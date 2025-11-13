@@ -154,6 +154,29 @@
       "ctaSecondary": "Contacteer Ons"
     }
   },
+  "admin": {
+    "title": "Admin Login",
+    "description": "Toegang tot het admin dashboard",
+    "username": "Gebruikersnaam",
+    "password": "Wachtwoord",
+    "login": "Inloggen",
+    "logout": "Uitloggen",
+    "invalidCredentials": "Ongeldige gebruikersnaam of wachtwoord",
+    "dashboard": "Admin Dashboard",
+    "totalBookings": "Totaal Boekingen",
+    "totalCustomers": "Totaal Klanten",
+    "totalOrders": "Totaal Bestellingen",
+    "comingSoon": "Binnenkort beschikbaar",
+    "integrations": "Integraties",
+    "integrationsDescription": "Verbind externe platforms en diensten",
+    "teamleaderDescription": "Beheer klanten en facturen",
+    "connect": "Verbinden",
+    "quickActions": "Snelle Acties",
+    "quickActionsDescription": "Veelgebruikte beheertaken",
+    "manageBookings": "Boekingen Beheren",
+    "viewCustomers": "Klanten Bekijken",
+    "viewOrders": "Bestellingen Bekijken"
+  },
   "b2b": {
     "title": "B2B Offerte Aanvragen",
     "subtitle": "Vraag een offerte aan voor uw bedrijfsuitje, schoolgroep of evenement",

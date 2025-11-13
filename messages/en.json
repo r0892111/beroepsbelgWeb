@@ -154,6 +154,29 @@
       "ctaSecondary": "Contact Us"
     }
   },
+  "admin": {
+    "title": "Admin Login",
+    "description": "Access the admin dashboard",
+    "username": "Username",
+    "password": "Password",
+    "login": "Login",
+    "logout": "Logout",
+    "invalidCredentials": "Invalid username or password",
+    "dashboard": "Admin Dashboard",
+    "totalBookings": "Total Bookings",
+    "totalCustomers": "Total Customers",
+    "totalOrders": "Total Orders",
+    "comingSoon": "Coming soon",
+    "integrations": "Integrations",
+    "integrationsDescription": "Connect external platforms and services",
+    "teamleaderDescription": "Manage customers and invoices",
+    "connect": "Connect",
+    "quickActions": "Quick Actions",
+    "quickActionsDescription": "Common administrative tasks",
+    "manageBookings": "Manage Bookings",
+    "viewCustomers": "View Customers",
+    "viewOrders": "View Orders"
+  },
   "b2b": {
     "title": "Request a B2B Quote",
     "subtitle": "Request a quote for your company outing, school group or event",
