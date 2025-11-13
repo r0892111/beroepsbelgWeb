@@ -60,7 +60,7 @@ export default function AdminDashboardPage() {
   };
 
   const handleTeamleaderConnect = () => {
-    const clientId = process.env.NEXT_PUBLIC_TEAMLEADER_CLIENT_ID;
+    const clientId = process.env.TEAMLEADER_CLIENT_ID;
     if (!clientId) {
       setFeedbackMessage(t('teamleaderMissingClientId'));
       return;

@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const clientId = Deno.env.get('VITE_TEAMLEADER_CLIENT_ID');
+    const clientId = Deno.env.get('TEAMLEADER_CLIENT_ID');
     const clientSecret = Deno.env.get('TEAMLEADER_CLIENT_SECRET');
 
     if (!clientId || !clientSecret) {
