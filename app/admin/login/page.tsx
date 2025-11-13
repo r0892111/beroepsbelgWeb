@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from 'next-intl';
 
-export default function AdminLoginPage({ params }: { params: { locale: string } }) {
+export default function AdminLoginPage() {
   const t = useTranslations('admin');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -22,7 +22,7 @@ export default function AdminLoginPage({ params }: { params: { locale: string } 
     setError('');
 
     if (login(username, password)) {
-      router.push(`/${params.locale}/admin/dashboard`);
+      router.push('/admin/dashboard');
     } else {
       setError(t('invalidCredentials'));
     }
@@ -69,3 +69,4 @@ export default function AdminLoginPage({ params }: { params: { locale: string } 
     </div>
   );
 }
+
