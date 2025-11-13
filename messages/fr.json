@@ -154,6 +154,29 @@
       "ctaSecondary": "Contactez-nous"
     }
   },
+  "admin": {
+    "title": "Connexion Admin",
+    "description": "Accéder au tableau de bord admin",
+    "username": "Nom d'utilisateur",
+    "password": "Mot de passe",
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "invalidCredentials": "Nom d'utilisateur ou mot de passe invalide",
+    "dashboard": "Tableau de Bord Admin",
+    "totalBookings": "Total Réservations",
+    "totalCustomers": "Total Clients",
+    "totalOrders": "Total Commandes",
+    "comingSoon": "Bientôt disponible",
+    "integrations": "Intégrations",
+    "integrationsDescription": "Connecter des plateformes et services externes",
+    "teamleaderDescription": "Gérer les clients et factures",
+    "connect": "Connecter",
+    "quickActions": "Actions Rapides",
+    "quickActionsDescription": "Tâches administratives courantes",
+    "manageBookings": "Gérer les Réservations",
+    "viewCustomers": "Voir les Clients",
+    "viewOrders": "Voir les Commandes"
+  },
   "b2b": {
     "title": "Demander un Devis B2B",
     "subtitle": "Demandez un devis pour votre sortie d'entreprise, groupe scolaire ou événement",

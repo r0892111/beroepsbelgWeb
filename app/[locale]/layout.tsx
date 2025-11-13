@@ -10,6 +10,7 @@ import SiteFooter from '@/components/design-system/SiteFooter';
 import { CookieBanner } from '@/components/layout/cookie-banner';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/lib/contexts/auth-context';
+import { AdminProvider } from '@/lib/contexts/admin-context';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair' });
@@ -43,15 +44,17 @@ export default async function LocaleLayout({
       <body className={`${inter.variable} ${playfair.variable} font-sans`}>
         <NextIntlClientProvider messages={messages} locale={locale}>
           <AuthProvider>
-            <div className="flex min-h-screen flex-col">
-              <header className="sticky top-0 z-40 bg-ivory border-b border-border">
-                <MainNav locale={locale as Locale} />
-              </header>
-              <main className="flex-1">{children}</main>
-              <SiteFooter locale={locale as Locale} />
-            </div>
-            <CookieBanner />
-            <Toaster />
+            <AdminProvider>
+              <div className="flex min-h-screen flex-col">
+                <header className="sticky top-0 z-40 bg-ivory border-b border-border">
+                  <MainNav locale={locale as Locale} />
+                </header>
+                <main className="flex-1">{children}</main>
+                <SiteFooter locale={locale as Locale} />
+              </div>
+              <CookieBanner />
+              <Toaster />
+            </AdminProvider>
           </AuthProvider>
         </NextIntlClientProvider>
       </body>

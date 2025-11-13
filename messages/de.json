@@ -154,6 +154,29 @@
       "ctaSecondary": "Kontaktieren Sie Uns"
     }
   },
+  "admin": {
+    "title": "Admin Login",
+    "description": "Zugriff auf das Admin-Dashboard",
+    "username": "Benutzername",
+    "password": "Passwort",
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "invalidCredentials": "Ungültiger Benutzername oder Passwort",
+    "dashboard": "Admin Dashboard",
+    "totalBookings": "Gesamt Buchungen",
+    "totalCustomers": "Gesamt Kunden",
+    "totalOrders": "Gesamt Bestellungen",
+    "comingSoon": "Bald verfügbar",
+    "integrations": "Integrationen",
+    "integrationsDescription": "Externe Plattformen und Dienste verbinden",
+    "teamleaderDescription": "Kunden und Rechnungen verwalten",
+    "connect": "Verbinden",
+    "quickActions": "Schnellaktionen",
+    "quickActionsDescription": "Häufige Verwaltungsaufgaben",
+    "manageBookings": "Buchungen Verwalten",
+    "viewCustomers": "Kunden Ansehen",
+    "viewOrders": "Bestellungen Ansehen"
+  },
   "b2b": {
     "title": "B2B Angebot Anfordern",
     "subtitle": "Fordern Sie ein Angebot für Ihren Betriebsausflug, Ihre Schulgruppe oder Veranstaltung an",
