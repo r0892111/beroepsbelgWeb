@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useCartContext } from '@/lib/contexts/cart-context';
 import { useFavoritesContext } from '@/lib/contexts/favorites-context';
+import { useState, useEffect } from 'react';
 
 interface MainNavProps {
   locale: Locale;
@@ -21,6 +22,15 @@ export function MainNav({ locale }: MainNavProps) {
   const { user, profile } = useAuth();
   const { cartCount } = useCartContext();
   const { favoritesCount } = useFavoritesContext();
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const navItems = [
     { label: t('tours'), href: `/${locale}/tours` },
@@ -35,18 +45,21 @@ export function MainNav({ locale }: MainNavProps) {
   ];
 
   return (
-    <div className="border-b border-border">
+    <div className={`border-b border-border sticky top-0 z-50 bg-ivory/95 backdrop-blur-md transition-all duration-300 ${isScrolled ? 'shadow-md' : ''}`}>
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
-          <Link href={`/${locale}`} className="flex items-center">
-            <Image
-              src="/Beroepsbelg Logo.png"
-              alt="BuroBeroepsBelg"
-              width={160}
-              height={50}
-              priority
-              className="h-10 w-auto"
-            />
+          <Link href={`/${locale}`} className="flex items-center group">
+            <div className="relative">
+              <Image
+                src="/Beroepsbelg Logo.png"
+                alt="BuroBeroepsBelg"
+                width={160}
+                height={50}
+                priority
+                className={`h-10 w-auto transition-all duration-300 ${isScrolled ? 'h-8' : 'h-10'}`}
+              />
+              <div className="absolute inset-0 bg-brass/0 group-hover:bg-brass/5 transition-colors duration-300 rounded" />
+            </div>
           </Link>
 
           <nav className="hidden items-center gap-6 lg:flex">
@@ -54,9 +67,10 @@ export function MainNav({ locale }: MainNavProps) {
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-sm font-medium transition-colors hover:text-primary"
+                className="text-sm font-medium transition-all duration-300 hover:text-brass relative group"
               >
                 {item.label}
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-brass transition-all duration-300 group-hover:w-full" />
               </Link>
             ))}
             {(profile?.isAdmin || profile?.is_admin) && (
