@@ -11,6 +11,8 @@ import { CookieBanner } from '@/components/layout/cookie-banner';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/lib/contexts/auth-context';
 import { AdminProvider } from '@/lib/contexts/admin-context';
+import { CartProvider } from '@/lib/contexts/cart-context';
+import { FavoritesProvider } from '@/lib/contexts/favorites-context';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair' });
@@ -45,15 +47,19 @@ export default async function LocaleLayout({
         <NextIntlClientProvider messages={messages} locale={locale}>
           <AuthProvider>
             <AdminProvider>
-              <div className="flex min-h-screen flex-col">
-                <header className="sticky top-0 z-40 bg-ivory border-b border-border">
-                  <MainNav locale={locale as Locale} />
-                </header>
-                <main className="flex-1">{children}</main>
-                <SiteFooter locale={locale as Locale} />
-              </div>
-              <CookieBanner />
-              <Toaster />
+              <CartProvider>
+                <FavoritesProvider>
+                  <div className="flex min-h-screen flex-col">
+                    <header className="sticky top-0 z-40 bg-ivory border-b border-border">
+                      <MainNav locale={locale as Locale} />
+                    </header>
+                    <main className="flex-1">{children}</main>
+                    <SiteFooter locale={locale as Locale} />
+                  </div>
+                  <CookieBanner />
+                  <Toaster />
+                </FavoritesProvider>
+              </CartProvider>
             </AdminProvider>
           </AuthProvider>
         </NextIntlClientProvider>

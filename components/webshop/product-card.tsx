@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Heart, ShoppingCart } from 'lucide-react';
 import { Product } from '@/lib/data/types';
 import { useAuth } from '@/lib/contexts/auth-context';
-import { useFavorites } from '@/lib/hooks/use-favorites';
-import { useCart } from '@/lib/hooks/use-cart';
+import { useFavoritesContext } from '@/lib/contexts/favorites-context';
+import { useCartContext } from '@/lib/contexts/cart-context';
 import { toast } from 'sonner';
 
 interface ProductCardProps {
@@ -22,8 +22,8 @@ export function ProductCard({ product }: ProductCardProps) {
   const router = useRouter();
   const locale = params.locale as 'nl' | 'en' | 'fr' | 'de';
   const { user } = useAuth();
-  const { isFavorite, addFavorite, removeFavorite } = useFavorites();
-  const { addToCart } = useCart();
+  const { isFavorite, addFavorite, removeFavorite } = useFavoritesContext();
+  const { addToCart } = useCartContext();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   const handleToggleFavorite = async () => {

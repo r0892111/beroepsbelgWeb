@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/contexts/auth-context';
-import { useFavorites } from '@/lib/hooks/use-favorites';
-import { useCart } from '@/lib/hooks/use-cart';
+import { useFavoritesContext } from '@/lib/contexts/favorites-context';
+import { useCartContext } from '@/lib/contexts/cart-context';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,8 +17,8 @@ import Link from 'next/link';
 export default function AccountPage() {
   const t = useTranslations('auth');
   const { user, profile, signOut, loading: authLoading } = useAuth();
-  const { favorites, removeFavorite } = useFavorites();
-  const { cartItems, updateQuantity, removeFromCart, addToCart } = useCart();
+  const { favorites, favoritesCount, removeFavorite } = useFavoritesContext();
+  const { cartItems, cartCount, updateQuantity, removeFromCart, addToCart } = useCartContext();
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -99,7 +99,7 @@ export default function AccountPage() {
                 {t('myCart')}
                 {cartItems.length > 0 && (
                   <span className="ml-1 rounded-full bg-[#92F0B1] px-2 py-0.5 text-xs text-[#0d1117]">
-                    {cartItems.reduce((total, item) => total + item.quantity, 0)}
+                    {cartCount}
                   </span>
                 )}
               </TabsTrigger>

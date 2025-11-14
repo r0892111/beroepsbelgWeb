@@ -9,8 +9,8 @@ import { Menu, User, ShoppingCart, Heart, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/lib/contexts/auth-context';
-import { useCart } from '@/lib/hooks/use-cart';
-import { useFavorites } from '@/lib/hooks/use-favorites';
+import { useCartContext } from '@/lib/contexts/cart-context';
+import { useFavoritesContext } from '@/lib/contexts/favorites-context';
 
 interface MainNavProps {
   locale: Locale;
@@ -19,10 +19,8 @@ interface MainNavProps {
 export function MainNav({ locale }: MainNavProps) {
   const t = useTranslations('nav');
   const { user } = useAuth();
-  const { getCartCount } = useCart();
-  const { favorites } = useFavorites();
-  const cartCount = getCartCount();
-  const favoritesCount = favorites.length;
+  const { cartCount } = useCartContext();
+  const { favoritesCount } = useFavoritesContext();
 
   const navItems = [
     { label: t('tours'), href: `/${locale}/tours` },
