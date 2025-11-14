@@ -72,7 +72,7 @@ export function useCart() {
       tempId = `temp-${Date.now()}`;
       setCartItems((prev) => [
         {
-          id: tempId,
+          id: tempId as string,
           user_id: user.id,
           product_id: productId,
           quantity,

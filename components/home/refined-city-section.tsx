@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { type Locale } from '@/i18n';
 import { cities } from '@/lib/data/cities';
 import { tours } from '@/lib/data/tours';
@@ -41,21 +42,34 @@ export function RefinedCitySection({ locale }: RefinedCitySectionProps) {
                 <Link
                   key={city.slug}
                   href={`/${locale}/tours-${city.slug}`}
-                  className="card-elevated group p-8 block"
+                  className="card-elevated group block overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl"
                 >
-                  <div className="brass-corner pb-6">
-                    <h3 className="text-2xl font-serif font-bold text-navy mb-3 group-hover:text-brass transition-colors">
-                      {city.name[locale]}
-                    </h3>
-                    {tourCount > 0 && (
-                      <p className="text-sm mb-4" style={{ color: 'var(--slate-blue)' }}>
-                        {tourCount} {tourCount === 1 ? 'tour' : 'tours'}
-                      </p>
-                    )}
+                  {city.image && (
+                    <div className="relative h-56 w-full overflow-hidden">
+                      <Image
+                        src={city.image}
+                        alt={city.name[locale]}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-navy/60 via-navy/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    </div>
+                  )}
+                  <div className="p-8">
+                    <div className="brass-corner pb-6">
+                      <h3 className="text-2xl font-serif font-bold text-navy mb-3 group-hover:text-brass transition-colors duration-300">
+                        {city.name[locale]}
+                      </h3>
+                      {tourCount > 0 && (
+                        <p className="text-sm mb-4" style={{ color: 'var(--slate-blue)' }}>
+                          {tourCount} {tourCount === 1 ? 'tour' : 'tours'}
+                        </p>
+                      )}
+                    </div>
+                    <p className="text-base leading-relaxed" style={{ color: 'var(--slate-blue)' }}>
+                      {city.teaser[locale]}
+                    </p>
                   </div>
-                  <p className="text-base leading-relaxed" style={{ color: 'var(--slate-blue)' }}>
-                    {city.teaser[locale]}
-                  </p>
                 </Link>
               );
             })}
