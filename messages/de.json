@@ -13,7 +13,8 @@
     "account": "Konto",
     "favorites": "Favoriten",
     "search": "Suchen",
-    "cart": "Warenkorb"
+    "cart": "Warenkorb",
+    "adminPanel": "Admin-Panel"
   },
   "hero": {
     "kicker": "— Entdecken Sie Belgien wie nie zuvor",
@@ -175,7 +176,23 @@
     "quickActionsDescription": "Häufige Verwaltungsaufgaben",
     "manageBookings": "Buchungen Verwalten",
     "viewCustomers": "Kunden Ansehen",
-    "viewOrders": "Bestellungen Ansehen"
+    "viewOrders": "Bestellungen Ansehen",
+    "teamleaderAuthorizeError": "Teamleader-Autorisierung konnte nicht gestartet werden.",
+    "teamleaderMissingCode": "Autorisierungscode fehlt im Teamleader-Callback.",
+    "teamleaderInvalidState": "Sicherheitsvalidierung fehlgeschlagen. Bitte starten Sie die Teamleader-Verbindung neu.",
+    "teamleaderError": "Ein Fehler ist bei der Teamleader-Integration aufgetreten.",
+    "teamleaderConnecting": "Verbinden mit Teamleader...",
+    "teamleaderSuccess": "Erfolgreich mit Teamleader verbunden!",
+    "teamleaderSuccessShort": "Teamleader verbunden.",
+    "teamleaderReconnect": "Erneut verbinden",
+    "teamleaderRefresh": "Status aktualisieren",
+    "teamleaderStatusDisconnected": "Nicht verbunden",
+    "teamleaderStatusConnected": "Verbunden als {name}",
+    "teamleaderUnknownUser": "Unbekannter Benutzer",
+    "teamleaderBackToDashboard": "Zurück zum Dashboard",
+    "teamleaderRedirecting": "Weiterleitung zum Dashboard...",
+    "home": "Startseite",
+    "loading": "Laden..."
   },
   "b2b": {
     "title": "B2B Angebot Anfordern",

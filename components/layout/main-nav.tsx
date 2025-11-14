@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { type Locale } from '@/i18n';
 import { LangSwitcher } from './lang-switcher';
-import { Menu, User, ShoppingCart, Heart, Search } from 'lucide-react';
+import { Menu, User, ShoppingCart, Heart, Search, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/lib/contexts/auth-context';
@@ -18,7 +18,7 @@ interface MainNavProps {
 
 export function MainNav({ locale }: MainNavProps) {
   const t = useTranslations('nav');
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { cartCount } = useCartContext();
   const { favoritesCount } = useFavoritesContext();
 
@@ -59,6 +59,14 @@ export function MainNav({ locale }: MainNavProps) {
                 {item.label}
               </Link>
             ))}
+            {(profile?.isAdmin || profile?.is_admin) && (
+              <Link
+                href={`/${locale}/admin/dashboard`}
+                className="text-sm font-medium transition-colors hover:text-primary"
+              >
+                {t('adminPanel')}
+              </Link>
+            )}
           </nav>
 
           <div className="flex items-center gap-2">
@@ -138,6 +146,15 @@ export function MainNav({ locale }: MainNavProps) {
                         </span>
                       )}
                     </Link>
+                    {(profile?.isAdmin || profile?.is_admin) && (
+                      <Link
+                        href={`/${locale}/admin/dashboard`}
+                        className="flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary"
+                      >
+                        <Settings className="h-4 w-4" />
+                        {t('adminPanel')}
+                      </Link>
+                    )}
                   </div>
                   {navItems.map((item) => (
                     <Link

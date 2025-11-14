@@ -13,7 +13,8 @@
     "account": "Account",
     "favorites": "Favorieten",
     "search": "Zoeken",
-    "cart": "Winkelmand"
+    "cart": "Winkelmand",
+    "adminPanel": "Admin Paneel"
   },
   "hero": {
     "kicker": "— Ontdek België zoals je het nog nooit hebt gezien",
@@ -175,7 +176,23 @@
     "quickActionsDescription": "Veelgebruikte beheertaken",
     "manageBookings": "Boekingen Beheren",
     "viewCustomers": "Klanten Bekijken",
-    "viewOrders": "Bestellingen Bekijken"
+    "viewOrders": "Bestellingen Bekijken",
+    "teamleaderAuthorizeError": "Kan Teamleader autorisatie niet starten.",
+    "teamleaderMissingCode": "Autorisatiecode ontbreekt in Teamleader callback.",
+    "teamleaderInvalidState": "Beveiligingsvalidatie mislukt. Start de Teamleader-verbinding opnieuw.",
+    "teamleaderError": "Er is een fout opgetreden tijdens de Teamleader-integratie.",
+    "teamleaderConnecting": "Verbinden met Teamleader...",
+    "teamleaderSuccess": "Succesvol verbonden met Teamleader!",
+    "teamleaderSuccessShort": "Teamleader verbonden.",
+    "teamleaderReconnect": "Opnieuw verbinden",
+    "teamleaderRefresh": "Status vernieuwen",
+    "teamleaderStatusDisconnected": "Niet verbonden",
+    "teamleaderStatusConnected": "Verbonden als {name}",
+    "teamleaderUnknownUser": "Onbekende gebruiker",
+    "teamleaderBackToDashboard": "Terug naar Dashboard",
+    "teamleaderRedirecting": "Doorverwijzen naar dashboard...",
+    "home": "Home",
+    "loading": "Laden..."
   },
   "b2b": {
     "title": "B2B Offerte Aanvragen",
