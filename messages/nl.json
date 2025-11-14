@@ -13,7 +13,8 @@
     "account": "Account",
     "favorites": "Favorieten",
     "search": "Zoeken",
-    "cart": "Winkelmand"
+    "cart": "Winkelmand",
+    "adminPanel": "Admin"
   },
   "hero": {
     "kicker": "— Ontdek België zoals je het nog nooit hebt gezien",
@@ -184,12 +185,18 @@
     "teamleaderBackToDashboard": "Terug naar dashboard",
     "teamleaderSuccess": "Teamleader-koppeling geslaagd! Je wordt doorgestuurd...",
     "teamleaderSuccessShort": "Teamleader-koppeling succesvol voltooid.",
+    "teamleaderRedirecting": "Doorverwijzen naar dashboard...",
     "teamleaderMissingClientId": "Teamleader client ID ontbreekt. Controleer de omgevingconfiguratie.",
+    "teamleaderAuthorizeError": "Starten van de Teamleader-koppeling mislukt. Probeer het later opnieuw.",
+    "teamleaderInvalidState": "Beveiligingscontrole mislukt. Start de Teamleader-koppeling opnieuw.",
     "quickActions": "Snelle Acties",
     "quickActionsDescription": "Veelgebruikte beheertaken",
     "manageBookings": "Boekingen Beheren",
     "viewCustomers": "Klanten Bekijken",
-    "viewOrders": "Bestellingen Bekijken"
+    "viewOrders": "Bestellingen Bekijken",
+    "loggingIn": "Bezig met inloggen...",
+    "loading": "Admin-dashboard wordt geladen...",
+    "home": "Home"
   },
   "b2b": {
     "title": "B2B Offerte Aanvragen",

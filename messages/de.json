@@ -13,7 +13,8 @@
     "account": "Konto",
     "favorites": "Favoriten",
     "search": "Suchen",
-    "cart": "Warenkorb"
+    "cart": "Warenkorb",
+    "adminPanel": "Admin"
   },
   "hero": {
     "kicker": "— Entdecken Sie Belgien wie nie zuvor",
@@ -184,12 +185,18 @@
     "teamleaderBackToDashboard": "Zurück zum Dashboard",
     "teamleaderSuccess": "Teamleader-Verbindung erfolgreich! Weiterleitung...",
     "teamleaderSuccessShort": "Teamleader-Verbindung erfolgreich hergestellt.",
+    "teamleaderRedirecting": "Weiterleitung zum Dashboard...",
     "teamleaderMissingClientId": "Teamleader Client-ID fehlt. Überprüfen Sie die Konfiguration.",
+    "teamleaderAuthorizeError": "Teamleader-Verbindung kann nicht gestartet werden. Bitte versuchen Sie es später erneut.",
+    "teamleaderInvalidState": "Sicherheitsprüfung fehlgeschlagen. Bitte starten Sie die Teamleader-Verbindung erneut.",
     "quickActions": "Schnellaktionen",
     "quickActionsDescription": "Häufige Verwaltungsaufgaben",
     "manageBookings": "Buchungen Verwalten",
     "viewCustomers": "Kunden Ansehen",
-    "viewOrders": "Bestellungen Ansehen"
+    "viewOrders": "Bestellungen Ansehen",
+    "loggingIn": "Wird angemeldet...",
+    "loading": "Admin-Dashboard wird geladen...",
+    "home": "Startseite"
   },
   "b2b": {
     "title": "B2B Angebot Anfordern",

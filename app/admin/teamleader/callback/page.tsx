@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Home } from 'lucide-react';
 import { useAdmin } from '@/lib/contexts/admin-context';
+import { useAuth } from '@/lib/contexts/auth-context';
 import { useTranslations } from 'next-intl';
 
 type StatusState = 'loading' | 'success' | 'error';
@@ -16,74 +18,152 @@ export default function TeamleaderCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { refreshTeamleaderIntegration } = useAdmin();
+  const { user } = useAuth();
 
   const [status, setStatus] = useState<StatusState>('loading');
   const [message, setMessage] = useState<string>(t('teamleaderConnecting'));
-  const [sessionUrl, setSessionUrl] = useState<string | null>(null);
+  const exchangeTriggeredRef = useRef(false);
+  const hasSucceededRef = useRef(false);
 
   useEffect(() => {
+    // Skip if we've already processed the exchange or succeeded
+    if (exchangeTriggeredRef.current || hasSucceededRef.current) {
+      return;
+    }
+
     const errorParam = searchParams.get('error');
     const code = searchParams.get('code');
+    const providedState = searchParams.get('state');
+    const storedState = localStorage.getItem('teamleaderOauthState');
+
+    console.log('Teamleader callback params:', { errorParam, hasCode: !!code, providedState, storedState });
 
     if (errorParam) {
+      hasSucceededRef.current = true; // Prevent re-validation
       setStatus('error');
       setMessage(t('teamleaderError'));
       return;
     }
 
     if (!code) {
+      hasSucceededRef.current = true; // Prevent re-validation
       setStatus('error');
       setMessage(t('teamleaderMissingCode'));
       return;
     }
 
+    if (!storedState || !providedState) {
+      console.error('State validation failed - missing state:', { storedState, providedState });
+      hasSucceededRef.current = true; // Prevent re-validation
+      setStatus('error');
+      setMessage(t('teamleaderInvalidState'));
+      return;
+    }
+
+    if (storedState !== providedState) {
+      console.error('State validation failed - mismatch:', { storedState, providedState });
+      hasSucceededRef.current = true; // Prevent re-validation
+      setStatus('error');
+      setMessage(t('teamleaderInvalidState'));
+      return;
+    }
+
     const exchangeCode = async () => {
+      if (exchangeTriggeredRef.current || !user?.id) {
+        return;
+      }
+      exchangeTriggeredRef.current = true;
       setStatus('loading');
       setMessage(t('teamleaderConnecting'));
 
       const redirectUri = `${window.location.origin}/admin/teamleader/callback`;
       const { data, error } = await supabase.functions.invoke<{
         success: boolean;
-        session_url: string;
+        teamleader_user_id?: string;
+        error?: string;
       }>('teamleader-auth', {
         body: {
           code,
-          redirect_uri: redirectUri
+          redirect_uri: redirectUri,
+          user_id: user.id
         }
       });
 
-      if (error || !data?.success || !data.session_url) {
+      console.log('Teamleader callback response:', { data, error });
+
+      // Check for Supabase function invoke errors
+      if (error) {
+        console.error('Supabase function invoke error:', error);
+        hasSucceededRef.current = true; // Prevent re-validation
+        setStatus('error');
+        setMessage(error.message || t('teamleaderError'));
+        return;
+      }
+
+      // Check if data exists and has success flag
+      if (!data) {
+        console.error('No data in response');
+        hasSucceededRef.current = true; // Prevent re-validation
         setStatus('error');
         setMessage(t('teamleaderError'));
         return;
       }
 
-      localStorage.setItem('teamleaderSessionUrl', data.session_url);
-      setSessionUrl(data.session_url);
+      // Check for explicit error in response
+      if (data.error) {
+        console.error('Function returned error:', data.error);
+        hasSucceededRef.current = true; // Prevent re-validation
+        setStatus('error');
+        setMessage(data.error);
+        return;
+      }
+
+      // If we got here with data and no error, treat as success
+      // The function saves the data before returning, so if we have data, it succeeded
+      // Only fail if success is explicitly false
+      if (data.success === false) {
+        console.error('Function explicitly returned failure:', data);
+        hasSucceededRef.current = true; // Prevent re-validation
+        setStatus('error');
+        setMessage(t('teamleaderError'));
+        return;
+      }
+
+      localStorage.removeItem('teamleaderOauthState');
+      hasSucceededRef.current = true;
+      
+      const successMessage = t('teamleaderSuccess');
+      console.log('Teamleader auth succeeded, showing success message:', successMessage);
+      
       setStatus('success');
-      setMessage(t('teamleaderSuccess'));
+      setMessage(successMessage);
+      
+      // Refresh integration status
       await refreshTeamleaderIntegration();
 
+      // Show success message for 3 seconds before redirecting
       setTimeout(() => {
         router.replace('/admin/dashboard?teamleader=connected');
-      }, 2000);
+      }, 3000);
     };
 
     void exchangeCode();
-  }, [searchParams, t, router, refreshTeamleaderIntegration]);
+  }, [searchParams, t, router, refreshTeamleaderIntegration, user]);
 
   const handleGoBack = () => {
     router.replace('/admin/dashboard');
   };
 
-  const handleOpenSession = () => {
-    if (sessionUrl) {
-      window.open(sessionUrl, '_blank', 'noopener,noreferrer');
-    }
-  };
-
   return (
     <div className="min-h-screen bg-sand flex items-center justify-center p-4">
+      <div className="absolute top-4 right-4">
+        <Link href="/nl">
+          <Button variant="ghost" size="sm">
+            <Home className="h-4 w-4 mr-2" />
+            {t('home') || 'Home'}
+          </Button>
+        </Link>
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl font-serif text-navy">{t('integrations')}</CardTitle>
@@ -98,13 +178,11 @@ export default function TeamleaderCallbackPage() {
 
           {status === 'success' && (
             <div className="flex flex-col items-center gap-3">
-              <CheckCircle2 className="h-10 w-10 text-green-600" />
-              <p className="text-sm text-muted-foreground">{message}</p>
-              {sessionUrl && (
-                <Button onClick={handleOpenSession}>
-                  {t('teamleaderOpenSession')}
-                </Button>
-              )}
+              <CheckCircle2 className="h-12 w-12 text-green-600" />
+              <p className="text-base font-medium text-green-700">{message}</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                {t('teamleaderRedirecting') || 'Redirecting to dashboard...'}
+              </p>
             </div>
           )}
 

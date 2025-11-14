@@ -1,28 +1,21 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabase/client';
 
-interface TeamleaderIntegration {
-  id: string;
-  user_id: string | null;
-  teamleader_user_id: string;
-  user_info: Record<string, unknown>;
-  access_token?: string | null;
-  refresh_token?: string | null;
-  scope?: string | null;
-  expires_at?: string | null;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string | null;
-}
+type TeamleaderIntegration = Record<string, unknown> | null;
 
 interface AdminContextType {
   isAuthenticated: boolean;
-  login: (username: string, password: string) => boolean;
-  logout: () => void;
+  login: (
+    username: string,
+    password: string
+  ) => Promise<{ success: boolean; error?: string; redirected?: boolean }>;
+  logout: () => Promise<void>;
   teamleaderIntegration: TeamleaderIntegration | null;
   refreshTeamleaderIntegration: () => Promise<void>;
   teamleaderLoading: boolean;
+  loading: boolean;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
@@ -31,12 +24,30 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [teamleaderIntegration, setTeamleaderIntegration] = useState<TeamleaderIntegration | null>(null);
   const [teamleaderLoading, setTeamleaderLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const adminAuth = localStorage.getItem('adminAuth');
-    if (adminAuth === 'true') {
-      setIsAuthenticated(true);
-    }
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setIsAuthenticated(!!session);
+      } catch (error) {
+        console.error('Failed to check session', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void checkSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+      if (!session) {
+        setTeamleaderIntegration(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const fetchTeamleaderIntegration = useCallback(async () => {
@@ -47,20 +58,29 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
 
     setTeamleaderLoading(true);
     try {
-      const response = await fetch('/api/admin/teamleader', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        cache: 'no-store'
-      });
-
-      if (!response.ok) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) {
         setTeamleaderIntegration(null);
         return;
       }
 
-      const data = await response.json();
+      const { data, error } = await supabase.functions.invoke<{
+        success: boolean;
+        integration?: TeamleaderIntegration;
+        error?: string;
+      }>('teamleader-auth', {
+        body: {
+          action: 'status',
+          user_id: session.user.id
+        }
+      });
+
+      if (error || !data?.success) {
+        console.error('Failed to fetch Teamleader integration', error || data?.error);
+        setTeamleaderIntegration(null);
+        return;
+      }
+
       setTeamleaderIntegration(data.integration ?? null);
     } catch (error) {
       console.error('Failed to fetch Teamleader integration', error);
@@ -78,25 +98,53 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated, fetchTeamleaderIntegration]);
 
-  const login = (username: string, password: string): boolean => {
-    if (username === 'admin' && password === 'admin123') {
-      setIsAuthenticated(true);
-      localStorage.setItem('adminAuth', 'true');
-      void fetchTeamleaderIntegration();
-      return true;
+  const login = async (
+    username: string,
+    password: string
+  ): Promise<{ success: boolean; error?: string; redirected?: boolean }> => {
+    if (username !== 'admin' || password !== 'admin123') {
+      return { success: false, error: 'Invalid credentials' };
     }
-    return false;
+
+    try {
+      const { data, error } = await supabase.functions.invoke<{
+        success: boolean;
+        session_url?: string;
+        error?: string;
+      }>('teamleader-auth', {
+        body: {
+          action: 'admin-login',
+          username,
+          password
+        }
+      });
+
+      if (error || !data?.success) {
+        return { success: false, error: data?.error || 'Failed to authenticate' };
+      }
+
+      if (data.session_url) {
+        window.location.href = data.session_url;
+        return { success: true, redirected: true };
+      }
+
+      return { success: false, error: 'Failed to create session' };
+    } catch (error) {
+      console.error('Login error', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Login failed'
+      };
+    }
   };
 
-  const logout = () => {
+  const logout = async (): Promise<void> => {
+    await supabase.auth.signOut();
     setIsAuthenticated(false);
-    localStorage.removeItem('adminAuth');
     setTeamleaderIntegration(null);
   };
 
-  const refreshTeamleaderIntegration = async () => {
-    await fetchTeamleaderIntegration();
-  };
+  const refreshTeamleaderIntegration = () => fetchTeamleaderIntegration();
 
   return (
     <AdminContext.Provider
@@ -106,7 +154,8 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         logout,
         teamleaderIntegration,
         refreshTeamleaderIntegration,
-        teamleaderLoading
+        teamleaderLoading,
+        loading
       }}
     >
       {children}
