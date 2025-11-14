@@ -13,8 +13,7 @@
     "account": "Account",
     "favorites": "Favorites",
     "search": "Search",
-    "cart": "Cart",
-    "adminPanel": "Admin"
+    "cart": "Cart"
   },
   "hero": {
     "kicker": "— Discover Belgium like you've never seen it before",
@@ -172,31 +171,11 @@
     "integrationsDescription": "Connect external platforms and services",
     "teamleaderDescription": "Manage customers and invoices",
     "connect": "Connect",
-    "teamleaderStatusConnected": "Connected as {name}",
-    "teamleaderStatusDisconnected": "Not connected",
-    "teamleaderUnknownUser": "Unknown Teamleader user",
-    "teamleaderRefresh": "Refresh status",
-    "teamleaderReconnect": "Reconnect",
-    "teamleaderOpenSession": "Open admin session",
-    "teamleaderLastUpdated": "Last updated {date}",
-    "teamleaderConnecting": "Completing Teamleader connection...",
-    "teamleaderError": "Failed to connect to Teamleader. Please try again.",
-    "teamleaderMissingCode": "Authorization code missing. Please restart the connection.",
-    "teamleaderBackToDashboard": "Back to dashboard",
-    "teamleaderSuccess": "Teamleader integration connected! Redirecting...",
-    "teamleaderSuccessShort": "Teamleader integration connected successfully.",
-    "teamleaderRedirecting": "Redirecting to dashboard...",
-    "teamleaderMissingClientId": "Teamleader client ID is missing. Check environment configuration.",
-    "teamleaderAuthorizeError": "Unable to start the Teamleader connection. Please try again later.",
-    "teamleaderInvalidState": "Security validation failed. Please restart the Teamleader connection.",
     "quickActions": "Quick Actions",
     "quickActionsDescription": "Common administrative tasks",
     "manageBookings": "Manage Bookings",
     "viewCustomers": "View Customers",
-    "viewOrders": "View Orders",
-    "loggingIn": "Logging in...",
-    "loading": "Loading admin dashboard...",
-    "home": "Home"
+    "viewOrders": "View Orders"
   },
   "b2b": {
     "title": "Request a B2B Quote",

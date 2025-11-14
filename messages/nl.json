@@ -13,8 +13,7 @@
     "account": "Account",
     "favorites": "Favorieten",
     "search": "Zoeken",
-    "cart": "Winkelmand",
-    "adminPanel": "Admin"
+    "cart": "Winkelmand"
   },
   "hero": {
     "kicker": "— Ontdek België zoals je het nog nooit hebt gezien",
@@ -172,31 +171,11 @@
     "integrationsDescription": "Verbind externe platforms en diensten",
     "teamleaderDescription": "Beheer klanten en facturen",
     "connect": "Verbinden",
-    "teamleaderStatusConnected": "Verbonden als {name}",
-    "teamleaderStatusDisconnected": "Niet verbonden",
-    "teamleaderUnknownUser": "Onbekende Teamleader-gebruiker",
-    "teamleaderRefresh": "Status verversen",
-    "teamleaderReconnect": "Opnieuw verbinden",
-    "teamleaderOpenSession": "Admin-sessie openen",
-    "teamleaderLastUpdated": "Laatst bijgewerkt op {date}",
-    "teamleaderConnecting": "Teamleader-koppeling voltooien...",
-    "teamleaderError": "Verbinding met Teamleader mislukt. Probeer het opnieuw.",
-    "teamleaderMissingCode": "Autorisatiecode ontbreekt. Start de koppeling opnieuw.",
-    "teamleaderBackToDashboard": "Terug naar dashboard",
-    "teamleaderSuccess": "Teamleader-koppeling geslaagd! Je wordt doorgestuurd...",
-    "teamleaderSuccessShort": "Teamleader-koppeling succesvol voltooid.",
-    "teamleaderRedirecting": "Doorverwijzen naar dashboard...",
-    "teamleaderMissingClientId": "Teamleader client ID ontbreekt. Controleer de omgevingconfiguratie.",
-    "teamleaderAuthorizeError": "Starten van de Teamleader-koppeling mislukt. Probeer het later opnieuw.",
-    "teamleaderInvalidState": "Beveiligingscontrole mislukt. Start de Teamleader-koppeling opnieuw.",
     "quickActions": "Snelle Acties",
     "quickActionsDescription": "Veelgebruikte beheertaken",
     "manageBookings": "Boekingen Beheren",
     "viewCustomers": "Klanten Bekijken",
-    "viewOrders": "Bestellingen Bekijken",
-    "loggingIn": "Bezig met inloggen...",
-    "loading": "Admin-dashboard wordt geladen...",
-    "home": "Home"
+    "viewOrders": "Bestellingen Bekijken"
   },
   "b2b": {
     "title": "B2B Offerte Aanvragen",
