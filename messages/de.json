@@ -13,8 +13,7 @@
     "account": "Konto",
     "favorites": "Favoriten",
     "search": "Suchen",
-    "cart": "Warenkorb",
-    "adminPanel": "Admin"
+    "cart": "Warenkorb"
   },
   "hero": {
     "kicker": "— Entdecken Sie Belgien wie nie zuvor",
@@ -172,31 +171,11 @@
     "integrationsDescription": "Externe Plattformen und Dienste verbinden",
     "teamleaderDescription": "Kunden und Rechnungen verwalten",
     "connect": "Verbinden",
-    "teamleaderStatusConnected": "Verbunden als {name}",
-    "teamleaderStatusDisconnected": "Nicht verbunden",
-    "teamleaderUnknownUser": "Unbekannter Teamleader-Benutzer",
-    "teamleaderRefresh": "Status aktualisieren",
-    "teamleaderReconnect": "Neu verbinden",
-    "teamleaderOpenSession": "Admin-Sitzung öffnen",
-    "teamleaderLastUpdated": "Zuletzt aktualisiert am {date}",
-    "teamleaderConnecting": "Teamleader-Verbindung wird hergestellt...",
-    "teamleaderError": "Teamleader-Verbindung fehlgeschlagen. Bitte erneut versuchen.",
-    "teamleaderMissingCode": "Autorisierungscode fehlt. Starte die Verbindung erneut.",
-    "teamleaderBackToDashboard": "Zurück zum Dashboard",
-    "teamleaderSuccess": "Teamleader-Verbindung erfolgreich! Weiterleitung...",
-    "teamleaderSuccessShort": "Teamleader-Verbindung erfolgreich hergestellt.",
-    "teamleaderRedirecting": "Weiterleitung zum Dashboard...",
-    "teamleaderMissingClientId": "Teamleader Client-ID fehlt. Überprüfen Sie die Konfiguration.",
-    "teamleaderAuthorizeError": "Teamleader-Verbindung kann nicht gestartet werden. Bitte versuchen Sie es später erneut.",
-    "teamleaderInvalidState": "Sicherheitsprüfung fehlgeschlagen. Bitte starten Sie die Teamleader-Verbindung erneut.",
     "quickActions": "Schnellaktionen",
     "quickActionsDescription": "Häufige Verwaltungsaufgaben",
     "manageBookings": "Buchungen Verwalten",
     "viewCustomers": "Kunden Ansehen",
-    "viewOrders": "Bestellungen Ansehen",
-    "loggingIn": "Wird angemeldet...",
-    "loading": "Admin-Dashboard wird geladen...",
-    "home": "Startseite"
+    "viewOrders": "Bestellungen Ansehen"
   },
   "b2b": {
     "title": "B2B Angebot Anfordern",

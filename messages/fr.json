@@ -13,8 +13,7 @@
     "account": "Compte",
     "favorites": "Favoris",
     "search": "Rechercher",
-    "cart": "Panier",
-    "adminPanel": "Admin"
+    "cart": "Panier"
   },
   "hero": {
     "kicker": "— Découvrez la Belgique comme vous ne l'avez jamais vue",
@@ -172,31 +171,11 @@
     "integrationsDescription": "Connecter des plateformes et services externes",
     "teamleaderDescription": "Gérer les clients et factures",
     "connect": "Connecter",
-    "teamleaderStatusConnected": "Connecté en tant que {name}",
-    "teamleaderStatusDisconnected": "Non connecté",
-    "teamleaderUnknownUser": "Utilisateur Teamleader inconnu",
-    "teamleaderRefresh": "Actualiser le statut",
-    "teamleaderReconnect": "Reconnecter",
-    "teamleaderOpenSession": "Ouvrir la session admin",
-    "teamleaderLastUpdated": "Dernière mise à jour {date}",
-    "teamleaderConnecting": "Connexion à Teamleader en cours...",
-    "teamleaderError": "Échec de la connexion à Teamleader. Veuillez réessayer.",
-    "teamleaderMissingCode": "Code d'autorisation manquant. Relancez la connexion.",
-    "teamleaderBackToDashboard": "Retour au tableau de bord",
-    "teamleaderSuccess": "Connexion à Teamleader réussie ! Redirection en cours...",
-    "teamleaderSuccessShort": "Connexion à Teamleader effectuée avec succès.",
-    "teamleaderRedirecting": "Redirection vers le tableau de bord...",
-    "teamleaderMissingClientId": "L'identifiant client Teamleader manque. Vérifiez la configuration.",
-    "teamleaderAuthorizeError": "Impossible de démarrer la connexion Teamleader. Veuillez réessayer plus tard.",
-    "teamleaderInvalidState": "La validation de sécurité a échoué. Relancez la connexion Teamleader.",
     "quickActions": "Actions Rapides",
     "quickActionsDescription": "Tâches administratives courantes",
     "manageBookings": "Gérer les Réservations",
     "viewCustomers": "Voir les Clients",
-    "viewOrders": "Voir les Commandes",
-    "loggingIn": "Connexion en cours...",
-    "loading": "Chargement du tableau de bord...",
-    "home": "Accueil"
+    "viewOrders": "Voir les Commandes"
   },
   "b2b": {
     "title": "Demander un Devis B2B",

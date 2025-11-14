@@ -4,16 +4,13 @@
 
 @layer base {
   :root {
-    --belgian-navy: #1a2642;
-    --deep-teal: #2d5a5f;
-    --warm-terracotta: #d87355;
-    --golden-amber: #d4a574;
-    --soft-cream: #faf8f3;
-    --warm-sand: #e8dcc8;
-    --charcoal: #2a2a2a;
-    --slate: #525e6f;
-    --accent-coral: #e87461;
-    --accent-sage: #8b9a7d;
+    --belgian-navy: #1C2C55;
+    --champagne-sand: #E6D8B5;
+    --ivory: #FAF9F6;
+    --graphite: #222222;
+    --brass: #C1A46D;
+    --slate-blue: #5E6A85;
+    --error: #B74E3D;
 
     --background: 0 0% 98%;
     --foreground: 0 0% 13%;
@@ -70,8 +67,8 @@
     font-feature-settings: "kern" 1, "liga" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: var(--soft-cream);
-    color: var(--charcoal);
+    background-color: var(--ivory);
+    color: var(--graphite);
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -82,35 +79,33 @@
 
   p {
     line-height: 1.7;
-    color: var(--slate);
+    color: var(--slate-blue);
   }
 }
 
 @layer utilities {
   .btn-primary {
-    @apply inline-flex items-center justify-center px-8 py-3 font-semibold rounded-full transition-all duration-300;
-    background: linear-gradient(135deg, var(--deep-teal) 0%, var(--belgian-navy) 100%);
-    color: white;
-    box-shadow: 0 4px 15px rgba(29, 90, 95, 0.2);
+    @apply inline-flex items-center justify-center px-8 py-3 font-semibold rounded transition-all duration-300;
+    background-color: var(--belgian-navy);
+    color: var(--ivory);
   }
 
   .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(29, 90, 95, 0.3);
+    background-color: transparent;
+    border: 1px solid var(--belgian-navy);
+    color: var(--belgian-navy);
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center px-8 py-3 font-semibold rounded-full transition-all duration-300;
+    @apply inline-flex items-center justify-center px-8 py-3 font-semibold rounded transition-all duration-300;
     background-color: transparent;
-    border: 2px solid var(--golden-amber);
+    border: 1px solid var(--brass);
     color: var(--belgian-navy);
   }
 
   .btn-secondary:hover {
-    background-color: var(--golden-amber);
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(212, 165, 116, 0.3);
+    background-color: var(--brass);
+    color: var(--ivory);
   }
 
   .brass-accent {
@@ -123,14 +118,13 @@
     bottom: -4px;
     left: 0;
     width: 60px;
-    height: 3px;
-    background: linear-gradient(90deg, var(--golden-amber), var(--warm-terracotta));
-    border-radius: 2px;
+    height: 2px;
+    background-color: var(--brass);
   }
 
   .section-divider {
     height: 1px;
-    background: linear-gradient(to right, transparent, var(--golden-amber), transparent);
+    background: linear-gradient(to right, transparent, var(--brass), transparent);
     margin: 4rem 0;
   }
 
@@ -147,30 +141,22 @@
     left: -8px;
     width: 40px;
     height: 40px;
-    border-top: 2px solid var(--golden-amber);
-    border-left: 2px solid var(--golden-amber);
-    transition: all 0.3s ease;
+    border-top: 2px solid var(--brass);
+    border-left: 2px solid var(--brass);
   }
 
   .card-elevated {
-    @apply rounded-xl shadow-sm transition-all duration-500;
+    @apply rounded shadow-sm transition-all duration-300;
     background-color: white;
-    border: 1px solid rgba(212, 165, 116, 0.1);
   }
 
   .card-elevated:hover {
-    @apply shadow-xl;
-    transform: translateY(-8px);
-    border-color: var(--golden-amber);
-  }
-
-  .card-elevated:hover .brass-corner::before {
-    width: 50px;
-    height: 50px;
+    @apply shadow-md;
+    transform: translateY(-4px);
   }
 
   .text-brass {
-    color: var(--golden-amber);
+    color: var(--brass);
   }
 
   .text-navy {
@@ -178,120 +164,10 @@
   }
 
   .bg-sand {
-    background-color: var(--warm-sand);
+    background-color: var(--champagne-sand);
   }
 
   .bg-ivory {
-    background-color: var(--soft-cream);
-  }
-
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes slideInLeft {
-    from {
-      opacity: 0;
-      transform: translateX(-50px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  @keyframes slideInRight {
-    from {
-      opacity: 0;
-      transform: translateX(50px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  @keyframes scaleIn {
-    from {
-      opacity: 0;
-      transform: scale(0.9);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  @keyframes float {
-    0%, 100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-10px);
-    }
-  }
-
-  .animate-fade-in-up {
-    animation: fadeInUp 0.8s ease-out forwards;
-  }
-
-  .animate-fade-in {
-    animation: fadeIn 1s ease-out forwards;
-  }
-
-  .animate-slide-in-left {
-    animation: slideInLeft 0.8s ease-out forwards;
-  }
-
-  .animate-slide-in-right {
-    animation: slideInRight 0.8s ease-out forwards;
-  }
-
-  .animate-scale-in {
-    animation: scaleIn 0.6s ease-out forwards;
-  }
-
-  .animate-float {
-    animation: float 3s ease-in-out infinite;
-  }
-
-  .stagger-1 {
-    animation-delay: 0.1s;
-  }
-
-  .stagger-2 {
-    animation-delay: 0.2s;
-  }
-
-  .stagger-3 {
-    animation-delay: 0.3s;
-  }
-
-  .stagger-4 {
-    animation-delay: 0.4s;
-  }
-
-  .stagger-5 {
-    animation-delay: 0.5s;
-  }
-
-  .stagger-6 {
-    animation-delay: 0.6s;
+    background-color: var(--ivory);
   }
 }

@@ -4,8 +4,6 @@ export interface Profile {
   full_name: string | null;
   created_at: string;
   updated_at: string;
-  is_admin?: boolean;
-  isAdmin?: boolean;
 }
 
 export interface Favorite {

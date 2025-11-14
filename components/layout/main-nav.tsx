@@ -18,12 +18,11 @@ interface MainNavProps {
 
 export function MainNav({ locale }: MainNavProps) {
   const t = useTranslations('nav');
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const { getCartCount } = useCart();
   const { favorites } = useFavorites();
   const cartCount = getCartCount();
   const favoritesCount = favorites.length;
-  const isAdmin = Boolean(profile?.is_admin ?? profile?.isAdmin);
 
   const navItems = [
     { label: t('tours'), href: `/${locale}/tours` },
@@ -99,23 +98,7 @@ export function MainNav({ locale }: MainNavProps) {
               )}
             </Link>
 
-            {isAdmin && (
-              <Link href="/admin/dashboard" className="hidden sm:inline-flex">
-                <Button variant="secondary" size="sm">
-                  {t('adminPanel')}
-                </Button>
-              </Link>
-            )}
-
             <LangSwitcher locale={locale} />
-                  {isAdmin && (
-                    <Link
-                      href="/admin/dashboard"
-                      className="flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary"
-                    >
-                      {t('adminPanel')}
-                    </Link>
-                  )}
 
             <Sheet>
               <SheetTrigger asChild className="lg:hidden">
