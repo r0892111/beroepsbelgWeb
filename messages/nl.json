@@ -213,6 +213,8 @@
     "companyName": "Bedrijfsnaam",
     "companyNamePlaceholder": "Optioneel",
     "contactName": "Naam contactpersoon",
+    "firstName": "Voornaam",
+    "lastName": "Achternaam",
     "contactEmail": "E-mailadres",
     "contactPhone": "Telefoonnummer",
     "billingInfo": "Facturatiegegevens",
