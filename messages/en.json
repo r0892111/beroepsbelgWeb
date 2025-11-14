@@ -13,7 +13,8 @@
     "account": "Account",
     "favorites": "Favorites",
     "search": "Search",
-    "cart": "Cart"
+    "cart": "Cart",
+    "adminPanel": "Admin"
   },
   "hero": {
     "kicker": "— Discover Belgium like you've never seen it before",
@@ -184,12 +185,18 @@
     "teamleaderBackToDashboard": "Back to dashboard",
     "teamleaderSuccess": "Teamleader integration connected! Redirecting...",
     "teamleaderSuccessShort": "Teamleader integration connected successfully.",
+    "teamleaderRedirecting": "Redirecting to dashboard...",
     "teamleaderMissingClientId": "Teamleader client ID is missing. Check environment configuration.",
+    "teamleaderAuthorizeError": "Unable to start the Teamleader connection. Please try again later.",
+    "teamleaderInvalidState": "Security validation failed. Please restart the Teamleader connection.",
     "quickActions": "Quick Actions",
     "quickActionsDescription": "Common administrative tasks",
     "manageBookings": "Manage Bookings",
     "viewCustomers": "View Customers",
-    "viewOrders": "View Orders"
+    "viewOrders": "View Orders",
+    "loggingIn": "Logging in...",
+    "loading": "Loading admin dashboard...",
+    "home": "Home"
   },
   "b2b": {
     "title": "Request a B2B Quote",

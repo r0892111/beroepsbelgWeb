@@ -6,7 +6,9 @@ import { useAdmin } from '@/lib/contexts/admin-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from 'next-intl';
-import { ExternalLink, RefreshCw, Users, ShoppingCart, Calendar, LogOut, Link as LinkIcon, CheckCircle2 } from 'lucide-react';
+import { ExternalLink, RefreshCw, Users, ShoppingCart, Calendar, LogOut, Link as LinkIcon, CheckCircle2, Home } from 'lucide-react';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase/client';
 
 export default function AdminDashboardPage() {
   const t = useTranslations('admin');
@@ -15,40 +17,27 @@ export default function AdminDashboardPage() {
     logout,
     teamleaderIntegration,
     refreshTeamleaderIntegration,
-    teamleaderLoading
+    teamleaderLoading,
+    loading
   } = useAdmin();
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [sessionLink, setSessionLink] = useState<string | null>(null);
   const [connectInFlight, setConnectInFlight] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!loading && !isAuthenticated) {
       router.push('/admin/login');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, loading, router]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      return;
-    }
-
-    const storedSession = localStorage.getItem('teamleaderSessionUrl');
-    setSessionLink(storedSession && storedSession.length > 0 ? storedSession : null);
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      return;
-    }
+    if (!isAuthenticated) return;
 
     const status = searchParams.get('teamleader');
     if (status === 'connected') {
       setFeedbackMessage(t('teamleaderSuccessShort'));
-      const storedSession = localStorage.getItem('teamleaderSessionUrl');
-      setSessionLink(storedSession && storedSession.length > 0 ? storedSession : null);
       void refreshTeamleaderIntegration();
       router.replace('/admin/dashboard');
     }
@@ -59,60 +48,91 @@ export default function AdminDashboardPage() {
     router.push('/admin/login');
   };
 
-  const handleTeamleaderConnect = () => {
-    const clientId = process.env.TEAMLEADER_CLIENT_ID;
-    if (!clientId) {
-      setFeedbackMessage(t('teamleaderMissingClientId'));
-      return;
-    }
-
-    const redirectUri =
-      process.env.NEXT_PUBLIC_TEAMLEADER_REDIRECT_URI ??
-      `${window.location.origin}/admin/teamleader/callback`;
-    const scope =
-      process.env.NEXT_PUBLIC_TEAMLEADER_SCOPE ??
-      'users.me contacts groups companies deals invoices.products invoices bookings';
-
-    const authorizationUrl = new URL('https://app.teamleader.eu/oauth2/authorize');
-    authorizationUrl.searchParams.set('response_type', 'code');
-    authorizationUrl.searchParams.set('client_id', clientId);
-    authorizationUrl.searchParams.set('redirect_uri', redirectUri);
-    authorizationUrl.searchParams.set('scope', scope);
-    authorizationUrl.searchParams.set('state', crypto.randomUUID());
-
+  const handleTeamleaderConnect = async () => {
+    setFeedbackMessage(null);
     setConnectInFlight(true);
-    window.location.href = authorizationUrl.toString();
-  };
+    try {
+      const { data, error } = await supabase.functions.invoke<{
+        success: boolean;
+        authorization_url?: string;
+        state?: string;
+        error?: string;
+      }>('teamleader-auth', {
+        body: {
+          action: 'authorize',
+          redirect_uri: `${window.location.origin}/admin/teamleader/callback`
+        }
+      });
 
-  const handleOpenSession = () => {
-    if (sessionLink) {
-      window.open(sessionLink, '_blank', 'noopener,noreferrer');
+      console.log('Teamleader authorize response:', { data, error });
+
+      if (error) {
+        console.error('Supabase function invoke error:', error);
+        setFeedbackMessage(error.message || t('teamleaderAuthorizeError'));
+        setConnectInFlight(false);
+        return;
+      }
+
+      if (data?.error) {
+        console.error('Function returned error:', data.error);
+        setFeedbackMessage(data.error);
+        setConnectInFlight(false);
+        return;
+      }
+
+      // Check if we have the required fields (more lenient success check)
+      if (!data || !data.authorization_url || !data.state) {
+        console.error('Missing required fields in response:', data);
+        setFeedbackMessage(t('teamleaderAuthorizeError'));
+        setConnectInFlight(false);
+        return;
+      }
+
+      console.log('Storing OAuth state:', data.state);
+      localStorage.setItem('teamleaderOauthState', data.state);
+      
+      // Verify it was stored
+      const verifyState = localStorage.getItem('teamleaderOauthState');
+      console.log('Verified stored state:', verifyState);
+      
+      if (verifyState !== data.state) {
+        console.error('Failed to store state in localStorage');
+        setFeedbackMessage(t('teamleaderAuthorizeError'));
+        setConnectInFlight(false);
+        return;
+      }
+
+      window.location.href = data.authorization_url;
+    } catch (err) {
+      console.error('Teamleader authorize error', err);
+      setFeedbackMessage(t('teamleaderAuthorizeError'));
+      setConnectInFlight(false);
     }
   };
+
 
   const integrationStatus = useMemo(() => {
     if (!teamleaderIntegration) {
       return t('teamleaderStatusDisconnected');
     }
 
-    const userInfo = teamleaderIntegration.user_info as Record<string, unknown>;
-    const nameParts = [
-      typeof userInfo?.first_name === 'string' ? userInfo.first_name : null,
-      typeof userInfo?.last_name === 'string' ? userInfo.last_name : null
-    ].filter(Boolean);
-
-    const name = nameParts.length > 0 ? nameParts.join(' ') : userInfo?.email ?? '';
-    return t('teamleaderStatusConnected', { name: name || t('teamleaderUnknownUser') });
+    const userInfo = teamleaderIntegration as Record<string, unknown>;
+    const firstName = typeof userInfo?.first_name === 'string' ? userInfo.first_name : '';
+    const lastName = typeof userInfo?.last_name === 'string' ? userInfo.last_name : '';
+    const email = typeof userInfo?.email === 'string' ? userInfo.email : '';
+    const name = [firstName, lastName].filter(Boolean).join(' ') || email || t('teamleaderUnknownUser') || 'Unknown User';
+    return t('teamleaderStatusConnected', { name });
   }, [teamleaderIntegration, t]);
 
-  const lastUpdated = useMemo(() => {
-    if (!teamleaderIntegration?.updated_at) return null;
-    try {
-      return new Date(teamleaderIntegration.updated_at).toLocaleString();
-    } catch {
-      return null;
-    }
-  }, [teamleaderIntegration]);
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-sand flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground">{t('loading') || 'Loading...'}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return null;
@@ -123,10 +143,18 @@ export default function AdminDashboardPage() {
       <div className="border-b bg-white">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-serif font-bold text-navy">{t('dashboard')}</h1>
-          <Button variant="outline" onClick={handleLogout}>
-            <LogOut className="h-4 w-4 mr-2" />
-            {t('logout')}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Link href="/nl">
+              <Button variant="ghost" size="sm">
+                <Home className="h-4 w-4 mr-2" />
+                {t('home') || 'Home'}
+              </Button>
+            </Link>
+            <Button variant="outline" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-2" />
+              {t('logout')}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -200,22 +228,8 @@ export default function AdminDashboardPage() {
                 </div>
                 <div className="space-y-2 text-sm">
                   <p className="font-medium text-navy">{integrationStatus}</p>
-                  {lastUpdated && (
-                    <p className="text-xs text-muted-foreground">
-                      {t('teamleaderLastUpdated', { date: lastUpdated })}
-                    </p>
-                  )}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleOpenSession}
-                    disabled={!sessionLink}
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    {t('teamleaderOpenSession')}
-                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
