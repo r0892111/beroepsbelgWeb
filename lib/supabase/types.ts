@@ -4,6 +4,9 @@ export interface Profile {
   full_name: string | null;
   created_at: string;
   updated_at: string;
+  isAdmin?: boolean;
+  is_admin?: boolean;
+  "TeamLeader UserInfo"?: Record<string, unknown> | null;
 }
 
 export interface Favorite {

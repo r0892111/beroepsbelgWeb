@@ -13,7 +13,8 @@
     "account": "Compte",
     "favorites": "Favoris",
     "search": "Rechercher",
-    "cart": "Panier"
+    "cart": "Panier",
+    "adminPanel": "Panneau d'administration"
   },
   "hero": {
     "kicker": "— Découvrez la Belgique comme vous ne l'avez jamais vue",
@@ -175,7 +176,23 @@
     "quickActionsDescription": "Tâches administratives courantes",
     "manageBookings": "Gérer les Réservations",
     "viewCustomers": "Voir les Clients",
-    "viewOrders": "Voir les Commandes"
+    "viewOrders": "Voir les Commandes",
+    "teamleaderAuthorizeError": "Échec de l'initiation de l'autorisation Teamleader.",
+    "teamleaderMissingCode": "Code d'autorisation manquant dans le callback Teamleader.",
+    "teamleaderInvalidState": "La validation de sécurité a échoué. Veuillez redémarrer la connexion Teamleader.",
+    "teamleaderError": "Une erreur s'est produite lors de l'intégration Teamleader.",
+    "teamleaderConnecting": "Connexion à Teamleader...",
+    "teamleaderSuccess": "Connecté avec succès à Teamleader !",
+    "teamleaderSuccessShort": "Teamleader connecté.",
+    "teamleaderReconnect": "Reconnecter",
+    "teamleaderRefresh": "Actualiser le statut",
+    "teamleaderStatusDisconnected": "Déconnecté",
+    "teamleaderStatusConnected": "Connecté en tant que {name}",
+    "teamleaderUnknownUser": "Utilisateur inconnu",
+    "teamleaderBackToDashboard": "Retour au tableau de bord",
+    "teamleaderRedirecting": "Redirection vers le tableau de bord...",
+    "home": "Accueil",
+    "loading": "Chargement..."
   },
   "b2b": {
     "title": "Demander un Devis B2B",
