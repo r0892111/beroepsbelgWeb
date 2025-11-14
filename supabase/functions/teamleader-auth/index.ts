@@ -176,6 +176,9 @@ Deno.serve(async (req) => {
 
     const tokenData = await tokenResponse.json();
     const accessToken = tokenData.access_token;
+    const refreshToken = tokenData.refresh_token;
+    const expiresIn = tokenData.expires_in;
+    const scope = tokenData.scope;
 
     if (!accessToken) {
       return new Response(JSON.stringify({
@@ -186,6 +189,9 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
+    // Calculate expiration time
+    const expiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1000).toISOString() : null;
 
     // Fetch user info from TeamLeader
     const userResponse = await fetch('https://api.teamleader.eu/users.me', {
@@ -215,11 +221,21 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Save Teamleader user info to profiles table
+    // Prepare Teamleader data with tokens and user info
+    const teamleaderData = {
+      user_info: userInfo,
+      access_token: accessToken,
+      refresh_token: refreshToken || null,
+      scope: scope || null,
+      expires_at: expiresAt,
+      teamleader_user_id: userInfo.id
+    };
+
+    // Save Teamleader data (user info + tokens) to profiles table
     const { error: updateError } = await supabase
       .from('profiles')
       .update({
-        'TeamLeader UserInfo': userInfo,
+        'TeamLeader UserInfo': teamleaderData,
         updated_at: new Date().toISOString()
       })
       .eq('id', userId);

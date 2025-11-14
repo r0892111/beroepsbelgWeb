@@ -28,7 +28,7 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      router.push('/admin/login');
+      router.push('/nl');
     }
   }, [isAuthenticated, loading, router]);
 
@@ -45,7 +45,7 @@ export default function AdminDashboardPage() {
 
   const handleLogout = () => {
     logout();
-    router.push('/admin/login');
+    router.push('/nl');
   };
 
   const handleTeamleaderConnect = async () => {
@@ -116,7 +116,9 @@ export default function AdminDashboardPage() {
       return t('teamleaderStatusDisconnected');
     }
 
-    const userInfo = teamleaderIntegration as Record<string, unknown>;
+    const integration = teamleaderIntegration as Record<string, unknown>;
+    // Handle both old structure (direct user info) and new structure (nested user_info)
+    const userInfo = (integration.user_info as Record<string, unknown>) || integration;
     const firstName = typeof userInfo?.first_name === 'string' ? userInfo.first_name : '';
     const lastName = typeof userInfo?.last_name === 'string' ? userInfo.last_name : '';
     const email = typeof userInfo?.email === 'string' ? userInfo.email : '';
