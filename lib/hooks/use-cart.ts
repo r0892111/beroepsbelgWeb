@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { CartItem } from '@/lib/supabase/types';
 import { useAuth } from '@/lib/contexts/auth-context';
@@ -8,7 +8,7 @@ export function useCart() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchCart = async () => {
+  const fetchCart = useCallback(async () => {
     if (!user) {
       setCartItems([]);
       setLoading(false);
@@ -25,7 +25,7 @@ export function useCart() {
       setCartItems(data);
     }
     setLoading(false);
-  };
+  }, [user]);
 
   useEffect(() => {
     fetchCart();
@@ -33,7 +33,7 @@ export function useCart() {
     if (!user) return;
 
     const channel = supabase
-      .channel('cart-changes')
+      .channel(`cart-changes-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -51,33 +51,72 @@ export function useCart() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, fetchCart]);
 
   const addToCart = async (productId: string, quantity: number = 1) => {
     if (!user) return { error: new Error('Not authenticated') };
 
     const existingItem = cartItems.find((item) => item.product_id === productId);
+    let tempId: string | null = null;
 
+    // Optimistic update
+    if (existingItem) {
+      setCartItems((prev) =>
+        prev.map((item) =>
+          item.id === existingItem.id
+            ? { ...item, quantity: item.quantity + quantity }
+            : item
+        )
+      );
+    } else {
+      tempId = `temp-${Date.now()}`;
+      setCartItems((prev) => [
+        {
+          id: tempId,
+          user_id: user.id,
+          product_id: productId,
+          quantity,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
+    }
+
+    // Sync with database
     if (existingItem) {
       const { error } = await supabase
         .from('cart_items')
         .update({ quantity: existingItem.quantity + quantity })
         .eq('id', existingItem.id);
 
-      if (!error) {
+      if (error) {
+        // Revert on error
         await fetchCart();
+        return { error };
       }
-      return { error };
     } else {
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('cart_items')
-        .insert({ user_id: user.id, product_id: productId, quantity });
+        .insert({ user_id: user.id, product_id: productId, quantity })
+        .select()
+        .single();
 
-      if (!error) {
+      if (error) {
+        // Revert on error
         await fetchCart();
+        return { error };
       }
-      return { error };
+
+      // Replace temp item with real item
+      if (data && tempId) {
+        setCartItems((prev) =>
+          prev.map((item) => (item.id === tempId ? data : item))
+        );
+      }
     }
+
+    return { error: null };
   };
 
   const updateQuantity = async (productId: string, quantity: number) => {
@@ -87,53 +126,87 @@ export function useCart() {
       return removeFromCart(productId);
     }
 
+    // Optimistic update
+    setCartItems((prev) =>
+      prev.map((item) =>
+        item.product_id === productId ? { ...item, quantity } : item
+      )
+    );
+
+    // Sync with database
     const { error } = await supabase
       .from('cart_items')
       .update({ quantity })
       .eq('user_id', user.id)
       .eq('product_id', productId);
 
-    if (!error) {
+    if (error) {
+      // Revert on error
       await fetchCart();
+      return { error };
     }
-    return { error };
+
+    return { error: null };
   };
 
   const removeFromCart = async (productId: string) => {
     if (!user) return { error: new Error('Not authenticated') };
 
+    // Optimistic update
+    const itemToRemove = cartItems.find((item) => item.product_id === productId);
+    setCartItems((prev) => prev.filter((item) => item.product_id !== productId));
+
+    // Sync with database
     const { error } = await supabase
       .from('cart_items')
       .delete()
       .eq('user_id', user.id)
       .eq('product_id', productId);
 
-    if (!error) {
-      await fetchCart();
+    if (error) {
+      // Revert on error
+      if (itemToRemove) {
+        setCartItems((prev) => [...prev, itemToRemove]);
+      }
+      return { error };
     }
-    return { error };
+
+    return { error: null };
   };
 
   const clearCart = async () => {
     if (!user) return { error: new Error('Not authenticated') };
 
+    // Optimistic update
+    const previousItems = [...cartItems];
+    setCartItems([]);
+
+    // Sync with database
     const { error } = await supabase
       .from('cart_items')
       .delete()
       .eq('user_id', user.id);
 
-    if (!error) {
-      await fetchCart();
+    if (error) {
+      // Revert on error
+      setCartItems(previousItems);
+      return { error };
     }
-    return { error };
+
+    return { error: null };
   };
 
   const getCartCount = () => {
     return cartItems.reduce((total, item) => total + item.quantity, 0);
   };
 
+  const cartCount = useMemo(() => {
+    return cartItems.reduce((total, item) => total + item.quantity, 0);
+  }, [cartItems]);
+
   return {
     cartItems,
+    cartCount,
     loading,
     addToCart,
     updateQuantity,
