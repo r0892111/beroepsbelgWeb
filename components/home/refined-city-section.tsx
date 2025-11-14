@@ -7,7 +7,7 @@ import { cities } from '@/lib/data/cities';
 import { tours } from '@/lib/data/tours';
 import { useTranslations } from 'next-intl';
 import { useState, useEffect, useRef } from 'react';
-import { MapPin, Clock, Users } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 
 interface RefinedCitySectionProps {
   locale: Locale;
@@ -98,32 +98,6 @@ export function RefinedCitySection({ locale }: RefinedCitySectionProps) {
                       <div className="absolute inset-0 bg-gradient-to-t from-navy/80 via-navy/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                       <div className="absolute inset-0 bg-gradient-to-br from-brass/0 via-brass/0 to-brass/30 opacity-0 group-hover:opacity-100 transition-all duration-500" />
-
-                      <div className={`absolute top-4 right-4 bg-brass/95 backdrop-blur-sm text-navy px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 shadow-lg flex items-center gap-2 ${isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'}`}>
-                        <MapPin className="w-4 h-4" />
-                        <span>{tourCount}</span>
-                      </div>
-
-                      <div className={`absolute bottom-0 left-0 right-0 p-6 text-white transition-all duration-500 ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="h-px flex-1 bg-white/30" />
-                          <MapPin className="w-4 h-4" />
-                          <div className="h-px flex-1 bg-white/30" />
-                        </div>
-                        <h4 className="font-serif font-bold text-2xl mb-2">{city.name[locale]}</h4>
-                        <p className="text-sm text-white/90 line-clamp-2 leading-relaxed">{city.teaser[locale]}</p>
-
-                        <div className="flex items-center gap-4 mt-3 text-xs text-white/80">
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            <span>2-3u</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Users className="w-3 h-3" />
-                            <span>1-20</span>
-                          </div>
-                        </div>
-                      </div>
 
                       <div className="absolute inset-0 border-2 border-brass/0 group-hover:border-brass/50 transition-all duration-500 rounded" />
                     </div>
