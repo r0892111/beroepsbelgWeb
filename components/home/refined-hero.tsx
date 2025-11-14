@@ -11,27 +11,28 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
   const t = useTranslations('home.hero');
 
   return (
-    <section className="relative bg-gradient-to-br from-soft-cream via-warm-sand/30 to-soft-cream overflow-hidden">
+    <section className="relative bg-gradient-to-br from-soft-cream via-accent-lime/5 to-accent-pink/10 overflow-hidden">
       <div className="absolute inset-0">
         <Image
           src="https://images.pexels.com/photos/16139366/pexels-photo-16139366.jpeg"
           alt="Historic Antwerp"
           fill
-          className="object-cover opacity-[0.12] mix-blend-multiply"
+          className="object-cover opacity-[0.08] mix-blend-overlay"
           priority
         />
       </div>
 
-      <div className="absolute inset-0 bg-gradient-to-br from-deep-teal/5 via-transparent to-warm-terracotta/5" />
+      <div className="absolute inset-0 bg-gradient-to-br from-ocean-blue/5 via-transparent to-royal-purple/5" />
 
-      <div className="absolute top-20 right-20 w-72 h-72 bg-golden-amber/10 rounded-full blur-3xl animate-float" />
-      <div className="absolute bottom-20 left-20 w-96 h-96 bg-deep-teal/10 rounded-full blur-3xl" style={{ animationDelay: '1.5s' }} />
+      <div className="absolute top-20 right-20 w-96 h-96 bg-gradient-to-br from-electric-gold/20 to-sunset-orange/20 rounded-full blur-3xl animate-float" />
+      <div className="absolute bottom-20 left-20 w-[500px] h-[500px] bg-gradient-to-br from-royal-purple/20 to-ocean-blue/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '1.5s' }} />
+      <div className="absolute top-1/2 left-1/2 w-72 h-72 bg-gradient-to-br from-mint-green/15 to-vibrant-coral/15 rounded-full blur-3xl animate-float" style={{ animationDelay: '0.7s' }} />
 
       <div className="container mx-auto px-4 py-32 md:py-40 relative">
         <div className="max-w-4xl mx-auto text-center">
           <div className="mb-6 opacity-0 animate-fade-in-up">
             <span
-              className="inline-block text-sm font-semibold tracking-[0.3em] uppercase mb-4 bg-gradient-to-r from-golden-amber to-warm-terracotta bg-clip-text text-transparent"
+              className="inline-block text-sm font-semibold tracking-[0.3em] uppercase mb-4 bg-gradient-to-r from-electric-gold via-sunset-orange to-vibrant-coral bg-clip-text text-transparent"
             >
               {t('kicker')}
             </span>
@@ -40,7 +41,7 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
           <h1 className="text-5xl md:text-7xl font-serif font-bold mb-8 text-navy leading-tight opacity-0 animate-fade-in-up stagger-1">
             {t('title')}
             <br />
-            <span className="italic bg-gradient-to-r from-deep-teal to-belgian-navy bg-clip-text text-transparent">{t('titleItalic')}</span>
+            <span className="italic bg-gradient-to-r from-ocean-blue via-royal-purple to-mint-green bg-clip-text text-transparent">{t('titleItalic')}</span>
           </h1>
 
           <p className="text-xl md:text-2xl mb-12 max-w-2xl mx-auto leading-relaxed text-slate opacity-0 animate-fade-in-up stagger-2">
