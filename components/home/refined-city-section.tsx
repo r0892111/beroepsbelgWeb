@@ -92,12 +92,12 @@ export function RefinedCitySection({ locale }: RefinedCitySectionProps) {
                         src={city.image}
                         alt={city.name[locale]}
                         fill
-                        className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1"
+                        className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1 group-hover:blur-sm"
                       />
 
-                      <div className="absolute inset-0 bg-gradient-to-t from-navy/80 via-navy/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/60 to-navy/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                      <div className="absolute inset-0 bg-gradient-to-br from-brass/0 via-brass/0 to-brass/30 opacity-0 group-hover:opacity-100 transition-all duration-500" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-brass/0 via-brass/0 to-brass/20 opacity-0 group-hover:opacity-100 transition-all duration-500" />
 
                       <div className={`absolute top-4 right-4 bg-brass/95 backdrop-blur-sm text-navy px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 shadow-lg flex items-center gap-2 ${isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'}`}>
                         <MapPin className="w-4 h-4" />
