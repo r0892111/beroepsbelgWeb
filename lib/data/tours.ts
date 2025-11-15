@@ -607,5 +607,258 @@ export const tours: Tour[] = [
         de: 'Niederländisch, Französisch, Englisch, Deutsch'
       }
     }
+  },
+  {
+    citySlug: 'brussel',
+    slug: 'time-machine-brussel',
+    title: {
+      nl: 'Time Machine Brussel',
+      en: 'Time Machine Brussels',
+      fr: 'Machine à Remonter le Temps Bruxelles',
+      de: 'Zeitmaschine Brüssel'
+    },
+    price: 19.95,
+    thumbnail: '',
+    images: [],
+    shortDescription: {
+      nl: 'Ontdek het nostalgische Brussel van de jaren \'50',
+      en: 'Discover the nostalgic Brussels of the 1950s',
+      fr: 'Découvrez le Bruxelles nostalgique des années 50',
+      de: 'Entdecken Sie das nostalgische Brüssel der 50er Jahre'
+    },
+    description: {
+      nl: 'Ga mee op stap doorheen de nostalgische wereld van Brussel. Wist jij dat vanaf de jaren \'50 de stad enorm is hertekend? Wil je weten wat er allemaal afgebroken is? Ga dan mee op stap met een expert aan je zijde.',
+      en: 'Join us on a journey through the nostalgic world of Brussels. Did you know that from the 1950s onwards the city was massively redesigned? Want to know what was demolished? Then join us with an expert by your side.',
+      fr: 'Rejoignez-nous dans un voyage à travers le monde nostalgique de Bruxelles. Saviez-vous qu\'à partir des années 50, la ville a été massivement redessinée? Vous voulez savoir ce qui a été démoli? Alors rejoignez-nous avec un expert à vos côtés.',
+      de: 'Begleiten Sie uns auf einer Reise durch die nostalgische Welt von Brüssel. Wussten Sie, dass die Stadt ab den 1950er Jahren massiv umgestaltet wurde? Möchten Sie wissen, was abgerissen wurde? Dann begleiten Sie uns mit einem Experten an Ihrer Seite.'
+    }
+  },
+  {
+    citySlug: 'brussel',
+    slug: 'best-of-brussels',
+    title: {
+      nl: 'Best of Brussels',
+      en: 'Best of Brussels',
+      fr: 'Best of Brussels',
+      de: 'Best of Brussels'
+    },
+    price: 24.95,
+    thumbnail: '',
+    images: [],
+    shortDescription: {
+      nl: 'Ontdek het hart van Europa met een expert',
+      en: 'Discover the heart of Europe with an expert',
+      fr: 'Découvrez le cœur de l\'Europe avec un expert',
+      de: 'Entdecken Sie das Herz Europas mit einem Experten'
+    },
+    description: {
+      nl: 'De hoofdstad van België heeft ongelooflijke monumenten, prachtige architectuur en verschillende lekkernijen die iedere levensgenieter weet te verleiden. Wandel met een expert aan je zijde doorheen het hart van Europa dankzij onze tour Best of Brussels.',
+      en: 'The capital of Belgium has incredible monuments, beautiful architecture and various delicacies that can seduce any bon vivant. Walk with an expert by your side through the heart of Europe thanks to our Best of Brussels tour.',
+      fr: 'La capitale de la Belgique possède des monuments incroyables, une architecture magnifique et diverses délices qui peuvent séduire tout bon vivant. Promenez-vous avec un expert à vos côtés à travers le cœur de l\'Europe grâce à notre visite Best of Brussels.',
+      de: 'Die Hauptstadt Belgiens hat unglaubliche Denkmäler, schöne Architektur und verschiedene Köstlichkeiten, die jeden Lebensgenießer verführen können. Spazieren Sie mit einem Experten an Ihrer Seite durch das Herz Europas dank unserer Best of Brussels Tour.'
+    }
+  },
+  {
+    citySlug: 'brussel',
+    slug: 'brussel-op-maat',
+    title: {
+      nl: 'Brussel op Maat',
+      en: 'Tailor-Made Brussels',
+      fr: 'Bruxelles sur Mesure',
+      de: 'Brüssel nach Maß'
+    },
+    price: 29.95,
+    badge: 'EXCLUSIEF',
+    thumbnail: '',
+    images: [],
+    shortDescription: {
+      nl: 'Een tour geheel naar jouw wensen ontworpen',
+      en: 'A tour completely designed to your wishes',
+      fr: 'Une visite entièrement conçue selon vos souhaits',
+      de: 'Eine Tour, die ganz nach Ihren Wünschen gestaltet ist'
+    },
+    description: {
+      nl: 'Wil je graag een tour geheel naar jouw wensen laten ontwerpen? Kan je geen keuze maken tussen onze tours en wil je een mix van verschillende stadswandelingen? Of heb je een specifiek onderwerp waar je je graag laat in onderdompelen? Dan is de tour Brussel op maat de beste keuze voor jou!',
+      en: 'Would you like a tour completely designed to your wishes? Can\'t choose between our tours and want a mix of different city walks? Or do you have a specific topic you\'d like to immerse yourself in? Then the Tailor-Made Brussels tour is the best choice for you!',
+      fr: 'Souhaitez-vous une visite entièrement conçue selon vos souhaits? Vous ne pouvez pas choisir entre nos visites et vous voulez un mélange de différentes promenades en ville? Ou avez-vous un sujet spécifique dans lequel vous aimeriez vous plonger? Alors la visite Bruxelles sur Mesure est le meilleur choix pour vous!',
+      de: 'Möchten Sie eine Tour, die ganz nach Ihren Wünschen gestaltet ist? Können Sie sich nicht zwischen unseren Touren entscheiden und möchten eine Mischung aus verschiedenen Stadtspaziergängen? Oder haben Sie ein bestimmtes Thema, in das Sie eintauchen möchten? Dann ist die Brüssel nach Maß Tour die beste Wahl für Sie!'
+    }
+  },
+  {
+    citySlug: 'brugge',
+    slug: 'brugge-op-maat',
+    title: {
+      nl: 'Brugge op Maat',
+      en: 'Tailor-Made Bruges',
+      fr: 'Bruges sur Mesure',
+      de: 'Brügge nach Maß'
+    },
+    price: 24.95,
+    badge: 'EXCLUSIEF',
+    thumbnail: '',
+    images: [],
+    shortDescription: {
+      nl: 'Een tour geheel naar jouw wensen ontworpen',
+      en: 'A tour completely designed to your wishes',
+      fr: 'Une visite entièrement conçue selon vos souhaits',
+      de: 'Eine Tour, die ganz nach Ihren Wünschen gestaltet ist'
+    },
+    description: {
+      nl: 'Wil je graag een tour geheel naar jouw wensen laten ontwerpen? Kan je geen keuze maken tussen onze tours en wil je een mix van verschillende stadswandelingen? Of heb je een specifiek onderwerp waar je je graag laat in onderdompelen? Dan is de tour Brugge op maat de beste keuze voor jou!',
+      en: 'Would you like a tour completely designed to your wishes? Can\'t choose between our tours and want a mix of different city walks? Or do you have a specific topic you\'d like to immerse yourself in? Then the Tailor-Made Bruges tour is the best choice for you!',
+      fr: 'Souhaitez-vous une visite entièrement conçue selon vos souhaits? Vous ne pouvez pas choisir entre nos visites et vous voulez un mélange de différentes promenades en ville? Ou avez-vous un sujet spécifique dans lequel vous aimeriez vous plonger? Alors la visite Bruges sur Mesure est le meilleur choix pour vous!',
+      de: 'Möchten Sie eine Tour, die ganz nach Ihren Wünschen gestaltet ist? Können Sie sich nicht zwischen unseren Touren entscheiden und möchten eine Mischung aus verschiedenen Stadtspaziergängen? Oder haben Sie ein bestimmtes Thema, in das Sie eintauchen möchten? Dann ist die Brügge nach Maß Tour die beste Wahl für Sie!'
+    }
+  },
+  {
+    citySlug: 'brugge',
+    slug: 'best-of-brugge',
+    title: {
+      nl: 'Best of Brugge',
+      en: 'Best of Bruges',
+      fr: 'Best of Bruges',
+      de: 'Best of Brügge'
+    },
+    price: 19.95,
+    thumbnail: '',
+    images: [],
+    shortDescription: {
+      nl: 'Ontdek de middeleeuwse parel van België',
+      en: 'Discover the medieval pearl of Belgium',
+      fr: 'Découvrez la perle médiévale de la Belgique',
+      de: 'Entdecken Sie die mittelalterliche Perle Belgiens'
+    },
+    description: {
+      nl: 'Leer de middeleeuwse parel van België kennen tijdens een stadswandeling met onze BeroepsBruggeling, Tanguy Ottomer. De stad uit de 15e eeuw die tijdens de 21e eeuw nog steeds bezoekers doet verbazen - er zijn weinig steden die dat kunnen zeggen. De verschillende kerken, bruggetjes en heerlijke pleinen worden allemaal met plezier belicht tijdens de tour Best of Brugge.',
+      en: 'Get to know the medieval pearl of Belgium during a city walk with our BeroepsBruggeling, Tanguy Ottomer. The 15th century city that still amazes visitors during the 21st century - few cities can say that. The various churches, bridges and delightful squares are all highlighted with pleasure during the Best of Bruges tour.',
+      fr: 'Apprenez à connaître la perle médiévale de la Belgique lors d\'une promenade en ville avec notre BeroepsBruggeling, Tanguy Ottomer. La ville du XVe siècle qui étonne encore les visiteurs au XXIe siècle - peu de villes peuvent le dire. Les différentes églises, ponts et places délicieuses sont tous mis en évidence avec plaisir lors de la visite Best of Bruges.',
+      de: 'Lernen Sie die mittelalterliche Perle Belgiens bei einem Stadtspaziergang mit unserem BeroepsBruggeling, Tanguy Ottomer, kennen. Die Stadt aus dem 15. Jahrhundert, die Besucher im 21. Jahrhundert immer noch erstaunt - wenige Städte können das sagen. Die verschiedenen Kirchen, Brücken und herrlichen Plätze werden alle mit Vergnügen während der Best of Brügge Tour hervorgehoben.'
+    }
+  },
+  {
+    citySlug: 'gent',
+    slug: 'time-machine-gent',
+    title: {
+      nl: 'Time Machine Gent',
+      en: 'Time Machine Ghent',
+      fr: 'Machine à Remonter le Temps Gand',
+      de: 'Zeitmaschine Gent'
+    },
+    price: 24.95,
+    thumbnail: '',
+    images: [],
+    shortDescription: {
+      nl: 'Ontdek hoe Gent er vroeger uitzag',
+      en: 'Discover how Ghent used to look',
+      fr: 'Découvrez à quoi ressemblait Gand autrefois',
+      de: 'Entdecken Sie, wie Gent früher aussah'
+    },
+    description: {
+      nl: 'Heeft u zich ooit afgevraagd hoe Gent er vroeger uitzag? Ga mee op een nostalgische stadswandeling met de tour Time Machine Gent, gecreëerd door Tanguy Ottomer, uw stadsgids in Gent.',
+      en: 'Have you ever wondered how Ghent used to look? Join us on a nostalgic city walk with the Time Machine Ghent tour, created by Tanguy Ottomer, your city guide in Ghent.',
+      fr: 'Vous êtes-vous déjà demandé à quoi ressemblait Gand autrefois? Rejoignez-nous pour une promenade nostalgique en ville avec la visite Time Machine Gand, créée par Tanguy Ottomer, votre guide de la ville à Gand.',
+      de: 'Haben Sie sich jemals gefragt, wie Gent früher aussah? Begleiten Sie uns auf einem nostalgischen Stadtspaziergang mit der Zeitmaschine Gent Tour, erstellt von Tanguy Ottomer, Ihrem Stadtführer in Gent.'
+    }
+  },
+  {
+    citySlug: 'gent',
+    slug: 'gent-op-maat',
+    title: {
+      nl: 'Gent op Maat',
+      en: 'Tailor-Made Ghent',
+      fr: 'Gand sur Mesure',
+      de: 'Gent nach Maß'
+    },
+    price: 24.95,
+    badge: 'EXCLUSIEF',
+    thumbnail: '',
+    images: [],
+    shortDescription: {
+      nl: 'Een tour geheel naar jouw wensen ontworpen',
+      en: 'A tour completely designed to your wishes',
+      fr: 'Une visite entièrement conçue selon vos souhaits',
+      de: 'Eine Tour, die ganz nach Ihren Wünschen gestaltet ist'
+    },
+    description: {
+      nl: 'Wil je graag een tour geheel naar jouw wensen laten ontwerpen? Kan je geen keuze maken tussen onze tours en wil je een mix van verschillende stadswandelingen? Of heb je een specifiek onderwerp waar je je graag laat in onderdompelen? Dan is de tour Gent op maat de beste keuze voor jou!',
+      en: 'Would you like a tour completely designed to your wishes? Can\'t choose between our tours and want a mix of different city walks? Or do you have a specific topic you\'d like to immerse yourself in? Then the Tailor-Made Ghent tour is the best choice for you!',
+      fr: 'Souhaitez-vous une visite entièrement conçue selon vos souhaits? Vous ne pouvez pas choisir entre nos visites et vous voulez un mélange de différentes promenades en ville? Ou avez-vous un sujet spécifique dans lequel vous aimeriez vous plonger? Alors la visite Gand sur Mesure est le meilleur choix pour vous!',
+      de: 'Möchten Sie eine Tour, die ganz nach Ihren Wünschen gestaltet ist? Können Sie sich nicht zwischen unseren Touren entscheiden und möchten eine Mischung aus verschiedenen Stadtspaziergängen? Oder haben Sie ein bestimmtes Thema, in das Sie eintauchen möchten? Dann ist die Gent nach Maß Tour die beste Wahl für Sie!'
+    }
+  },
+  {
+    citySlug: 'gent',
+    slug: 'best-of-gent',
+    title: {
+      nl: 'Best of Gent',
+      en: 'Best of Ghent',
+      fr: 'Best of Gand',
+      de: 'Best of Gent'
+    },
+    price: 24.95,
+    thumbnail: '',
+    images: [],
+    shortDescription: {
+      nl: 'Wandel langs de kanalen van de stad van Karel V',
+      en: 'Walk along the canals of the city of Charles V',
+      fr: 'Promenez-vous le long des canaux de la ville de Charles Quint',
+      de: 'Spazieren Sie entlang der Kanäle der Stadt Karls V.'
+    },
+    description: {
+      nl: 'Wandel langs de verschillende kanalen van deze stad van Karel V en de gebroeders Van Eyck met onze expert aan je zijde. De magische architectuur van verschillende eeuwen laat altijd een verpletterende indruk na. Onze BeroepsBelg, Tanguy Ottomer, vergezelt jou en je gezelschap langs de mooiste plekken van de lichtstad van België. Onze tour Best of Gent is een stadswandeling waar je mond van open valt!',
+      en: 'Walk along the various canals of this city of Charles V and the Van Eyck brothers with our expert by your side. The magical architecture of different centuries always leaves an overwhelming impression. Our BeroepsBelg, Tanguy Ottomer, accompanies you and your company along the most beautiful spots of the light city of Belgium. Our Best of Ghent tour is a city walk that will leave you speechless!',
+      fr: 'Promenez-vous le long des différents canaux de cette ville de Charles Quint et des frères Van Eyck avec notre expert à vos côtés. L\'architecture magique de différents siècles laisse toujours une impression écrasante. Notre BeroepsBelg, Tanguy Ottomer, vous accompagne, vous et votre compagnie, le long des plus beaux endroits de la ville lumière de la Belgique. Notre visite Best of Gand est une promenade en ville qui vous laissera sans voix!',
+      de: 'Spazieren Sie entlang der verschiedenen Kanäle dieser Stadt Karls V. und der Gebrüder Van Eyck mit unserem Experten an Ihrer Seite. Die magische Architektur verschiedener Jahrhunderte hinterlässt immer einen überwältigenden Eindruck. Unser BeroepsBelg, Tanguy Ottomer, begleitet Sie und Ihre Gesellschaft entlang der schönsten Orte der Lichtstadt Belgiens. Unsere Best of Gent Tour ist ein Stadtspaziergang, der Sie sprachlos machen wird!'
+    }
+  },
+  {
+    citySlug: 'knokke-heist',
+    slug: 'boulevard-nostalgie',
+    title: {
+      nl: 'Knokke-Heist: Boulevard Nostalgie',
+      en: 'Knokke-Heist: Boulevard Nostalgie',
+      fr: 'Knokke-Heist: Boulevard Nostalgie',
+      de: 'Knokke-Heist: Boulevard Nostalgie'
+    },
+    price: 35,
+    thumbnail: '',
+    images: [],
+    shortDescription: {
+      nl: 'Ontdek het Saint-Tropez van België',
+      en: 'Discover the Saint-Tropez of Belgium',
+      fr: 'Découvrez le Saint-Tropez de la Belgique',
+      de: 'Entdecken Sie das Saint-Tropez Belgiens'
+    },
+    description: {
+      nl: 'Het Saint-Tropez van België heeft door de eeuwen heen haar schitterende status meer dan verdiend. De crème de la crème van kunstenaars, architecten, beroemdheden én vogels kan je hier allemaal terugvinden. Wist je dat Marlène Dietrich, Frank Sinatra en Keith Haring hier vroeger wel eens vertoefden? Het Casino werd ontworpen door dezelfde architect die De Singel in Antwerpen bouwde. Kortom, spring op je fiets en ga mee op fietstocht met een expert in het \'Knokke van vroeger\'...',
+      en: 'The Saint-Tropez of Belgium has more than earned its brilliant status over the centuries. The crème de la crème of artists, architects, celebrities and birds can all be found here. Did you know that Marlène Dietrich, Frank Sinatra and Keith Haring used to stay here? The Casino was designed by the same architect who built De Singel in Antwerp. In short, jump on your bike and join us on a bike tour with an expert in the \'Knokke of the past\'...',
+      fr: 'Le Saint-Tropez de la Belgique a plus que mérité son statut brillant au fil des siècles. La crème de la crème des artistes, architectes, célébrités et oiseaux peut être trouvée ici. Saviez-vous que Marlène Dietrich, Frank Sinatra et Keith Haring séjournaient ici? Le Casino a été conçu par le même architecte qui a construit De Singel à Anvers. Bref, montez sur votre vélo et rejoignez-nous pour un tour à vélo avec un expert du \'Knokke d\'autrefois\'...',
+      de: 'Das Saint-Tropez Belgiens hat seinen brillanten Status über die Jahrhunderte mehr als verdient. Die Crème de la Crème der Künstler, Architekten, Prominenten und Vögel kann hier gefunden werden. Wussten Sie, dass Marlène Dietrich, Frank Sinatra und Keith Haring hier früher verweilten? Das Casino wurde vom selben Architekten entworfen, der De Singel in Antwerpen baute. Kurz gesagt, steigen Sie auf Ihr Fahrrad und begleiten Sie uns auf einer Fahrradtour mit einem Experten im \'Knokke von damals\'...'
+    }
+  },
+  {
+    citySlug: 'leuven',
+    slug: 'leuven-time-machine',
+    title: {
+      nl: 'Leuven Time Machine',
+      en: 'Leuven Time Machine',
+      fr: 'Machine à Remonter le Temps Louvain',
+      de: 'Löwen Zeitmaschine'
+    },
+    price: 19.95,
+    thumbnail: '',
+    images: [],
+    shortDescription: {
+      nl: 'Ontdek het Leuven van toen en nu',
+      en: 'Discover Leuven then and now',
+      fr: 'Découvrez Louvain d\'hier et d\'aujourd\'hui',
+      de: 'Entdecken Sie Löwen damals und heute'
+    },
+    description: {
+      nl: 'Leuven is veel meer dan een studentenstad. Ontdek het Leuven van toen en nu met onze nieuwe wandeling Time Machine Leuven. Tijdens deze unieke tour neemt onze deskundige gids u mee op een tijdreis door de rijke geschiedenis van Leuven. U ziet hoe de stad er vroeger uitzag met prachtige historische beelden en leert over de evolutie tot het moderne Leuven van vandaag. Onze expert voorziet u van diepgaande en enthousiaste uitleg, waardoor de culturele en maatschappelijke transformaties tot leven komen. Of u nu een lokale inwoner bent of een bezoeker, de Time Machine Leuven wandeling biedt een verrijkende ervaring die uw kijk op Leuven voor altijd zal veranderen.',
+      en: 'Leuven is much more than a student city. Discover Leuven then and now with our new Time Machine Leuven walk. During this unique tour, our expert guide takes you on a time travel through the rich history of Leuven. You will see how the city used to look with beautiful historical images and learn about the evolution to the modern Leuven of today. Our expert provides you with in-depth and enthusiastic explanations, bringing the cultural and social transformations to life. Whether you are a local resident or a visitor, the Time Machine Leuven walk offers an enriching experience that will change your view of Leuven forever.',
+      fr: 'Louvain est bien plus qu\'une ville étudiante. Découvrez Louvain d\'hier et d\'aujourd\'hui avec notre nouvelle promenade Time Machine Louvain. Au cours de cette visite unique, notre guide expert vous emmène dans un voyage dans le temps à travers la riche histoire de Louvain. Vous verrez à quoi ressemblait la ville autrefois avec de belles images historiques et apprendrez sur l\'évolution vers le Louvain moderne d\'aujourd\'hui. Notre expert vous fournit des explications approfondies et enthousiastes, donnant vie aux transformations culturelles et sociales. Que vous soyez un résident local ou un visiteur, la promenade Time Machine Louvain offre une expérience enrichissante qui changera votre vue de Louvain pour toujours.',
+      de: 'Löwen ist viel mehr als eine Studentenstadt. Entdecken Sie Löwen damals und heute mit unserem neuen Spaziergang Zeitmaschine Löwen. Während dieser einzigartigen Tour nimmt Sie unser Expertenführer mit auf eine Zeitreise durch die reiche Geschichte von Löwen. Sie werden sehen, wie die Stadt früher aussah mit schönen historischen Bildern und lernen über die Entwicklung zum modernen Löwen von heute. Unser Experte versorgt Sie mit ausführlichen und enthusiastischen Erklärungen, die die kulturellen und sozialen Transformationen zum Leben erwecken. Ob Sie ein lokaler Einwohner oder ein Besucher sind, der Spaziergang Zeitmaschine Löwen bietet eine bereichernde Erfahrung, die Ihre Sicht auf Löwen für immer verändern wird.'
+    }
   }
 ];
