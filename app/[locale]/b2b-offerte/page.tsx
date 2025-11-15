@@ -24,8 +24,7 @@ const quoteSchema = z.object({
   numberOfPeople: z.string().min(1),
   tourType: z.string().min(1),
   companyName: z.string().optional(),
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
+  contactName: z.string().min(1),
   contactEmail: z.string().email(),
   contactPhone: z.string().min(1),
   billingInfo: z.string().optional(),
@@ -83,9 +82,7 @@ export default function B2BQuotePage() {
         numberOfPeople: data.numberOfPeople,
         tourType: data.tourType,
         companyName: data.companyName || null,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        contactName: `${data.firstName} ${data.lastName}`,
+        contactName: data.contactName,
         contactEmail: data.contactEmail,
         contactPhone: data.contactPhone,
         billingInfo: data.billingInfo || null,
@@ -333,29 +330,16 @@ export default function B2BQuotePage() {
 
             {step === 3 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <Label htmlFor="firstName" className="text-base font-semibold">
-                      {t('firstName')}*
-                    </Label>
-                    <Input
-                      id="firstName"
-                      {...register('firstName')}
-                      className="mt-2"
-                    />
-                    {errors.firstName && <p className="mt-1 text-sm text-destructive">{tForms('required')}</p>}
-                  </div>
-                  <div>
-                    <Label htmlFor="lastName" className="text-base font-semibold">
-                      {t('lastName')}*
-                    </Label>
-                    <Input
-                      id="lastName"
-                      {...register('lastName')}
-                      className="mt-2"
-                    />
-                    {errors.lastName && <p className="mt-1 text-sm text-destructive">{tForms('required')}</p>}
-                  </div>
+                <div>
+                  <Label htmlFor="contactName" className="text-base font-semibold">
+                    {t('contactName')}*
+                  </Label>
+                  <Input
+                    id="contactName"
+                    {...register('contactName')}
+                    className="mt-2"
+                  />
+                  {errors.contactName && <p className="mt-1 text-sm text-destructive">{tForms('required')}</p>}
                 </div>
 
                 <div>
