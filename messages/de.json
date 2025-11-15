@@ -213,8 +213,6 @@
     "companyName": "Firmenname",
     "companyNamePlaceholder": "Optional",
     "contactName": "Name der Kontaktperson",
-    "firstName": "Vorname",
-    "lastName": "Nachname",
     "contactEmail": "E-Mail-Adresse",
     "contactPhone": "Telefonnummer",
     "billingInfo": "Rechnungsinformationen",
