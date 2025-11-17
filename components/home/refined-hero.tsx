@@ -19,11 +19,11 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
           fill
           sizes="100vw"
           quality={75}
-          className="object-cover opacity-[0.08]"
+          className="object-cover opacity-[0.25]"
           priority
         />
       </div>
-      <div className="absolute inset-0 bg-gradient-to-b from-champagne-sand/20 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-b from-ivory/40 to-ivory/20" />
 
       <div className="container mx-auto px-4 py-32 md:py-40 relative">
         <div className="max-w-4xl mx-auto text-center">
