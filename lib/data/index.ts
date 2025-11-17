@@ -5,3 +5,5 @@ export * from './products';
 export * from './faq';
 export * from './blog';
 export * from './press';
+
+export * from '../api/content';

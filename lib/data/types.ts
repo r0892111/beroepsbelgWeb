@@ -1,4 +1,6 @@
-export type Locale = 'nl' | 'en' | 'fr' | 'de';
+import type { Locale as I18nLocale } from '@/i18n';
+
+export type Locale = I18nLocale;
 
 export type City = {
   slug: string;
