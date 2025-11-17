@@ -267,7 +267,10 @@ export default function B2BQuotePage() {
                     {selectedTour && (
                       <button
                         type="button"
-                        onClick={() => window.open(`/${locale}/tours-${selectedCity}/${selectedTour}`, '_blank')}
+                        onClick={() => {
+                          const url = `${window.location.origin}/${locale}/tours-${selectedCity}/${selectedTour}`;
+                          window.open(url, '_blank');
+                        }}
                         className="mt-2 inline-flex items-center gap-1 text-sm font-medium transition-opacity hover:opacity-70 cursor-pointer"
                         style={{ color: 'var(--brass)' }}
                       >
