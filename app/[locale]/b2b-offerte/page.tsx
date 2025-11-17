@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Calendar, Users, MapPin, Languages, Building2, Sparkles, CheckCircle2, Home, ShoppingBag } from 'lucide-react';
+import { Calendar, Users, MapPin, Languages, Building2, Sparkles, CheckCircle2, Home, ShoppingBag, ExternalLink } from 'lucide-react';
 import { cities } from '@/lib/data/cities';
 import { tours } from '@/lib/data/tours';
 
@@ -62,7 +62,7 @@ export default function B2BQuotePage() {
   const selectedLanguage = watch('language');
 
   const availableTours = selectedCity
-    ? tours.filter((tour) => tour.citySlug === selectedCity)
+    ? tours.filter((tour) => tour.citySlug === selectedCity && tour.slug !== 'cadeaubon')
     : [];
 
   useEffect(() => {
@@ -137,7 +137,7 @@ export default function B2BQuotePage() {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-ivory flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#fdfcfa' }}>
         <div className="container mx-auto px-4 py-16">
           <div className="mx-auto max-w-2xl text-center animate-in fade-in zoom-in duration-500">
             <div className="mb-8 inline-flex h-20 w-20 items-center justify-center rounded-full" style={{ backgroundColor: 'var(--brass-light)' }}>
@@ -172,7 +172,7 @@ export default function B2BQuotePage() {
   }
 
   return (
-    <div className="min-h-screen bg-ivory">
+    <div className="min-h-screen" style={{ backgroundColor: '#fdfcfa' }}>
       <div className="container mx-auto px-4 py-16">
         <div className="mx-auto max-w-3xl">
           <div className="mb-8 text-center">
@@ -190,7 +190,7 @@ export default function B2BQuotePage() {
             <div className={`h-2 w-24 rounded-full transition-all`} style={{ backgroundColor: step >= 3 ? 'var(--brass)' : '#e5e7eb' }} />
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 rounded-2xl bg-sand p-8 brass-corner shadow-lg">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 rounded-2xl p-8 brass-corner shadow-lg" style={{ backgroundColor: '#faf8f5' }}>
             {step === 1 && (
               <div
                 className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500"
@@ -211,7 +211,7 @@ export default function B2BQuotePage() {
                   {errors.dateTime && <p className="mt-1 text-sm text-destructive">{tForms('required')}</p>}
                 </div>
 
-                <div className="rounded-lg bg-ivory p-4">
+                <div className="rounded-lg p-4" style={{ backgroundColor: '#f5f2ed' }}>
                   <p className="mb-3 text-sm font-medium text-navy">{t('dateRange')}</p>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
@@ -264,6 +264,18 @@ export default function B2BQuotePage() {
                       </SelectContent>
                     </Select>
                     {errors.tour && <p className="mt-1 text-sm text-destructive">{tForms('required')}</p>}
+                    {selectedTour && (
+                      <a
+                        href={`/${locale}/tours-${selectedCity}/${selectedTour}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 inline-flex items-center gap-1 text-sm font-medium transition-opacity hover:opacity-70"
+                        style={{ color: 'var(--brass)' }}
+                      >
+                        {t('viewTour')}
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                    )}
                   </div>
                 )}
 
