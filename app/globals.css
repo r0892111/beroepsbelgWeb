@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -85,9 +87,10 @@
 
 @layer utilities {
   .btn-primary {
-    @apply inline-flex items-center justify-center px-8 py-3 font-semibold rounded transition-all duration-300;
+    @apply inline-flex items-center justify-center px-8 py-3 font-semibold rounded transition-all duration-150 ease-out;
     background-color: var(--belgian-navy);
     color: var(--ivory);
+    will-change: background-color, border, color;
   }
 
   .btn-primary:hover {
@@ -97,10 +100,11 @@
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center px-8 py-3 font-semibold rounded transition-all duration-300;
+    @apply inline-flex items-center justify-center px-8 py-3 font-semibold rounded transition-all duration-150 ease-out;
     background-color: transparent;
     border: 1px solid var(--brass);
     color: var(--belgian-navy);
+    will-change: background-color, color;
   }
 
   .btn-secondary:hover {
@@ -146,8 +150,9 @@
   }
 
   .card-elevated {
-    @apply rounded shadow-sm transition-all duration-300;
+    @apply rounded shadow-sm transition-all duration-200 ease-out;
     background-color: white;
+    will-change: transform, box-shadow;
   }
 
   .card-elevated:hover {

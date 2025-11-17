@@ -40,18 +40,17 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
 
       <div className="container mx-auto px-4 py-32 md:py-40 relative">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="mb-8">
-            <div className="inline-flex items-baseline gap-3 mb-2">
-              <span className="text-xs md:text-sm font-semibold tracking-[0.3em] uppercase text-navy">
-                CNN
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-serif font-light mb-6 text-navy leading-[1.15] tracking-tight" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontWeight: 300 }}>
+            "One of the 7 savviest guides <span className="italic font-normal" style={{ color: 'var(--brass)' }}>in the world</span>"
+          </h1>
+
+          <div className="mb-12">
+            <div className="inline-block">
+              <span className="text-base md:text-lg font-semibold tracking-[0.25em] uppercase text-navy">
+                — CNN
               </span>
-              <div className="h-px w-8 bg-brass/40 mb-1" />
             </div>
           </div>
-
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-serif font-bold mb-8 text-navy leading-[1.1] tracking-tight">
-            "One of the 7 savviest guides <span className="italic" style={{ color: 'var(--brass)' }}>in the world</span>"
-          </h1>
 
           <p className="text-lg md:text-xl mb-12 max-w-2xl mx-auto leading-relaxed font-light" style={{ color: 'var(--slate-blue)' }}>
             Ontdek Belgische verborgen verhalen met op maat gemaakte culturele tours
