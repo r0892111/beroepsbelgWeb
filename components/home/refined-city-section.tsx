@@ -3,8 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { type Locale } from '@/i18n';
-import { cities } from '@/lib/data/cities';
-import { tours } from '@/lib/data/tours';
+import { getCities, getTours, type City, type Tour } from '@/lib/data';
 import { useTranslations } from 'next-intl';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { MapPin } from 'lucide-react';
@@ -17,9 +16,30 @@ export function RefinedCitySection({ locale }: RefinedCitySectionProps) {
   const t = useTranslations('home.cities');
   const [visibleCards, setVisibleCards] = useState<Set<number>>(new Set());
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
+  const [cities, setCities] = useState<City[]>([]);
+  const [tours, setTours] = useState<Tour[]>([]);
+  const [loading, setLoading] = useState(true);
   const cardRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
-  const liveCities = useMemo(() => cities.filter(city => city.status === 'live'), []);
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [citiesData, toursData] = await Promise.all([
+          getCities(),
+          getTours()
+        ]);
+        setCities(citiesData);
+        setTours(toursData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  const liveCities = useMemo(() => cities.filter(city => city.status === 'live'), [cities]);
 
   const cityTourCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -27,7 +47,7 @@ export function RefinedCitySection({ locale }: RefinedCitySectionProps) {
       counts[city.slug] = tours.filter(tour => tour.citySlug === city.slug).length;
     });
     return counts;
-  }, [liveCities]);
+  }, [liveCities, tours]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -48,6 +68,22 @@ export function RefinedCitySection({ locale }: RefinedCitySectionProps) {
 
     return () => observer.disconnect();
   }, []);
+
+  if (loading) {
+    return (
+      <section className="py-24 bg-sand relative overflow-hidden">
+        <div className="container mx-auto px-4 relative">
+          <div className="max-w-6xl mx-auto text-center">
+            <div className="animate-pulse">
+              <div className="h-6 bg-navy/10 rounded w-32 mx-auto mb-4" />
+              <div className="h-12 bg-navy/10 rounded w-64 mx-auto mb-6" />
+              <div className="h-4 bg-navy/10 rounded w-96 mx-auto" />
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-24 bg-sand relative overflow-hidden">
