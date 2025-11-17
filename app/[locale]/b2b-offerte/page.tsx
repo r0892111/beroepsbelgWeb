@@ -264,17 +264,17 @@ export default function B2BQuotePage() {
                       </SelectContent>
                     </Select>
                     {errors.tour && <p className="mt-1 text-sm text-destructive">{tForms('required')}</p>}
-                    {selectedTour && (
+                    {selectedCity && (
                       <button
                         type="button"
                         onClick={() => {
-                          const url = `${window.location.origin}/${locale}/tours-${selectedCity}/${selectedTour}`;
+                          const url = `${window.location.origin}/${locale}/tours-${selectedCity}`;
                           window.open(url, '_blank');
                         }}
                         className="mt-2 inline-flex items-center gap-1 text-sm font-medium transition-opacity hover:opacity-70 cursor-pointer"
                         style={{ color: 'var(--brass)' }}
                       >
-                        {t('viewTour')}
+                        Bekijk tours
                         <ExternalLink className="h-3.5 w-3.5" />
                       </button>
                     )}
