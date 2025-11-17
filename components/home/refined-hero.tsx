@@ -49,7 +49,7 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
       <div className="container mx-auto px-4 py-32 md:py-40 relative flex-1 flex items-center">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-serif font-light mb-6 text-navy leading-[1.15] tracking-tight" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontWeight: 300 }}>
-            "One of the 7 savviest guides <span className="italic font-normal" style={{ color: 'var(--brass)' }}>in the world</span>"
+            "One of the 7 savviest guides <span className="italic font-normal" style={{ color: 'var(--brass)' }}>in the world</span> "
           </h1>
 
           <div className="mb-12">
