@@ -13,6 +13,7 @@ import { Heart, ShoppingCart, User, LogOut, Package, Trash2, Plus, Minus } from 
 import { products } from '@/lib/data/products';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { ProductDetailDialog } from '@/components/webshop/product-detail-dialog';
 
 export default function AccountPage() {
   const t = useTranslations('auth');
@@ -25,6 +26,13 @@ export default function AccountPage() {
   const locale = params.locale as string;
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(tabFromUrl === 'cart' ? 'cart' : 'favorites');
+  const [selectedProduct, setSelectedProduct] = useState<typeof products[0] | null>(null);
+  const [showProductDialog, setShowProductDialog] = useState(false);
+
+  const handleProductClick = (product: typeof products[0]) => {
+    setSelectedProduct(product);
+    setShowProductDialog(true);
+  };
 
   useEffect(() => {
     if (tabFromUrl === 'cart' || tabFromUrl === 'favorites') {
@@ -120,14 +128,15 @@ export default function AccountPage() {
               ) : (
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {favoriteProducts.map((product) => (
-                    <Card key={product.slug}>
+                    <Card key={product.slug} className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleProductClick(product)}>
                       <CardHeader>
                         <CardTitle className="text-lg">{product.title[locale as 'nl' | 'en' | 'fr' | 'de']}</CardTitle>
                         <CardDescription>€{product.price.toFixed(2)}</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-2">
                         <Button
-                          onClick={async () => {
+                          onClick={async (e) => {
+                            e.stopPropagation();
                             await addToCart(product.slug, 1);
                             toast.success(t('addToCart'));
                           }}
@@ -138,7 +147,8 @@ export default function AccountPage() {
                           {t('addToCart')}
                         </Button>
                         <Button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             removeFavorite(product.slug);
                             toast.success(t('removeFromFavorites'));
                           }}
@@ -172,7 +182,7 @@ export default function AccountPage() {
                 <div className="space-y-6">
                   <div className="space-y-4">
                     {cartProducts.map((item) => (
-                      <Card key={item.id}>
+                      <Card key={item.id} className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => item.product && handleProductClick(item.product)}>
                         <CardContent className="flex items-center justify-between p-6">
                           <div className="flex-1">
                             <h3 className="text-lg font-semibold text-[#0d1117]">
@@ -183,7 +193,10 @@ export default function AccountPage() {
                           <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2">
                               <Button
-                                onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateQuantity(item.product_id, item.quantity - 1);
+                                }}
                                 variant="outline"
                                 size="icon"
                                 className="h-8 w-8"
@@ -192,7 +205,10 @@ export default function AccountPage() {
                               </Button>
                               <span className="w-8 text-center font-medium">{item.quantity}</span>
                               <Button
-                                onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateQuantity(item.product_id, item.quantity + 1);
+                                }}
                                 variant="outline"
                                 size="icon"
                                 className="h-8 w-8"
@@ -204,7 +220,8 @@ export default function AccountPage() {
                               €{((item.product?.price || 0) * item.quantity).toFixed(2)}
                             </div>
                             <Button
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 removeFromCart(item.product_id);
                                 toast.success(t('removeFromCart'));
                               }}
@@ -241,6 +258,14 @@ export default function AccountPage() {
           </Tabs>
         </div>
       </div>
+
+      {selectedProduct && (
+        <ProductDetailDialog
+          product={selectedProduct}
+          open={showProductDialog}
+          onOpenChange={setShowProductDialog}
+        />
+      )}
     </div>
   );
 }
