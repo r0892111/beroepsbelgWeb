@@ -23,15 +23,26 @@ export function RefinedCitySection({ locale }: RefinedCitySectionProps) {
 
   useEffect(() => {
     async function fetchData() {
+      console.log('[RefinedCitySection] Starting data fetch...');
+      const startTime = performance.now();
+
       try {
         const [citiesData, toursData] = await Promise.all([
           getCities(),
           getTours()
         ]);
+
+        console.log('[RefinedCitySection] ✓ Data fetched successfully');
+        console.log('[RefinedCitySection] Cities:', citiesData.length);
+        console.log('[RefinedCitySection] Tours:', toursData.length);
+
         setCities(citiesData);
         setTours(toursData);
+
+        const endTime = performance.now();
+        console.log(`[RefinedCitySection] Total fetch time: ${(endTime - startTime).toFixed(2)}ms`);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('[RefinedCitySection] ✖ Error fetching data:', error);
       } finally {
         setLoading(false);
       }
@@ -39,13 +50,18 @@ export function RefinedCitySection({ locale }: RefinedCitySectionProps) {
     fetchData();
   }, []);
 
-  const liveCities = useMemo(() => cities.filter(city => city.status === 'live'), [cities]);
+  const liveCities = useMemo(() => {
+    const filtered = cities.filter(city => city.status === 'live');
+    console.log(`[RefinedCitySection] Live cities: ${filtered.length}/${cities.length}`);
+    return filtered;
+  }, [cities]);
 
   const cityTourCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     liveCities.forEach(city => {
       counts[city.slug] = tours.filter(tour => tour.citySlug === city.slug).length;
     });
+    console.log('[RefinedCitySection] Tour counts per city:', counts);
     return counts;
   }, [liveCities, tours]);
 
