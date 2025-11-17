@@ -17,6 +17,8 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
           src="https://images.pexels.com/photos/16139366/pexels-photo-16139366.jpeg"
           alt="Historic Antwerp"
           fill
+          sizes="100vw"
+          quality={75}
           className="object-cover opacity-[0.08]"
           priority
         />
