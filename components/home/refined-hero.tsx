@@ -5,6 +5,7 @@ import { type Locale } from '@/i18n';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
+import { ChevronDown } from 'lucide-react';
 
 interface RefinedHeroProps {
   locale: Locale;
@@ -22,8 +23,15 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const scrollToContent = () => {
+    window.scrollTo({
+      top: window.innerHeight,
+      behavior: 'smooth'
+    });
+  };
+
   return (
-    <section className="relative bg-ivory overflow-hidden">
+    <section className="relative bg-ivory overflow-hidden min-h-screen flex flex-col">
       <div className="absolute inset-0">
         <Image
           src="/Antwerpen Homepage Foto.jpg"
@@ -38,7 +46,7 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
       </div>
       <div className="absolute inset-0 bg-gradient-to-b from-ivory/40 to-ivory/20" />
 
-      <div className="container mx-auto px-4 py-32 md:py-40 relative">
+      <div className="container mx-auto px-4 py-32 md:py-40 relative flex-1 flex items-center">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-serif font-light mb-6 text-navy leading-[1.15] tracking-tight" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontWeight: 300 }}>
             "One of the 7 savviest guides <span className="italic font-normal" style={{ color: 'var(--brass)' }}>in the world</span>"
@@ -67,10 +75,19 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
         </div>
       </div>
 
-      <div
-        className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-32 h-px"
-        style={{ background: 'linear-gradient(to right, transparent, var(--brass), transparent)' }}
-      />
+      <div className="absolute bottom-20 left-0 right-0 flex flex-col items-center gap-4">
+        <div
+          className="w-32 h-px"
+          style={{ background: 'linear-gradient(to right, transparent, var(--brass), transparent)' }}
+        />
+        <button
+          onClick={scrollToContent}
+          className="text-navy hover:text-brass transition-colors duration-200 cursor-pointer animate-bounce-slow"
+          aria-label="Scroll to content"
+        >
+          <ChevronDown className="w-8 h-8" />
+        </button>
+      </div>
     </section>
   );
 }

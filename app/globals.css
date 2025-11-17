@@ -252,4 +252,19 @@
     backdrop-filter: blur(10px);
     background: rgba(250, 249, 246, 0.8);
   }
+
+  @keyframes bounce-slow {
+    0%, 100% {
+      transform: translateY(0);
+      opacity: 0.8;
+    }
+    50% {
+      transform: translateY(-10px);
+      opacity: 1;
+    }
+  }
+
+  .animate-bounce-slow {
+    animation: bounce-slow 2s ease-in-out infinite;
+  }
 }
