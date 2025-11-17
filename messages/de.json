@@ -204,6 +204,8 @@
     "endDate": "Enddatum",
     "city": "Stadt oder Ort",
     "cityPlaceholder": "Wählen Sie eine Stadt",
+    "tour": "Welche Tour",
+    "tourPlaceholder": "Wählen Sie eine Tour",
     "language": "Toursprache",
     "languagePlaceholder": "Wählen Sie eine Sprache",
     "numberOfPeople": "Anzahl der Personen",

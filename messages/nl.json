@@ -204,6 +204,8 @@
     "endDate": "Einddatum",
     "city": "Stad of locatie",
     "cityPlaceholder": "Selecteer een stad",
+    "tour": "Welke tour",
+    "tourPlaceholder": "Selecteer een tour",
     "language": "Taal van de tour",
     "languagePlaceholder": "Selecteer een taal",
     "numberOfPeople": "Aantal personen",
