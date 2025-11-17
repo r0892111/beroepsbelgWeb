@@ -6,7 +6,7 @@ import { type Locale } from '@/i18n';
 import { cities } from '@/lib/data/cities';
 import { tours } from '@/lib/data/tours';
 import { useTranslations } from 'next-intl';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { MapPin } from 'lucide-react';
 
 interface RefinedCitySectionProps {
@@ -19,9 +19,15 @@ export function RefinedCitySection({ locale }: RefinedCitySectionProps) {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const cardRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
-  const getCityTourCount = (citySlug: string) => {
-    return tours.filter(tour => tour.citySlug === citySlug).length;
-  };
+  const liveCities = useMemo(() => cities.filter(city => city.status === 'live'), []);
+
+  const cityTourCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    liveCities.forEach(city => {
+      counts[city.slug] = tours.filter(tour => tour.citySlug === city.slug).length;
+    });
+    return counts;
+  }, [liveCities]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -71,10 +77,9 @@ export function RefinedCitySection({ locale }: RefinedCitySectionProps) {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {cities.filter(city => city.status === 'live').map((city, index) => {
-              const tourCount = getCityTourCount(city.slug);
+            {liveCities.map((city, index) => {
+              const tourCount = cityTourCounts[city.slug];
               const isVisible = visibleCards.has(index);
-              const isHovered = hoveredCard === index;
 
               return (
                 <Link
@@ -92,6 +97,8 @@ export function RefinedCitySection({ locale }: RefinedCitySectionProps) {
                         src={city.image}
                         alt={city.name[locale]}
                         fill
+                        loading="lazy"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1"
                       />
 
