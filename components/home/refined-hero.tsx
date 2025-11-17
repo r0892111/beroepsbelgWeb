@@ -14,11 +14,11 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
     <section className="relative bg-ivory overflow-hidden">
       <div className="absolute inset-0">
         <Image
-          src="https://images.pexels.com/photos/16139366/pexels-photo-16139366.jpeg"
+          src="/Antwerpen Homepage Foto.jpg"
           alt="Historic Antwerp"
           fill
           sizes="100vw"
-          quality={75}
+          quality={90}
           className="object-cover opacity-[0.25]"
           priority
         />
