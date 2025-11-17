@@ -30,8 +30,12 @@ export type Tour = {
 
 export type Product = {
   slug: string;
+  uuid: string;
   title: Record<Locale, string>;
+  category: 'Book' | 'Merchandise' | 'Game';
   price: number;
+  description: Record<Locale, string>;
+  additionalInfo?: Record<Locale, string>;
   label?: string;
   image?: string;
 };
