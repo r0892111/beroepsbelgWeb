@@ -217,7 +217,7 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <Card>
+          <Card className="flex h-full flex-col">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <LinkIcon className="h-5 w-5" />
@@ -225,8 +225,8 @@ export default function AdminDashboardPage() {
               </CardTitle>
               <CardDescription>{t('integrationsDescription')}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 rounded-lg border p-4">
+            <CardContent className="flex flex-1 flex-col">
+              <div className="grid flex-1 gap-4 rounded-lg border p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-semibold text-navy">Teamleader CRM</h3>
@@ -244,7 +244,7 @@ export default function AdminDashboardPage() {
                 <div className="space-y-2 text-sm">
                   <p className="font-medium text-navy">{integrationStatus}</p>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="mt-auto flex flex-wrap gap-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -259,25 +259,27 @@ export default function AdminDashboardPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="flex h-full flex-col">
             <CardHeader>
               <CardTitle>{t('quickActions')}</CardTitle>
               <CardDescription>{t('quickActionsDescription')}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2">
-              <Button variant="outline" className="w-full justify-start" disabled>
-                <Calendar className="h-4 w-4 mr-2" />
-                {t('manageBookings')}
-              </Button>
-              <Button variant="outline" className="w-full justify-start" disabled>
-                <Users className="h-4 w-4 mr-2" />
-                {t('viewCustomers')}
-              </Button>
-              <Button variant="outline" className="w-full justify-start" disabled>
-                <ShoppingCart className="h-4 w-4 mr-2" />
-                {t('viewOrders')}
-              </Button>
-              <p className="text-xs text-muted-foreground pt-2">{t('comingSoon')}</p>
+            <CardContent className="flex flex-1 flex-col">
+              <div className="space-y-2">
+                <Button variant="outline" className="w-full justify-start" disabled>
+                  <Calendar className="h-4 w-4 mr-2" />
+                  {t('manageBookings')}
+                </Button>
+                <Button variant="outline" className="w-full justify-start" disabled>
+                  <Users className="h-4 w-4 mr-2" />
+                  {t('viewCustomers')}
+                </Button>
+                <Button variant="outline" className="w-full justify-start" disabled>
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  {t('viewOrders')}
+                </Button>
+              </div>
+              <p className="mt-auto pt-4 text-xs text-muted-foreground">{t('comingSoon')}</p>
             </CardContent>
           </Card>
         </div>

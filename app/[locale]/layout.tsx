@@ -1,6 +1,4 @@
-import '../globals.css';
 import type { Metadata } from 'next';
-import { Inter, Playfair_Display } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -14,9 +12,6 @@ import { AdminProvider } from '@/lib/contexts/admin-context';
 import { CartProvider } from '@/lib/contexts/cart-context';
 import { FavoritesProvider } from '@/lib/contexts/favorites-context';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
-const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair' });
-
 export const metadata: Metadata = {
   title: 'BeroepsBelg — Uw gids in België',
   description: 'Ontdek België met professionele stadswandelingen in Antwerpen, Brussel, Brugge, Gent en meer.',
@@ -28,12 +23,12 @@ export function generateStaticParams() {
 
 export default async function LocaleLayout({
   children,
-  params
+  params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ locale: string }>;
+  params: { locale: string };
 }) {
-  const { locale } = await params;
+  const { locale } = params;
 
   if (!locales.includes(locale as Locale)) {
     notFound();
@@ -42,28 +37,24 @@ export default async function LocaleLayout({
   const messages = await getMessages({ locale });
 
   return (
-    <html lang={locale}>
-      <body className={`${inter.variable} ${playfair.variable} font-sans`}>
-        <NextIntlClientProvider messages={messages} locale={locale}>
-          <AuthProvider>
-            <AdminProvider>
-              <CartProvider>
-                <FavoritesProvider>
-                  <div className="flex min-h-screen flex-col">
-                    <header className="sticky top-0 z-40 bg-ivory border-b border-border">
-                      <MainNav locale={locale as Locale} />
-                    </header>
-                    <main className="flex-1">{children}</main>
-                    <SiteFooter locale={locale as Locale} />
-                  </div>
-                  <CookieBanner />
-                  <Toaster />
-                </FavoritesProvider>
-              </CartProvider>
-            </AdminProvider>
-          </AuthProvider>
-        </NextIntlClientProvider>
-      </body>
-    </html>
+    <NextIntlClientProvider messages={messages} locale={locale}>
+      <AuthProvider>
+        <AdminProvider>
+          <CartProvider>
+            <FavoritesProvider>
+              <div className="flex min-h-screen flex-col">
+                <header className="sticky top-0 z-40 border-b border-border bg-ivory">
+                  <MainNav locale={locale as Locale} />
+                </header>
+                <main className="flex-1">{children}</main>
+                <SiteFooter locale={locale as Locale} />
+              </div>
+              <CookieBanner />
+              <Toaster />
+            </FavoritesProvider>
+          </CartProvider>
+        </AdminProvider>
+      </AuthProvider>
+    </NextIntlClientProvider>
   );
 }

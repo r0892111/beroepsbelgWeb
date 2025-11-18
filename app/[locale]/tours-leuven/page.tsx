@@ -1,14 +1,14 @@
 import { type Locale } from '@/i18n';
-import { tours } from '@/lib/data';
+import { getTours } from '@/lib/api/content';
 import { TourCard } from '@/components/tours/tour-card';
 
 interface ToursLeuvenPageProps {
-  params: Promise<{ locale: Locale }>;
+  params: { locale: Locale };
 }
 
 export default async function ToursLeuvenPage({ params }: ToursLeuvenPageProps) {
-  const { locale } = await params;
-  const leuvenTours = tours.filter((tour) => tour.citySlug === 'leuven');
+  const { locale } = params;
+  const leuvenTours = await getTours('leuven');
 
   return (
     <div className="container mx-auto px-4 py-20">

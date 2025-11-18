@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { type Locale } from '@/i18n';
-import { cities } from '@/lib/data';
+import { getCities } from '@/lib/api/content';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,8 +11,9 @@ interface CityGridProps {
   locale: Locale;
 }
 
-export function CityGrid({ locale }: CityGridProps) {
+export async function CityGrid({ locale }: CityGridProps) {
   const t = useTranslations('common');
+  const cities = await getCities();
 
   return (
     <section className="py-20">
@@ -22,7 +23,7 @@ export function CityGrid({ locale }: CityGridProps) {
           {cities.map((city) => (
             <Card
               key={city.slug}
-              className="group overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg"
+              className="group flex h-full flex-col overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg"
             >
               {city.image && (
                 <div className="relative h-48 w-full overflow-hidden">
@@ -34,7 +35,7 @@ export function CityGrid({ locale }: CityGridProps) {
                   />
                 </div>
               )}
-              <CardHeader>
+              <CardHeader className="flex-1">
                 <div className="mb-2 flex items-center justify-between">
                   <CardTitle>{city.name[locale]}</CardTitle>
                   {city.status === 'coming-soon' && (
@@ -43,7 +44,7 @@ export function CityGrid({ locale }: CityGridProps) {
                 </div>
                 <CardDescription className="line-clamp-3">{city.teaser[locale]}</CardDescription>
               </CardHeader>
-              <CardFooter>
+              <CardFooter className="mt-auto">
                 {city.status === 'live' ? (
                   <Button asChild className="w-full">
                     <Link href={`/${locale}/tours-${city.slug}`}>
