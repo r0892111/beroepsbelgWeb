@@ -1,6 +1,27 @@
 import { supabase } from '@/lib/supabase/client';
 import type { Locale, City, Tour, Product, FaqItem, BlogPost, PressLink } from '@/lib/data/types';
 
+const slugify = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+const parseNumber = (value: unknown): number | null => {
+  if (typeof value === 'number') {
+    return Number.isNaN(value) ? null : value;
+  }
+  if (typeof value === 'string') {
+    const normalized = value.replace(',', '.').trim();
+    if (!normalized) return null;
+    const parsed = Number.parseFloat(normalized);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+  return null;
+};
+
 export async function getCities(): Promise<City[]> {
   console.log('[Supabase API] Fetching cities...');
   const startTime = performance.now();
@@ -160,41 +181,68 @@ export async function getProducts(): Promise<Product[]> {
   const startTime = performance.now();
 
   const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .order('slug');
-
+    .from('webshop_data')
+    .select('*');
   if (error) {
     console.error('[Supabase API] ❌ Error fetching products:', error);
     throw error;
   }
 
-  const products = (data || []).map((row: any) => ({
-    slug: row.slug,
-    uuid: row.uuid_legacy,
-    title: {
-      nl: row.title_nl,
-      en: row.title_en,
-      fr: row.title_fr,
-      de: row.title_de,
-    },
-    category: row.category,
-    price: row.price,
-    description: {
-      nl: row.description_nl,
-      en: row.description_en,
-      fr: row.description_fr,
-      de: row.description_de,
-    },
-    additionalInfo: row.additional_info_nl ? {
-      nl: row.additional_info_nl,
-      en: row.additional_info_en,
-      fr: row.additional_info_fr,
-      de: row.additional_info_de,
-    } : undefined,
-    label: row.label,
-    image: row.image,
-  }));
+  const categoryOptions: Product['category'][] = ['Book', 'Merchandise', 'Game'];
+
+  const products = (data || []).map((row: Record<string, any>) => {
+    const rawName = typeof row.Name === 'string' ? row.Name.trim() : '';
+    const slug = rawName ? slugify(rawName) : row.uuid;
+    const price = parseNumber(row['Price (EUR)']) ?? 0;
+    const categoryValue = typeof row.Category === 'string' ? row.Category.trim() : '';
+    const category = (categoryOptions.includes(categoryValue as Product['category'])
+      ? categoryValue
+      : 'Book') as Product['category'];
+    const description = typeof row.Description === 'string' ? row.Description.trim() : '';
+    const additionalInfo = typeof row['Additional Info'] === 'string' ? row['Additional Info'].trim() : '';
+
+    const titleRecord = {
+      nl: rawName,
+      en: rawName,
+      fr: rawName,
+      de: rawName,
+    };
+
+    const descriptionRecord = description
+      ? {
+          nl: description,
+          en: description,
+          fr: description,
+          de: description,
+        }
+      : {
+          nl: '',
+          en: '',
+          fr: '',
+          de: '',
+        };
+
+    const additionalInfoRecord = additionalInfo
+      ? {
+          nl: additionalInfo,
+          en: additionalInfo,
+          fr: additionalInfo,
+          de: additionalInfo,
+        }
+      : undefined;
+
+    return {
+      slug,
+      uuid: row.uuid,
+      title: titleRecord,
+      category,
+      price,
+      description: descriptionRecord,
+      additionalInfo: additionalInfoRecord,
+      label: undefined,
+      image: undefined,
+    } satisfies Product;
+  });
 
   const endTime = performance.now();
   console.log(`[Supabase API] ✓ Fetched ${products.length} products in ${(endTime - startTime).toFixed(2)}ms`);

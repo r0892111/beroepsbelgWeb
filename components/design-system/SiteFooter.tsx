@@ -125,7 +125,7 @@ export default function SiteFooter({ locale }: SiteFooterProps) {
         </form>
       </div>
       <div className="relative container pb-4 text-center text-sm opacity-75">
-        <p>Webshop by Webhero</p>
+        <p>© {new Date().getFullYear()} BeroepsBelg</p>
       </div>
     </footer>
   );
