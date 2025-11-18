@@ -64,6 +64,7 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
   }
 
   const tours = (data || []).map((row: any) => ({
+    id: row.id,
     citySlug: row.city_slug,
     slug: row.slug,
     title: {
@@ -125,6 +126,7 @@ export async function getTourBySlug(citySlug: string, slug: string): Promise<Tou
   console.log(`[Supabase API] ✓ Fetched tour in ${(endTime - startTime).toFixed(2)}ms`);
 
   return {
+    id: data.id,
     citySlug: data.city_slug,
     slug: data.slug,
     title: {

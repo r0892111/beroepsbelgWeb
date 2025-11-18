@@ -1,5 +1,5 @@
 import { type Locale } from '@/i18n';
-import { tours } from '@/lib/data';
+import { getTourBySlug, getTours } from '@/lib/api/content';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Share2, Facebook, Twitter, Mail, MapPin, Clock, Languages, Bike } from 'lucide-react';
@@ -9,19 +9,19 @@ import { getTranslations } from 'next-intl/server';
 import { TourImageGallery } from '@/components/tours/tour-image-gallery';
 
 interface TourDetailPageProps {
-  params: Promise<{ locale: Locale; slug: string }>;
+  params: { locale: Locale; slug: string };
 }
 
-export function generateStaticParams() {
-  const bruggeTours = tours.filter((tour) => tour.citySlug === 'brugge');
+export async function generateStaticParams() {
+  const bruggeTours = await getTours('brugge');
   return bruggeTours.map((tour) => ({
     slug: tour.slug,
   }));
 }
 
 export default async function TourDetailPage({ params }: TourDetailPageProps) {
-  const { locale, slug } = await params;
-  const tour = tours.find((t) => t.citySlug === 'brugge' && t.slug === slug);
+  const { locale, slug } = params;
+  const tour = await getTourBySlug('brugge', slug);
 
   if (!tour) {
     notFound();

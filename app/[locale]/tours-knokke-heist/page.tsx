@@ -1,14 +1,14 @@
 import { type Locale } from '@/i18n';
-import { tours } from '@/lib/data';
+import { getTours } from '@/lib/api/content';
 import { TourCard } from '@/components/tours/tour-card';
 
 interface ToursKnokkeHeistPageProps {
-  params: Promise<{ locale: Locale }>;
+  params: { locale: Locale };
 }
 
 export default async function ToursKnokkeHeistPage({ params }: ToursKnokkeHeistPageProps) {
-  const { locale } = await params;
-  const knokkeHeistTours = tours.filter((tour) => tour.citySlug === 'knokke-heist');
+  const { locale } = params;
+  const knokkeHeistTours = await getTours('knokke-heist');
 
   return (
     <div className="container mx-auto px-4 py-20">

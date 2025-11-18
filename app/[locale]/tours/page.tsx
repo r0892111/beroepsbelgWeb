@@ -1,5 +1,5 @@
 import { type Locale } from '@/i18n';
-import { cities } from '@/lib/data';
+import { getCities } from '@/lib/api/content';
 import AngledSection from '@/components/design-system/AngledSection';
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,12 +9,13 @@ import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 
 interface ToursPageProps {
-  params: Promise<{ locale: Locale }>;
+  params: { locale: Locale };
 }
 
 export default async function ToursPage({ params }: ToursPageProps) {
-  const { locale } = await params;
+  const { locale } = params;
   const t = await getTranslations('common');
+  const cities = await getCities();
 
   return (
     <AngledSection plane="left">
@@ -23,7 +24,7 @@ export default async function ToursPage({ params }: ToursPageProps) {
         {cities.map((city) => (
           <Card
             key={city.slug}
-            className="group overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg"
+            className="group flex h-full flex-col overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg"
           >
             {city.image && (
               <div className="relative h-48 w-full overflow-hidden">
@@ -35,7 +36,7 @@ export default async function ToursPage({ params }: ToursPageProps) {
                 />
               </div>
             )}
-            <CardHeader>
+            <CardHeader className="flex-1">
               <div className="mb-2 flex items-center justify-between">
                 <CardTitle>{city.name[locale]}</CardTitle>
                 {city.status === 'coming-soon' && (
@@ -44,7 +45,7 @@ export default async function ToursPage({ params }: ToursPageProps) {
               </div>
               <CardDescription className="line-clamp-3">{city.teaser[locale]}</CardDescription>
             </CardHeader>
-            <CardFooter>
+            <CardFooter className="mt-auto">
               {city.status === 'live' ? (
                 <Button asChild className="w-full">
                   <Link href={`/${locale}/tours-${city.slug}`}>

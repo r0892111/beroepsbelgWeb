@@ -1,5 +1,5 @@
 import { type Locale } from '@/i18n';
-import { tours } from '@/lib/data';
+import { getTourBySlug, getTours } from '@/lib/api/content';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Share2, Facebook, Twitter, Mail, MapPin, Clock, Languages, Bike } from 'lucide-react';
@@ -9,19 +9,19 @@ import { getTranslations } from 'next-intl/server';
 import { TourImageGallery } from '@/components/tours/tour-image-gallery';
 
 interface TourDetailPageProps {
-  params: Promise<{ locale: Locale; slug: string }>;
+  params: { locale: Locale; slug: string };
 }
 
-export function generateStaticParams() {
-  const gentTours = tours.filter((tour) => tour.citySlug === 'gent');
+export async function generateStaticParams() {
+  const gentTours = await getTours('gent');
   return gentTours.map((tour) => ({
     slug: tour.slug,
   }));
 }
 
 export default async function TourDetailPage({ params }: TourDetailPageProps) {
-  const { locale, slug } = await params;
-  const tour = tours.find((t) => t.citySlug === 'gent' && t.slug === slug);
+  const { locale, slug } = params;
+  const tour = await getTourBySlug('gent', slug);
 
   if (!tour) {
     notFound();

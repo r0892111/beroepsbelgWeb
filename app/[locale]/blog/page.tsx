@@ -1,17 +1,18 @@
 import AngledSection from '@/components/design-system/AngledSection';
 import { type Locale } from '@/i18n';
-import { blogPosts } from '@/lib/data';
+import { getBlogPosts } from '@/lib/api/content';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { format } from 'date-fns';
 
 interface BlogPageProps {
-  params: Promise<{ locale: Locale }>;
+  params: { locale: Locale };
 }
 
 export default async function BlogPage({ params }: BlogPageProps) {
-  const { locale } = await params;
+  const { locale } = params;
+  const blogPosts = await getBlogPosts();
   return (
     <AngledSection plane="right">
       <h1 className="mb-12 text-center text-4xl font-bold">Blog</h1>

@@ -12,6 +12,7 @@ export type City = {
 };
 
 export type Tour = {
+  id?: string;
   citySlug: string;
   slug: string;
   title: Record<Locale, string>;

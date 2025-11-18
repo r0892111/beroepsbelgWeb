@@ -10,7 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Heart, ShoppingCart, User, LogOut, Package, Trash2, Plus, Minus } from 'lucide-react';
-import { products } from '@/lib/data/products';
+import { getProducts } from '@/lib/api/content';
+import type { Product } from '@/lib/data/types';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { ProductDetailDialog } from '@/components/webshop/product-detail-dialog';
@@ -26,13 +27,44 @@ export default function AccountPage() {
   const locale = params.locale as string;
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(tabFromUrl === 'cart' ? 'cart' : 'favorites');
-  const [selectedProduct, setSelectedProduct] = useState<typeof products[0] | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [productsError, setProductsError] = useState<string | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showProductDialog, setShowProductDialog] = useState(false);
 
-  const handleProductClick = (product: typeof products[0]) => {
+  const handleProductClick = (product: Product) => {
     setSelectedProduct(product);
     setShowProductDialog(true);
   };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadProducts() {
+      try {
+        const data = await getProducts();
+        if (!isMounted) return;
+        setProducts(data);
+        setProductsError(null);
+      } catch (error) {
+        console.error('[AccountPage] Failed to load products', error);
+        if (isMounted) {
+          setProductsError('Kon de producten niet laden.');
+        }
+      } finally {
+        if (isMounted) {
+          setProductsLoading(false);
+        }
+      }
+    }
+
+    void loadProducts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (tabFromUrl === 'cart' || tabFromUrl === 'favorites') {
@@ -52,11 +84,22 @@ export default function AccountPage() {
     router.push(`/${locale}`);
   };
 
-  if (authLoading || !user) {
+  if (authLoading || !user || productsLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#92F0B1]/10 via-white to-[#92F0B1]/5 flex items-center justify-center">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#92F0B1] border-t-transparent mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (productsError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#92F0B1]/10 via-white to-[#92F0B1]/5 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <p className="text-red-600">{productsError}</p>
+          <Button onClick={() => window.location.reload()}>Probeer opnieuw</Button>
         </div>
       </div>
     );

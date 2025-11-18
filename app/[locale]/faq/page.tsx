@@ -1,6 +1,6 @@
 import AngledSection from '@/components/design-system/AngledSection';
 import { type Locale } from '@/i18n';
-import { faqItems } from '@/lib/data';
+import { getFaqItems } from '@/lib/api/content';
 import {
   Accordion,
   AccordionContent,
@@ -9,11 +9,12 @@ import {
 } from '@/components/ui/accordion';
 
 interface FaqPageProps {
-  params: Promise<{ locale: Locale }>;
+  params: { locale: Locale };
 }
 
 export default async function FaqPage({ params }: FaqPageProps) {
-  const { locale } = await params;
+  const { locale } = params;
+  const faqItems = await getFaqItems();
   return (
     <AngledSection plane="left">
       <div className="mx-auto max-w-3xl">

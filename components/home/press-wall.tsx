@@ -1,7 +1,9 @@
-import { pressLinks } from '@/lib/data';
+import { getPressLinks } from '@/lib/api/content';
 import { ExternalLink } from 'lucide-react';
 
-export function PressWall() {
+export async function PressWall() {
+  const pressLinks = await getPressLinks();
+
   return (
     <section className="py-20">
       <div className="container mx-auto px-4">

@@ -1,7 +1,9 @@
-import { pressLinks } from '@/lib/data';
+import { getPressLinks } from '@/lib/api/content';
 import { ExternalLink } from 'lucide-react';
 
-export default function PersPage() {
+export default async function PersPage() {
+  const pressLinks = await getPressLinks();
+
   return (
     <div className="container mx-auto px-4 py-20">
       <h1 className="mb-12 text-center text-4xl font-bold">In de Pers</h1>

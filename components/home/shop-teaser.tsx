@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { type Locale } from '@/i18n';
-import { products } from '@/lib/data';
+import { getProducts } from '@/lib/api/content';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,8 +10,9 @@ interface ShopTeaserProps {
   locale: Locale;
 }
 
-export function ShopTeaser({ locale }: ShopTeaserProps) {
+export async function ShopTeaser({ locale }: ShopTeaserProps) {
   const t = useTranslations('common');
+  const products = await getProducts();
   const featuredProducts = products.slice(0, 3);
 
   return (

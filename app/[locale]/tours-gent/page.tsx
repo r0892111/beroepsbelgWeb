@@ -1,14 +1,14 @@
 import { type Locale } from '@/i18n';
-import { tours } from '@/lib/data';
+import { getTours } from '@/lib/api/content';
 import { TourCard } from '@/components/tours/tour-card';
 
 interface ToursGhentPageProps {
-  params: Promise<{ locale: Locale }>;
+  params: { locale: Locale };
 }
 
 export default async function ToursGhentPage({ params }: ToursGhentPageProps) {
-  const { locale } = await params;
-  const gentTours = tours.filter((tour) => tour.citySlug === 'gent');
+  const { locale } = params;
+  const gentTours = await getTours('gent');
 
   return (
     <div className="container mx-auto px-4 py-20">

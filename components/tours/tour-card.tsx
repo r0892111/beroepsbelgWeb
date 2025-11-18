@@ -16,7 +16,7 @@ export function TourCard({ tour, locale }: TourCardProps) {
   const t = useTranslations('common');
 
   return (
-    <Card className="group overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg">
+    <Card className="group flex h-full flex-col overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg">
       {tour.thumbnail && (
         <div className="relative h-48 w-full overflow-hidden">
           <Image
@@ -32,15 +32,17 @@ export function TourCard({ tour, locale }: TourCardProps) {
           )}
         </div>
       )}
-      <CardHeader>
+      <CardHeader className="flex-1">
         <div className="mb-2 flex items-center justify-between">
           <CardTitle className="text-lg">{tour.title[locale]}</CardTitle>
           {tour.badge && <Badge variant="secondary">{tour.badge}</Badge>}
         </div>
         <CardDescription className="line-clamp-2">{tour.shortDescription[locale]}</CardDescription>
       </CardHeader>
-      <CardFooter className="flex items-center justify-between">
-        {tour.price && <span className="text-xl font-bold">€{tour.price.toFixed(2)}</span>}
+      <CardFooter className="mt-auto flex items-center justify-between gap-4">
+        <span className="text-xl font-bold">
+          {tour.price ? `€${tour.price.toFixed(2)}` : '\u00A0'}
+        </span>
         <Button size="sm" asChild>
           <Link href={`/${locale}/tours-${tour.citySlug}/${tour.slug}`}>{t('moreInfo')}</Link>
         </Button>

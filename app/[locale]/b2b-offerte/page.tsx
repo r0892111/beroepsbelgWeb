@@ -13,15 +13,15 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Calendar, Users, MapPin, Languages, Building2, Sparkles, CheckCircle2, Home, ShoppingBag, ExternalLink } from 'lucide-react';
-import { cities } from '@/lib/data/cities';
-import { tours } from '@/lib/data/tours';
+import { getCities, getTours } from '@/lib/api/content';
+import type { City, Tour } from '@/lib/data/types';
 
 const quoteSchema = z.object({
   dateTime: z.string().min(1),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   city: z.string().min(1),
-  tour: z.string().min(1),
+  tourId: z.string().min(1),
   language: z.string().min(1),
   numberOfPeople: z.string().min(1),
   tourType: z.string().min(1),
@@ -45,6 +45,10 @@ export default function B2BQuotePage() {
   const [step, setStep] = useState(1);
   const [isSuccess, setIsSuccess] = useState(false);
   const [countdown, setCountdown] = useState(5);
+  const [cities, setCities] = useState<City[]>([]);
+  const [tours, setTours] = useState<Tour[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [dataError, setDataError] = useState<string | null>(null);
 
   const {
     register,
@@ -58,8 +62,38 @@ export default function B2BQuotePage() {
   });
 
   const selectedCity = watch('city');
-  const selectedTour = watch('tour');
+  const selectedTourId = watch('tourId');
   const selectedLanguage = watch('language');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadContent() {
+      try {
+        const [citiesData, toursData] = await Promise.all([getCities(), getTours()]);
+        if (!isMounted) return;
+
+        setCities(citiesData);
+        setTours(toursData);
+        setDataError(null);
+      } catch (error) {
+        console.error('[B2BQuotePage] Failed to load cities/tours', error);
+        if (isMounted) {
+          setDataError('Kon de gegevens niet laden. Probeer het later opnieuw.');
+        }
+      } finally {
+        if (isMounted) {
+          setDataLoading(false);
+        }
+      }
+    }
+
+    void loadContent();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const availableTours = selectedCity
     ? tours.filter((tour) => tour.citySlug === selectedCity && tour.slug !== 'cadeaubon')
@@ -67,7 +101,7 @@ export default function B2BQuotePage() {
 
   useEffect(() => {
     if (selectedCity) {
-      setValue('tour', '');
+      setValue('tourId', '');
     }
   }, [selectedCity, setValue]);
 
@@ -86,12 +120,20 @@ export default function B2BQuotePage() {
     setIsSubmitting(true);
 
     try {
+      const selectedCityData = cities.find((city) => city.slug === data.city);
+      const selectedTourData = tours.find((tour) => tour.id === data.tourId);
+
       const payload = {
         dateTime: data.dateTime,
         startDate: data.startDate || null,
         endDate: data.endDate || null,
-        city: data.city,
-        tour: data.tour,
+        citySlug: data.city,
+        cityName: selectedCityData?.name ?? null,
+        tourId: data.tourId,
+        tourSlug: selectedTourData?.slug ?? null,
+        tourTitle: selectedTourData?.title ?? null,
+        tourPrice: selectedTourData?.price ?? null,
+        tourDetails: selectedTourData?.details ?? null,
         language: data.language,
         numberOfPeople: data.numberOfPeople,
         tourType: data.tourType,
@@ -134,6 +176,25 @@ export default function B2BQuotePage() {
       action();
     }
   };
+
+  if (dataLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#fdfcfa' }}>
+        <p className="text-muted-foreground">Gegevens laden...</p>
+      </div>
+    );
+  }
+
+  if (dataError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#fdfcfa' }}>
+        <div className="text-center space-y-4">
+          <p className="text-red-600">{dataError}</p>
+          <Button onClick={() => window.location.reload()}>Probeer opnieuw</Button>
+        </div>
+      </div>
+    );
+  }
 
   if (isSuccess) {
     return (
@@ -251,19 +312,19 @@ export default function B2BQuotePage() {
                       <Building2 className="h-5 w-5" style={{ color: 'var(--brass)' }} />
                       {t('tour')}*
                     </Label>
-                    <Select value={selectedTour} onValueChange={(value) => setValue('tour', value)}>
+                    <Select value={selectedTourId} onValueChange={(value) => setValue('tourId', value)}>
                       <SelectTrigger className="mt-2">
                         <SelectValue placeholder={t('tourPlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
                         {availableTours.map((tour) => (
-                          <SelectItem key={tour.slug} value={tour.slug}>
+                          <SelectItem key={tour.id ?? tour.slug} value={tour.id ?? tour.slug}>
                             {tour.title.nl}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    {errors.tour && <p className="mt-1 text-sm text-destructive">{tForms('required')}</p>}
+                    {errors.tourId && <p className="mt-1 text-sm text-destructive">{tForms('required')}</p>}
                     <button
                       type="button"
                       onClick={() => {
