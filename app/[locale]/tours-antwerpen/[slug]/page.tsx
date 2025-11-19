@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { TourImageGallery } from '@/components/tours/tour-image-gallery';
+import { TourBookingButton } from '@/components/tours/tour-booking-button';
 
 interface TourDetailPageProps {
   params: { locale: Locale; slug: string };
@@ -164,14 +165,15 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
           </div>
         )}
 
-        <div className="mb-12">
-          <Button
-            size="lg"
-            className="btn-primary px-8 py-6 text-lg font-semibold"
-          >
-            Reserveer deze tour
-          </Button>
-        </div>
+        {tour.price && (
+          <div className="mb-12">
+            <TourBookingButton
+              tourId={tour.id}
+              tourTitle={tour.title[locale]}
+              tourPrice={tour.price}
+            />
+          </div>
+        )}
 
         <div className="pt-8" style={{ borderTop: '1px solid var(--brass)' }}>
           <h3 className="mb-4 flex items-center gap-2 text-lg font-serif font-semibold text-navy">
