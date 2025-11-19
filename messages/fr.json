@@ -236,7 +236,14 @@
       "nl": "Néerlandais",
       "en": "Anglais",
       "fr": "Français",
-      "de": "Allemand"
+      "de": "Allemand",
+      "es": "Espagnol",
+      "it": "Italien",
+      "pt": "Portugais",
+      "pl": "Polonais",
+      "ru": "Russe",
+      "zh": "Chinois",
+      "ja": "Japonais"
     }
   }
 }
