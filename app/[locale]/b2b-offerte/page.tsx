@@ -168,7 +168,7 @@ export default function B2BQuotePage() {
   };
 
   const availableCities = cities.filter(city => city.status === 'live');
-  const tourLanguages = ['nl', 'en', 'fr', 'de'];
+  const tourLanguages = ['nl', 'en', 'fr', 'de', 'es', 'it', 'pt', 'pl', 'ru', 'zh', 'ja'];
 
   const handleKeyDown = (e: React.KeyboardEvent, action: () => void) => {
     if (e.key === 'Enter') {
