@@ -39,7 +39,7 @@ serve(async (req: Request) => {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
 
-        const { error } = await supabase
+        const { error: bookingError } = await supabase
           .from('bookings')
           .update({
             status: 'completed',
@@ -48,10 +48,25 @@ serve(async (req: Request) => {
           })
           .eq('stripe_session_id', session.id)
 
-        if (error) {
-          console.error('Error updating booking:', error)
+        if (bookingError) {
+          console.error('Error updating booking:', bookingError)
         } else {
           console.log('Booking completed:', session.id)
+        }
+
+        const { error: orderError } = await supabase
+          .from('orders')
+          .update({
+            status: 'paid',
+            stripe_payment_intent_id: session.payment_intent as string,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('stripe_session_id', session.id)
+
+        if (orderError) {
+          console.error('Error updating order:', orderError)
+        } else {
+          console.log('Order paid:', session.id)
         }
         break
       }
@@ -59,7 +74,7 @@ serve(async (req: Request) => {
       case 'checkout.session.expired': {
         const session = event.data.object as Stripe.Checkout.Session
 
-        const { error } = await supabase
+        await supabase
           .from('bookings')
           .update({
             status: 'cancelled',
@@ -67,16 +82,20 @@ serve(async (req: Request) => {
           })
           .eq('stripe_session_id', session.id)
 
-        if (error) {
-          console.error('Error updating booking:', error)
-        }
+        await supabase
+          .from('orders')
+          .update({
+            status: 'cancelled',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('stripe_session_id', session.id)
         break
       }
 
       case 'payment_intent.payment_failed': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent
 
-        const { error } = await supabase
+        await supabase
           .from('bookings')
           .update({
             status: 'cancelled',
@@ -84,16 +103,20 @@ serve(async (req: Request) => {
           })
           .eq('stripe_payment_intent_id', paymentIntent.id)
 
-        if (error) {
-          console.error('Error updating booking:', error)
-        }
+        await supabase
+          .from('orders')
+          .update({
+            status: 'cancelled',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('stripe_payment_intent_id', paymentIntent.id)
         break
       }
 
       case 'charge.refunded': {
         const charge = event.data.object as Stripe.Charge
 
-        const { error } = await supabase
+        await supabase
           .from('bookings')
           .update({
             status: 'refunded',
@@ -101,9 +124,13 @@ serve(async (req: Request) => {
           })
           .eq('stripe_payment_intent_id', charge.payment_intent as string)
 
-        if (error) {
-          console.error('Error updating booking:', error)
-        }
+        await supabase
+          .from('orders')
+          .update({
+            status: 'refunded',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('stripe_payment_intent_id', charge.payment_intent as string)
         break
       }
 

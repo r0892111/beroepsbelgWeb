@@ -12,6 +12,7 @@ import { useAuth } from '@/lib/contexts/auth-context';
 import { useCartContext } from '@/lib/contexts/cart-context';
 import { useFavoritesContext } from '@/lib/contexts/favorites-context';
 import { useState, useEffect } from 'react';
+import { CartSheet } from '@/components/webshop/cart-sheet';
 
 interface MainNavProps {
   locale: Locale;
@@ -107,16 +108,7 @@ export function MainNav({ locale }: MainNavProps) {
               </Button>
             </Link>
 
-            <Link href={`/${locale}/account?tab=cart`} className="relative inline-flex">
-              <Button variant="ghost" size="icon">
-                <ShoppingCart className="h-5 w-5" />
-              </Button>
-              {cartCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#92F0B1] text-xs font-bold text-[#0d1117]">
-                  {cartCount}
-                </span>
-              )}
-            </Link>
+            <CartSheet />
 
             <LangSwitcher locale={locale} />
 

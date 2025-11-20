@@ -17,7 +17,7 @@ export function useCart() {
 
     const { data, error } = await supabase
       .from('cart_items')
-      .select('*')
+      .select('*, products(*)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
