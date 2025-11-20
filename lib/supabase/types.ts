@@ -16,6 +16,30 @@ export interface Favorite {
   created_at: string;
 }
 
+export interface Product {
+  id: string;
+  slug: string;
+  uuid_legacy: string | null;
+  title_nl: string;
+  title_en: string;
+  title_fr: string;
+  title_de: string;
+  category: string;
+  price: number;
+  description_nl: string;
+  description_en: string;
+  description_fr: string;
+  description_de: string;
+  additional_info_nl: string | null;
+  additional_info_en: string | null;
+  additional_info_fr: string | null;
+  additional_info_de: string | null;
+  label: string | null;
+  image: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface CartItem {
   id: string;
   user_id: string;
@@ -23,4 +47,5 @@ export interface CartItem {
   quantity: number;
   created_at: string;
   updated_at: string;
+  products?: Product;
 }
