@@ -64,6 +64,13 @@ export default function B2BQuotePage() {
   const selectedCity = watch('city');
   const selectedTourId = watch('tourId');
   const selectedLanguage = watch('language');
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
+
+  const selectedTour = tours.find((tour) => (tour.id ?? tour.slug) === selectedTourId);
+  const isCustomWalk = selectedTour?.slug === 'wandeling-op-maat' || 
+                       selectedTour?.title.nl?.toLowerCase().includes('wandeling op maat') ||
+                       selectedTour?.title.nl?.toLowerCase().includes('op maat');
 
   useEffect(() => {
     let isMounted = true;
@@ -102,8 +109,28 @@ export default function B2BQuotePage() {
   useEffect(() => {
     if (selectedCity) {
       setValue('tourId', '');
+      setSelectedDate('');
+      setSelectedTimeSlot('');
+      setValue('dateTime', '');
     }
   }, [selectedCity, setValue]);
+
+  useEffect(() => {
+    if (selectedTourId) {
+      setSelectedDate('');
+      setSelectedTimeSlot('');
+      setValue('dateTime', '');
+    }
+  }, [selectedTourId, setValue]);
+
+  // Combine date + timeslot for non-custom tours
+  useEffect(() => {
+    if (!isCustomWalk && selectedDate && selectedTimeSlot) {
+      const [startHour] = selectedTimeSlot.split(' to ');
+      const dateTimeString = `${selectedDate}T${startHour}`;
+      setValue('dateTime', dateTimeString);
+    }
+  }, [selectedDate, selectedTimeSlot, isCustomWalk, setValue]);
 
   useEffect(() => {
     if (isSuccess && countdown > 0) {
@@ -258,35 +285,6 @@ export default function B2BQuotePage() {
                 onKeyDown={(e) => handleKeyDown(e, () => setStep(2))}
               >
                 <div>
-                  <Label htmlFor="dateTime" className="flex items-center gap-2 text-base font-semibold text-navy">
-                    <Calendar className="h-5 w-5" style={{ color: 'var(--brass)' }} />
-                    {t('dateTime')}*
-                  </Label>
-                  <p className="mb-2 text-sm" style={{ color: 'var(--slate-blue)' }}>{t('dateTimeHelper')}</p>
-                  <Input
-                    id="dateTime"
-                    type="datetime-local"
-                    {...register('dateTime')}
-                    className="mt-2"
-                  />
-                  {errors.dateTime && <p className="mt-1 text-sm text-destructive">{tForms('required')}</p>}
-                </div>
-
-                <div className="rounded-lg p-4" style={{ backgroundColor: '#f5f2ed' }}>
-                  <p className="mb-3 text-sm font-medium text-navy">{t('dateRange')}</p>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <Label htmlFor="startDate" className="text-sm">{t('startDate')}</Label>
-                      <Input id="startDate" type="date" {...register('startDate')} className="mt-1" />
-                    </div>
-                    <div>
-                      <Label htmlFor="endDate" className="text-sm">{t('endDate')}</Label>
-                      <Input id="endDate" type="date" {...register('endDate')} className="mt-1" />
-                    </div>
-                  </div>
-                </div>
-
-                <div>
                   <Label htmlFor="city" className="flex items-center gap-2 text-base font-semibold text-navy">
                     <MapPin className="h-5 w-5" style={{ color: 'var(--brass)' }} />
                     {t('city')}*
@@ -360,9 +358,71 @@ export default function B2BQuotePage() {
                   {errors.language && <p className="mt-1 text-sm text-destructive">{tForms('required')}</p>}
                 </div>
 
+                {isCustomWalk ? (
+                  <div>
+                    <Label htmlFor="dateTime" className="flex items-center gap-2 text-base font-semibold text-navy">
+                      <Calendar className="h-5 w-5" style={{ color: 'var(--brass)' }} />
+                      {t('dateTime')}*
+                    </Label>
+                    <p className="mb-2 text-sm" style={{ color: 'var(--slate-blue)' }}>{t('dateTimeHelper')}</p>
+                    <Input
+                      id="dateTime"
+                      type="datetime-local"
+                      {...register('dateTime')}
+                      className="mt-2"
+                    />
+                    {errors.dateTime && <p className="mt-1 text-sm text-destructive">{tForms('required')}</p>}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="date" className="flex items-center gap-2 text-base font-semibold text-navy">
+                        <Calendar className="h-5 w-5" style={{ color: 'var(--brass)' }} />
+                        {t('dateTime')}*
+                      </Label>
+                      <p className="mb-2 text-sm" style={{ color: 'var(--slate-blue)' }}>Selecteer een datum</p>
+                      <Input
+                        id="date"
+                        type="date"
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        min={new Date().toISOString().split('T')[0]}
+                        className="mt-2"
+                      />
+                    </div>
+                    {selectedDate && (
+                      <div>
+                        <Label htmlFor="timeSlot" className="text-base font-semibold text-navy">
+                          Tijdslot*
+                        </Label>
+                        <p className="mb-2 text-sm" style={{ color: 'var(--slate-blue)' }}>Selecteer een tijdslot</p>
+                        <Select value={selectedTimeSlot} onValueChange={setSelectedTimeSlot}>
+                          <SelectTrigger className="mt-2">
+                            <SelectValue placeholder="Selecteer een tijdslot" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="10:00 to 12:00">10:00 - 12:00</SelectItem>
+                            <SelectItem value="14:00 to 16:00">14:00 - 16:00</SelectItem>
+                            <SelectItem value="16:00 to 18:00">16:00 - 18:00</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {(!selectedTimeSlot && errors.dateTime) && <p className="mt-1 text-sm text-destructive">{tForms('required')}</p>}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+          
+
                 <Button
                   type="button"
-                  onClick={() => setStep(2)}
+                  onClick={() => {
+                    if (!isCustomWalk && (!selectedDate || !selectedTimeSlot)) {
+                      toast.error('Selecteer zowel een datum als een tijdslot');
+                      return;
+                    }
+                    setStep(2);
+                  }}
                   className="w-full btn-secondary"
                 >
                   {t('next')}

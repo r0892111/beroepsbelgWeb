@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Search, Facebook, Instagram, Youtube } from 'lucide-react';
+import { Facebook, Instagram, Youtube } from 'lucide-react';
 import DiagonalStripes from './DiagonalStripes';
 import { type Locale } from '@/i18n';
 
@@ -109,23 +109,10 @@ export default function SiteFooter({ locale }: SiteFooterProps) {
           </Link>
         </nav>
 
-        <form className="flex items-center gap-2">
-          <input
-            placeholder="Zoeken"
-            className="flex-1 bg-transparent placeholder-white/90 text-on-mint border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50"
-            style={{ borderColor: 'var(--border-mint)' }}
-          />
-          <button
-            type="submit"
-            className="btn-ghost-white px-3 py-2"
-            aria-label="Search"
-          >
-            <Search className="h-4 w-4" />
-          </button>
-        </form>
-      </div>
-      <div className="relative container pb-4 text-center text-sm opacity-75">
-        <p>© {new Date().getFullYear()} BeroepsBelg</p>
+        <div className="space-y-3">
+          <p className="text-sm opacity-80">© {new Date().getFullYear()} BeroepsBelg</p>
+          <p className="text-sm opacity-80">Alle rechten voorbehouden</p>
+        </div>
       </div>
     </footer>
   );
