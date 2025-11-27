@@ -138,9 +138,10 @@
   }
 
   .section-divider {
-    height: 1px;
-    background: linear-gradient(to right, transparent, var(--brass), transparent);
+    height: 2px;
+    background: linear-gradient(to right, transparent, var(--green-accent), transparent);
     margin: 4rem 0;
+    box-shadow: 0 0 10px rgba(61, 213, 152, 0.3);
   }
 
   .brass-corner {
