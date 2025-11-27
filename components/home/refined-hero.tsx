@@ -39,12 +39,12 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
           fill
           sizes="100vw"
           quality={95}
-          className="object-cover opacity-[0.12] transition-transform duration-1000 ease-out"
+          className="object-cover opacity-[0.35] transition-transform duration-1000 ease-out"
           style={{ transform: `scale(${1 + scrollY * 0.0001})` }}
           priority
         />
       </div>
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white" />
+      <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/30 to-white/80" />
 
       <div className="container mx-auto px-6 md:px-12 py-24 md:py-32 lg:py-40 relative flex-1 flex items-center">
         <div className="max-w-5xl mx-auto text-center">
