@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;500;600;700&family=Lato:wght@300;400;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,13 +6,13 @@
 
 @layer base {
   :root {
-    --belgian-navy: #1C2C55;
-    --champagne-sand: #E6D8B5;
-    --ivory: #FAF9F6;
-    --graphite: #222222;
-    --brass: #C1A46D;
-    --slate-blue: #5E6A85;
-    --error: #B74E3D;
+    --beige-light: #F5F2ED;
+    --beige: #E8E4DD;
+    --text-primary: #1A1A1A;
+    --text-secondary: #6B6B6B;
+    --accent: #2C2C2C;
+    --hover: #4A4A4A;
+    --border-light: #D4CFC7;
 
     --background: 0 0% 98%;
     --foreground: 0 0% 13%;
@@ -65,51 +65,59 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Open Sans', 'Lato', sans-serif;
     font-feature-settings: "kern" 1, "liga" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: var(--ivory);
-    color: var(--graphite);
+    background-color: var(--beige-light);
+    color: var(--text-primary);
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-serif font-bold;
-    line-height: 1.2;
-    color: var(--belgian-navy);
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--text-primary);
   }
 
   p {
-    line-height: 1.7;
-    color: var(--slate-blue);
+    line-height: 1.65;
+    color: var(--text-secondary);
   }
 }
 
 @layer utilities {
   .btn-primary {
-    @apply inline-flex items-center justify-center px-8 py-3 font-semibold rounded transition-all duration-150 ease-out;
-    background-color: var(--belgian-navy);
-    color: var(--ivory);
-    will-change: background-color, border, color;
+    @apply inline-flex items-center justify-center px-10 py-4 font-medium rounded-sm transition-all duration-300 ease-out;
+    background-color: var(--accent);
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.95rem;
+    letter-spacing: 0.025em;
+    will-change: background-color, transform;
   }
 
   .btn-primary:hover {
-    background-color: transparent;
-    border: 1px solid var(--belgian-navy);
-    color: var(--belgian-navy);
+    background-color: var(--hover);
+    transform: translateY(-2px);
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center px-8 py-3 font-semibold rounded transition-all duration-150 ease-out;
+    @apply inline-flex items-center justify-center px-10 py-4 font-medium rounded-sm transition-all duration-300 ease-out;
     background-color: transparent;
-    border: 1px solid var(--brass);
-    color: var(--belgian-navy);
-    will-change: background-color, color;
+    border: 1.5px solid var(--accent);
+    color: var(--accent);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.95rem;
+    letter-spacing: 0.025em;
+    will-change: background-color, color, transform;
   }
 
   .btn-secondary:hover {
-    background-color: var(--brass);
-    color: var(--ivory);
+    background-color: var(--accent);
+    color: white;
+    transform: translateY(-2px);
   }
 
   .brass-accent {
