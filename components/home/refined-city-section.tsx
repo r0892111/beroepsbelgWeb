@@ -85,32 +85,8 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
       <div className="container mx-auto px-6 md:px-12 relative" style={{ position: 'relative', zIndex: 1 }}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16 md:mb-20 relative">
-            <div className="inline-block mb-6 relative">
-              <div
-                className="h-1.5 w-20 mx-auto rounded-full"
-                style={{
-                  backgroundColor: 'var(--green-accent)',
-                  boxShadow: '0 0 20px rgba(30, 139, 116, 0.4)'
-                }}
-              />
-              <div
-                className="absolute inset-0 h-1.5 w-20 mx-auto rounded-full animate-pulse"
-                style={{
-                  backgroundColor: 'var(--green-accent)',
-                  opacity: 0.3
-                }}
-              />
-            </div>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 relative inline-block" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-primary)' }}>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-primary)' }}>
               {t('title') || 'Explore Belgian Cities'}
-              <div
-                className="absolute -bottom-2 left-0 right-0 h-3 opacity-20"
-                style={{
-                  backgroundColor: 'var(--green-accent)',
-                  filter: 'blur(8px)',
-                  transform: 'scaleX(0.8)'
-                }}
-              />
             </h2>
             <p className="text-lg md:text-xl max-w-3xl mx-auto font-light" style={{ fontFamily: 'Open Sans, sans-serif', color: 'var(--text-secondary)' }}>
               {t('description') || 'Discover authentic stories and hidden gems in Belgium\'s most captivating cities'}
