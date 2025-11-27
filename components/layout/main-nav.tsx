@@ -72,7 +72,7 @@ export function MainNav({ locale }: MainNavProps) {
                 style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-primary)', letterSpacing: '0.025em' }}
               >
                 {item.label}
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-200 group-hover:w-full" style={{ backgroundColor: 'var(--accent)' }} />
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-200 group-hover:w-full" style={{ backgroundColor: 'var(--green-accent)' }} />
               </Link>
             ))}
             {(profile?.isAdmin || profile?.is_admin) && (
