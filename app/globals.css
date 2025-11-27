@@ -6,13 +6,14 @@
 
 @layer base {
   :root {
-    --beige-light: #F5F2ED;
-    --beige: #E8E4DD;
-    --text-primary: #1A1A1A;
+    --white: #FFFFFF;
+    --black: #000000;
+    --charcoal: #2C2C2C;
+    --text-primary: #000000;
     --text-secondary: #6B6B6B;
     --accent: #2C2C2C;
-    --hover: #4A4A4A;
-    --border-light: #D4CFC7;
+    --hover: #000000;
+    --border-light: #E5E5E5;
 
     --background: 0 0% 98%;
     --foreground: 0 0% 13%;
@@ -70,7 +71,7 @@
     font-feature-settings: "kern" 1, "liga" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: var(--beige-light);
+    background-color: var(--white);
     color: var(--text-primary);
   }
 

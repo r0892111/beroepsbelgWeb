@@ -46,7 +46,7 @@ export function MainNav({ locale }: MainNavProps) {
   ];
 
   return (
-    <div className={`border-b transition-all duration-300 sticky top-0 z-50 backdrop-blur-md ${isScrolled ? 'shadow-sm' : ''}`} style={{ borderColor: 'var(--border-light)', backgroundColor: 'rgba(245, 242, 237, 0.95)' }}>
+    <div className={`border-b transition-all duration-300 sticky top-0 z-50 backdrop-blur-md ${isScrolled ? 'shadow-sm' : ''}`} style={{ borderColor: 'var(--border-light)', backgroundColor: 'rgba(255, 255, 255, 0.95)' }}>
       <div className="container mx-auto px-6 md:px-12">
         <div className="flex h-20 items-center justify-between">
           <Link href={`/${locale}`} className="flex items-center group">

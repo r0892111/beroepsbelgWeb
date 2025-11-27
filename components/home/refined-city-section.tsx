@@ -130,7 +130,7 @@ export function RefinedCitySection({ locale }: RefinedCitySectionProps) {
                   style={{ transitionDelay: `${index * 100}ms` }}
                 >
                   {city.image && (
-                    <div className="relative h-72 w-full overflow-hidden mb-6" style={{ backgroundColor: 'var(--beige)' }}>
+                    <div className="relative h-72 w-full overflow-hidden mb-6" style={{ backgroundColor: '#F5F5F5' }}>
                       <Image
                         src={city.image}
                         alt={city.name[locale]}
@@ -139,7 +139,7 @@ export function RefinedCitySection({ locale }: RefinedCitySectionProps) {
                         sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         className="object-cover transition-all duration-500 group-hover:scale-105"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/15 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </div>
                   )}
 
