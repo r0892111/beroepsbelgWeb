@@ -9,10 +9,12 @@
     --white: #FFFFFF;
     --black: #000000;
     --charcoal: #2C2C2C;
+    --green-accent: #3DD598;
+    --green-dark: #2ABE7D;
     --text-primary: #000000;
     --text-secondary: #6B6B6B;
-    --accent: #2C2C2C;
-    --hover: #000000;
+    --accent: #3DD598;
+    --hover: #2ABE7D;
     --border-light: #E5E5E5;
 
     --background: 0 0% 98%;
@@ -91,7 +93,7 @@
 @layer utilities {
   .btn-primary {
     @apply inline-flex items-center justify-center px-10 py-4 font-medium rounded-sm transition-all duration-300 ease-out;
-    background-color: var(--accent);
+    background-color: var(--green-accent);
     color: white;
     font-family: 'Montserrat', sans-serif;
     font-size: 0.95rem;
@@ -100,15 +102,15 @@
   }
 
   .btn-primary:hover {
-    background-color: var(--hover);
+    background-color: var(--green-dark);
     transform: translateY(-2px);
   }
 
   .btn-secondary {
     @apply inline-flex items-center justify-center px-10 py-4 font-medium rounded-sm transition-all duration-300 ease-out;
     background-color: transparent;
-    border: 1.5px solid var(--accent);
-    color: var(--accent);
+    border: 1.5px solid var(--charcoal);
+    color: var(--charcoal);
     font-family: 'Montserrat', sans-serif;
     font-size: 0.95rem;
     letter-spacing: 0.025em;
@@ -116,7 +118,7 @@
   }
 
   .btn-secondary:hover {
-    background-color: var(--accent);
+    background-color: var(--charcoal);
     color: white;
     transform: translateY(-2px);
   }
