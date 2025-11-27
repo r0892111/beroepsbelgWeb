@@ -57,6 +57,9 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
       <div className="container mx-auto px-6 md:px-12 relative" style={{ position: 'relative', zIndex: 1 }}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16 md:mb-20">
+            <div className="inline-block mb-4">
+              <div className="h-1 w-16 mx-auto" style={{ backgroundColor: 'var(--green-accent)' }} />
+            </div>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-primary)' }}>
               {t('title') || 'Explore Belgian Cities'}
             </h2>
@@ -95,7 +98,7 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
                   )}
 
                   <div className="relative">
-                    <h3 className="text-2xl md:text-3xl font-bold mb-3 transition-colors duration-200" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-primary)' }}>
+                    <h3 className="text-2xl md:text-3xl font-bold mb-3 transition-colors duration-200 group-hover:text-[var(--green-accent)]" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-primary)' }}>
                       {city.name[locale]}
                     </h3>
 
@@ -103,13 +106,13 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
                       {city.teaser[locale]}
                     </p>
 
-                    <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid var(--border-light)' }}>
-                      <div className="flex items-center gap-2 text-sm font-medium" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-secondary)' }}>
+                    <div className="flex items-center justify-between pt-4" style={{ borderTop: '2px solid var(--green-accent)' }}>
+                      <div className="flex items-center gap-2 text-sm font-medium" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--green-accent)' }}>
                         <MapPin className="w-4 h-4" />
                         <span>{tourCount} tours</span>
                       </div>
 
-                      <div className="flex items-center gap-1 text-sm font-medium transition-all duration-200 group-hover:gap-2" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-primary)' }}>
+                      <div className="flex items-center gap-1 text-sm font-medium transition-all duration-200 group-hover:gap-2" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--green-accent)' }}>
                         <span>View tours</span>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
