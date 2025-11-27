@@ -102,8 +102,8 @@ export function RefinedCitySection({ locale }: RefinedCitySectionProps) {
   }
 
   return (
-    <section className="py-20 md:py-32 relative" style={{ backgroundColor: 'white' }}>
-      <div className="container mx-auto px-6 md:px-12 relative">
+    <section className="py-20 md:py-32 relative" style={{ backgroundColor: 'var(--white)' }}>
+      <div className="container mx-auto px-6 md:px-12 relative" style={{ position: 'relative', zIndex: 1 }}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16 md:mb-20">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-primary)' }}>

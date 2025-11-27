@@ -14,8 +14,6 @@ export default async function HomePage({ params }: HomePageProps) {
 
   return (
     <div className="relative">
-      <ParallaxBackground />
-      <MouseTracker />
       <RefinedHero locale={locale} />
       <div className="section-divider" />
       <RefinedCitySection locale={locale} />
