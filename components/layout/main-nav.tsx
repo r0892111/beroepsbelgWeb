@@ -46,9 +46,9 @@ export function MainNav({ locale }: MainNavProps) {
   ];
 
   return (
-    <div className={`border-b border-border sticky top-0 z-50 bg-ivory/95 backdrop-blur-md transition-all duration-300 ${isScrolled ? 'shadow-md' : ''}`}>
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
+    <div className={`border-b transition-all duration-300 sticky top-0 z-50 backdrop-blur-md ${isScrolled ? 'shadow-sm' : ''}`} style={{ borderColor: 'var(--border-light)', backgroundColor: 'rgba(245, 242, 237, 0.95)' }}>
+      <div className="container mx-auto px-6 md:px-12">
+        <div className="flex h-20 items-center justify-between">
           <Link href={`/${locale}`} className="flex items-center group">
             <div className="relative">
               <Image
@@ -63,21 +63,23 @@ export function MainNav({ locale }: MainNavProps) {
             </div>
           </Link>
 
-          <nav className="hidden items-center gap-6 lg:flex">
+          <nav className="hidden items-center gap-8 lg:flex">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-sm font-medium transition-all duration-300 hover:text-brass relative group"
+                className="text-sm font-medium transition-all duration-200 relative group"
+                style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-primary)', letterSpacing: '0.025em' }}
               >
                 {item.label}
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-brass transition-all duration-300 group-hover:w-full" />
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-200 group-hover:w-full" style={{ backgroundColor: 'var(--accent)' }} />
               </Link>
             ))}
             {(profile?.isAdmin || profile?.is_admin) && (
               <Link
                 href={`/${locale}/admin/dashboard`}
-                className="text-sm font-medium transition-colors hover:text-primary"
+                className="text-sm font-medium transition-colors"
+                style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-primary)' }}
               >
                 {t('adminPanel')}
               </Link>
