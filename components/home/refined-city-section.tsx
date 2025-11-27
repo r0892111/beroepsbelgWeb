@@ -3,57 +3,25 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { type Locale } from '@/i18n';
-import { getCities, getTours, type City, type Tour } from '@/lib/data';
+import { type City, type Tour } from '@/lib/data';
 import { useTranslations } from 'next-intl';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { MapPin } from 'lucide-react';
 
 interface RefinedCitySectionProps {
   locale: Locale;
+  cities: City[];
+  tours: Tour[];
 }
 
-export function RefinedCitySection({ locale }: RefinedCitySectionProps) {
+export function RefinedCitySection({ locale, cities, tours }: RefinedCitySectionProps) {
   const t = useTranslations('home.cities');
   const [visibleCards, setVisibleCards] = useState<Set<number>>(new Set());
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
-  const [cities, setCities] = useState<City[]>([]);
-  const [tours, setTours] = useState<Tour[]>([]);
-  const [loading, setLoading] = useState(true);
   const cardRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
-  useEffect(() => {
-    async function fetchData() {
-      console.log('[RefinedCitySection] Starting data fetch...');
-      const startTime = performance.now();
-
-      try {
-        const [citiesData, toursData] = await Promise.all([
-          getCities(),
-          getTours()
-        ]);
-
-        console.log('[RefinedCitySection] ✓ Data fetched successfully');
-        console.log('[RefinedCitySection] Cities:', citiesData.length);
-        console.log('[RefinedCitySection] Tours:', toursData.length);
-
-        setCities(citiesData);
-        setTours(toursData);
-
-        const endTime = performance.now();
-        console.log(`[RefinedCitySection] Total fetch time: ${(endTime - startTime).toFixed(2)}ms`);
-      } catch (error) {
-        console.error('[RefinedCitySection] ✖ Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, []);
-
   const liveCities = useMemo(() => {
-    const filtered = cities.filter(city => city.status === 'live');
-    console.log(`[RefinedCitySection] Live cities: ${filtered.length}/${cities.length}`);
-    return filtered;
+    return cities.filter(city => city.status === 'live');
   }, [cities]);
 
   const cityTourCounts = useMemo(() => {
@@ -61,7 +29,6 @@ export function RefinedCitySection({ locale }: RefinedCitySectionProps) {
     liveCities.forEach(city => {
       counts[city.slug] = tours.filter(tour => tour.citySlug === city.slug).length;
     });
-    console.log('[RefinedCitySection] Tour counts per city:', counts);
     return counts;
   }, [liveCities, tours]);
 
@@ -83,23 +50,7 @@ export function RefinedCitySection({ locale }: RefinedCitySectionProps) {
     });
 
     return () => observer.disconnect();
-  }, []);
-
-  if (loading) {
-    return (
-      <section className="py-24 bg-sand relative overflow-hidden">
-        <div className="container mx-auto px-4 relative">
-          <div className="max-w-6xl mx-auto text-center">
-            <div className="animate-pulse">
-              <div className="h-6 bg-navy/10 rounded w-32 mx-auto mb-4" />
-              <div className="h-12 bg-navy/10 rounded w-64 mx-auto mb-6" />
-              <div className="h-4 bg-navy/10 rounded w-96 mx-auto" />
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  }, [liveCities]);
 
   return (
     <section className="py-20 md:py-32 relative" style={{ backgroundColor: 'var(--white)' }}>
