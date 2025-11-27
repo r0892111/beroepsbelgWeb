@@ -80,7 +80,7 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
                   href={`/${locale}/tours-${city.slug}`}
                   onMouseEnter={() => setHoveredCard(index)}
                   onMouseLeave={() => setHoveredCard(null)}
-                  className={`group block overflow-hidden transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                  className={`group flex flex-col h-full overflow-hidden transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                   style={{ transitionDelay: `${index * 100}ms` }}
                 >
                   {city.image && (
@@ -97,16 +97,16 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
                     </div>
                   )}
 
-                  <div className="relative">
+                  <div className="relative flex flex-col flex-1">
                     <h3 className="text-2xl md:text-3xl font-bold mb-3 transition-colors duration-200 group-hover:text-[var(--green-accent)]" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-primary)' }}>
                       {city.name[locale]}
                     </h3>
 
-                    <p className="text-base leading-relaxed mb-4" style={{ fontFamily: 'Open Sans, sans-serif', color: 'var(--text-secondary)' }}>
+                    <p className="text-base leading-relaxed mb-4 flex-1" style={{ fontFamily: 'Open Sans, sans-serif', color: 'var(--text-secondary)' }}>
                       {city.teaser[locale]}
                     </p>
 
-                    <div className="flex items-center justify-between pt-4" style={{ borderTop: '2px solid var(--green-accent)' }}>
+                    <div className="flex items-center justify-between pt-4 mt-auto" style={{ borderTop: '2px solid var(--green-accent)' }}>
                       <div className="flex items-center gap-2 text-sm font-medium" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--green-accent)' }}>
                         <MapPin className="w-4 h-4" />
                         <span>{tourCount} tours</span>
