@@ -246,5 +246,52 @@
       "zh": "Chinees",
       "ja": "Japans"
     }
+  },
+  "homepage": {
+    "hero": {
+      "title": "Ontdek België met BeroepsBelg",
+      "subtitle": "Expertbegeleide culturele rondleidingen, zakelijke ervaringen en authentieke Belgische geschenken"
+    },
+    "sections": {
+      "b2b": {
+        "title": "Zakelijke Rondleidingen",
+        "description": "Unieke ervaringen voor uw team of klanten",
+        "feature1": "Groepsrondleidingen op maat voor bedrijven",
+        "feature2": "Teambuilding activiteiten",
+        "feature3": "Flexibele planning en locaties",
+        "cta": "Vraag een Offerte Aan"
+      },
+      "tours": {
+        "title": "Culturele Rondleidingen",
+        "description": "Ontdek de verborgen verhalen van België",
+        "feature1": "Expertbegeleide wandeltours",
+        "feature2": "Kleine groepen voor intieme ervaringen",
+        "feature3": "Beschikbaar in meerdere talen",
+        "cta": "Bekijk Rondleidingen"
+      },
+      "webshop": {
+        "title": "Boeken & Geschenken",
+        "description": "Authentieke Belgische producten en souvenirs",
+        "feature1": "Geselecteerde Belgische boeken",
+        "feature2": "Unieke lokale geschenken",
+        "feature3": "Snelle verzending beschikbaar",
+        "cta": "Shop Nu"
+      }
+    },
+    "about": {
+      "title": "Uw Expert Gids in België",
+      "description": "BeroepsBelg biedt unieke culturele ervaringen via authentieke rondleidingen, zakelijke ervaringen op maat en zorgvuldig geselecteerde Belgische producten. Opgericht door Tanguy Ottomer, delen we de rijke geschiedenis en cultuur van België met passie en expertise.",
+      "stat1": "Jaar Ervaring",
+      "stat2": "Unieke Tours",
+      "stat3": "Blije Gasten"
+    },
+    "spotlight": {
+      "title": "In de Kijker",
+      "subtitle": "Ontdek onze uitgelichte collectie authentieke Belgische boeken en geschenken",
+      "viewProduct": "Bekijk Details",
+      "viewAll": "Alle Producten Bekijken",
+      "inStock": "Op Voorraad",
+      "outOfStock": "Niet op Voorraad"
+    }
   }
 }

@@ -246,5 +246,52 @@
       "zh": "Chinois",
       "ja": "Japonais"
     }
+  },
+  "homepage": {
+    "hero": {
+      "title": "Découvrez la Belgique avec BeroepsBelg",
+      "subtitle": "Visites culturelles guidées par des experts, expériences d'affaires et cadeaux belges authentiques"
+    },
+    "sections": {
+      "b2b": {
+        "title": "Visites d'Affaires",
+        "description": "Expériences uniques pour votre équipe ou vos clients",
+        "feature1": "Visites de groupe personnalisées pour entreprises",
+        "feature2": "Activités de team building",
+        "feature3": "Planification et lieux flexibles",
+        "cta": "Demander un Devis"
+      },
+      "tours": {
+        "title": "Visites Culturelles",
+        "description": "Découvrez les histoires cachées de la Belgique",
+        "feature1": "Visites guidées à pied par des experts",
+        "feature2": "Petits groupes pour des expériences intimes",
+        "feature3": "Disponible en plusieurs langues",
+        "cta": "Parcourir les Visites"
+      },
+      "webshop": {
+        "title": "Livres & Cadeaux",
+        "description": "Produits belges authentiques et souvenirs",
+        "feature1": "Livres belges sélectionnés",
+        "feature2": "Cadeaux locaux uniques",
+        "feature3": "Expédition rapide disponible",
+        "cta": "Acheter Maintenant"
+      }
+    },
+    "about": {
+      "title": "Votre Guide Expert en Belgique",
+      "description": "BeroepsBelg propose des expériences culturelles uniques à travers des visites guidées authentiques, des expériences d'affaires sur mesure et des produits belges soigneusement sélectionnés. Fondée par Tanguy Ottomer, nous partageons l'histoire et la culture riches de la Belgique avec passion et expertise.",
+      "stat1": "Années d'Expérience",
+      "stat2": "Visites Uniques",
+      "stat3": "Clients Satisfaits"
+    },
+    "spotlight": {
+      "title": "À la Une",
+      "subtitle": "Découvrez notre collection vedette de livres et cadeaux belges authentiques",
+      "viewProduct": "Voir les Détails",
+      "viewAll": "Voir Tous les Produits",
+      "inStock": "En Stock",
+      "outOfStock": "Rupture de Stock"
+    }
   }
 }

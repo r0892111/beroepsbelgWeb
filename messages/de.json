@@ -246,5 +246,52 @@
       "zh": "Chinesisch",
       "ja": "Japanisch"
     }
+  },
+  "homepage": {
+    "hero": {
+      "title": "Entdecken Sie Belgien mit BeroepsBelg",
+      "subtitle": "Expertengeführte Kulturtouren, Geschäftserlebnisse und authentische belgische Geschenke"
+    },
+    "sections": {
+      "b2b": {
+        "title": "Geschäftstouren",
+        "description": "Einzigartige Erlebnisse für Ihr Team oder Ihre Kunden",
+        "feature1": "Maßgeschneiderte Gruppentouren für Unternehmen",
+        "feature2": "Teambuilding-Aktivitäten",
+        "feature3": "Flexible Planung und Standorte",
+        "cta": "Angebot Anfordern"
+      },
+      "tours": {
+        "title": "Kulturtouren",
+        "description": "Entdecken Sie Belgiens verborgene Geschichten",
+        "feature1": "Expertengeführte Wandertouren",
+        "feature2": "Kleine Gruppen für intime Erlebnisse",
+        "feature3": "Verfügbar in mehreren Sprachen",
+        "cta": "Touren Durchsuchen"
+      },
+      "webshop": {
+        "title": "Bücher & Geschenke",
+        "description": "Authentische belgische Produkte und Souvenirs",
+        "feature1": "Ausgewählte belgische Bücher",
+        "feature2": "Einzigartige lokale Geschenke",
+        "feature3": "Schneller Versand verfügbar",
+        "cta": "Jetzt Einkaufen"
+      }
+    },
+    "about": {
+      "title": "Ihr Experten-Guide in Belgien",
+      "description": "BeroepsBelg bietet einzigartige kulturelle Erlebnisse durch authentische Führungen, maßgeschneiderte Geschäftserlebnisse und sorgfältig ausgewählte belgische Produkte. Gegründet von Tanguy Ottomer, teilen wir Belgiens reiche Geschichte und Kultur mit Leidenschaft und Expertise.",
+      "stat1": "Jahre Erfahrung",
+      "stat2": "Einzigartige Touren",
+      "stat3": "Zufriedene Gäste"
+    },
+    "spotlight": {
+      "title": "Im Rampenlicht",
+      "subtitle": "Entdecken Sie unsere ausgewählte Kollektion authentischer belgischer Bücher und Geschenke",
+      "viewProduct": "Details Ansehen",
+      "viewAll": "Alle Produkte Ansehen",
+      "inStock": "Auf Lager",
+      "outOfStock": "Nicht auf Lager"
+    }
   }
 }

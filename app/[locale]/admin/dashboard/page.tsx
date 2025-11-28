@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { Button } from '@/components/ui/button';
@@ -29,24 +29,6 @@ export default function AdminDashboardPage() {
   const [googleConnected, setGoogleConnected] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleConnectInFlight, setGoogleConnectInFlight] = useState(false);
-  const googleConnectRef = useRef(false);
-  const [tours, setTours] = useState<TourRow[]>([]);
-  const [toursLoading, setToursLoading] = useState(false);
-  const [tourActionLoading, setTourActionLoading] = useState(false);
-  const [tourFeedback, setTourFeedback] = useState<string | null>(null);
-  const [editingTourId, setEditingTourId] = useState<string | null>(null);
-  const initialTourForm: TourFormState = {
-    citySlug: '',
-    slug: '',
-    title: '',
-    shortDescription: '',
-    description: '',
-    price: '',
-    badge: '',
-    thumbnail: '',
-  };
-  const [addForm, setAddForm] = useState<TourFormState>(initialTourForm);
-  const [editForm, setEditForm] = useState<TourFormState>(initialTourForm);
 
   const initialGuideForm: GuideFormState = {
     name: '',
@@ -299,13 +281,10 @@ export default function AdminDashboardPage() {
   };
 
   const handleGoogleConnect = useCallback(async () => {
-    // Prevent multiple simultaneous calls using ref (more reliable than state)
-    if (googleConnectRef.current) {
-      console.log('Google connect already in progress, skipping...');
+    if (googleConnectInFlight) {
       return;
     }
 
-    googleConnectRef.current = true;
     setFeedbackMessage(null);
     setGoogleConnectInFlight(true);
     try {
@@ -325,7 +304,6 @@ export default function AdminDashboardPage() {
         console.error('Supabase function invoke error:', error);
         setFeedbackMessage(error.message || 'Failed to initiate Google authorization.');
         setGoogleConnectInFlight(false);
-        googleConnectRef.current = false;
         return;
       }
 
@@ -333,7 +311,6 @@ export default function AdminDashboardPage() {
         console.error('Function returned error:', data.error);
         setFeedbackMessage(data.error);
         setGoogleConnectInFlight(false);
-        googleConnectRef.current = false;
         return;
       }
 
@@ -341,20 +318,17 @@ export default function AdminDashboardPage() {
         console.error('Missing required fields in response:', data);
         setFeedbackMessage('Failed to initiate Google authorization.');
         setGoogleConnectInFlight(false);
-        googleConnectRef.current = false;
         return;
       }
 
       localStorage.setItem('googleOauthState', data.state);
-      // Don't reset the ref here since we're redirecting
       window.location.href = data.authorization_url;
     } catch (err) {
       console.error('Google authorize error', err);
       setFeedbackMessage('Failed to initiate Google authorization.');
       setGoogleConnectInFlight(false);
-      googleConnectRef.current = false;
     }
-  }, [locale]);
+  }, [locale, googleConnectInFlight]);
 
   const integrationStatus = useMemo(() => {
     if (!teamleaderIntegration) {
