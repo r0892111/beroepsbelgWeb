@@ -280,11 +280,7 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleGoogleConnect = useCallback(async () => {
-    if (googleConnectInFlight) {
-      return;
-    }
-
+  const handleGoogleConnect = async () => {
     setFeedbackMessage(null);
     setGoogleConnectInFlight(true);
     try {
@@ -328,7 +324,7 @@ export default function AdminDashboardPage() {
       setFeedbackMessage('Failed to initiate Google authorization.');
       setGoogleConnectInFlight(false);
     }
-  }, [locale, googleConnectInFlight]);
+  };
 
   const integrationStatus = useMemo(() => {
     if (!teamleaderIntegration) {
