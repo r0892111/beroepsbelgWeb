@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
@@ -10,6 +10,8 @@ import { supabase } from '@/lib/supabase/client';
 export default function GoogleCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const params = useParams();
+  const locale = params.locale as string;
   const { user } = useAuth();
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [message, setMessage] = useState('Processing Google connection...');
@@ -20,7 +22,7 @@ export default function GoogleCallbackPage() {
         setStatus('error');
         setMessage('You must be logged in to connect Google.');
         setTimeout(() => {
-          router.push('/nl/auth/sign-in');
+          router.push(`/${locale}/auth/sign-in`);
         }, 2000);
         return;
       }
@@ -35,7 +37,7 @@ export default function GoogleCallbackPage() {
         setMessage(`Google authorization failed: ${error}`);
         localStorage.removeItem('googleOauthState');
         setTimeout(() => {
-          router.push('/nl/admin/dashboard');
+          router.push(`/${locale}/admin/dashboard`);
         }, 3000);
         return;
       }
@@ -45,7 +47,7 @@ export default function GoogleCallbackPage() {
         setMessage('Missing authorization code or state.');
         localStorage.removeItem('googleOauthState');
         setTimeout(() => {
-          router.push('/nl/admin/dashboard');
+          router.push(`/${locale}/admin/dashboard`);
         }, 3000);
         return;
       }
@@ -55,7 +57,7 @@ export default function GoogleCallbackPage() {
         setMessage('Invalid state parameter. Possible CSRF attack.');
         localStorage.removeItem('googleOauthState');
         setTimeout(() => {
-          router.push('/nl/admin/dashboard');
+          router.push(`/${locale}/admin/dashboard`);
         }, 3000);
         return;
       }
@@ -74,7 +76,7 @@ export default function GoogleCallbackPage() {
           body: {
             action: 'exchange',
             code,
-            redirect_uri: `${window.location.origin}/nl/admin/google/callback`,
+            redirect_uri: `${window.location.origin}/${locale}/admin/google/callback`,
             state: returnedState,
           },
           headers: {
@@ -91,7 +93,7 @@ export default function GoogleCallbackPage() {
         setMessage('Google account connected successfully!');
 
         setTimeout(() => {
-          router.push('/nl/admin/dashboard?google=connected');
+          router.push(`/${locale}/admin/dashboard?google=connected`);
         }, 2000);
       } catch (err) {
         console.error('Google callback error:', err);
@@ -99,13 +101,13 @@ export default function GoogleCallbackPage() {
         setMessage(err instanceof Error ? err.message : 'Failed to connect Google account');
         localStorage.removeItem('googleOauthState');
         setTimeout(() => {
-          router.push('/nl/admin/dashboard');
+          router.push(`/${locale}/admin/dashboard`);
         }, 3000);
       }
     };
 
     void handleCallback();
-  }, [user, searchParams, router]);
+  }, [user, searchParams, router, locale]);
 
   return (
     <div className="min-h-screen bg-sand flex items-center justify-center p-4">
