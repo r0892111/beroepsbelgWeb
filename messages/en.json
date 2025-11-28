@@ -246,52 +246,5 @@
       "zh": "Chinese",
       "ja": "Japanese"
     }
-  },
-  "homepage": {
-    "hero": {
-      "title": "Discover Belgium with BeroepsBelg",
-      "subtitle": "Expert-guided cultural tours, business experiences, and authentic Belgian gifts"
-    },
-    "sections": {
-      "b2b": {
-        "title": "Business Tours",
-        "description": "Unique experiences for your team or clients",
-        "feature1": "Custom group tours for companies",
-        "feature2": "Team building activities",
-        "feature3": "Flexible scheduling and locations",
-        "cta": "Request a Quote"
-      },
-      "tours": {
-        "title": "Cultural Tours",
-        "description": "Discover Belgium's hidden stories",
-        "feature1": "Expert-guided walking tours",
-        "feature2": "Small groups for intimate experiences",
-        "feature3": "Available in multiple languages",
-        "cta": "Browse Tours"
-      },
-      "webshop": {
-        "title": "Books & Gifts",
-        "description": "Authentic Belgian products and souvenirs",
-        "feature1": "Curated Belgian books",
-        "feature2": "Unique local gifts",
-        "feature3": "Fast shipping available",
-        "cta": "Shop Now"
-      }
-    },
-    "about": {
-      "title": "Your Expert Guide in Belgium",
-      "description": "BeroepsBelg offers unique cultural experiences through authentic guided tours, tailored business experiences, and carefully curated Belgian products. Founded by Tanguy Ottomer, we share Belgium's rich history and culture with passion and expertise.",
-      "stat1": "Years of Experience",
-      "stat2": "Unique Tours",
-      "stat3": "Happy Guests"
-    },
-    "spotlight": {
-      "title": "In the Spotlight",
-      "subtitle": "Discover our featured collection of authentic Belgian books and gifts",
-      "viewProduct": "View Details",
-      "viewAll": "View All Products",
-      "inStock": "In Stock",
-      "outOfStock": "Out of Stock"
-    }
   }
 }
