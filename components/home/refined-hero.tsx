@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { type Locale } from '@/i18n';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ArrowDown } from 'lucide-react';
+import { getHeroVideos, type VideoFile } from '@/lib/supabase/storage';
 
 interface RefinedHeroProps {
   locale: Locale;
@@ -14,6 +15,12 @@ interface RefinedHeroProps {
 export function RefinedHero({ locale }: RefinedHeroProps) {
   const t = useTranslations('home.hero');
   const [scrollY, setScrollY] = useState(0);
+  const [videos, setVideos] = useState<VideoFile[]>([]);
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showFallbackImage, setShowFallbackImage] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const nextVideoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -22,6 +29,50 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    async function loadVideos() {
+      try {
+        const fetchedVideos = await getHeroVideos();
+        if (fetchedVideos.length > 0) {
+          setVideos(fetchedVideos);
+          setShowFallbackImage(false);
+        } else {
+          setShowFallbackImage(true);
+        }
+      } catch (error) {
+        console.error('Error loading videos:', error);
+        setShowFallbackImage(true);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadVideos();
+  }, []);
+
+  useEffect(() => {
+    if (videos.length > 1 && nextVideoRef.current) {
+      const nextIndex = (currentVideoIndex + 1) % videos.length;
+      nextVideoRef.current.src = videos[nextIndex].url;
+      nextVideoRef.current.load();
+    }
+  }, [currentVideoIndex, videos]);
+
+  const handleVideoEnd = () => {
+    if (videos.length <= 1) return;
+
+    const nextIndex = (currentVideoIndex + 1) % videos.length;
+
+    if (videoRef.current && nextVideoRef.current) {
+      videoRef.current.style.opacity = '0';
+      nextVideoRef.current.style.opacity = '1';
+      nextVideoRef.current.play();
+
+      setTimeout(() => {
+        setCurrentVideoIndex(nextIndex);
+      }, 1000);
+    }
+  };
 
   const scrollToContent = () => {
     window.scrollTo({
@@ -53,16 +104,44 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
       </div>
 
       <div className="absolute inset-0">
-        <Image
-          src="/Antwerpen Homepage Foto.jpg"
-          alt="Historic Antwerp"
-          fill
-          sizes="100vw"
-          quality={95}
-          className="object-cover opacity-[0.35] transition-transform duration-1000 ease-out"
-          style={{ transform: `scale(${1 + scrollY * 0.0001})` }}
-          priority
-        />
+        {!isLoading && videos.length > 0 && !showFallbackImage ? (
+          <div className="relative w-full h-full">
+            <video
+              ref={videoRef}
+              key={`video-${currentVideoIndex}`}
+              src={videos[currentVideoIndex]?.url}
+              className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
+              style={{ opacity: 1, zIndex: 1 }}
+              autoPlay
+              muted
+              playsInline
+              onEnded={handleVideoEnd}
+              onError={() => setShowFallbackImage(true)}
+            />
+            {videos.length > 1 && (
+              <video
+                ref={nextVideoRef}
+                src={videos[(currentVideoIndex + 1) % videos.length]?.url}
+                className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
+                style={{ opacity: 0, zIndex: 2 }}
+                muted
+                playsInline
+                preload="auto"
+              />
+            )}
+          </div>
+        ) : (
+          <Image
+            src="/Antwerpen Homepage Foto.jpg"
+            alt="Historic Antwerp"
+            fill
+            sizes="100vw"
+            quality={95}
+            className="object-cover opacity-[0.35] transition-transform duration-1000 ease-out"
+            style={{ transform: `scale(${1 + scrollY * 0.0001})` }}
+            priority
+          />
+        )}
       </div>
       <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/30 to-white/80" />
       <div className="absolute inset-0 bg-gradient-to-br from-[var(--green-accent)]/5 via-transparent to-transparent" />
