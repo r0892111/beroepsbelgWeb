@@ -55,21 +55,51 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
       const nextIndex = (currentVideoIndex + 1) % videos.length;
       nextVideoRef.current.src = videos[nextIndex].url;
       nextVideoRef.current.load();
+      // Ensure next video is ready to play
+      nextVideoRef.current.currentTime = 0;
     }
   }, [currentVideoIndex, videos]);
 
   const handleVideoEnd = () => {
+    // If only one video, loop it
+    if (videos.length === 1 && videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play();
+      return;
+    }
+
     if (videos.length <= 1) return;
 
     const nextIndex = (currentVideoIndex + 1) % videos.length;
+    console.log('[Hero] Video ended, transitioning from', currentVideoIndex, 'to', nextIndex);
 
     if (videoRef.current && nextVideoRef.current) {
+      // Fade out current video
       videoRef.current.style.opacity = '0';
+      
+      // Prepare and play next video
+      nextVideoRef.current.currentTime = 0; // Start from beginning
       nextVideoRef.current.style.opacity = '1';
-      nextVideoRef.current.play();
+      
+      // Play the next video
+      const playPromise = nextVideoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log('[Hero] Next video started playing');
+          })
+          .catch((error) => {
+            console.error('[Hero] Error playing next video:', error);
+          });
+      }
 
+      // Update index after transition completes
       setTimeout(() => {
         setCurrentVideoIndex(nextIndex);
+        // Swap refs: current becomes next, next becomes current
+        if (videoRef.current) {
+          videoRef.current.style.opacity = '1';
+        }
       }, 1000);
     }
   };
@@ -103,7 +133,8 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
         />
       </div>
 
-      <div className="absolute inset-0">
+      {/* Video Background - Behind everything */}
+      <div className="absolute inset-0" style={{ zIndex: 0 }}>
         {!isLoading && videos.length > 0 && !showFallbackImage ? (
           <div className="relative w-full h-full">
             <video
@@ -111,22 +142,40 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
               key={`video-${currentVideoIndex}`}
               src={videos[currentVideoIndex]?.url}
               className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
-              style={{ opacity: 1, zIndex: 1 }}
+              style={{ opacity: 1, zIndex: 0 }}
               autoPlay
               muted
               playsInline
+              loop={videos.length === 1}
               onEnded={handleVideoEnd}
               onError={() => setShowFallbackImage(true)}
+              onLoadedData={() => {
+                console.log('[Hero] Current video loaded:', videos[currentVideoIndex]?.name);
+                if (videoRef.current) {
+                  videoRef.current.play().catch(err => console.error('[Hero] Play error:', err));
+                }
+              }}
             />
             {videos.length > 1 && (
               <video
                 ref={nextVideoRef}
+                key={`next-video-${(currentVideoIndex + 1) % videos.length}`}
                 src={videos[(currentVideoIndex + 1) % videos.length]?.url}
                 className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
-                style={{ opacity: 0, zIndex: 2 }}
+                style={{ opacity: 0, zIndex: 0 }}
                 muted
                 playsInline
                 preload="auto"
+                onLoadedData={() => {
+                  console.log('[Hero] Next video preloaded:', videos[(currentVideoIndex + 1) % videos.length]?.name);
+                  // Ensure it's ready to play
+                  if (nextVideoRef.current) {
+                    nextVideoRef.current.currentTime = 0;
+                  }
+                }}
+                onCanPlay={() => {
+                  console.log('[Hero] Next video can play');
+                }}
               />
             )}
           </div>
@@ -143,10 +192,13 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
           />
         )}
       </div>
-      <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/30 to-white/80" />
-      <div className="absolute inset-0 bg-gradient-to-br from-[var(--green-accent)]/5 via-transparent to-transparent" />
+      
+      {/* Gradient overlays - Above video, below text */}
+      <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/30 to-white/80" style={{ zIndex: 1 }} />
+      <div className="absolute inset-0 bg-gradient-to-br from-[var(--green-accent)]/5 via-transparent to-transparent" style={{ zIndex: 1 }} />
 
-      <div className="container mx-auto px-6 md:px-12 py-24 md:py-32 lg:py-40 relative flex-1 flex items-center">
+      {/* Hero Content - Above video and gradients */}
+      <div className="container mx-auto px-6 md:px-12 py-24 md:py-32 lg:py-40 relative flex-1 flex items-center" style={{ zIndex: 10, position: 'relative' }}>
         <div className="max-w-5xl mx-auto text-center">
           {/* Animated turquoise accent */}
           <div className="inline-block mb-6 relative">
@@ -212,7 +264,7 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
         </div>
       </div>
 
-      <div className="absolute bottom-12 left-0 right-0 flex justify-center">
+      <div className="absolute bottom-12 left-0 right-0 flex justify-center" style={{ zIndex: 10 }}>
         <button
           onClick={scrollToContent}
           className="flex flex-col items-center gap-2 transition-all duration-300 hover:opacity-70 group relative"
