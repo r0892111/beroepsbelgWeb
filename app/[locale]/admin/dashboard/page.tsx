@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,7 @@ export default function AdminDashboardPage() {
   const [googleConnected, setGoogleConnected] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleConnectInFlight, setGoogleConnectInFlight] = useState(false);
+  const googleConnectRef = useRef(false);
   const [tours, setTours] = useState<TourRow[]>([]);
   const [toursLoading, setToursLoading] = useState(false);
   const [tourActionLoading, setTourActionLoading] = useState(false);
@@ -499,7 +500,14 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleGoogleConnect = async () => {
+  const handleGoogleConnect = useCallback(async () => {
+    // Prevent multiple simultaneous calls using ref (more reliable than state)
+    if (googleConnectRef.current) {
+      console.log('Google connect already in progress, skipping...');
+      return;
+    }
+
+    googleConnectRef.current = true;
     setFeedbackMessage(null);
     setGoogleConnectInFlight(true);
     try {
@@ -519,6 +527,7 @@ export default function AdminDashboardPage() {
         console.error('Supabase function invoke error:', error);
         setFeedbackMessage(error.message || 'Failed to initiate Google authorization.');
         setGoogleConnectInFlight(false);
+        googleConnectRef.current = false;
         return;
       }
 
@@ -526,6 +535,7 @@ export default function AdminDashboardPage() {
         console.error('Function returned error:', data.error);
         setFeedbackMessage(data.error);
         setGoogleConnectInFlight(false);
+        googleConnectRef.current = false;
         return;
       }
 
@@ -533,17 +543,20 @@ export default function AdminDashboardPage() {
         console.error('Missing required fields in response:', data);
         setFeedbackMessage('Failed to initiate Google authorization.');
         setGoogleConnectInFlight(false);
+        googleConnectRef.current = false;
         return;
       }
 
       localStorage.setItem('googleOauthState', data.state);
+      // Don't reset the ref here since we're redirecting
       window.location.href = data.authorization_url;
     } catch (err) {
       console.error('Google authorize error', err);
       setFeedbackMessage('Failed to initiate Google authorization.');
       setGoogleConnectInFlight(false);
+      googleConnectRef.current = false;
     }
-  };
+  }, [locale]);
 
   const integrationStatus = useMemo(() => {
     if (!teamleaderIntegration) {
