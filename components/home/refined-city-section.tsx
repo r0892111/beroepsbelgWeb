@@ -3,57 +3,25 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { type Locale } from '@/i18n';
-import { getCities, getTours, type City, type Tour } from '@/lib/data';
+import { type City, type Tour } from '@/lib/data';
 import { useTranslations } from 'next-intl';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { MapPin } from 'lucide-react';
 
 interface RefinedCitySectionProps {
   locale: Locale;
+  cities: City[];
+  tours: Tour[];
 }
 
-export function RefinedCitySection({ locale }: RefinedCitySectionProps) {
+export function RefinedCitySection({ locale, cities, tours }: RefinedCitySectionProps) {
   const t = useTranslations('home.cities');
   const [visibleCards, setVisibleCards] = useState<Set<number>>(new Set());
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
-  const [cities, setCities] = useState<City[]>([]);
-  const [tours, setTours] = useState<Tour[]>([]);
-  const [loading, setLoading] = useState(true);
   const cardRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
-  useEffect(() => {
-    async function fetchData() {
-      console.log('[RefinedCitySection] Starting data fetch...');
-      const startTime = performance.now();
-
-      try {
-        const [citiesData, toursData] = await Promise.all([
-          getCities(),
-          getTours()
-        ]);
-
-        console.log('[RefinedCitySection] ✓ Data fetched successfully');
-        console.log('[RefinedCitySection] Cities:', citiesData.length);
-        console.log('[RefinedCitySection] Tours:', toursData.length);
-
-        setCities(citiesData);
-        setTours(toursData);
-
-        const endTime = performance.now();
-        console.log(`[RefinedCitySection] Total fetch time: ${(endTime - startTime).toFixed(2)}ms`);
-      } catch (error) {
-        console.error('[RefinedCitySection] ✖ Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, []);
-
   const liveCities = useMemo(() => {
-    const filtered = cities.filter(city => city.status === 'live');
-    console.log(`[RefinedCitySection] Live cities: ${filtered.length}/${cities.length}`);
-    return filtered;
+    return cities.filter(city => city.status === 'live');
   }, [cities]);
 
   const cityTourCounts = useMemo(() => {
@@ -61,7 +29,6 @@ export function RefinedCitySection({ locale }: RefinedCitySectionProps) {
     liveCities.forEach(city => {
       counts[city.slug] = tours.filter(tour => tour.citySlug === city.slug).length;
     });
-    console.log('[RefinedCitySection] Tour counts per city:', counts);
     return counts;
   }, [liveCities, tours]);
 
@@ -83,52 +50,50 @@ export function RefinedCitySection({ locale }: RefinedCitySectionProps) {
     });
 
     return () => observer.disconnect();
-  }, []);
-
-  if (loading) {
-    return (
-      <section className="py-24 bg-sand relative overflow-hidden">
-        <div className="container mx-auto px-4 relative">
-          <div className="max-w-6xl mx-auto text-center">
-            <div className="animate-pulse">
-              <div className="h-6 bg-navy/10 rounded w-32 mx-auto mb-4" />
-              <div className="h-12 bg-navy/10 rounded w-64 mx-auto mb-6" />
-              <div className="h-4 bg-navy/10 rounded w-96 mx-auto" />
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  }, [liveCities]);
 
   return (
-    <section className="py-24 bg-sand relative overflow-hidden">
-      <div className="absolute inset-0 opacity-30">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-brass/20 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-navy/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
+    <section className="py-20 md:py-32 relative overflow-hidden" style={{ backgroundColor: 'var(--white)' }}>
+      {/* Decorative background elements */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div
+          className="absolute -top-24 -left-24 w-96 h-96 rounded-full opacity-5"
+          style={{
+            backgroundColor: 'var(--green-accent)',
+            filter: 'blur(80px)',
+            animation: 'float 20s ease-in-out infinite'
+          }}
+        />
+        <div
+          className="absolute top-1/2 -right-32 w-80 h-80 rounded-full opacity-5"
+          style={{
+            backgroundColor: 'var(--green-accent)',
+            filter: 'blur(80px)',
+            animation: 'float 25s ease-in-out infinite reverse'
+          }}
+        />
+        <div
+          className="absolute -bottom-24 left-1/3 w-72 h-72 rounded-full opacity-5"
+          style={{
+            backgroundColor: 'var(--green-accent)',
+            filter: 'blur(80px)',
+            animation: 'float 30s ease-in-out infinite'
+          }}
+        />
       </div>
 
-      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-brass/50 to-transparent" />
-
-      <div className="container mx-auto px-4 relative">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <span
-              className="inline-block text-sm font-semibold tracking-[0.2em] uppercase mb-4 relative"
-              style={{ color: 'var(--brass)' }}
-            >
-              <span className="relative z-10">{t('kicker')}</span>
-              <span className="absolute inset-0 bg-brass/10 blur-xl" />
-            </span>
-            <h2 className="text-4xl md:text-5xl font-serif font-bold text-navy mb-6">
-              {t('title')}
+      <div className="container mx-auto px-6 md:px-12 relative" style={{ position: 'relative', zIndex: 1 }}>
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16 md:mb-20 relative">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-primary)' }}>
+              {t('title') || 'Explore Belgian Cities'}
             </h2>
-            <p className="text-lg max-w-2xl mx-auto" style={{ color: 'var(--slate-blue)' }}>
-              {t('description')}
+            <p className="text-lg md:text-xl max-w-3xl mx-auto font-light" style={{ fontFamily: 'Open Sans, sans-serif', color: 'var(--text-secondary)' }}>
+              {t('description') || 'Discover authentic stories and hidden gems in Belgium\'s most captivating cities'}
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-12">
             {liveCities.map((city, index) => {
               const tourCount = cityTourCounts[city.slug];
               const isVisible = visibleCards.has(index);
@@ -140,80 +105,116 @@ export function RefinedCitySection({ locale }: RefinedCitySectionProps) {
                   href={`/${locale}/tours-${city.slug}`}
                   onMouseEnter={() => setHoveredCard(index)}
                   onMouseLeave={() => setHoveredCard(null)}
-                  className={`card-elevated group block overflow-hidden transition-all duration-700 hover:-translate-y-3 hover:shadow-2xl perspective-card ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}
-                  style={{ transitionDelay: `${index * 150}ms` }}
+                  className={`group flex flex-col h-full overflow-hidden transition-all duration-500 hover:shadow-2xl relative ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                  style={{
+                    transitionDelay: `${index * 100}ms`,
+                    borderRadius: '12px'
+                  }}
                 >
+                  {/* Turquoise glow on hover */}
+                  <div
+                    className="absolute -inset-0.5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10 blur-lg"
+                    style={{ backgroundColor: 'var(--green-accent)' }}
+                  />
+
                   {city.image && (
-                    <div className="relative h-64 w-full overflow-hidden">
+                    <div className="relative h-72 w-full overflow-hidden mb-6 rounded-t-xl" style={{ backgroundColor: '#F5F5F5' }}>
+                      {/* Turquoise corner accent */}
+                      <div
+                        className="absolute top-0 right-0 w-16 h-16 opacity-0 group-hover:opacity-100 transition-all duration-500"
+                        style={{
+                          background: `linear-gradient(135deg, transparent 50%, var(--green-accent) 50%)`,
+                          clipPath: 'polygon(100% 0, 100% 100%, 0 0)'
+                        }}
+                      />
+
                       <Image
                         src={city.image}
                         alt={city.name[locale]}
                         fill
                         loading="lazy"
                         sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1"
+                        className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-105"
                       />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                      <div className="absolute inset-0 bg-gradient-to-t from-navy/80 via-navy/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                      <div className="absolute inset-0 bg-gradient-to-br from-brass/0 via-brass/0 to-brass/30 opacity-0 group-hover:opacity-100 transition-all duration-500" />
-
-                      <div className="absolute inset-0 border-2 border-brass/0 group-hover:border-brass/50 transition-all duration-500 rounded" />
+                      {/* Animated turquoise overlay */}
+                      <div
+                        className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500"
+                        style={{ backgroundColor: 'var(--green-accent)' }}
+                      />
                     </div>
                   )}
 
-                  <div className="p-8 relative bg-white">
-                    <div className="absolute top-0 left-0 w-0 h-1 bg-gradient-to-r from-brass via-brass/50 to-transparent group-hover:w-full transition-all duration-700" />
+                  <div className="relative flex flex-col flex-1 px-6 pb-6 bg-white rounded-b-xl">
+                    <h3 className="text-2xl md:text-3xl font-bold mb-3 transition-all duration-300 group-hover:text-[var(--green-accent)] group-hover:translate-x-1" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-primary)' }}>
+                      {city.name[locale]}
+                    </h3>
 
-                    <div className="brass-corner pb-6">
-                      <h3 className="text-2xl font-serif font-bold text-navy mb-3 group-hover:text-brass transition-colors duration-300 flex items-center gap-2">
-                        <span>{city.name[locale]}</span>
-                        <svg className="w-5 h-5 transform translate-x-0 group-hover:translate-x-2 transition-transform duration-300 opacity-0 group-hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </h3>
-                    </div>
-
-                    <p className="text-base leading-relaxed mb-4" style={{ color: 'var(--slate-blue)' }}>
+                    <p className="text-base leading-relaxed mb-4 flex-1" style={{ fontFamily: 'Open Sans, sans-serif', color: 'var(--text-secondary)' }}>
                       {city.teaser[locale]}
                     </p>
 
-                    <div className="flex items-center justify-between pt-4 border-t border-sand/50">
-                      <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--brass)' }}>
-                        <MapPin className="w-4 h-4" />
-                        <span className="font-semibold">{tourCount} tours beschikbaar</span>
+                    <div
+                      className="flex items-center justify-between pt-4 mt-auto relative"
+                      style={{ borderTop: '3px solid var(--green-accent)' }}
+                    >
+                      {/* Animated border extension on hover */}
+                      <div
+                        className="absolute top-0 left-0 h-0.5 bg-gradient-to-r from-transparent via-[var(--green-accent)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                        style={{ width: '100%', transform: 'translateY(-3px)' }}
+                      />
+
+                      <div className="flex items-center gap-2 text-sm font-medium transition-all duration-300 group-hover:scale-105" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--green-accent)' }}>
+                        <div className="relative">
+                          <MapPin className="w-4 h-4 transition-transform duration-300 group-hover:scale-110" />
+                          <div
+                            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm"
+                            style={{ backgroundColor: 'var(--green-accent)' }}
+                          />
+                        </div>
+                        <span className="font-semibold">{tourCount} tours</span>
                       </div>
 
-                      <div className="flex items-center text-brass opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all duration-300">
-                        <span className="text-sm font-semibold mr-1">Ontdek</span>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      <div className="flex items-center gap-1.5 text-sm font-semibold transition-all duration-300 group-hover:gap-3 group-hover:scale-105" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--green-accent)' }}>
+                        <span>View tours</span>
+                        <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                         </svg>
                       </div>
                     </div>
                   </div>
-
-                  <div className="absolute inset-0 border border-transparent group-hover:border-brass/20 transition-colors duration-300 pointer-events-none rounded" />
                 </Link>
               );
             })}
           </div>
 
-          <div className="mt-12 text-center">
-            <Link
-              href={`/${locale}/tours`}
-              className="inline-flex items-center gap-2 px-8 py-4 bg-navy text-ivory rounded-full font-semibold transition-all duration-300 hover:bg-brass hover:text-navy hover:shadow-xl hover:scale-105 group"
-            >
-              <span>Bekijk alle tours</span>
-              <svg className="w-5 h-5 transform group-hover:translate-x-2 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </Link>
+          <div className="mt-16 md:mt-20 text-center relative">
+            <div className="inline-block relative group">
+              {/* Animated turquoise glow */}
+              <div
+                className="absolute -inset-2 rounded-full opacity-0 group-hover:opacity-30 transition-opacity duration-500 blur-xl"
+                style={{ backgroundColor: 'var(--green-accent)' }}
+              />
+              <Link
+                href={`/${locale}/tours`}
+                className="btn-primary relative inline-flex items-center gap-2 px-8 py-4 font-semibold text-lg transition-all duration-300 group-hover:scale-105 group-hover:shadow-xl"
+                style={{
+                  backgroundColor: 'var(--green-accent)',
+                  color: 'white',
+                  borderRadius: '9999px',
+                  fontFamily: 'Montserrat, sans-serif'
+                }}
+              >
+                View All Tours
+                <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
-
-      <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-brass/50 to-transparent" />
     </section>
   );
 }
