@@ -26,9 +26,6 @@ export default function AdminDashboardPage() {
   const [teamleaderLoading, setTeamleaderLoading] = useState(false);
   const [connectInFlight, setConnectInFlight] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
-  const [googleConnected, setGoogleConnected] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [googleConnectInFlight, setGoogleConnectInFlight] = useState(false);
   const [tours, setTours] = useState<TourRow[]>([]);
   const [toursLoading, setToursLoading] = useState(false);
   const [tourActionLoading, setTourActionLoading] = useState(false);
@@ -127,35 +124,6 @@ export default function AdminDashboardPage() {
       setTeamleaderIntegration(null);
     } finally {
       setTeamleaderLoading(false);
-    }
-  }, [user?.id]);
-
-  const fetchGoogleConnection = useCallback(async () => {
-    if (!user?.id) {
-      setGoogleConnected(false);
-      return;
-    }
-
-    setGoogleLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('google_access_token, google_refresh_token')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Failed to fetch Google connection', error);
-        setGoogleConnected(false);
-        return;
-      }
-
-      setGoogleConnected(!!(data?.google_access_token && data?.google_refresh_token));
-    } catch (error) {
-      console.error('Failed to fetch Google connection', error);
-      setGoogleConnected(false);
-    } finally {
-      setGoogleLoading(false);
     }
   }, [user?.id]);
 
@@ -420,29 +388,20 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     if (!user) return;
     void fetchTeamleaderIntegration();
-    void fetchGoogleConnection();
     void fetchToursAdmin();
     void fetchGuides();
-  }, [user, fetchTeamleaderIntegration, fetchGoogleConnection, fetchToursAdmin, fetchGuides]);
+  }, [user, fetchTeamleaderIntegration, fetchToursAdmin, fetchGuides]);
 
   useEffect(() => {
     if (!user) return;
 
-    const teamleaderStatus = searchParams.get('teamleader');
-    const googleStatus = searchParams.get('google');
-
-    if (teamleaderStatus === 'connected') {
+    const status = searchParams.get('teamleader');
+    if (status === 'connected') {
       setFeedbackMessage(t('teamleaderSuccessShort') || 'Teamleader connected.');
       void fetchTeamleaderIntegration();
       router.replace(`/${locale}/admin/dashboard`);
     }
-
-    if (googleStatus === 'connected') {
-      setFeedbackMessage('Google account connected successfully!');
-      void fetchGoogleConnection();
-      router.replace(`/${locale}/admin/dashboard`);
-    }
-  }, [user, searchParams, t, router, locale, fetchTeamleaderIntegration, fetchGoogleConnection]);
+  }, [user, searchParams, t, router, locale, fetchTeamleaderIntegration]);
 
   const handleLogout = () => {
     signOut();
@@ -496,52 +455,6 @@ export default function AdminDashboardPage() {
       console.error('Teamleader authorize error', err);
       setFeedbackMessage(t('teamleaderAuthorizeError') || 'Failed to initiate authorization.');
       setConnectInFlight(false);
-    }
-  };
-
-  const handleGoogleConnect = async () => {
-    setFeedbackMessage(null);
-    setGoogleConnectInFlight(true);
-    try {
-      const { data, error } = await supabase.functions.invoke<{
-        success: boolean;
-        authorization_url?: string;
-        state?: string;
-        error?: string;
-      }>('google-oauth', {
-        body: {
-          action: 'authorize',
-          redirect_uri: `${window.location.origin}/${locale}/admin/google/callback`
-        }
-      });
-
-      if (error) {
-        console.error('Supabase function invoke error:', error);
-        setFeedbackMessage(error.message || 'Failed to initiate Google authorization.');
-        setGoogleConnectInFlight(false);
-        return;
-      }
-
-      if (data?.error) {
-        console.error('Function returned error:', data.error);
-        setFeedbackMessage(data.error);
-        setGoogleConnectInFlight(false);
-        return;
-      }
-
-      if (!data || !data.authorization_url || !data.state) {
-        console.error('Missing required fields in response:', data);
-        setFeedbackMessage('Failed to initiate Google authorization.');
-        setGoogleConnectInFlight(false);
-        return;
-      }
-
-      localStorage.setItem('googleOauthState', data.state);
-      window.location.href = data.authorization_url;
-    } catch (err) {
-      console.error('Google authorize error', err);
-      setFeedbackMessage('Failed to initiate Google authorization.');
-      setGoogleConnectInFlight(false);
     }
   };
 
@@ -635,7 +548,7 @@ export default function AdminDashboardPage() {
               </CardTitle>
               <CardDescription>{t('integrationsDescription')}</CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-1 flex-col space-y-4">
+            <CardContent className="flex flex-1 flex-col">
               <div className="grid flex-1 gap-4 rounded-lg border p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -663,39 +576,6 @@ export default function AdminDashboardPage() {
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />
                     {t('teamleaderRefresh') || 'Refresh Status'}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="grid flex-1 gap-4 rounded-lg border p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold text-navy">Google Account</h3>
-                    <p className="text-sm text-muted-foreground">Connect your Google account for Calendar and other services</p>
-                  </div>
-                  <Button
-                    onClick={handleGoogleConnect}
-                    className="btn-primary"
-                    disabled={googleConnectInFlight}
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    {googleConnected ? 'Reconnect' : 'Connect'}
-                  </Button>
-                </div>
-                <div className="space-y-2 text-sm">
-                  <p className="font-medium text-navy">
-                    {googleConnected ? 'Connected' : 'Disconnected'}
-                  </p>
-                </div>
-                <div className="mt-auto flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => void fetchGoogleConnection()}
-                    disabled={googleLoading}
-                  >
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Refresh Status
                   </Button>
                 </div>
               </div>
