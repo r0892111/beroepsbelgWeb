@@ -56,6 +56,8 @@ Deno.serve(async (req: Request) => {
       authUrl.searchParams.set('prompt', 'consent');
       authUrl.searchParams.set('state', randomState);
 
+      console.log('Authorization request - redirect_uri:', redirect_uri);
+
       return new Response(
         JSON.stringify({
           success: true,
@@ -76,27 +78,40 @@ Deno.serve(async (req: Request) => {
         throw new Error('Google OAuth credentials not configured');
       }
 
+      console.log('Token exchange - redirect_uri:', redirect_uri);
+      console.log('Token exchange - code length:', code?.length);
+
+      const tokenParams = {
+        code,
+        client_id: GOOGLE_CLIENT_ID,
+        client_secret: GOOGLE_CLIENT_SECRET,
+        redirect_uri,
+        grant_type: 'authorization_code',
+      };
+
+      console.log('Token exchange params (without secrets):', {
+        code_length: code?.length,
+        redirect_uri,
+        grant_type: 'authorization_code',
+      });
+
       const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: new URLSearchParams({
-          code,
-          client_id: GOOGLE_CLIENT_ID,
-          client_secret: GOOGLE_CLIENT_SECRET,
-          redirect_uri,
-          grant_type: 'authorization_code',
-        }),
+        body: new URLSearchParams(tokenParams),
       });
 
       if (!tokenResponse.ok) {
         const errorText = await tokenResponse.text();
         console.error('Token exchange failed:', errorText);
-        throw new Error('Failed to exchange authorization code');
+        console.error('Status:', tokenResponse.status);
+        throw new Error(`Token exchange failed: ${errorText}`);
       }
 
       const tokens = await tokenResponse.json();
+      console.log('Token exchange successful, has refresh_token:', !!tokens.refresh_token);
 
       const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
         headers: {
@@ -118,6 +133,8 @@ Deno.serve(async (req: Request) => {
         console.error('Failed to save tokens:', updateError);
         throw new Error('Failed to save Google tokens');
       }
+
+      console.log('Tokens saved successfully for user:', user.id);
 
       return new Response(
         JSON.stringify({
