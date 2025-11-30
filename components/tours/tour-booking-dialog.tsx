@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { loadStripe } from '@stripe/stripe-js';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Loader2 } from 'lucide-react';
+import { CalendarIcon, Clock, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
@@ -22,6 +22,7 @@ interface TourBookingDialogProps {
   tourId: string;
   tourTitle: string;
   tourPrice: number;
+  tourDuration?: number; // Duration in minutes
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -30,6 +31,7 @@ export function TourBookingDialog({
   tourId,
   tourTitle,
   tourPrice,
+  tourDuration = 120, // Default 2 hours
   open,
   onOpenChange,
 }: TourBookingDialogProps) {
@@ -38,6 +40,7 @@ export function TourBookingDialog({
   const tB2b = useTranslations('b2b');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
 
   const [formData, setFormData] = useState({
     customerName: '',
@@ -49,15 +52,63 @@ export function TourBookingDialog({
     specialRequests: '',
   });
 
+  // Generate time slots between 10:00 and 18:00 based on tour duration
+  const timeSlots = useMemo(() => {
+    const durationMinutes = tourDuration;
+    const startHour = 10; // 10:00
+    const endHour = 18; // 18:00
+    const slots: { value: string; label: string }[] = [];
+    
+    let currentMinutes = startHour * 60;
+    const endMinutes = endHour * 60;
+    
+    const formatTime = (mins: number) => {
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    };
+    
+    while (currentMinutes + durationMinutes <= endMinutes) {
+      const startTime = formatTime(currentMinutes);
+      const endTime = formatTime(currentMinutes + durationMinutes);
+      slots.push({
+        value: startTime,
+        label: `${startTime} - ${endTime}`
+      });
+      currentMinutes += durationMinutes;
+    }
+    
+    return slots;
+  }, [tourDuration]);
+
+  // Format duration for display
+  const formatDuration = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0 && mins > 0) return `${hours}u ${mins}min`;
+    if (hours > 0) return `${hours} uur`;
+    return `${mins} min`;
+  };
+
+  // Form validation
+  const [showValidation, setShowValidation] = useState(false);
+  const isDateValid = !!formData.bookingDate;
+  const isTimeValid = !!selectedTimeSlot;
+  const isFormValid = isDateValid && isTimeValid && formData.customerName && formData.customerEmail;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setShowValidation(true);
+    
+    if (!isDateValid || !isTimeValid) {
+      setError(!isDateValid ? t('selectBookingDate') : 'Selecteer een tijdslot');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
 
     try {
-      if (!formData.bookingDate) {
-        throw new Error(t('selectBookingDate'));
-      }
 
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -74,6 +125,7 @@ export function TourBookingDialog({
           customerEmail: formData.customerEmail,
           customerPhone: formData.customerPhone,
           bookingDate: format(formData.bookingDate, 'yyyy-MM-dd'),
+          bookingTime: selectedTimeSlot,
           numberOfPeople: formData.numberOfPeople,
           language: formData.language,
           specialRequests: formData.specialRequests,
@@ -145,32 +197,76 @@ export function TourBookingDialog({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>{t('tourDate')} *</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    'w-full justify-start text-left font-normal',
-                    !formData.bookingDate && 'text-muted-foreground'
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.bookingDate ? format(formData.bookingDate, 'PPP') : t('selectDate')}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={formData.bookingDate}
-                  onSelect={(date) => setFormData({ ...formData, bookingDate: date })}
-                  disabled={(date) => date < new Date()}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+          <div className="grid grid-cols-2 gap-4 items-start">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1">
+                <CalendarIcon className="h-3 w-3" />
+                {t('tourDate')} *
+              </Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      'w-full h-10 justify-start text-left font-normal',
+                      !formData.bookingDate && 'text-muted-foreground',
+                      showValidation && !isDateValid && 'border-red-500 ring-1 ring-red-500'
+                    )}
+                  >
+                    {formData.bookingDate ? format(formData.bookingDate, 'PP') : t('selectDate')}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={formData.bookingDate}
+                    onSelect={(date) => {
+                      setFormData({ ...formData, bookingDate: date });
+                      setSelectedTimeSlot(''); // Reset time slot when date changes
+                    }}
+                    disabled={(date) => date < new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              {showValidation && !isDateValid && (
+                <p className="text-xs text-red-500">Selecteer een datum</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                Tijdslot *
+              </Label>
+              <Select 
+                value={selectedTimeSlot} 
+                onValueChange={setSelectedTimeSlot}
+                disabled={!formData.bookingDate}
+              >
+                <SelectTrigger className={cn(
+                  "h-10",
+                  showValidation && !isTimeValid && formData.bookingDate && 'border-red-500 ring-1 ring-red-500'
+                )}>
+                  <SelectValue placeholder={formData.bookingDate ? "Kies tijd" : "Kies eerst datum"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {timeSlots.map((slot) => (
+                    <SelectItem key={slot.value} value={slot.value}>
+                      {slot.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {showValidation && !isTimeValid && formData.bookingDate && (
+                <p className="text-xs text-red-500">Selecteer een tijdslot</p>
+              )}
+            </div>
           </div>
+          
+          <p className="text-xs text-muted-foreground -mt-2">
+            Tourduur: {formatDuration(tourDuration)}
+          </p>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

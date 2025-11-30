@@ -303,7 +303,8 @@
     "specialRequestsPlaceholder": "Any special requirements or requests...",
     "total": "Total",
     "processing": "Processing...",
-    "proceedToPayment": "Proceed to Payment"
+    "proceedToPayment": "Proceed to Payment",
+    "bookNow": "Book Now"
   },
   "product": {
     "description": "Description",
