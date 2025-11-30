@@ -303,7 +303,8 @@
     "specialRequestsPlaceholder": "Bijzondere wensen of verzoeken...",
     "total": "Totaal",
     "processing": "Verwerken...",
-    "proceedToPayment": "Doorgaan naar betaling"
+    "proceedToPayment": "Doorgaan naar betaling",
+    "bookNow": "Boek nu"
   },
   "product": {
     "description": "Beschrijving",

@@ -153,6 +153,7 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
               tourId={tour.id}
               tourTitle={tour.title}
               tourPrice={tour.price}
+              tourDuration={tour.durationMinutes}
             />
           </div>
         )}

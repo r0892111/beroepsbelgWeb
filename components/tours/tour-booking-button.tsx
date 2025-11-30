@@ -3,15 +3,18 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { TourBookingDialog } from './tour-booking-dialog';
+import { useTranslations } from 'next-intl';
 
 interface TourBookingButtonProps {
   tourId: string;
   tourTitle: string;
   tourPrice: number;
+  tourDuration?: number;
 }
 
-export function TourBookingButton({ tourId, tourTitle, tourPrice }: TourBookingButtonProps) {
+export function TourBookingButton({ tourId, tourTitle, tourPrice, tourDuration }: TourBookingButtonProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const t = useTranslations('booking');
 
   return (
     <>
@@ -20,12 +23,13 @@ export function TourBookingButton({ tourId, tourTitle, tourPrice }: TourBookingB
         className="btn-primary px-8 py-6 text-lg font-semibold"
         onClick={() => setDialogOpen(true)}
       >
-        Book this Tour
+        {t('bookNow')}
       </Button>
       <TourBookingDialog
         tourId={tourId}
         tourTitle={tourTitle}
         tourPrice={tourPrice}
+        tourDuration={tourDuration}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
       />

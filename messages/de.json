@@ -303,7 +303,8 @@
     "specialRequestsPlaceholder": "Besondere Anforderungen oder Wünsche...",
     "total": "Gesamt",
     "processing": "Verarbeitung...",
-    "proceedToPayment": "Weiter zur Zahlung"
+    "proceedToPayment": "Weiter zur Zahlung",
+    "bookNow": "Jetzt buchen"
   },
   "product": {
     "description": "Beschreibung",
