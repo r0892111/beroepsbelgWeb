@@ -285,7 +285,8 @@
     "country": "Country",
     "processing": "Processing...",
     "proceedToPayment": "Proceed to Payment",
-    "required": "*"
+    "required": "*",
+    "total": "Total"
   },
   "booking": {
     "title": "Book Tour",

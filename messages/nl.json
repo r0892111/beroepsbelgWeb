@@ -285,7 +285,8 @@
     "country": "Land",
     "processing": "Verwerken...",
     "proceedToPayment": "Doorgaan naar betaling",
-    "required": "*"
+    "required": "*",
+    "total": "Totaal"
   },
   "booking": {
     "title": "Tour Boeken",
