@@ -285,7 +285,8 @@
     "country": "Land",
     "processing": "Verarbeitung...",
     "proceedToPayment": "Weiter zur Zahlung",
-    "required": "*"
+    "required": "*",
+    "total": "Gesamt"
   },
   "booking": {
     "title": "Tour Buchen",

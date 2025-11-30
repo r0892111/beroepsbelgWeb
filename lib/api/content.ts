@@ -10,19 +10,27 @@ const slugify = (value: string) =>
     .replace(/^-+|-+$/g, '');
 
 const citySlugify = (city: string): string => {
+  if (!city) return '';
   const cityMap: Record<string, string> = {
     'antwerpen': 'antwerpen',
+    'antwerp': 'antwerpen',
+    'anvers': 'antwerpen',
     'brussel': 'brussel',
     'brussels': 'brussel',
+    'bruxelles': 'brussel',
     'brugge': 'brugge',
     'bruges': 'brugge',
     'gent': 'gent',
     'ghent': 'gent',
+    'gand': 'gent',
     'leuven': 'leuven',
+    'louvain': 'leuven',
     'mechelen': 'mechelen',
+    'malines': 'mechelen',
     'hasselt': 'hasselt',
     'knokke-heist': 'knokke-heist',
     'knokke': 'knokke-heist',
+    'heist': 'knokke-heist',
   };
   const normalized = city.toLowerCase().trim();
   return cityMap[normalized] || slugify(normalized);
@@ -90,19 +98,20 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
   console.log(`[Supabase API] Fetching tours${citySlug ? ` for city: ${citySlug}` : ' (all cities)'}...`);
   const startTime = performance.now();
 
-  let query = supabase.from('tours_table_prod').select('*');
-
-  if (citySlug) {
-    // Match city field case-insensitively and handle variations
-    query = query.ilike('city', `%${citySlug.replace('-', '%')}%`);
-  }
-
-  const { data, error } = await query.order('title');
-
+  // Fetch all tours first, then filter client-side for better matching
+  const { data, error } = await supabase
+    .from('tours_table_prod')
+    .select('*');
   if (error) {
     console.error('[Supabase API] ❌ Error fetching tours:', error);
     throw error;
   }
+
+  console.log(`[Supabase API] Raw tours data:`, (data || []).map((row: any) => ({ 
+    title: row.title, 
+    city: row.city,
+    citySlugified: citySlugify(row.city)
+  })));
 
   const tours = (data || []).map((row: any): Tour => ({
     id: row.id,
@@ -128,9 +137,11 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
     : tours;
 
   const endTime = performance.now();
-  console.log(`[Supabase API] ✓ Fetched ${filteredTours.length} tours in ${(endTime - startTime).toFixed(2)}ms`);
+  console.log(`[Supabase API] ✓ Fetched ${filteredTours.length} tours (from ${tours.length} total) in ${(endTime - startTime).toFixed(2)}ms`);
   if (citySlug) {
-    console.log(`[Supabase API] Tours for ${citySlug}:`, filteredTours.map(t => t.slug));
+    console.log(`[Supabase API] Looking for city: "${citySlug}"`);
+    console.log(`[Supabase API] Available cities in data:`, [...new Set(tours.map(t => t.city))]);
+    console.log(`[Supabase API] Tours for ${citySlug}:`, filteredTours.map(t => ({ slug: t.slug, city: t.city })));
   }
 
   return filteredTours;

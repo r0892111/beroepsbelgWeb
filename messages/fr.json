@@ -285,7 +285,8 @@
     "country": "Pays",
     "processing": "Traitement...",
     "proceedToPayment": "Procéder au paiement",
-    "required": "*"
+    "required": "*",
+    "total": "Total"
   },
   "booking": {
     "title": "Réserver une visite",
