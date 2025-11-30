@@ -140,7 +140,7 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
   console.log(`[Supabase API] ✓ Fetched ${filteredTours.length} tours (from ${tours.length} total) in ${(endTime - startTime).toFixed(2)}ms`);
   if (citySlug) {
     console.log(`[Supabase API] Looking for city: "${citySlug}"`);
-    console.log(`[Supabase API] Available cities in data:`, [...new Set(tours.map(t => t.city))]);
+    console.log(`[Supabase API] Available cities in data:`, Array.from(new Set(tours.map(t => t.city))));
     console.log(`[Supabase API] Tours for ${citySlug}:`, filteredTours.map(t => ({ slug: t.slug, city: t.city })));
   }
 
