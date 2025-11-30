@@ -124,7 +124,7 @@ export function TourBookingDialog({
           customerName: formData.customerName,
           customerEmail: formData.customerEmail,
           customerPhone: formData.customerPhone,
-          bookingDate: format(formData.bookingDate, 'yyyy-MM-dd'),
+          bookingDate: formData.bookingDate ? format(formData.bookingDate, 'yyyy-MM-dd') : '',
           bookingTime: selectedTimeSlot,
           numberOfPeople: formData.numberOfPeople,
           language: formData.language,

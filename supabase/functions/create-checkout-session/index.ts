@@ -85,23 +85,22 @@ serve(async (req: Request) => {
       },
     })
 
-    const { error: bookingError } = await supabase.from('bookings').insert({
-      user_id: userId || null,
+    const { error: bookingError } = await supabase.from('tourbooking').insert({
       tour_id: tourId,
-      stripe_session_id: session.id,
       status: 'pending',
-      amount: tour.price * numberOfPeople,
-      currency: 'eur',
-      customer_name: customerName,
-      customer_email: customerEmail,
-      customer_phone: customerPhone || null,
-      booking_date: bookingDate,
-      number_of_people: numberOfPeople,
-      language,
-      special_requests: specialRequests || null,
-      metadata: {
-        tourTitle,
-      },
+      tour_datetime: new Date(bookingDate).toISOString(),
+      city: tour.city || null,
+      invitees: [{
+        name: customerName,
+        email: customerEmail,
+        phone: customerPhone || null,
+        numberOfPeople,
+        language,
+        specialRequests: specialRequests || null,
+        stripeSessionId: session.id,
+        amount: tour.price * numberOfPeople,
+        currency: 'eur',
+      }],
     })
 
     if (bookingError) {
