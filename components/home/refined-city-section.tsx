@@ -27,7 +27,7 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
   const cityTourCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     liveCities.forEach(city => {
-      counts[city.slug] = tours.filter(tour => tour.citySlug === city.slug).length;
+      counts[city.slug] = tours.filter(tour => tour.city === city.slug).length;
     });
     return counts;
   }, [liveCities, tours]);
@@ -173,11 +173,11 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
                             style={{ backgroundColor: 'var(--green-accent)' }}
                           />
                         </div>
-                        <span className="font-semibold">{tourCount} tours</span>
+                        <span className="font-semibold">{t('toursCount', { count: tourCount })}</span>
                       </div>
 
                       <div className="flex items-center gap-1.5 text-sm font-semibold transition-all duration-300 group-hover:gap-3 group-hover:scale-105" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--green-accent)' }}>
-                        <span>View tours</span>
+                        <span>{t('viewTours')}</span>
                         <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                         </svg>
@@ -206,7 +206,7 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
                   fontFamily: 'Montserrat, sans-serif'
                 }}
               >
-                View All Tours
+                {t('viewAllTours')}
                 <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>

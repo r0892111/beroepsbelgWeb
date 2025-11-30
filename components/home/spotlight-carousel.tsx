@@ -60,10 +60,10 @@ export function SpotlightCarousel({ products }: SpotlightCarouselProps) {
               {t('inSpotlight')}
             </p>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-primary)' }}>
-              Featured Products
+              {t('featuredProducts')}
             </h2>
             <p className="text-lg md:text-xl max-w-3xl mx-auto font-light" style={{ fontFamily: 'Open Sans, sans-serif', color: 'var(--text-secondary)' }}>
-              Discover our carefully selected collection of Belgian cultural treasures
+              {t('featuredProductsDesc')}
             </p>
           </div>
 

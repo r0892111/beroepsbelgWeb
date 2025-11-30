@@ -91,10 +91,7 @@ export function NewsletterForm({ locale }: NewsletterFormProps) {
                 className="mt-0.5"
               />
               <Label htmlFor="consent" className="text-sm text-primary-foreground/90">
-                {t('consent')}{' '}
-                <Link href={`/${locale}/privacy`} className="underline hover:no-underline">
-                  privacy policy
-                </Link>
+                {t('consent')}
               </Label>
             </div>
             {errors.consent && (

@@ -7,8 +7,11 @@ import { ShoppingCart, Minus, Plus, Trash2 } from 'lucide-react';
 import { useCartContext } from '@/lib/contexts/cart-context';
 import { CheckoutDialog } from './checkout-dialog';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 
 export function CartSheet() {
+  const t = useTranslations('cart');
+  const tAuth = useTranslations('auth');
   const { cartItems, cartCount, updateQuantity, removeFromCart, loading } = useCartContext();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -37,23 +40,23 @@ export function CartSheet() {
         </SheetTrigger>
         <SheetContent className="w-full sm:max-w-lg">
           <SheetHeader>
-            <SheetTitle>Shopping Cart</SheetTitle>
+            <SheetTitle>{t('title')}</SheetTitle>
             <SheetDescription>
-              {cartCount} {cartCount === 1 ? 'item' : 'items'} in your cart
+              {t('itemCount', { count: cartCount })}
             </SheetDescription>
           </SheetHeader>
 
           <div className="mt-8 flex flex-col h-full">
             {loading ? (
               <div className="flex-1 flex items-center justify-center">
-                <p className="text-muted-foreground">Loading cart...</p>
+                <p className="text-muted-foreground">{t('loading')}</p>
               </div>
             ) : cartItems.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center">
                 <ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground mb-2">Your cart is empty</p>
+                <p className="text-muted-foreground mb-2">{t('empty')}</p>
                 <Button variant="outline" onClick={() => setSheetOpen(false)}>
-                  Continue Shopping
+                  {tAuth('continueShopping')}
                 </Button>
               </div>
             ) : (
@@ -117,7 +120,7 @@ export function CartSheet() {
 
                 <div className="border-t pt-4 space-y-4">
                   <div className="flex justify-between text-lg font-bold">
-                    <span>Total:</span>
+                    <span>{t('total')}:</span>
                     <span>€{totalAmount.toFixed(2)}</span>
                   </div>
                   <Button
@@ -125,7 +128,7 @@ export function CartSheet() {
                     size="lg"
                     onClick={handleCheckout}
                   >
-                    Proceed to Checkout
+                    {t('proceedToCheckout')}
                   </Button>
                 </div>
               </>

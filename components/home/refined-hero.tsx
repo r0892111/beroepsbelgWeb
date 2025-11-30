@@ -219,7 +219,7 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
           </div>
 
           <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-8 leading-tight tracking-tight relative inline-block" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-primary)' }}>
-            Discover Belgium through the eyes of its most passionate storyteller
+            {t('headline')}
             <div
               className="absolute -bottom-3 left-1/2 -translate-x-1/2 h-2 w-3/4 opacity-10"
               style={{
@@ -270,7 +270,7 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
           className="flex flex-col items-center gap-2 transition-all duration-300 hover:opacity-70 group relative"
           aria-label="Scroll to content"
         >
-          <span className="text-xs font-semibold uppercase tracking-wider transition-colors duration-300 group-hover:text-[var(--green-accent)]" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-secondary)' }}>Scroll</span>
+          <span className="text-xs font-semibold uppercase tracking-wider transition-colors duration-300 group-hover:text-[var(--green-accent)]" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-secondary)' }}>{t('scroll')}</span>
           <ArrowDown className="w-5 h-5 animate-bounce transition-colors duration-300 group-hover:text-[var(--green-accent)]" style={{ color: 'var(--text-secondary)' }} />
           <div
             className="absolute -bottom-2 w-12 h-12 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-xl"

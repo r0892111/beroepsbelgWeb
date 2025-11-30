@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase/client';
-import type { Locale, City, Tour, Product, FaqItem, BlogPost, PressLink } from '@/lib/data/types';
+import type { Locale, City, Tour, TourOptions, Product, FaqItem, BlogPost, PressLink } from '@/lib/data/types';
 
 const slugify = (value: string) =>
   value
@@ -8,6 +8,25 @@ const slugify = (value: string) =>
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
+
+const citySlugify = (city: string): string => {
+  const cityMap: Record<string, string> = {
+    'antwerpen': 'antwerpen',
+    'brussel': 'brussel',
+    'brussels': 'brussel',
+    'brugge': 'brugge',
+    'bruges': 'brugge',
+    'gent': 'gent',
+    'ghent': 'gent',
+    'leuven': 'leuven',
+    'mechelen': 'mechelen',
+    'hasselt': 'hasselt',
+    'knokke-heist': 'knokke-heist',
+    'knokke': 'knokke-heist',
+  };
+  const normalized = city.toLowerCase().trim();
+  return cityMap[normalized] || slugify(normalized);
+};
 
 const parseNumber = (value: unknown): number | null => {
   if (typeof value === 'number') {
@@ -71,74 +90,74 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
   console.log(`[Supabase API] Fetching tours${citySlug ? ` for city: ${citySlug}` : ' (all cities)'}...`);
   const startTime = performance.now();
 
-  let query = supabase.from('tours').select('*');
+  let query = supabase.from('tours_table_prod').select('*');
 
   if (citySlug) {
-    query = query.eq('city_slug', citySlug);
+    // Match city field case-insensitively and handle variations
+    query = query.ilike('city', `%${citySlug.replace('-', '%')}%`);
   }
 
-  const { data, error } = await query.order('slug');
+  const { data, error } = await query.order('title');
 
   if (error) {
     console.error('[Supabase API] ❌ Error fetching tours:', error);
     throw error;
   }
 
-  const tours = (data || []).map((row: any) => ({
+  const tours = (data || []).map((row: any): Tour => ({
     id: row.id,
-    citySlug: row.city_slug,
-    slug: row.slug,
-    title: {
-      nl: row.title_nl,
-      en: row.title_en,
-      fr: row.title_fr,
-      de: row.title_de,
-    },
-    price: row.price,
-    badge: row.badge,
-    shortDescription: {
-      nl: row.short_description_nl,
-      en: row.short_description_en,
-      fr: row.short_description_fr,
-      de: row.short_description_de,
-    },
-    description: row.description_nl ? {
-      nl: row.description_nl,
-      en: row.description_en,
-      fr: row.description_fr,
-      de: row.description_de,
-    } : undefined,
-    thumbnail: row.thumbnail,
-    images: row.images || [],
-    details: row.details,
+    city: citySlugify(row.city),
+    slug: slugify(row.title),
+    title: row.title,
+    type: row.type,
+    durationMinutes: row.duration_minutes,
+    price: row.price ? Number(row.price) : undefined,
+    startLocation: row.start_location,
+    endLocation: row.end_location,
+    languages: row.languages || [],
+    description: row.description,
+    notes: row.notes,
+    options: row.options as TourOptions,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   }));
 
+  // Filter by exact city slug if provided (for more accurate matching)
+  const filteredTours = citySlug 
+    ? tours.filter(t => t.city === citySlug)
+    : tours;
+
   const endTime = performance.now();
-  console.log(`[Supabase API] ✓ Fetched ${tours.length} tours in ${(endTime - startTime).toFixed(2)}ms`);
+  console.log(`[Supabase API] ✓ Fetched ${filteredTours.length} tours in ${(endTime - startTime).toFixed(2)}ms`);
   if (citySlug) {
-    console.log(`[Supabase API] Tours for ${citySlug}:`, tours.map(t => t.slug));
+    console.log(`[Supabase API] Tours for ${citySlug}:`, filteredTours.map(t => t.slug));
   }
 
-  return tours;
+  return filteredTours;
 }
 
 export async function getTourBySlug(citySlug: string, slug: string): Promise<Tour | null> {
   console.log(`[Supabase API] Fetching tour: ${citySlug}/${slug}`);
   const startTime = performance.now();
 
+  // Fetch all tours for the city and find by generated slug
   const { data, error } = await supabase
-    .from('tours')
-    .select('*')
-    .eq('city_slug', citySlug)
-    .eq('slug', slug)
-    .maybeSingle();
+    .from('tours_table_prod')
+    .select('*');
 
   if (error) {
     console.error('[Supabase API] ❌ Error fetching tour:', error);
     throw error;
   }
 
-  if (!data) {
+  // Find matching tour by city and generated slug
+  const matchingTour = (data || []).find((row: any) => {
+    const rowCitySlug = citySlugify(row.city);
+    const rowSlug = slugify(row.title);
+    return rowCitySlug === citySlug && rowSlug === slug;
+  });
+
+  if (!matchingTour) {
     console.warn(`[Supabase API] ⚠ Tour not found: ${citySlug}/${slug}`);
     return null;
   }
@@ -147,32 +166,21 @@ export async function getTourBySlug(citySlug: string, slug: string): Promise<Tou
   console.log(`[Supabase API] ✓ Fetched tour in ${(endTime - startTime).toFixed(2)}ms`);
 
   return {
-    id: data.id,
-    citySlug: data.city_slug,
-    slug: data.slug,
-    title: {
-      nl: data.title_nl,
-      en: data.title_en,
-      fr: data.title_fr,
-      de: data.title_de,
-    },
-    price: data.price,
-    badge: data.badge,
-    shortDescription: {
-      nl: data.short_description_nl,
-      en: data.short_description_en,
-      fr: data.short_description_fr,
-      de: data.short_description_de,
-    },
-    description: data.description_nl ? {
-      nl: data.description_nl,
-      en: data.description_en,
-      fr: data.description_fr,
-      de: data.description_de,
-    } : undefined,
-    thumbnail: data.thumbnail,
-    images: data.images || [],
-    details: data.details,
+    id: matchingTour.id,
+    city: citySlugify(matchingTour.city),
+    slug: slugify(matchingTour.title),
+    title: matchingTour.title,
+    type: matchingTour.type,
+    durationMinutes: matchingTour.duration_minutes,
+    price: matchingTour.price ? Number(matchingTour.price) : undefined,
+    startLocation: matchingTour.start_location,
+    endLocation: matchingTour.end_location,
+    languages: matchingTour.languages || [],
+    description: matchingTour.description,
+    notes: matchingTour.notes,
+    options: matchingTour.options as TourOptions,
+    createdAt: matchingTour.created_at,
+    updatedAt: matchingTour.updated_at,
   };
 }
 

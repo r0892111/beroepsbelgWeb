@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { useCartContext } from '@/lib/contexts/cart-context';
+import { useTranslations } from 'next-intl';
 
 interface CheckoutDialogProps {
   open: boolean;
@@ -15,6 +16,7 @@ interface CheckoutDialogProps {
 }
 
 export function CheckoutDialog({ open, onOpenChange, totalAmount }: CheckoutDialogProps) {
+  const t = useTranslations('checkout');
   const { cartItems, clearCart } = useCartContext();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,79 +95,73 @@ export function CheckoutDialog({ open, onOpenChange, totalAmount }: CheckoutDial
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Checkout</DialogTitle>
+          <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>
-            Complete your purchase - Total: €{totalAmount.toFixed(2)}
+            {t('completePurchase', { total: totalAmount.toFixed(2) })}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Full Name *</Label>
+            <Label htmlFor="name">{t('fullName')} {t('required')}</Label>
             <Input
               id="name"
               required
               value={formData.customerName}
               onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-              placeholder="John Doe"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email *</Label>
+            <Label htmlFor="email">{t('email')} {t('required')}</Label>
             <Input
               id="email"
               type="email"
               required
               value={formData.customerEmail}
               onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
-              placeholder="john@example.com"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="street">Street Address *</Label>
+            <Label htmlFor="street">{t('streetAddress')} {t('required')}</Label>
             <Input
               id="street"
               required
               value={formData.street}
               onChange={(e) => setFormData({ ...formData, street: e.target.value })}
-              placeholder="123 Main Street"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="city">City *</Label>
+              <Label htmlFor="city">{t('city')} {t('required')}</Label>
               <Input
                 id="city"
                 required
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                placeholder="Brussels"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="postalCode">Postal Code *</Label>
+              <Label htmlFor="postalCode">{t('postalCode')} {t('required')}</Label>
               <Input
                 id="postalCode"
                 required
                 value={formData.postalCode}
                 onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                placeholder="1000"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="country">Country *</Label>
+            <Label htmlFor="country">{t('country')} {t('required')}</Label>
             <Input
               id="country"
               required
               value={formData.country}
               onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-              placeholder="Belgium"
             />
           </div>
 
@@ -178,16 +174,16 @@ export function CheckoutDialog({ open, onOpenChange, totalAmount }: CheckoutDial
           <DialogFooter>
             <div className="flex w-full items-center justify-between">
               <div className="text-lg font-bold">
-                Total: €{totalAmount.toFixed(2)}
+                {t('total')}: €{totalAmount.toFixed(2)}
               </div>
               <Button type="submit" disabled={loading}>
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
+                    {t('processing')}
                   </>
                 ) : (
-                  'Proceed to Payment'
+                  t('proceedToPayment')
                 )}
               </Button>
             </div>

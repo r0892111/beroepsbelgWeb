@@ -12,6 +12,7 @@ interface FooterProps {
 
 export function Footer({ locale }: FooterProps) {
   const t = useTranslations('footer');
+  const tNav = useTranslations('nav');
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
@@ -86,29 +87,29 @@ export function Footer({ locale }: FooterProps) {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <Link href={`/${locale}/tours`} className="hover:text-brass transition-colors duration-300">
-                  Tours
+                  {tNav('tours')}
                 </Link>
               </li>
               <li>
                 <Link href={`/${locale}/webshop`} className="hover:text-brass transition-colors duration-300">
-                  Webshop
+                  {tNav('webshop')}
                 </Link>
               </li>
               <li>
                 <Link href={`/${locale}/blog`} className="hover:text-brass transition-colors duration-300">
-                  Blog
+                  {tNav('blog')}
                 </Link>
               </li>
               <li>
                 <Link href={`/${locale}/contact/contactformulier`} className="hover:text-brass transition-colors duration-300">
-                  Contact
+                  {tNav('contact')}
                 </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h3 className="mb-4 text-sm font-semibold">Social</h3>
+            <h3 className="mb-4 text-sm font-semibold">{tNav('social')}</h3>
             <div className="flex gap-4">
               <a
                 href="https://www.facebook.com"

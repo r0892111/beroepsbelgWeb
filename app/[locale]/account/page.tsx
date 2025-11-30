@@ -50,7 +50,7 @@ export default function AccountPage() {
       } catch (error) {
         console.error('[AccountPage] Failed to load products', error);
         if (isMounted) {
-          setProductsError('Kon de producten niet laden.');
+          setProductsError(t('couldNotLoadProducts'));
         }
       } finally {
         if (isMounted) {
@@ -99,7 +99,7 @@ export default function AccountPage() {
       <div className="min-h-screen bg-gradient-to-br from-[#92F0B1]/10 via-white to-[#92F0B1]/5 flex items-center justify-center">
         <div className="text-center space-y-4">
           <p className="text-red-600">{productsError}</p>
-          <Button onClick={() => window.location.reload()}>Probeer opnieuw</Button>
+          <Button onClick={() => window.location.reload()}>{t('tryAgain')}</Button>
         </div>
       </div>
     );

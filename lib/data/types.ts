@@ -11,24 +11,30 @@ export type City = {
   ctaText?: Record<Locale, string>;
 };
 
-export type Tour = {
-  id: string;
-  citySlug: string;
-  slug: string;
-  title: Record<Locale, string>;
-  price?: number;
-  badge?: 'EXCLUSIEF' | 'UITVERKOCHT' | 'NIEUW';
-  shortDescription: Record<Locale, string>;
-  description?: Record<Locale, string>;
+export type TourOptions = {
   thumbnail?: string;
   images?: string[];
-  details?: {
-    start?: Record<Locale, string>;
-    end?: Record<Locale, string>;
-    duration?: Record<Locale, string>;
-    languages?: Record<Locale, string>;
-    extraInfo?: Record<Locale, string>;
-  };
+  badge?: 'EXCLUSIEF' | 'UITVERKOCHT' | 'NIEUW';
+  extraInfo?: string;
+  [key: string]: unknown;
+};
+
+export type Tour = {
+  id: string;
+  city: string;
+  slug: string;
+  title: string;
+  type: string;
+  durationMinutes: number;
+  price?: number;
+  startLocation?: string;
+  endLocation?: string;
+  languages: string[];
+  description: string;
+  notes?: string;
+  options?: TourOptions;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type Product = {
