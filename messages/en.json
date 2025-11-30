@@ -14,7 +14,8 @@
     "favorites": "Favorites",
     "search": "Search",
     "cart": "Cart",
-    "adminPanel": "Admin Panel"
+    "adminPanel": "Admin Panel",
+    "social": "Social"
   },
   "hero": {
     "kicker": "— Discover Belgium like you've never seen it before",
@@ -23,6 +24,8 @@
   },
   "sections": {
     "inSpotlight": "In the spotlight",
+    "featuredProducts": "Featured Products",
+    "featuredProductsDesc": "Discover our carefully selected collection of Belgian cultural treasures",
     "toursByCity": "Tours by city",
     "shop": "Webshop",
     "press": "In the press",
@@ -71,7 +74,8 @@
     "customize": "Customize",
     "functional": "Functional cookies",
     "tracking": "Tracking cookies",
-    "save": "Save settings"
+    "save": "Save settings",
+    "back": "Back"
   },
   "auth": {
     "signIn": "Sign In",
@@ -104,6 +108,9 @@
     "browseProducts": "Browse products",
     "removeFromFavorites": "Remove from favorites",
     "addToCart": "Add to cart",
+    "addedToCart": "Added to cart",
+    "addedToFavorites": "Added to favorites",
+    "failedToAddToCart": "Failed to add to cart",
     "removeFromCart": "Remove",
     "quantity": "Quantity",
     "total": "Total",
@@ -112,7 +119,13 @@
     "profile": "Profile",
     "editProfile": "Edit profile",
     "saveChanges": "Save changes",
-    "profileUpdated": "Profile updated"
+    "profileUpdated": "Profile updated",
+    "googleSignIn": "Continue with Google",
+    "connecting": "Connecting...",
+    "orContinueWithEmail": "Or continue with email",
+    "failedGoogleSignIn": "Failed to sign in with Google",
+    "couldNotLoadProducts": "Could not load products",
+    "tryAgain": "Try again"
   },
   "forms": {
     "name": "Name",
@@ -128,16 +141,21 @@
       "kicker": "Expert Belgian Guides",
       "title": "Discover Belgium's",
       "titleItalic": "Hidden Stories",
+      "headline": "Discover Belgium through the eyes of its most passionate storyteller",
       "subtitle": "Curated cultural walking tours that reveal the hidden stories of Belgian cities",
       "description": "Bespoke cultural tours through Antwerp, Brussels, Ghent & Bruges.",
       "tagline": "Where architecture, gastronomy, and heritage meet intellect.",
       "ctaPrimary": "Explore Tours",
-      "ctaSecondary": "Private Groups"
+      "ctaSecondary": "Private Groups",
+      "scroll": "Scroll"
     },
     "cities": {
       "kicker": "Our Cities",
       "title": "Cultural Journeys Through Belgium",
-      "description": "Each city tells a unique story. Our expert guides reveal the layers of history, art, and life that define Belgian culture."
+      "description": "Each city tells a unique story. Our expert guides reveal the layers of history, art, and life that define Belgian culture.",
+      "toursCount": "{count} tours",
+      "viewTours": "View tours",
+      "viewAllTours": "View All Tours"
     },
     "about": {
       "kicker": "About BeroepsBelg",
@@ -247,5 +265,70 @@
       "zh": "Chinese",
       "ja": "Japanese"
     }
+  },
+  "cart": {
+    "title": "Shopping Cart",
+    "itemCount": "{count, plural, =0 {no items} =1 {1 item} other {# items}} in your cart",
+    "loading": "Loading cart...",
+    "empty": "Your cart is empty",
+    "total": "Total",
+    "proceedToCheckout": "Proceed to Checkout"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "completePurchase": "Complete your purchase - Total: €{total}",
+    "fullName": "Full Name",
+    "email": "Email",
+    "streetAddress": "Street Address",
+    "city": "City",
+    "postalCode": "Postal Code",
+    "country": "Country",
+    "processing": "Processing...",
+    "proceedToPayment": "Proceed to Payment",
+    "required": "*"
+  },
+  "booking": {
+    "title": "Book Tour",
+    "perPerson": "per person",
+    "fullName": "Full Name",
+    "email": "Email",
+    "phone": "Phone",
+    "tourDate": "Tour Date",
+    "selectDate": "Select date",
+    "selectBookingDate": "Please select a booking date",
+    "numberOfPeople": "Number of People",
+    "language": "Language",
+    "specialRequests": "Special Requests",
+    "specialRequestsPlaceholder": "Any special requirements or requests...",
+    "total": "Total",
+    "processing": "Processing...",
+    "proceedToPayment": "Proceed to Payment"
+  },
+  "product": {
+    "description": "Description",
+    "productInfo": "Product Information",
+    "inFavorites": "In favorites",
+    "addToFavorites": "Add to favorites"
+  },
+  "webshop": {
+    "title": "Webshop",
+    "subtitle": "Discover our collection of books, merchandise and games",
+    "loading": "Loading products...",
+    "loadError": "Could not load products. Please try again later.",
+    "productCount": "{count, plural, =1 {1 product} other {# products}}",
+    "all": "All",
+    "books": "Books",
+    "merchandise": "Merchandise",
+    "games": "Games"
+  },
+  "tourDetail": {
+    "backToCity": "Back to {city} tours",
+    "bikeTour": "Bike Tour",
+    "details": "Tour Details",
+    "start": "Start",
+    "end": "End",
+    "duration": "Duration",
+    "languages": "Languages",
+    "type": "Type"
   }
 }

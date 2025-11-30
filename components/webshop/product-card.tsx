@@ -39,7 +39,7 @@ export function ProductCard({ product }: ProductCardProps) {
       toast.success(t('removeFromFavorites'));
     } else {
       await addFavorite(product.slug);
-      toast.success('Added to favorites');
+      toast.success(t('addedToFavorites'));
     }
   };
 
@@ -52,9 +52,9 @@ export function ProductCard({ product }: ProductCardProps) {
     setIsAddingToCart(true);
     try {
       await addToCart(product.slug, 1);
-      toast.success(t('addToCart'));
+      toast.success(t('addedToCart'));
     } catch (error) {
-      toast.error('Failed to add to cart');
+      toast.error(t('failedToAddToCart'));
     } finally {
       setIsAddingToCart(false);
     }

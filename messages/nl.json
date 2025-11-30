@@ -14,7 +14,8 @@
     "favorites": "Favorieten",
     "search": "Zoeken",
     "cart": "Winkelmand",
-    "adminPanel": "Admin Paneel"
+    "adminPanel": "Admin Paneel",
+    "social": "Sociaal"
   },
   "hero": {
     "kicker": "— Ontdek België zoals je het nog nooit hebt gezien",
@@ -23,6 +24,8 @@
   },
   "sections": {
     "inSpotlight": "In de kijker",
+    "featuredProducts": "Uitgelichte Producten",
+    "featuredProductsDesc": "Ontdek onze zorgvuldig geselecteerde collectie Belgische culturele schatten",
     "toursByCity": "Tours per stad",
     "shop": "Webshop",
     "press": "In de pers",
@@ -71,7 +74,8 @@
     "customize": "Aanpassen",
     "functional": "Functionele cookies",
     "tracking": "Tracking cookies",
-    "save": "Instellingen opslaan"
+    "save": "Instellingen opslaan",
+    "back": "Terug"
   },
   "auth": {
     "signIn": "Inloggen",
@@ -104,6 +108,9 @@
     "browseProducts": "Bekijk producten",
     "removeFromFavorites": "Verwijder uit favorieten",
     "addToCart": "Toevoegen aan winkelwagen",
+    "addedToCart": "Toegevoegd aan winkelwagen",
+    "addedToFavorites": "Toegevoegd aan favorieten",
+    "failedToAddToCart": "Kon niet toevoegen aan winkelwagen",
     "removeFromCart": "Verwijderen",
     "quantity": "Aantal",
     "total": "Totaal",
@@ -112,7 +119,13 @@
     "profile": "Profiel",
     "editProfile": "Profiel bewerken",
     "saveChanges": "Wijzigingen opslaan",
-    "profileUpdated": "Profiel bijgewerkt"
+    "profileUpdated": "Profiel bijgewerkt",
+    "googleSignIn": "Doorgaan met Google",
+    "connecting": "Verbinden...",
+    "orContinueWithEmail": "Of doorgaan met e-mail",
+    "failedGoogleSignIn": "Inloggen met Google mislukt",
+    "couldNotLoadProducts": "Kon de producten niet laden",
+    "tryAgain": "Probeer opnieuw"
   },
   "forms": {
     "name": "Naam",
@@ -128,16 +141,21 @@
       "kicker": "Experte Belgische Gidsen",
       "title": "Ontdek Belgische",
       "titleItalic": "Verborgen Verhalen",
+      "headline": "Ontdek België door de ogen van zijn meest gepassioneerde verhalenverteller",
       "subtitle": "Op maat gemaakte culturele wandeltours die de verborgen verhalen van Belgische steden onthullen",
       "description": "Op maat gemaakte culturele tours door Antwerpen, Brussel, Gent & Brugge.",
       "tagline": "Waar architectuur, gastronomie en erfgoed elkaar ontmoeten.",
       "ctaPrimary": "Ontdek Tours",
-      "ctaSecondary": "Privégroepen"
+      "ctaSecondary": "Privégroepen",
+      "scroll": "Scroll"
     },
     "cities": {
       "kicker": "Onze Steden",
       "title": "Culturele Reizen Door België",
-      "description": "Elke stad vertelt een uniek verhaal. Onze deskundige gidsen onthullen de lagen van geschiedenis, kunst en leven die de Belgische cultuur definiëren."
+      "description": "Elke stad vertelt een uniek verhaal. Onze deskundige gidsen onthullen de lagen van geschiedenis, kunst en leven die de Belgische cultuur definiëren.",
+      "toursCount": "{count} tours",
+      "viewTours": "Bekijk tours",
+      "viewAllTours": "Bekijk Alle Tours"
     },
     "about": {
       "kicker": "Over BeroepsBelg",
@@ -247,5 +265,70 @@
       "zh": "Chinees",
       "ja": "Japans"
     }
+  },
+  "cart": {
+    "title": "Winkelwagen",
+    "itemCount": "{count, plural, =0 {geen artikelen} =1 {1 artikel} other {# artikelen}} in je winkelwagen",
+    "loading": "Winkelwagen laden...",
+    "empty": "Je winkelwagen is leeg",
+    "total": "Totaal",
+    "proceedToCheckout": "Naar afrekenen"
+  },
+  "checkout": {
+    "title": "Afrekenen",
+    "completePurchase": "Voltooi je aankoop - Totaal: €{total}",
+    "fullName": "Volledige naam",
+    "email": "E-mail",
+    "streetAddress": "Straat en huisnummer",
+    "city": "Stad",
+    "postalCode": "Postcode",
+    "country": "Land",
+    "processing": "Verwerken...",
+    "proceedToPayment": "Doorgaan naar betaling",
+    "required": "*"
+  },
+  "booking": {
+    "title": "Tour Boeken",
+    "perPerson": "per persoon",
+    "fullName": "Volledige naam",
+    "email": "E-mail",
+    "phone": "Telefoon",
+    "tourDate": "Tourdatum",
+    "selectDate": "Selecteer datum",
+    "selectBookingDate": "Selecteer een boekingsdatum",
+    "numberOfPeople": "Aantal personen",
+    "language": "Taal",
+    "specialRequests": "Speciale verzoeken",
+    "specialRequestsPlaceholder": "Bijzondere wensen of verzoeken...",
+    "total": "Totaal",
+    "processing": "Verwerken...",
+    "proceedToPayment": "Doorgaan naar betaling"
+  },
+  "product": {
+    "description": "Beschrijving",
+    "productInfo": "Productinformatie",
+    "inFavorites": "In favorieten",
+    "addToFavorites": "Toevoegen aan favorieten"
+  },
+  "webshop": {
+    "title": "Webshop",
+    "subtitle": "Ontdek onze collectie boeken, merchandise en spellen",
+    "loading": "Producten laden...",
+    "loadError": "Kon de producten niet laden. Probeer het later opnieuw.",
+    "productCount": "{count, plural, =1 {1 product} other {# producten}}",
+    "all": "Alles",
+    "books": "Boeken",
+    "merchandise": "Merchandise",
+    "games": "Spellen"
+  },
+  "tourDetail": {
+    "backToCity": "Terug naar {city} tours",
+    "bikeTour": "Fietstour",
+    "details": "Tour Details",
+    "start": "Start",
+    "end": "Einde",
+    "duration": "Duur",
+    "languages": "Talen",
+    "type": "Type"
   }
 }

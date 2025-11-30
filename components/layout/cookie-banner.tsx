@@ -69,7 +69,7 @@ export function CookieBanner() {
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" size="sm" onClick={() => setShowCustomize(false)}>
-                Back
+                {t('back')}
               </Button>
               <Button size="sm" onClick={handleSaveSettings}>
                 {t('save')}

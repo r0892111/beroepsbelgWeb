@@ -27,6 +27,7 @@ interface ProductDetailDialogProps {
 
 export function ProductDetailDialog({ product, open, onOpenChange }: ProductDetailDialogProps) {
   const t = useTranslations('auth');
+  const tProduct = useTranslations('product');
   const params = useParams();
   const router = useRouter();
   const locale = params.locale as 'nl' | 'en' | 'fr' | 'de';
@@ -46,7 +47,7 @@ export function ProductDetailDialog({ product, open, onOpenChange }: ProductDeta
       toast.success(t('removeFromFavorites'));
     } else {
       await addFavorite(product.slug);
-      toast.success('Added to favorites');
+      toast.success(t('addedToFavorites'));
     }
   };
 
@@ -59,9 +60,9 @@ export function ProductDetailDialog({ product, open, onOpenChange }: ProductDeta
     setIsAddingToCart(true);
     try {
       await addToCart(product.slug, 1);
-      toast.success(t('addToCart'));
+      toast.success(t('addedToCart'));
     } catch (error) {
-      toast.error('Failed to add to cart');
+      toast.error(t('failedToAddToCart'));
     } finally {
       setIsAddingToCart(false);
     }
@@ -109,7 +110,7 @@ export function ProductDetailDialog({ product, open, onOpenChange }: ProductDeta
 
         <div className="space-y-6 py-4">
           <div>
-            <h3 className="text-lg font-semibold mb-2">Beschrijving</h3>
+            <h3 className="text-lg font-semibold mb-2">{tProduct('description')}</h3>
             <DialogDescription className="text-base leading-relaxed whitespace-pre-line">
               {product.description[locale]}
             </DialogDescription>
@@ -117,7 +118,7 @@ export function ProductDetailDialog({ product, open, onOpenChange }: ProductDeta
 
           {product.additionalInfo && product.additionalInfo[locale] && (
             <div>
-              <h3 className="text-lg font-semibold mb-2">Productinformatie</h3>
+              <h3 className="text-lg font-semibold mb-2">{tProduct('productInfo')}</h3>
               <DialogDescription className="text-base leading-relaxed whitespace-pre-line">
                 {product.additionalInfo[locale]}
               </DialogDescription>
@@ -132,7 +133,7 @@ export function ProductDetailDialog({ product, open, onOpenChange }: ProductDeta
             className={`gap-2 ${isFavorite(product.slug) ? 'text-red-500 border-red-500' : ''}`}
           >
             <Heart className={`h-4 w-4 ${isFavorite(product.slug) ? 'fill-current' : ''}`} />
-            {isFavorite(product.slug) ? 'In favorieten' : 'Toevoegen aan favorieten'}
+            {isFavorite(product.slug) ? tProduct('inFavorites') : tProduct('addToFavorites')}
           </Button>
           <Button
             onClick={handleAddToCart}

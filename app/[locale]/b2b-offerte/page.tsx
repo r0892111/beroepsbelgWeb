@@ -69,8 +69,8 @@ export default function B2BQuotePage() {
 
   const selectedTour = tours.find((tour) => (tour.id ?? tour.slug) === selectedTourId);
   const isCustomWalk = selectedTour?.slug === 'wandeling-op-maat' || 
-                       selectedTour?.title.nl?.toLowerCase().includes('wandeling op maat') ||
-                       selectedTour?.title.nl?.toLowerCase().includes('op maat');
+                       selectedTour?.title?.toLowerCase().includes('wandeling op maat') ||
+                       selectedTour?.title?.toLowerCase().includes('op maat');
 
   useEffect(() => {
     let isMounted = true;
@@ -103,7 +103,7 @@ export default function B2BQuotePage() {
   }, []);
 
   const availableTours = selectedCity
-    ? tours.filter((tour) => tour.citySlug === selectedCity && tour.slug !== 'cadeaubon')
+    ? tours.filter((tour) => tour.city === selectedCity && tour.slug !== 'cadeaubon')
     : [];
 
   useEffect(() => {
@@ -160,7 +160,13 @@ export default function B2BQuotePage() {
         tourSlug: selectedTourData?.slug ?? null,
         tourTitle: selectedTourData?.title ?? null,
         tourPrice: selectedTourData?.price ?? null,
-        tourDetails: selectedTourData?.details ?? null,
+        tourDetails: {
+          startLocation: selectedTourData?.startLocation ?? null,
+          endLocation: selectedTourData?.endLocation ?? null,
+          durationMinutes: selectedTourData?.durationMinutes ?? null,
+          languages: selectedTourData?.languages ?? null,
+          type: selectedTourData?.type ?? null,
+        },
         language: data.language,
         numberOfPeople: data.numberOfPeople,
         tourType: data.tourType,
@@ -317,7 +323,7 @@ export default function B2BQuotePage() {
                       <SelectContent>
                         {availableTours.map((tour) => (
                           <SelectItem key={tour.id ?? tour.slug} value={tour.id ?? tour.slug}>
-                            {tour.title.nl}
+                            {tour.title}
                           </SelectItem>
                         ))}
                       </SelectContent>

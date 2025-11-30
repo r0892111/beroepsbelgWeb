@@ -14,7 +14,8 @@
     "favorites": "Favoriten",
     "search": "Suchen",
     "cart": "Warenkorb",
-    "adminPanel": "Admin-Panel"
+    "adminPanel": "Admin-Panel",
+    "social": "Soziales"
   },
   "hero": {
     "kicker": "— Entdecken Sie Belgien wie nie zuvor",
@@ -23,6 +24,8 @@
   },
   "sections": {
     "inSpotlight": "Im Rampenlicht",
+    "featuredProducts": "Empfohlene Produkte",
+    "featuredProductsDesc": "Entdecken Sie unsere sorgfältig ausgewählte Sammlung belgischer Kulturschätze",
     "toursByCity": "Touren nach Stadt",
     "shop": "Webshop",
     "press": "In der Presse",
@@ -71,7 +74,8 @@
     "customize": "Anpassen",
     "functional": "Funktionale Cookies",
     "tracking": "Tracking-Cookies",
-    "save": "Einstellungen speichern"
+    "save": "Einstellungen speichern",
+    "back": "Zurück"
   },
   "auth": {
     "signIn": "Anmelden",
@@ -104,6 +108,9 @@
     "browseProducts": "Produkte durchsuchen",
     "removeFromFavorites": "Aus Favoriten entfernen",
     "addToCart": "In den Warenkorb",
+    "addedToCart": "Zum Warenkorb hinzugefügt",
+    "addedToFavorites": "Zu Favoriten hinzugefügt",
+    "failedToAddToCart": "Konnte nicht zum Warenkorb hinzufügen",
     "removeFromCart": "Entfernen",
     "quantity": "Menge",
     "total": "Gesamt",
@@ -112,7 +119,13 @@
     "profile": "Profil",
     "editProfile": "Profil bearbeiten",
     "saveChanges": "Änderungen speichern",
-    "profileUpdated": "Profil aktualisiert"
+    "profileUpdated": "Profil aktualisiert",
+    "googleSignIn": "Mit Google fortfahren",
+    "connecting": "Verbinden...",
+    "orContinueWithEmail": "Oder mit E-Mail fortfahren",
+    "failedGoogleSignIn": "Anmeldung mit Google fehlgeschlagen",
+    "couldNotLoadProducts": "Produkte konnten nicht geladen werden",
+    "tryAgain": "Erneut versuchen"
   },
   "forms": {
     "name": "Name",
@@ -128,16 +141,21 @@
       "kicker": "Erfahrene Belgische Führer",
       "title": "Entdecken Sie Belgiens",
       "titleItalic": "Verborgene Geschichten",
+      "headline": "Entdecken Sie Belgien durch die Augen seines leidenschaftlichsten Geschichtenerzählers",
       "subtitle": "Kuratierte kulturelle Stadtrundgänge, die die verborgenen Geschichten belgischer Städte enthüllen",
       "description": "Maßgeschneiderte Kulturtouren durch Antwerpen, Brüssel, Gent & Brügge.",
       "tagline": "Wo Architektur, Gastronomie und Erbe auf Intellekt treffen.",
       "ctaPrimary": "Touren Entdecken",
-      "ctaSecondary": "Privatgruppen"
+      "ctaSecondary": "Privatgruppen",
+      "scroll": "Scrollen"
     },
     "cities": {
       "kicker": "Unsere Städte",
       "title": "Kulturreisen Durch Belgien",
-      "description": "Jede Stadt erzählt eine einzigartige Geschichte. Unsere erfahrenen Guides enthüllen die Schichten von Geschichte, Kunst und Leben, die die belgische Kultur definieren."
+      "description": "Jede Stadt erzählt eine einzigartige Geschichte. Unsere erfahrenen Guides enthüllen die Schichten von Geschichte, Kunst und Leben, die die belgische Kultur definieren.",
+      "toursCount": "{count} Touren",
+      "viewTours": "Touren ansehen",
+      "viewAllTours": "Alle Touren Ansehen"
     },
     "about": {
       "kicker": "Über BeroepsBelg",
@@ -247,5 +265,70 @@
       "zh": "Chinesisch",
       "ja": "Japanisch"
     }
+  },
+  "cart": {
+    "title": "Warenkorb",
+    "itemCount": "{count, plural, =0 {keine Artikel} =1 {1 Artikel} other {# Artikel}} in Ihrem Warenkorb",
+    "loading": "Warenkorb wird geladen...",
+    "empty": "Ihr Warenkorb ist leer",
+    "total": "Gesamt",
+    "proceedToCheckout": "Zur Kasse"
+  },
+  "checkout": {
+    "title": "Kasse",
+    "completePurchase": "Kauf abschließen - Gesamt: €{total}",
+    "fullName": "Vollständiger Name",
+    "email": "E-Mail",
+    "streetAddress": "Straße und Hausnummer",
+    "city": "Stadt",
+    "postalCode": "Postleitzahl",
+    "country": "Land",
+    "processing": "Verarbeitung...",
+    "proceedToPayment": "Weiter zur Zahlung",
+    "required": "*"
+  },
+  "booking": {
+    "title": "Tour Buchen",
+    "perPerson": "pro Person",
+    "fullName": "Vollständiger Name",
+    "email": "E-Mail",
+    "phone": "Telefon",
+    "tourDate": "Tourdatum",
+    "selectDate": "Datum auswählen",
+    "selectBookingDate": "Bitte wählen Sie ein Buchungsdatum",
+    "numberOfPeople": "Anzahl der Personen",
+    "language": "Sprache",
+    "specialRequests": "Besondere Wünsche",
+    "specialRequestsPlaceholder": "Besondere Anforderungen oder Wünsche...",
+    "total": "Gesamt",
+    "processing": "Verarbeitung...",
+    "proceedToPayment": "Weiter zur Zahlung"
+  },
+  "product": {
+    "description": "Beschreibung",
+    "productInfo": "Produktinformationen",
+    "inFavorites": "In Favoriten",
+    "addToFavorites": "Zu Favoriten hinzufügen"
+  },
+  "webshop": {
+    "title": "Webshop",
+    "subtitle": "Entdecken Sie unsere Sammlung von Büchern, Merchandise und Spielen",
+    "loading": "Produkte werden geladen...",
+    "loadError": "Produkte konnten nicht geladen werden. Bitte versuchen Sie es später erneut.",
+    "productCount": "{count, plural, =1 {1 Produkt} other {# Produkte}}",
+    "all": "Alle",
+    "books": "Bücher",
+    "merchandise": "Merchandise",
+    "games": "Spiele"
+  },
+  "tourDetail": {
+    "backToCity": "Zurück zu {city} Touren",
+    "bikeTour": "Radtour",
+    "details": "Tour Details",
+    "start": "Start",
+    "end": "Ende",
+    "duration": "Dauer",
+    "languages": "Sprachen",
+    "type": "Typ"
   }
 }

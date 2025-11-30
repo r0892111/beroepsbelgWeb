@@ -34,7 +34,8 @@ export function TourBookingDialog({
   onOpenChange,
 }: TourBookingDialogProps) {
   const router = useRouter();
-  const t = useTranslations();
+  const t = useTranslations('booking');
+  const tB2b = useTranslations('b2b');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,7 +56,7 @@ export function TourBookingDialog({
 
     try {
       if (!formData.bookingDate) {
-        throw new Error('Please select a booking date');
+        throw new Error(t('selectBookingDate'));
       }
 
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -105,38 +106,36 @@ export function TourBookingDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Book Tour</DialogTitle>
+          <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>
-            {tourTitle} - €{tourPrice.toFixed(2)} per person
+            {tourTitle} - €{tourPrice.toFixed(2)} {t('perPerson')}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Full Name *</Label>
+            <Label htmlFor="name">{t('fullName')} *</Label>
             <Input
               id="name"
               required
               value={formData.customerName}
               onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-              placeholder="John Doe"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email *</Label>
+            <Label htmlFor="email">{t('email')} *</Label>
             <Input
               id="email"
               type="email"
               required
               value={formData.customerEmail}
               onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
-              placeholder="john@example.com"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone</Label>
+            <Label htmlFor="phone">{t('phone')}</Label>
             <Input
               id="phone"
               type="tel"
@@ -147,7 +146,7 @@ export function TourBookingDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Tour Date *</Label>
+            <Label>{t('tourDate')} *</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -158,7 +157,7 @@ export function TourBookingDialog({
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.bookingDate ? format(formData.bookingDate, 'PPP') : 'Select date'}
+                  {formData.bookingDate ? format(formData.bookingDate, 'PPP') : t('selectDate')}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
@@ -175,7 +174,7 @@ export function TourBookingDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="people">Number of People *</Label>
+              <Label htmlFor="people">{t('numberOfPeople')} *</Label>
               <Input
                 id="people"
                 type="number"
@@ -188,7 +187,7 @@ export function TourBookingDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="language">Language *</Label>
+              <Label htmlFor="language">{t('language')} *</Label>
               <Select
                 value={formData.language}
                 onValueChange={(value) => setFormData({ ...formData, language: value })}
@@ -197,22 +196,22 @@ export function TourBookingDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="nl">Nederlands</SelectItem>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="fr">Français</SelectItem>
-                  <SelectItem value="de">Deutsch</SelectItem>
+                  <SelectItem value="nl">{tB2b('languages.nl')}</SelectItem>
+                  <SelectItem value="en">{tB2b('languages.en')}</SelectItem>
+                  <SelectItem value="fr">{tB2b('languages.fr')}</SelectItem>
+                  <SelectItem value="de">{tB2b('languages.de')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="requests">Special Requests</Label>
+            <Label htmlFor="requests">{t('specialRequests')}</Label>
             <Textarea
               id="requests"
               value={formData.specialRequests}
               onChange={(e) => setFormData({ ...formData, specialRequests: e.target.value })}
-              placeholder="Any special requirements or requests..."
+              placeholder={t('specialRequestsPlaceholder')}
               rows={3}
             />
           </div>
@@ -226,16 +225,16 @@ export function TourBookingDialog({
           <DialogFooter>
             <div className="flex w-full items-center justify-between">
               <div className="text-lg font-bold">
-                Total: €{totalPrice.toFixed(2)}
+                {t('total')}: €{totalPrice.toFixed(2)}
               </div>
               <Button type="submit" disabled={loading}>
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
+                    {t('processing')}
                   </>
                 ) : (
-                  'Proceed to Payment'
+                  t('proceedToPayment')
                 )}
               </Button>
             </div>

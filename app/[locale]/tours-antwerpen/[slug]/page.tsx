@@ -20,6 +20,15 @@ export async function generateStaticParams() {
   }));
 }
 
+// Format duration from minutes to readable string
+const formatDuration = (minutes: number) => {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours > 0 && mins > 0) return `${hours}h ${mins}min`;
+  if (hours > 0) return `${hours} uur`;
+  return `${mins} min`;
+};
+
 export default async function TourDetailPage({ params }: TourDetailPageProps) {
   const { locale, slug } = params;
   const tour = await getTourBySlug('antwerpen', slug);
@@ -29,6 +38,10 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
   }
 
   const t = await getTranslations('common');
+  const tTour = await getTranslations('tourDetail');
+  
+  const images = tour.options?.images || [];
+  const badge = tour.options?.badge;
 
   return (
     <div className="bg-ivory min-h-screen">
@@ -40,29 +53,29 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
               className="text-sm font-semibold transition-colors hover:opacity-70"
               style={{ color: 'var(--brass)' }}
             >
-              ← Terug naar Antwerpen tours
+              ← {tTour('backToCity', { city: 'Antwerpen' })}
             </Link>
           </div>
 
           <div className="mb-12">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-              <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy">{tour.title[locale]}</h1>
+              <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy">{tour.title}</h1>
               <div className="flex items-center gap-2">
-                {tour.slug === 'het-jaar-2030' && (
+                {tour.type === 'bike' && (
                   <Badge
                     variant="outline"
                     className="flex items-center gap-1 border-brass text-navy"
                   >
                     <Bike className="h-4 w-4" />
-                    Fietstour
+                    {tTour('bikeTour')}
                   </Badge>
                 )}
-                {tour.badge && (
+                {badge && (
                   <Badge
                     className="text-sm font-semibold"
                     style={{ backgroundColor: 'var(--brass)', color: 'var(--belgian-navy)' }}
                   >
-                    {tour.badge}
+                    {badge}
                   </Badge>
                 )}
               </div>
@@ -74,15 +87,14 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
             )}
           </div>
 
-        {tour.images && tour.images.length > 0 && (
-          <TourImageGallery images={tour.images} title={tour.title[locale]} />
+        {images.length > 0 && (
+          <TourImageGallery images={images} title={tour.title} />
         )}
 
         <div className="mb-12 space-y-6">
-          <p className="text-xl font-serif font-semibold text-navy">{tour.shortDescription[locale]}</p>
           {tour.description && (
             <div className="prose max-w-none">
-              {tour.description[locale].split('\\n\\n').map((paragraph, idx) => {
+              {tour.description.split('\n\n').map((paragraph, idx) => {
                 const hasFAQ = paragraph.includes('FAQ');
                 if (hasFAQ) {
                   const parts = paragraph.split(/(FAQ-pagina|FAQ page|page FAQ|FAQ-Seite)/gi);
@@ -114,62 +126,61 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
               })}
             </div>
           )}
+          {tour.notes && (
+            <p className="text-sm italic" style={{ color: 'var(--brass)' }}>{tour.notes}</p>
+          )}
         </div>
 
-        {tour.details && (
-          <div className="mb-12 rounded-lg bg-sand p-8 brass-corner">
-            <h3 className="text-2xl font-serif font-bold text-navy mb-6">Tour Details</h3>
-            <div className="grid gap-6 md:grid-cols-2">
-              {tour.details.start && (
-                <div className="flex items-start gap-3">
-                  <MapPin className="mt-1 h-5 w-5 flex-shrink-0" style={{ color: 'var(--brass)' }} />
-                  <div>
-                    <p className="font-semibold text-navy mb-1">Start</p>
-                    <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>{tour.details.start[locale]}</p>
-                  </div>
+        <div className="mb-12 rounded-lg bg-sand p-8 brass-corner">
+          <h3 className="text-2xl font-serif font-bold text-navy mb-6">{tTour('details')}</h3>
+          <div className="grid gap-6 md:grid-cols-2">
+            {tour.startLocation && (
+              <div className="flex items-start gap-3">
+                <MapPin className="mt-1 h-5 w-5 flex-shrink-0" style={{ color: 'var(--brass)' }} />
+                <div>
+                  <p className="font-semibold text-navy mb-1">{tTour('start')}</p>
+                  <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>{tour.startLocation}</p>
                 </div>
-              )}
-              {tour.details.end && (
-                <div className="flex items-start gap-3">
-                  <MapPin className="mt-1 h-5 w-5 flex-shrink-0" style={{ color: 'var(--brass)' }} />
-                  <div>
-                    <p className="font-semibold text-navy mb-1">Einde</p>
-                    <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>{tour.details.end[locale]}</p>
-                  </div>
+              </div>
+            )}
+            {tour.endLocation && (
+              <div className="flex items-start gap-3">
+                <MapPin className="mt-1 h-5 w-5 flex-shrink-0" style={{ color: 'var(--brass)' }} />
+                <div>
+                  <p className="font-semibold text-navy mb-1">{tTour('end')}</p>
+                  <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>{tour.endLocation}</p>
                 </div>
-              )}
-              {tour.details.duration && (
-                <div className="flex items-start gap-3">
-                  <Clock className="mt-1 h-5 w-5 flex-shrink-0" style={{ color: 'var(--brass)' }} />
-                  <div>
-                    <p className="font-semibold text-navy mb-1">Duurtijd</p>
-                    <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>{tour.details.duration[locale]}</p>
-                  </div>
-                </div>
-              )}
-              {tour.details.languages && (
-                <div className="flex items-start gap-3">
-                  <Languages className="mt-1 h-5 w-5 flex-shrink-0" style={{ color: 'var(--brass)' }} />
-                  <div>
-                    <p className="font-semibold text-navy mb-1">Talen</p>
-                    <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>{tour.details.languages[locale]}</p>
-                  </div>
-                </div>
-              )}
-              {tour.details.extraInfo && (
-                <div className="md:col-span-2">
-                  <p className="text-sm font-semibold" style={{ color: 'var(--brass)' }}>{tour.details.extraInfo[locale]}</p>
-                </div>
-              )}
+              </div>
+            )}
+            <div className="flex items-start gap-3">
+              <Clock className="mt-1 h-5 w-5 flex-shrink-0" style={{ color: 'var(--brass)' }} />
+              <div>
+                <p className="font-semibold text-navy mb-1">{tTour('duration')}</p>
+                <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>{formatDuration(tour.durationMinutes)}</p>
+              </div>
             </div>
+            {tour.languages.length > 0 && (
+              <div className="flex items-start gap-3">
+                <Languages className="mt-1 h-5 w-5 flex-shrink-0" style={{ color: 'var(--brass)' }} />
+                <div>
+                  <p className="font-semibold text-navy mb-1">{tTour('languages')}</p>
+                  <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>{tour.languages.join(', ')}</p>
+                </div>
+              </div>
+            )}
+            {tour.options?.extraInfo && (
+              <div className="md:col-span-2">
+                <p className="text-sm font-semibold" style={{ color: 'var(--brass)' }}>{tour.options.extraInfo}</p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
         {tour.price && (
           <div className="mb-12">
             <TourBookingButton
               tourId={tour.id}
-              tourTitle={tour.title[locale]}
+              tourTitle={tour.title}
               tourPrice={tour.price}
             />
           </div>
