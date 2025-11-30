@@ -314,59 +314,69 @@ export async function getPressLinks(): Promise<PressLink[]> {
   console.log('[Supabase API] Fetching press links...');
   const startTime = performance.now();
 
-  const { data, error } = await supabase
-    .from('press_links')
-    .select('*')
-    .order('sort_order');
+  try {
+    const { data, error } = await supabase
+      .from('press_links')
+      .select('*')
+      .order('sort_order');
 
-  if (error) {
-    console.error('[Supabase API] ❌ Error fetching press links:', error);
-    throw error;
+    if (error) {
+      console.error('[Supabase API] ❌ Error fetching press links:', error);
+      return []; // Return empty array instead of throwing
+    }
+
+    const links = (data || []).map((row: any) => ({
+      name: row.name,
+      url: row.url,
+      logo: row.logo,
+    }));
+
+    const endTime = performance.now();
+    console.log(`[Supabase API] ✓ Fetched ${links.length} press links in ${(endTime - startTime).toFixed(2)}ms`);
+
+    return links;
+  } catch (err) {
+    console.error('[Supabase API] ❌ Failed to fetch press links:', err);
+    return [];
   }
-
-  const links = (data || []).map((row: any) => ({
-    name: row.name,
-    url: row.url,
-    logo: row.logo,
-  }));
-
-  const endTime = performance.now();
-  console.log(`[Supabase API] ✓ Fetched ${links.length} press links in ${(endTime - startTime).toFixed(2)}ms`);
-
-  return links;
 }
 
 export async function getFaqItems(): Promise<FaqItem[]> {
   console.log('[Supabase API] Fetching FAQ items...');
   const startTime = performance.now();
 
-  const { data, error } = await supabase
-    .from('faq_items')
-    .select('*')
-    .order('sort_order');
+  try {
+    const { data, error } = await supabase
+      .from('faq_items')
+      .select('*')
+      .order('sort_order');
 
-  if (error) {
-    console.error('[Supabase API] ❌ Error fetching FAQ items:', error);
-    throw error;
+    if (error) {
+      console.error('[Supabase API] ❌ Error fetching FAQ items:', error);
+      return [];
+    }
+
+    const items = (data || []).map((row: any) => ({
+      question: {
+        nl: row.question_nl,
+        en: row.question_en,
+        fr: row.question_fr,
+        de: row.question_de,
+      },
+      answer: {
+        nl: row.answer_nl,
+        en: row.answer_en,
+        fr: row.answer_fr,
+        de: row.answer_de,
+      },
+    }));
+
+    const endTime = performance.now();
+    console.log(`[Supabase API] ✓ Fetched ${items.length} FAQ items in ${(endTime - startTime).toFixed(2)}ms`);
+
+    return items;
+  } catch (err) {
+    console.error('[Supabase API] ❌ Failed to fetch FAQ items:', err);
+    return [];
   }
-
-  const items = (data || []).map((row: any) => ({
-    question: {
-      nl: row.question_nl,
-      en: row.question_en,
-      fr: row.question_fr,
-      de: row.question_de,
-    },
-    answer: {
-      nl: row.answer_nl,
-      en: row.answer_en,
-      fr: row.answer_fr,
-      de: row.answer_de,
-    },
-  }));
-
-  const endTime = performance.now();
-  console.log(`[Supabase API] ✓ Fetched ${items.length} FAQ items in ${(endTime - startTime).toFixed(2)}ms`);
-
-  return items;
 }
