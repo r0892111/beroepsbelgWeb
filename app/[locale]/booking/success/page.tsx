@@ -25,7 +25,7 @@ export default function BookingSuccessPage() {
         const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
         const response = await fetch(
-          `${supabaseUrl}/rest/v1/tourbooking?select=*,tours_table_prod(*)`,
+          `${supabaseUrl}/rest/v1/tourbooking?stripe_session_id=eq.${sessionId}&select=*,tours_table_prod(*)`,
           {
             headers: {
               'apikey': supabaseAnonKey || '',
@@ -36,14 +36,12 @@ export default function BookingSuccessPage() {
 
         if (response.ok) {
           const data = await response.json();
-          const bookingWithSession = data.find((booking: any) =>
-            booking.invitees?.some((inv: any) => inv.stripeSessionId === sessionId)
-          );
+          if (data && data.length > 0) {
+            const bookingData = data[0];
+            const invitee = bookingData.invitees?.[0];
 
-          if (bookingWithSession) {
-            const invitee = bookingWithSession.invitees.find((inv: any) => inv.stripeSessionId === sessionId);
             setBooking({
-              ...bookingWithSession,
+              ...bookingData,
               customer_name: invitee?.name,
               customer_email: invitee?.email,
               customer_phone: invitee?.phone,
@@ -51,7 +49,7 @@ export default function BookingSuccessPage() {
               language: invitee?.language,
               special_requests: invitee?.specialRequests,
               amount: invitee?.amount,
-              booking_date: bookingWithSession.tour_datetime,
+              booking_date: bookingData.tour_datetime,
             });
           }
         }
