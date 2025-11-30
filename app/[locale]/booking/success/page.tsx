@@ -25,7 +25,7 @@ export default function BookingSuccessPage() {
         const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
         const response = await fetch(
-          `${supabaseUrl}/rest/v1/bookings?stripe_session_id=eq.${sessionId}&select=*,tours(*)`,
+          `${supabaseUrl}/rest/v1/tourbooking?select=*,tours_table_prod(*)`,
           {
             headers: {
               'apikey': supabaseAnonKey || '',
@@ -36,8 +36,23 @@ export default function BookingSuccessPage() {
 
         if (response.ok) {
           const data = await response.json();
-          if (data && data.length > 0) {
-            setBooking(data[0]);
+          const bookingWithSession = data.find((booking: any) =>
+            booking.invitees?.some((inv: any) => inv.stripeSessionId === sessionId)
+          );
+
+          if (bookingWithSession) {
+            const invitee = bookingWithSession.invitees.find((inv: any) => inv.stripeSessionId === sessionId);
+            setBooking({
+              ...bookingWithSession,
+              customer_name: invitee?.name,
+              customer_email: invitee?.email,
+              customer_phone: invitee?.phone,
+              number_of_people: invitee?.numberOfPeople,
+              language: invitee?.language,
+              special_requests: invitee?.specialRequests,
+              amount: invitee?.amount,
+              booking_date: bookingWithSession.tour_datetime,
+            });
           }
         }
       } catch (error) {
@@ -95,7 +110,7 @@ export default function BookingSuccessPage() {
           <div className="space-y-4">
             <div className="flex justify-between border-b pb-2">
               <span className="font-medium">Tour:</span>
-              <span className="text-muted-foreground">{booking.tours?.title_nl || 'Tour'}</span>
+              <span className="text-muted-foreground">{booking.tours_table_prod?.title || 'Tour'}</span>
             </div>
             <div className="flex justify-between border-b pb-2">
               <span className="font-medium">Date:</span>
