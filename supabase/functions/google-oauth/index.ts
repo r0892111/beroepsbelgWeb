@@ -11,7 +11,8 @@ const GOOGLE_CLIENT_SECRET = Deno.env.get('GOOGLE_CLIENT_SECRET');
 const GOOGLE_OAUTH_SCOPES = [
   'https://www.googleapis.com/auth/calendar',
   'https://www.googleapis.com/auth/userinfo.email',
-  'https://www.googleapis.com/auth/userinfo.profile'
+  'https://www.googleapis.com/auth/userinfo.profile',
+  'https://www.googleapis.com/auth/drive.file'
 ].join(' ');
 
 Deno.serve(async (req: Request) => {
@@ -76,6 +77,8 @@ Deno.serve(async (req: Request) => {
         throw new Error('Google OAuth credentials not configured');
       }
 
+      console.log('Exchanging code with redirect_uri:', redirect_uri);
+
       const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: {
@@ -91,9 +94,10 @@ Deno.serve(async (req: Request) => {
       });
 
       if (!tokenResponse.ok) {
-        const errorText = await tokenResponse.text();
-        console.error('Token exchange failed:', errorText);
-        throw new Error('Failed to exchange authorization code');
+        const errorData = await tokenResponse.json().catch(() => ({}));
+        console.error('Token exchange failed:', JSON.stringify(errorData));
+        console.error('Used redirect_uri:', redirect_uri);
+        throw new Error(`Google token exchange failed: ${errorData.error || 'unknown'} - ${errorData.error_description || 'no description'}`);
       }
 
       const tokens = await tokenResponse.json();

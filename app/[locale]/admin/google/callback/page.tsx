@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,12 +12,23 @@ export default function GoogleCallbackPage() {
   const searchParams = useSearchParams();
   const params = useParams();
   const locale = params.locale as string;
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [message, setMessage] = useState('Processing Google connection...');
+  const hasAttemptedExchange = useRef(false);
 
   useEffect(() => {
     const handleCallback = async () => {
+      // Wait for auth to finish loading
+      if (authLoading) {
+        return;
+      }
+
+      // Prevent multiple exchange attempts (code can only be used once)
+      if (hasAttemptedExchange.current) {
+        return;
+      }
+
       if (!user) {
         setStatus('error');
         setMessage('You must be logged in to connect Google.');
@@ -61,6 +72,9 @@ export default function GoogleCallbackPage() {
         }, 3000);
         return;
       }
+
+      // Mark that we're attempting the exchange (only allow once)
+      hasAttemptedExchange.current = true;
 
       try {
         const { data: session } = await supabase.auth.getSession();
@@ -107,7 +121,7 @@ export default function GoogleCallbackPage() {
     };
 
     void handleCallback();
-  }, [user, searchParams, router, locale]);
+  }, [user, authLoading, searchParams, router, locale]);
 
   return (
     <div className="min-h-screen bg-sand flex items-center justify-center p-4">

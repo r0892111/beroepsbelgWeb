@@ -24,8 +24,9 @@ export default function BookingSuccessPage() {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-        const response = await fetch(
-          `${supabaseUrl}/rest/v1/tourbooking?stripe_session_id=eq.${sessionId}&select=*,tours_table_prod(*)`,
+        // First, fetch the booking
+        const bookingResponse = await fetch(
+          `${supabaseUrl}/rest/v1/tourbooking?stripe_session_id=eq.${sessionId}&select=*`,
           {
             headers: {
               'apikey': supabaseAnonKey || '',
@@ -34,14 +35,38 @@ export default function BookingSuccessPage() {
           }
         );
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.length > 0) {
-            const bookingData = data[0];
-            const invitee = bookingData.invitees?.[0];
+        if (bookingResponse.ok) {
+          const bookingData = await bookingResponse.json();
+          console.log('Booking data:', bookingData);
+          
+          if (bookingData && bookingData.length > 0) {
+            const booking = bookingData[0];
+            const invitee = booking.invitees?.[0];
+
+            // Fetch the tour data separately
+            let tourTitle = 'Tour';
+            if (booking.tour_id) {
+              const tourResponse = await fetch(
+                `${supabaseUrl}/rest/v1/tours_table_prod?id=eq.${booking.tour_id}&select=title`,
+                {
+                  headers: {
+                    'apikey': supabaseAnonKey || '',
+                    'Authorization': `Bearer ${supabaseAnonKey}`,
+                  },
+                }
+              );
+              
+              if (tourResponse.ok) {
+                const tourData = await tourResponse.json();
+                if (tourData && tourData.length > 0) {
+                  tourTitle = tourData[0].title;
+                }
+              }
+            }
 
             setBooking({
-              ...bookingData,
+              ...booking,
+              tour_title: tourTitle,
               customer_name: invitee?.name,
               customer_email: invitee?.email,
               customer_phone: invitee?.phone,
@@ -49,9 +74,11 @@ export default function BookingSuccessPage() {
               language: invitee?.language,
               special_requests: invitee?.specialRequests,
               amount: invitee?.amount,
-              booking_date: bookingData.tour_datetime,
+              booking_date: booking.tour_datetime,
             });
           }
+        } else {
+          console.error('Failed to fetch booking:', await bookingResponse.text());
         }
       } catch (error) {
         console.error('Error fetching booking:', error);
@@ -108,7 +135,7 @@ export default function BookingSuccessPage() {
           <div className="space-y-4">
             <div className="flex justify-between border-b pb-2">
               <span className="font-medium">Tour:</span>
-              <span className="text-muted-foreground">{booking.tours_table_prod?.title || 'Tour'}</span>
+              <span className="text-muted-foreground">{booking.tour_title || 'Tour'}</span>
             </div>
             <div className="flex justify-between border-b pb-2">
               <span className="font-medium">Date:</span>

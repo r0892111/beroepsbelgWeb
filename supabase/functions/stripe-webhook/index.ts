@@ -57,71 +57,88 @@ async function handleEvent(event: Stripe.Event) {
   const stripeData = event?.data?.object ?? {};
 
   if (!stripeData) {
+    console.error('No stripe data in event');
     return;
   }
 
-  if (!('customer' in stripeData)) {
-    return;
-  }
+  // Handle checkout session completed events (for tour bookings and webshop orders)
+  if (event.type === 'checkout.session.completed') {
+    const session = stripeData as Stripe.Checkout.Session;
+    const { id: sessionId, mode, payment_status, metadata } = session;
 
-  // for one time payments, we only listen for the checkout.session.completed event
-  if (event.type === 'payment_intent.succeeded' && event.data.object.invoice === null) {
-    return;
-  }
+    console.info(`Processing checkout.session.completed: ${sessionId}, mode: ${mode}, status: ${payment_status}`);
 
-  const { customer: customerId } = stripeData;
+    if (mode === 'payment' && payment_status === 'paid') {
+      // First, try to update a tour booking
+      const { data: tourBooking, error: tourBookingError } = await supabase
+        .from('tourbooking')
+        .update({ status: 'completed' })
+        .eq('stripe_session_id', sessionId)
+        .select()
+        .single();
 
-  if (!customerId || typeof customerId !== 'string') {
-    console.error(`No customer received on event: ${JSON.stringify(event)}`);
-  } else {
-    let isSubscription = true;
+      if (tourBooking) {
+        console.info(`Successfully updated tour booking for session: ${sessionId}`);
+        return;
+      }
 
-    if (event.type === 'checkout.session.completed') {
-      const { mode } = stripeData as Stripe.Checkout.Session;
+      if (tourBookingError && tourBookingError.code !== 'PGRST116') {
+        // PGRST116 = no rows found, which is fine - might be a webshop order
+        console.error('Error updating tour booking:', tourBookingError);
+      }
 
-      isSubscription = mode === 'subscription';
+      // If no tour booking found, try to update a webshop order
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .update({ 
+          status: 'completed',
+          updated_at: new Date().toISOString()
+        })
+        .eq('stripe_session_id', sessionId)
+        .select()
+        .single();
 
-      console.info(`Processing ${isSubscription ? 'subscription' : 'one-time payment'} checkout session`);
-    }
+      if (order) {
+        console.info(`Successfully updated webshop order for session: ${sessionId}`);
+        return;
+      }
 
-    const { mode, payment_status } = stripeData as Stripe.Checkout.Session;
+      if (orderError && orderError.code !== 'PGRST116') {
+        console.error('Error updating webshop order:', orderError);
+      }
 
-    if (isSubscription) {
-      console.info(`Starting subscription sync for customer: ${customerId}`);
-      await syncCustomerFromStripe(customerId);
-    } else if (mode === 'payment' && payment_status === 'paid') {
-      try {
-        // Extract the necessary information from the session
-        const {
-          id: checkout_session_id,
-          payment_intent,
-          amount_subtotal,
-          amount_total,
-          currency,
-        } = stripeData as Stripe.Checkout.Session;
-
-        // Insert the order into the stripe_orders table
-        const { error: orderError } = await supabase.from('stripe_orders').insert({
-          checkout_session_id,
-          payment_intent_id: payment_intent,
-          customer_id: customerId,
-          amount_subtotal,
-          amount_total,
-          currency,
-          payment_status,
-          status: 'completed', // assuming we want to mark it as completed since payment is successful
-        });
-
-        if (orderError) {
-          console.error('Error inserting order:', orderError);
-          return;
-        }
-        console.info(`Successfully processed one-time payment for session: ${checkout_session_id}`);
-      } catch (error) {
-        console.error('Error processing one-time payment:', error);
+      // If neither found, log it
+      if (!tourBooking && !order) {
+        console.warn(`No booking or order found for session: ${sessionId}`);
       }
     }
+
+    // Handle subscription checkouts
+    if (mode === 'subscription' && 'customer' in session && session.customer) {
+      const customerId = typeof session.customer === 'string' ? session.customer : session.customer.id;
+      console.info(`Starting subscription sync for customer: ${customerId}`);
+      await syncCustomerFromStripe(customerId);
+    }
+
+    return;
   }
+
+  // Handle other subscription-related events
+  if (
+    event.type === 'customer.subscription.updated' ||
+    event.type === 'customer.subscription.deleted' ||
+    event.type === 'invoice.payment_succeeded' ||
+    event.type === 'invoice.payment_failed'
+  ) {
+    if ('customer' in stripeData && stripeData.customer) {
+      const customerId = typeof stripeData.customer === 'string' ? stripeData.customer : stripeData.customer.id;
+      console.info(`Syncing subscription for customer: ${customerId} (event: ${event.type})`);
+      await syncCustomerFromStripe(customerId);
+    }
+    return;
+  }
+
+  console.info(`Unhandled event type: ${event.type}`);
 }
 
 // based on the excellent https://github.com/t3dotgg/stripe-recommendations
