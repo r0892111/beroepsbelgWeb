@@ -14,7 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Calendar, Users, MapPin, Languages, Building2, Sparkles, CheckCircle2, Home, ShoppingBag, ExternalLink, CreditCard, FileText, Clock, Gift } from 'lucide-react';
+import { Calendar, Users, MapPin, Languages, Building2, Sparkles, CheckCircle2, Home, ShoppingBag, ExternalLink, Clock, Gift } from 'lucide-react';
 import { getCities, getTours, getProducts } from '@/lib/api/content';
 import type { City, Tour, Product } from '@/lib/data/types';
 import Image from 'next/image';
@@ -26,7 +26,8 @@ const quoteSchema = z.object({
   language: z.string().min(1),
   numberOfPeople: z.string().min(1),
   companyName: z.string().optional(),
-  contactName: z.string().min(1),
+  contactFirstName: z.string().min(1),
+  contactLastName: z.string().min(1),
   contactEmail: z.string().email(),
   contactPhone: z.string().min(1),
   vatNumber: z.string().optional(),
@@ -51,8 +52,6 @@ export default function B2BQuotePage() {
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
   const [selectedUpsell, setSelectedUpsell] = useState<string[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState<'online' | 'transfer'>('online');
-  const [wantsInvoice, setWantsInvoice] = useState(true); // B2B always wants invoice
   const [countdown, setCountdown] = useState(5);
 
   const {
@@ -264,13 +263,11 @@ export default function B2BQuotePage() {
         vatNumber: data.vatNumber || null,
         billingAddress: data.billingAddress || null,
         // Contact info
-        contactName: data.contactName,
+        contactFirstName: data.contactFirstName,
+        contactLastName: data.contactLastName,
         contactEmail: data.contactEmail,
         contactPhone: data.contactPhone,
         additionalInfo: data.additionalInfo || null,
-        // Payment
-        paymentMethod,
-        wantsInvoice,
         // Upsell
         upsellProducts: upsellProducts.map(p => ({
           id: p.uuid,
@@ -563,14 +560,20 @@ export default function B2BQuotePage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="contactName" className="text-base font-semibold text-navy">Contactpersoon*</Label>
-                    <Input id="contactName" {...register('contactName')} className="mt-2" />
-                    {errors.contactName && <p className="mt-1 text-sm text-destructive">{tForms('required')}</p>}
+                    <Label htmlFor="contactFirstName" className="text-base font-semibold text-navy">Voornaam*</Label>
+                    <Input id="contactFirstName" {...register('contactFirstName')} className="mt-2" />
+                    {errors.contactFirstName && <p className="mt-1 text-sm text-destructive">{tForms('required')}</p>}
                   </div>
                   <div>
-                    <Label htmlFor="companyName" className="text-base font-semibold text-navy">Bedrijfsnaam</Label>
-                    <Input id="companyName" {...register('companyName')} className="mt-2" />
+                    <Label htmlFor="contactLastName" className="text-base font-semibold text-navy">Achternaam*</Label>
+                    <Input id="contactLastName" {...register('contactLastName')} className="mt-2" />
+                    {errors.contactLastName && <p className="mt-1 text-sm text-destructive">{tForms('required')}</p>}
                   </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="companyName" className="text-base font-semibold text-navy">Bedrijfsnaam</Label>
+                  <Input id="companyName" {...register('companyName')} className="mt-2" />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -698,39 +701,8 @@ export default function B2BQuotePage() {
                   </div>
                 </div>
 
-                {/* Payment method */}
-                <div>
-                  <Label className="text-base font-semibold text-navy mb-3 block">Betaalmethode</Label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div
-                      onClick={() => setPaymentMethod('online')}
-                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all flex items-center gap-3 ${
-                        paymentMethod === 'online' ? 'border-brass bg-brass/5' : 'border-gray-200'
-                      }`}
-                    >
-                      <CreditCard className="h-6 w-6" style={{ color: paymentMethod === 'online' ? 'var(--brass)' : '#9ca3af' }} />
-                      <div>
-                        <p className="font-medium">Online betaling</p>
-                        <p className="text-xs text-muted-foreground">Kaart, Bancontact, Apple Pay</p>
-                      </div>
-                    </div>
-                    <div
-                      onClick={() => setPaymentMethod('transfer')}
-                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all flex items-center gap-3 ${
-                        paymentMethod === 'transfer' ? 'border-brass bg-brass/5' : 'border-gray-200'
-                      }`}
-                    >
-                      <FileText className="h-6 w-6" style={{ color: paymentMethod === 'transfer' ? 'var(--brass)' : '#9ca3af' }} />
-                      <div>
-                        <p className="font-medium">Overschrijving</p>
-                        <p className="text-xs text-muted-foreground">Factuur via e-mail</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
                 <p className="text-sm text-muted-foreground text-center">
-                  Na bevestiging controleren wij de beschikbaarheid van de gids en ontvangt u een bevestigingsmail met {paymentMethod === 'online' ? 'een betaallink' : 'factuur'}.
+                  Na bevestiging controleren wij de beschikbaarheid van de gids en ontvangt u een bevestigingsmail met factuur.
                 </p>
 
                 <div className="flex gap-3">

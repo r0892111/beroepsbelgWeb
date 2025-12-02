@@ -130,6 +130,7 @@ export function TourBookingDialog({
           language: formData.language,
           specialRequests: formData.specialRequests,
           userId: null,
+          bookingType: 'B2C',
         }),
       });
 
