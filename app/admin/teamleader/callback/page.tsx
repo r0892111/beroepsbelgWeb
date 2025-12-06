@@ -23,13 +23,21 @@ export default function TeamleaderCallbackPage() {
   const exchangeTriggeredRef = useRef(false);
   const hasSucceededRef = useRef(false);
 
+  // Get locale from localStorage or default to 'nl'
+  const [locale, setLocale] = useState('nl');
+
+  useEffect(() => {
+    const savedLocale = localStorage.getItem('userLocale') || 'nl';
+    setLocale(savedLocale);
+  }, []);
+
   useEffect(() => {
     // Check admin access
     if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
-      router.push('/nl');
+      router.push(`/${locale}`);
       return;
     }
-  }, [user, profile, router]);
+  }, [user, profile, router, locale]);
 
   useEffect(() => {
     // Skip if we've already processed the exchange or succeeded
@@ -94,6 +102,7 @@ export default function TeamleaderCallbackPage() {
         error?: string;
       }>('teamleader-auth', {
         body: {
+          action: 'exchange',
           code,
           redirect_uri: redirectUri,
           user_id: user.id
@@ -149,15 +158,15 @@ export default function TeamleaderCallbackPage() {
 
       // Show success message for 3 seconds before redirecting
       setTimeout(() => {
-        router.replace('/nl/admin/dashboard?teamleader=connected');
+        router.replace(`/${locale}/admin/dashboard?teamleader=connected`);
       }, 3000);
     };
 
     void exchangeCode();
-  }, [searchParams, router, user, profile, t]);
+  }, [searchParams, router, user, profile, t, locale]);
 
   const handleGoBack = () => {
-    router.replace('/nl/admin/dashboard');
+    router.replace(`/${locale}/admin/dashboard`);
   };
 
   // Don't render if user is not admin
@@ -168,7 +177,7 @@ export default function TeamleaderCallbackPage() {
   return (
     <div className="min-h-screen bg-sand flex items-center justify-center p-4">
       <div className="absolute top-4 right-4">
-        <Link href="/nl">
+        <Link href={`/${locale}`}>
           <Button variant="ghost" size="sm">
             <Home className="h-4 w-4 mr-2" />
             {t('home') || 'Home'}

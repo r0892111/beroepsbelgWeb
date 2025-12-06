@@ -137,6 +137,34 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    if (action === 'disconnect') {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          google_access_token: null,
+          google_refresh_token: null,
+        })
+        .eq('id', user.id);
+
+      if (updateError) {
+        console.error('Failed to disconnect Google:', updateError);
+        throw new Error('Failed to disconnect Google account');
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Google account disconnected successfully',
+        }),
+        {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
+
     throw new Error('Invalid action');
   } catch (error) {
     console.error('Google OAuth error:', error);

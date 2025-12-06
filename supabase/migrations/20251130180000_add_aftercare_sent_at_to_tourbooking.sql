@@ -14,3 +14,7 @@ ALTER TABLE tourbooking ADD COLUMN IF NOT EXISTS aftercare_sent_at timestamptz;
 -- Create index for faster cron job queries
 CREATE INDEX IF NOT EXISTS idx_tourbooking_aftercare_sent_at ON tourbooking(aftercare_sent_at);
 
+
+
+
+
