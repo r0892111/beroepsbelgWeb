@@ -40,7 +40,6 @@ export function MainNav({ locale }: MainNavProps) {
     { label: t('press'), href: `/${locale}/pers` },
     { label: t('faq'), href: `/${locale}/faq` },
     { label: t('jobs'), href: `/${locale}/jobs/become-a-guide` },
-    { label: t('blog'), href: `/${locale}/blog` },
     { label: t('contact'), href: `/${locale}/contact/contactformulier` },
     { label: t('b2b'), href: `/${locale}/b2b-offerte` },
   ];
