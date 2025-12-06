@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from 'next-intl';
-import { ExternalLink, LogOut, Link as LinkIcon, Home, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { ExternalLink, LogOut, Link as LinkIcon, Home, RefreshCw, CheckCircle2, Unlink } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 
@@ -128,6 +128,8 @@ export default function AdminDashboardPage() {
   const handleTeamleaderConnect = async () => {
     setFeedbackMessage(null);
     setConnectInFlight(true);
+    // Save locale for callback
+    localStorage.setItem('userLocale', locale);
     try {
       const { data, error } = await supabase.functions.invoke<{
         success: boolean;
@@ -137,7 +139,9 @@ export default function AdminDashboardPage() {
       }>('teamleader-auth', {
         body: {
           action: 'authorize',
-          redirect_uri: `${window.location.origin}/admin/teamleader/callback`
+          redirect_uri: `${window.location.origin}/admin/teamleader/callback`,
+          user_id: user.id,
+          locale: locale  // Pass locale separately so callback can redirect back with it
         }
       });
 
@@ -218,6 +222,73 @@ export default function AdminDashboardPage() {
       console.error('Google authorize error', err);
       setFeedbackMessage('Failed to initiate Google authorization.');
       setGoogleConnectInFlight(false);
+    }
+  };
+
+  const handleTeamleaderDisconnect = async () => {
+    if (!confirm('Are you sure you want to disconnect Teamleader?')) {
+      return;
+    }
+
+    setFeedbackMessage(null);
+    setTeamleaderLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke<{
+        success: boolean;
+        error?: string;
+      }>('teamleader-auth', {
+        body: {
+          action: 'disconnect',
+          user_id: user?.id
+        }
+      });
+
+      if (error || !data?.success) {
+        console.error('Failed to disconnect Teamleader', error || data?.error);
+        setFeedbackMessage(data?.error || error?.message || 'Failed to disconnect Teamleader.');
+        return;
+      }
+
+      setFeedbackMessage('Teamleader disconnected successfully.');
+      setTeamleaderIntegration(null);
+    } catch (error) {
+      console.error('Failed to disconnect Teamleader', error);
+      setFeedbackMessage('Failed to disconnect Teamleader.');
+    } finally {
+      setTeamleaderLoading(false);
+    }
+  };
+
+  const handleGoogleDisconnect = async () => {
+    if (!confirm('Are you sure you want to disconnect Google?')) {
+      return;
+    }
+
+    setFeedbackMessage(null);
+    setGoogleLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke<{
+        success: boolean;
+        error?: string;
+      }>('google-oauth', {
+        body: {
+          action: 'disconnect'
+        }
+      });
+
+      if (error || !data?.success) {
+        console.error('Failed to disconnect Google', error || data?.error);
+        setFeedbackMessage(data?.error || error?.message || 'Failed to disconnect Google.');
+        return;
+      }
+
+      setFeedbackMessage('Google account disconnected successfully.');
+      setGoogleConnected(false);
+    } catch (error) {
+      console.error('Failed to disconnect Google', error);
+      setFeedbackMessage('Failed to disconnect Google.');
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -304,6 +375,18 @@ export default function AdminDashboardPage() {
                   <RefreshCw className="h-4 w-4 mr-2" />
                   {t('teamleaderRefresh') || 'Refresh Status'}
                 </Button>
+                {teamleaderIntegration && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleTeamleaderDisconnect}
+                    disabled={teamleaderLoading}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Unlink className="h-4 w-4 mr-2" />
+                    Disconnect
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -337,6 +420,18 @@ export default function AdminDashboardPage() {
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Refresh Status
                 </Button>
+                {googleConnected && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGoogleDisconnect}
+                    disabled={googleLoading}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Unlink className="h-4 w-4 mr-2" />
+                    Disconnect
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>

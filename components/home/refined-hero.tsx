@@ -264,7 +264,7 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
         </div>
       </div>
 
-      <div className="absolute bottom-12 left-0 right-0 flex justify-center" style={{ zIndex: 10 }}>
+      <div className="absolute bottom-20 left-0 right-0 flex justify-center" style={{ zIndex: 10 }}>
         <button
           onClick={scrollToContent}
           className="flex flex-col items-center gap-2 transition-all duration-300 hover:opacity-70 group relative"

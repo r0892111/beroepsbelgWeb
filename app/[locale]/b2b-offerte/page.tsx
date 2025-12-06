@@ -278,7 +278,7 @@ export default function B2BQuotePage() {
         status: 'pending_guide_confirmation',
       };
 
-      const response = await fetch('https://alexfinit.app.n8n.cloud/webhook-test/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc', {
+      const response = await fetch('https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
