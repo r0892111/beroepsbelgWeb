@@ -14,7 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Calendar, Users, MapPin, Languages, Building2, Sparkles, CheckCircle2, Home, ShoppingBag, ExternalLink, Clock, Gift } from 'lucide-react';
+import { Calendar, Users, MapPin, Languages, Building2, Sparkles, CheckCircle2, Home, ShoppingBag, ExternalLink, Clock, Gift, FileText } from 'lucide-react';
 import { getCities, getTours, getProducts } from '@/lib/api/content';
 import type { City, Tour, Product } from '@/lib/data/types';
 import Image from 'next/image';
@@ -53,6 +53,7 @@ export default function B2BQuotePage() {
   const [dataError, setDataError] = useState<string | null>(null);
   const [selectedUpsell, setSelectedUpsell] = useState<string[]>([]);
   const [countdown, setCountdown] = useState(5);
+  const [bookingType, setBookingType] = useState<'particulier' | 'zakelijk'>('particulier');
 
   const {
     register,
@@ -273,6 +274,8 @@ export default function B2BQuotePage() {
           id: p.uuid,
           title: p.title.nl,
         })),
+        // Booking type
+        bookingType,
         // Meta
         submittedAt: new Date().toISOString(),
         status: 'pending_guide_confirmation',
@@ -307,6 +310,31 @@ export default function B2BQuotePage() {
   
   // Get available languages from the selected tour
   const availableLanguages = selectedTour?.languages ?? [];
+
+  // Map language names to codes for translation
+  const languageNameToCode: Record<string, string> = {
+    'Nederlands': 'nl',
+    'Engels': 'en',
+    'Frans': 'fr',
+    'Duits': 'de',
+    'Spaans': 'es',
+    'Italiaans': 'it',
+    'Portugees': 'pt',
+    'Pools': 'pl',
+    'Russisch': 'ru',
+    'Chinees': 'zh',
+    'Japans': 'ja',
+  };
+
+  const getLanguageLabel = (lang: string) => {
+    // If it's already a language name (like "Engels"), use it directly
+    if (languageNameToCode[lang]) {
+      const code = languageNameToCode[lang];
+      return t(`languages.${code}`, { default: lang });
+    }
+    // If it's a code (like "en"), translate it
+    return t(`languages.${lang}`, { default: lang });
+  };
 
   if (dataLoading) {
     return (
@@ -483,7 +511,7 @@ export default function B2BQuotePage() {
                       <SelectContent>
                         {availableLanguages.map((lang) => (
                           <SelectItem key={lang} value={lang}>
-                            {t(`languages.${lang}`)}
+                            {getLanguageLabel(lang)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -571,11 +599,6 @@ export default function B2BQuotePage() {
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="companyName" className="text-base font-semibold text-navy">Bedrijfsnaam</Label>
-                  <Input id="companyName" {...register('companyName')} className="mt-2" />
-                </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="contactEmail" className="text-base font-semibold text-navy">E-mail*</Label>
@@ -589,16 +612,55 @@ export default function B2BQuotePage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="vatNumber" className="text-base font-semibold text-navy">BTW-nummer</Label>
-                    <Input id="vatNumber" placeholder="BE0123456789" {...register('vatNumber')} className="mt-2" />
-                  </div>
-                  <div>
-                    <Label htmlFor="billingAddress" className="text-base font-semibold text-navy">Factuuradres</Label>
-                    <Input id="billingAddress" {...register('billingAddress')} className="mt-2" />
+                {/* Booking type toggle */}
+                <div className="flex items-center justify-center py-4">
+                  <div className="inline-flex rounded-lg border-2 p-1" style={{ borderColor: 'var(--brass)' }}>
+                    <Button
+                      type="button"
+                      onClick={() => setBookingType('particulier')}
+                      variant={bookingType === 'particulier' ? "default" : "ghost"}
+                      className={`gap-2 ${bookingType === 'particulier' ? 'btn-primary' : ''}`}
+                    >
+                      {bookingType === 'particulier' && <CheckCircle2 className="h-4 w-4" />}
+                      Particulier
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => setBookingType('zakelijk')}
+                      variant={bookingType === 'zakelijk' ? "default" : "ghost"}
+                      className={`gap-2 ${bookingType === 'zakelijk' ? 'btn-primary' : ''}`}
+                    >
+                      {bookingType === 'zakelijk' && <CheckCircle2 className="h-4 w-4" />}
+                      <Building2 className="h-4 w-4" />
+                      Zakelijk
+                    </Button>
                   </div>
                 </div>
+
+                {bookingType === 'zakelijk' && (
+                  <div className="space-y-4 p-6 rounded-lg border-2 animate-in fade-in slide-in-from-top-2 duration-300" style={{ borderColor: 'var(--brass)', backgroundColor: 'rgba(212, 175, 55, 0.05)' }}>
+                    <div className="flex items-center gap-2 mb-4">
+                      <FileText className="h-5 w-5" style={{ color: 'var(--brass)' }} />
+                      <h3 className="font-semibold text-navy">Factuurgegevens</h3>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="companyName" className="text-base font-semibold text-navy">Bedrijfsnaam*</Label>
+                      <Input id="companyName" {...register('companyName')} className="mt-2" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="vatNumber" className="text-base font-semibold text-navy">BTW-nummer*</Label>
+                        <Input id="vatNumber" placeholder="BE0123456789" {...register('vatNumber')} className="mt-2" />
+                      </div>
+                      <div>
+                        <Label htmlFor="billingAddress" className="text-base font-semibold text-navy">Factuuradres*</Label>
+                        <Input id="billingAddress" {...register('billingAddress')} className="mt-2" />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <Label htmlFor="additionalInfo" className="text-base font-semibold text-navy">Opmerkingen</Label>
@@ -680,10 +742,10 @@ export default function B2BQuotePage() {
               </div>
             )}
 
-            {/* Step 4: Payment Options */}
+            {/* Step 4: Confirm Quote Request */}
             {step === 'payment' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <h2 className="text-2xl font-serif font-bold text-navy mb-6">Stap 4: Bevestig & betaal</h2>
+                <h2 className="text-2xl font-serif font-bold text-navy mb-6">Stap 4: Bevestig uw aanvraag</h2>
 
                 {/* Order summary */}
                 <div className="p-6 rounded-lg" style={{ backgroundColor: 'white', border: '2px solid var(--brass)' }}>
@@ -702,7 +764,7 @@ export default function B2BQuotePage() {
                 </div>
 
                 <p className="text-sm text-muted-foreground text-center">
-                  Na bevestiging controleren wij de beschikbaarheid van de gids en ontvangt u een bevestigingsmail met factuur.
+                  Na bevestiging controleren wij de beschikbaarheid van de gids en ontvangt u een bevestigingsmail met offerte.
                 </p>
 
                 <div className="flex gap-3">
