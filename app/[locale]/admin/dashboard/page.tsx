@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from 'next-intl';
-import { ExternalLink, LogOut, Link as LinkIcon, Home, RefreshCw, CheckCircle2, Unlink } from 'lucide-react';
+import { ExternalLink, LogOut, Link as LinkIcon, Home, RefreshCw, CheckCircle2, Unlink, Calendar, Users as UsersIcon } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 
@@ -337,6 +337,29 @@ export default function AdminDashboardPage() {
             <span>{feedbackMessage}</span>
           </div>
         )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Access</CardTitle>
+            <CardDescription>Manage tours and bookings</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Link href={`/${locale}/admin/tours`}>
+                <Button className="w-full justify-start btn-primary" size="lg">
+                  <Calendar className="h-5 w-5 mr-2" />
+                  View Active Tours
+                </Button>
+              </Link>
+              <Link href={`/${locale}/admin/guides`}>
+                <Button className="w-full justify-start btn-primary" size="lg">
+                  <UsersIcon className="h-5 w-5 mr-2" />
+                  Manage Guides
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card className="flex h-full flex-col">
           <CardHeader>

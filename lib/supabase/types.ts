@@ -49,3 +49,16 @@ export interface CartItem {
   updated_at: string;
   products?: Product;
 }
+
+export interface TourBooking {
+  id: number;
+  guide_id: number | null;
+  deal_id: string | null;
+  status: string;
+  invitees: Record<string, unknown>[] | null;
+  city: string | null;
+  tour_datetime: string | null;
+  tour_id: string | null;
+  stripe_session_id: string | null;
+  google_calendar_link: string | null;
+}
