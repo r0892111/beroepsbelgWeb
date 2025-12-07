@@ -278,23 +278,14 @@ export default function AdminGuidesPage() {
         throw new Error(result.error || 'Failed to create calendar');
       }
 
-      toast.success(`Calendar "${result.calendarName}" created successfully!`);
+      if (result.calendarShared) {
+        toast.success(`Calendar "${result.calendarName}" created and shared with ${guide.Email}! They will receive a Google Calendar invitation.`);
+      } else {
+        toast.success(`Calendar "${result.calendarName}" created! (Note: Could not share with guide email)`);
+      }
       
       // Refresh the guides list to show updated calendar status
       void fetchGuides();
-      
-      // Also open email client for manual follow-up if desired
-      const subject = encodeURIComponent('Google Calendar Created - Beroepsbelg');
-      const body = encodeURIComponent(
-        `Hi ${guide.name},\n\n` +
-        `We've created a Google Calendar for you: "${result.calendarName}".\n\n` +
-        `Your calendar ID: ${result.calendarId}\n\n` +
-        `This calendar will be used to manage your tour bookings.\n\n` +
-        `Best regards,\n` +
-        `Beroepsbelg Team`
-      );
-      
-      window.open(`mailto:${guide.Email}?subject=${subject}&body=${body}`, '_blank');
       
     } catch (err) {
       console.error('Failed to create guide calendar:', err);

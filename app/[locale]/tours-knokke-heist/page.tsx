@@ -6,9 +6,14 @@ interface ToursKnokkeHeistPageProps {
   params: { locale: Locale };
 }
 
+// Revalidate every 60 seconds to ensure fresh data
+export const revalidate = 60;
+
 export default async function ToursKnokkeHeistPage({ params }: ToursKnokkeHeistPageProps) {
   const { locale } = params;
   const knokkeHeistTours = await getTours('knokke-heist');
+
+  console.log('[Tours Page] Knokke-Heist tours fetched:', knokkeHeistTours);
 
   return (
     <div className="container mx-auto px-4 py-20">
