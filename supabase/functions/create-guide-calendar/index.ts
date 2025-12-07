@@ -112,6 +112,44 @@ Deno.serve(async (req: Request) => {
     const calendar = await calendarResponse.json();
     console.log('Calendar created:', calendar.id);
 
+    // Share calendar with guide (give them writer/edit permissions)
+    let calendarShared = false;
+    if (guideEmail) {
+      try {
+        const aclResponse = await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/${calendar.id}/acl`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              role: 'writer', // Allows guide to make and edit events
+              scope: {
+                type: 'user',
+                value: guideEmail,
+              },
+            }),
+          }
+        );
+
+        if (!aclResponse.ok) {
+          const errorData = await aclResponse.json().catch(() => ({}));
+          console.error('Calendar sharing failed:', errorData);
+          throw new Error(`Failed to share calendar: ${errorData.error?.message || 'Unknown error'}`);
+        }
+
+        const aclRule = await aclResponse.json();
+        console.log('Calendar shared with guide:', aclRule.id);
+        calendarShared = true;
+      } catch (shareError) {
+        console.error('Failed to share calendar:', shareError);
+        // Don't fail the whole operation if sharing fails
+        // The calendar was still created, just not shared
+      }
+    }
+
     // Update guide with calendar ID
     const { error: updateError } = await supabase
       .from('guides_temp')
@@ -125,26 +163,13 @@ Deno.serve(async (req: Request) => {
       throw new Error('Failed to save calendar ID to guide');
     }
 
-    // If guide email is provided, send them an invite email
-    let emailSent = false;
-    if (guideEmail) {
-      try {
-        // TODO: Implement email sending via your email service
-        // For now, we just log it
-        console.log(`Should send calendar invite to ${guideEmail}`);
-        emailSent = true;
-      } catch (emailError) {
-        console.error('Failed to send email:', emailError);
-        // Don't fail the whole operation if email fails
-      }
-    }
-
     return new Response(
       JSON.stringify({
         success: true,
         calendarId: calendar.id,
         calendarName: calendarName,
-        emailSent: emailSent,
+        calendarShared: calendarShared,
+        sharedWithEmail: guideEmail || null,
       }),
       {
         headers: {

@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase/client';
+import { supabaseServer } from '@/lib/supabase/server';
 import type { Locale, City, Tour, TourOptions, Product, FaqItem, BlogPost, PressLink } from '@/lib/data/types';
 
 const slugify = (value: string) =>
@@ -29,6 +29,8 @@ const citySlugify = (city: string): string => {
     'malines': 'mechelen',
     'hasselt': 'hasselt',
     'knokke-heist': 'knokke-heist',
+    'knokke heist': 'knokke-heist',
+    'knokkeheis': 'knokke-heist',
     'knokke': 'knokke-heist',
     'heist': 'knokke-heist',
   };
@@ -53,7 +55,7 @@ export async function getCities(): Promise<City[]> {
   console.log('[Supabase API] Fetching cities...');
   const startTime = performance.now();
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseServer
     .from('cities')
     .select('*')
     .order('slug');
@@ -99,7 +101,7 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
   const startTime = performance.now();
 
   // Fetch all tours first, then filter client-side for better matching
-  const { data, error } = await supabase
+  const { data, error } = await supabaseServer
     .from('tours_table_prod')
     .select('*');
   if (error) {
@@ -107,33 +109,43 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
     throw error;
   }
 
+  console.log(`[Supabase API] Raw database response - found ${data?.length || 0} total tours`);
   console.log(`[Supabase API] Raw tours data:`, (data || []).map((row: any) => ({ 
     title: row.title, 
     city: row.city,
     citySlugified: citySlugify(row.city)
   })));
 
-  const tours = (data || []).map((row: any): Tour => ({
-    id: row.id,
-    city: citySlugify(row.city),
-    slug: slugify(row.title),
-    title: row.title,
-    type: row.type,
-    durationMinutes: row.duration_minutes,
-    price: row.price ? Number(row.price) : undefined,
-    startLocation: row.start_location,
-    endLocation: row.end_location,
-    languages: row.languages || [],
-    description: row.description,
-    notes: row.notes,
-    options: row.options as TourOptions,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  }));
+  const tours = (data || []).map((row: any): Tour => {
+    const slugifiedCity = citySlugify(row.city);
+    console.log(`[Supabase API] Processing tour: "${row.title}" - City: "${row.city}" -> Slugified: "${slugifiedCity}"`);
+    
+    return {
+      id: row.id,
+      city: slugifiedCity,
+      slug: slugify(row.title),
+      title: row.title,
+      type: row.type,
+      durationMinutes: row.duration_minutes,
+      price: row.price ? Number(row.price) : undefined,
+      startLocation: row.start_location,
+      endLocation: row.end_location,
+      languages: row.languages || [],
+      description: row.description,
+      notes: row.notes,
+      options: row.options as TourOptions,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  });
 
   // Filter by exact city slug if provided (for more accurate matching)
   const filteredTours = citySlug 
-    ? tours.filter(t => t.city === citySlug)
+    ? tours.filter(t => {
+        const matches = t.city === citySlug;
+        console.log(`[Supabase API] Comparing tour city "${t.city}" with filter "${citySlug}": ${matches}`);
+        return matches;
+      })
     : tours;
 
   const endTime = performance.now();
@@ -141,7 +153,7 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
   if (citySlug) {
     console.log(`[Supabase API] Looking for city: "${citySlug}"`);
     console.log(`[Supabase API] Available cities in data:`, Array.from(new Set(tours.map(t => t.city))));
-    console.log(`[Supabase API] Tours for ${citySlug}:`, filteredTours.map(t => ({ slug: t.slug, city: t.city })));
+    console.log(`[Supabase API] Tours for ${citySlug}:`, filteredTours.map(t => ({ slug: t.slug, city: t.city, title: t.title })));
   }
 
   return filteredTours;
@@ -152,7 +164,7 @@ export async function getTourBySlug(citySlug: string, slug: string): Promise<Tou
   const startTime = performance.now();
 
   // Fetch all tours for the city and find by generated slug
-  const { data, error } = await supabase
+  const { data, error } = await supabaseServer
     .from('tours_table_prod')
     .select('*');
 
@@ -199,7 +211,7 @@ export async function getProducts(): Promise<Product[]> {
   console.log('[Supabase API] Fetching products...');
   const startTime = performance.now();
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseServer
     .from('webshop_data')
     .select('*');
   if (error) {
@@ -277,7 +289,7 @@ export async function getBlogPosts(): Promise<BlogPost[]> {
   console.log('[Supabase API] Fetching blog posts...');
   const startTime = performance.now();
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseServer
     .from('blog_posts')
     .select('*')
     .order('date', { ascending: false });
@@ -315,7 +327,7 @@ export async function getPressLinks(): Promise<PressLink[]> {
   const startTime = performance.now();
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from('press_links')
       .select('*')
       .order('sort_order');
@@ -346,7 +358,7 @@ export async function getFaqItems(): Promise<FaqItem[]> {
   const startTime = performance.now();
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from('faq_items')
       .select('*')
       .order('sort_order');

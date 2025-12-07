@@ -15,14 +15,14 @@ export default async function ToursAntwerpPage({ params }: ToursAntwerpPageProps
       <h1 className="mb-12 text-center text-4xl font-bold">
         Tours Antwerpen
       </h1>
-      {antwerpTours.length === 0 ? (
-        <p className="text-center text-muted-foreground">Er zijn momenteel geen tours beschikbaar voor Antwerpen.</p>
-      ) : (
+      {antwerpTours.length > 0 ? (
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {antwerpTours.map((tour) => (
             <TourCard key={tour.slug} tour={tour} locale={locale} />
           ))}
         </div>
+      ) : (
+        <p className="text-center text-muted-foreground">Binnenkort beschikbaar</p>
       )}
     </div>
   );
