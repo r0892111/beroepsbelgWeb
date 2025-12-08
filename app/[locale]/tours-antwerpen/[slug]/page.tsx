@@ -21,12 +21,20 @@ export async function generateStaticParams() {
 }
 
 // Format duration from minutes to readable string
-const formatDuration = (minutes: number) => {
+const formatDuration = (minutes: number, t: any) => {
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
-  if (hours > 0 && mins > 0) return `${hours}h ${mins}min`;
-  if (hours > 0) return `${hours} uur`;
-  return `${mins} min`;
+  if (hours > 0 && mins > 0) {
+    const hourText = hours === 1 ? t('hour') : t('hours');
+    const minText = mins === 1 ? t('minute') : t('minutes');
+    return `${hours} ${hourText} ${mins} ${minText}`;
+  }
+  if (hours > 0) {
+    const hourText = hours === 1 ? t('hour') : t('hours');
+    return `${hours} ${hourText}`;
+  }
+  const minText = mins === 1 ? t('minute') : t('minutes');
+  return `${mins} ${minText}`;
 };
 
 export default async function TourDetailPage({ params }: TourDetailPageProps) {
@@ -156,7 +164,7 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
               <Clock className="mt-1 h-5 w-5 flex-shrink-0" style={{ color: 'var(--brass)' }} />
               <div>
                 <p className="font-semibold text-navy mb-1">{tTour('duration')}</p>
-                <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>{formatDuration(tour.durationMinutes)}</p>
+                <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>{formatDuration(tour.durationMinutes, t)}</p>
               </div>
             </div>
             {tour.languages.length > 0 && (

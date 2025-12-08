@@ -49,7 +49,11 @@
     "comingSoon": "COMING 2025",
     "backToTop": "Back to top",
     "share": "Share",
-    "goToWebshop": "Go to Webshop"
+    "goToWebshop": "Go to Webshop",
+    "hour": "hour",
+    "hours": "hours",
+    "minute": "minute",
+    "minutes": "minutes"
   },
   "newsletter": {
     "title": "Stay informed",

@@ -49,7 +49,11 @@
     "comingSoon": "VERWACHT 2025",
     "backToTop": "Naar boven",
     "share": "Delen",
-    "goToWebshop": "Ga naar Webshop"
+    "goToWebshop": "Ga naar Webshop",
+    "hour": "uur",
+    "hours": "uur",
+    "minute": "min",
+    "minutes": "min"
   },
   "newsletter": {
     "title": "Blijf op de hoogte",
