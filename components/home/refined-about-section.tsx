@@ -1,3 +1,5 @@
+'use client';
+
 import { type Locale } from '@/i18n';
 import { useTranslations } from 'next-intl';
 
