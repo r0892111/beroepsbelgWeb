@@ -144,6 +144,15 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
                 <p className="text-sm font-semibold" style={{ color: 'var(--brass)' }}>{tour.options.extraInfo}</p>
               </div>
             )}
+            {tour.options?.local_stories === true && (
+              <div className="md:col-span-2 mt-4 p-4 rounded-lg bg-white/50 border-2" style={{ borderColor: 'var(--brass)' }}>
+                <p className="text-sm font-semibold text-navy mb-2">{tTour('localStoriesTitle')}</p>
+                <ul className="text-sm space-y-1" style={{ color: 'var(--slate-blue)' }}>
+                  <li>• {tTour('localStoriesTime')}</li>
+                  <li>• {tTour('localStoriesMinimum')}</li>
+                </ul>
+              </div>
+            )}
           </div>
         </div>
 

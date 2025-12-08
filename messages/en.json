@@ -331,6 +331,9 @@
     "end": "End",
     "duration": "Duration",
     "languages": "Languages",
-    "type": "Type"
+    "type": "Type",
+    "localStoriesTitle": "Important Information",
+    "localStoriesTime": "Tours are only available starting at 14:00h",
+    "localStoriesMinimum": "Minimum of 4 persons required"
   }
 }

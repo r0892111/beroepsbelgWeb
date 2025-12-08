@@ -331,6 +331,9 @@
     "end": "Einde",
     "duration": "Duur",
     "languages": "Talen",
-    "type": "Type"
+    "type": "Type",
+    "localStoriesTitle": "Belangrijke Informatie",
+    "localStoriesTime": "Tours zijn enkel beschikbaar vanaf 14:00u",
+    "localStoriesMinimum": "Minimum van 4 personen vereist"
   }
 }
