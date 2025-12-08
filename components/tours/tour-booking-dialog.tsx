@@ -322,8 +322,8 @@ export function TourBookingDialog({
 
           {/* Request Tanguy Ottomer Section */}
           <div className="rounded-lg border-2 p-4 transition-all hover:border-brass" style={{ borderColor: formData.requestTanguy ? 'var(--brass)' : '#e5e7eb' }}>
-            <div className="flex items-start gap-4">
-              <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-full ring-2 ring-brass/20">
+            <div className="flex items-center gap-4">
+              <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded">
                 <Image
                   src="/headshot_tanguy.jpg"
                   alt="Tanguy Ottomer"
