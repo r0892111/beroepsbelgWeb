@@ -337,5 +337,141 @@
     "localStoriesTitle": "Important Information",
     "localStoriesTime": "Tours are only available from 14:00h to 16:00h",
     "localStoriesMinimum": "Minimum of 4 persons required"
+  },
+  "faq": {
+    "title": "FAQ"
+  },
+  "press": {
+    "title": "In the Press",
+    "subtitle": "BeroepsBelg in the media"
+  },
+  "blog": {
+    "title": "Blog",
+    "readMore": "Read more"
+  },
+  "contact": {
+    "title": "Contact",
+    "address": "Address",
+    "email": "Email",
+    "phone": "Phone",
+    "sendMessage": "Send us a message",
+    "messageSent": "Message sent!",
+    "addressLine1": "Groenplaats 1",
+    "addressLine2": "2000 Antwerp",
+    "addressLine3": "Belgium",
+    "consent": "I agree to the privacy policy"
+  },
+  "jobs": {
+    "title": "Become a BeroepsBelg guide",
+    "applyNow": "Apply now",
+    "description": "Are you passionate about Belgian culture, history and architecture? Do you have a talent for storytelling and enjoy sharing your knowledge with others? Then we are looking for you! BeroepsBelg is always looking for enthusiastic guides who can take our guests on an unforgettable journey through the fascinating history of our beautiful cities.",
+    "name": "Name*",
+    "email": "Email*",
+    "phone": "Phone*",
+    "cities": "In which city(ies) would you like to give tours?*",
+    "citiesPlaceholder": "e.g. Antwerp, Brussels",
+    "motivation": "Why do you want to become a BeroepsBelg guide?*",
+    "motivationMinLength": "Minimum 50 characters required",
+    "consent": "I agree to the privacy policy and the processing of my personal data",
+    "submit": "Submit application",
+    "applicationSent": "Application sent!",
+    "required": "This field is required"
+  },
+  "lecture": {
+    "title": "Lecture: The Boerentoren",
+    "date": "Date",
+    "onRequest": "On request",
+    "location": "Location",
+    "antwerp": "Antwerp",
+    "groupSize": "Group size",
+    "people": "10-50 people",
+    "description": "In this captivating lecture, Tanguy Ottomer takes you on a journey through the fascinating history of the Boerentoren, Antwerp's most iconic skyscraper. From its construction in the 1930s to its role in the cityscape today, you'll discover how this building has shaped the city and remains a symbol of ambition and innovation.",
+    "bookLecture": "Book this lecture",
+    "moreInfo": "More information"
+  },
+  "disclaimer": {
+    "title": "Terms & Conditions",
+    "scope": "Scope",
+    "scopeContent": "These general terms and conditions apply to all tours, lectures and other services provided by BeroepsBelg, unless explicitly agreed otherwise in writing.",
+    "bookings": "Bookings",
+    "bookingsContent": "Bookings can be made via our website, by email or by phone. A booking is only confirmed after we have sent a written confirmation.",
+    "payment": "Payment",
+    "paymentContent": "Payment must be made in advance via the payment methods indicated on our website. For group bookings, payment can be made by invoice after consultation.",
+    "cancellation": "Cancellation",
+    "cancellationContent": "Free cancellation is possible up to 48 hours before the start of the tour. In case of cancellation within 48 hours, the full amount will be charged. No refund is possible in case of no-show.",
+    "liability": "Liability",
+    "liabilityContent": "BeroepsBelg is not liable for damage or injury to persons or property during the tour, unless there is intent or gross negligence on our part.",
+    "weatherConditions": "Weather conditions",
+    "weatherConditionsContent": "Tours take place in all weather conditions. In case of extreme weather, we reserve the right to postpone or cancel the tour. In that case, you will receive a full refund or an alternative date will be offered.",
+    "copyright": "Copyright",
+    "copyrightContent": "All content on our website, including texts, images and logos, is protected by copyright and may not be used without prior written permission."
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "intro": "BeroepsBelg respects your privacy and handles your personal data with care. This privacy policy explains which data we collect, why we collect it and how we use it.",
+    "dataCollection": "Data Collection",
+    "dataCollectionContent": "We collect personal data that you provide to us when booking a tour, subscribing to our newsletter or contacting us. This includes your name, email address, phone number and any other information you share with us.",
+    "dataUsage": "Data Usage",
+    "dataUsageContent": "We use your personal data to process your booking, send you confirmations and relevant information about your tour, and to improve our services. We will never share your data with third parties without your explicit consent, unless legally required.",
+    "dataRetention": "Data Retention",
+    "dataRetentionContent": "We retain your personal data for as long as necessary for the purposes described in this privacy policy, or as required by law.",
+    "yourRights": "Your Rights",
+    "yourRightsContent": "You have the right to view, correct or delete your personal data at any time. You can also object to the processing of your data or request data portability. Contact us if you wish to exercise these rights.",
+    "cookies": "Cookies",
+    "cookiesContent": "Our website uses cookies to improve your user experience. You can manage your cookie preferences via the cookie banner on our website.",
+    "contact": "Contact",
+    "contactContent": "If you have any questions about this privacy policy or the processing of your personal data, please contact us via email or phone."
+  },
+  "bookingSuccess": {
+    "loading": "Loading booking details...",
+    "notFound": "Booking Not Found",
+    "notFoundDesc": "We couldn't find your booking details.",
+    "returnHome": "Return to Home",
+    "confirmed": "Booking Confirmed!",
+    "confirmedDesc": "Your tour has been successfully booked. You will receive a confirmation email shortly.",
+    "bookingDetails": "Booking Details",
+    "tour": "Tour",
+    "date": "Date",
+    "time": "Time",
+    "numberOfPeople": "Number of People",
+    "language": "Language",
+    "totalPaid": "Total Paid",
+    "contactInfo": "Contact Information",
+    "bookingReference": "Booking Reference",
+    "specialRequests": "Special Requests",
+    "whatsNext": "What's Next?",
+    "whatsNextDesc": "You will receive a confirmation email with all the details of your booking. We look forward to welcoming you on the tour!",
+    "browseTours": "Browse More Tours"
+  },
+  "bookingCancelled": {
+    "title": "Booking Cancelled",
+    "description": "Your booking was not completed. No charges have been made.",
+    "supportMessage": "If you experienced any issues or have questions, please don't hesitate to contact our support team.",
+    "browseTours": "Browse Tours",
+    "contactUs": "Contact Us"
+  },
+  "orderSuccess": {
+    "loading": "Loading order details...",
+    "notFound": "Order Not Found",
+    "notFoundDesc": "We couldn't find your order details.",
+    "returnHome": "Return to Home",
+    "confirmed": "Order Confirmed!",
+    "confirmedDesc": "Thank you for your purchase. You will receive a confirmation email shortly.",
+    "orderDetails": "Order Details",
+    "orderNumber": "Order Number",
+    "orderDate": "Order Date",
+    "items": "Items",
+    "totalPaid": "Total Paid",
+    "shippingInfo": "Shipping Information",
+    "whatsNext": "What's Next?",
+    "whatsNextDesc": "You will receive a confirmation email with all the details of your order. Your items will be shipped within 2-3 business days.",
+    "continueShopping": "Continue Shopping"
+  },
+  "orderCancelled": {
+    "title": "Order Cancelled",
+    "description": "Your order was not completed. No charges have been made to your account.",
+    "supportMessage": "If you experienced any issues during checkout or have questions, please contact our support team.",
+    "returnShop": "Return to Shop",
+    "contactSupport": "Contact Support"
   }
 }
