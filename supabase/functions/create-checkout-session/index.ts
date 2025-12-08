@@ -31,9 +31,11 @@ serve(async (req: Request) => {
       customerEmail,
       customerPhone,
       bookingDate,
+      bookingTime,
       numberOfPeople,
       language,
       specialRequests,
+      requestTanguy = false,
       userId,
       bookingType = 'B2C', // Default to B2C for consumer bookings
     } = await req.json()
@@ -79,9 +81,11 @@ serve(async (req: Request) => {
         customerName,
         customerPhone: customerPhone || '',
         bookingDate,
+        bookingTime: bookingTime || '',
         numberOfPeople: numberOfPeople.toString(),
         language,
         specialRequests: specialRequests || '',
+        requestTanguy: requestTanguy.toString(),
         userId: userId || '',
       },
     })
@@ -94,6 +98,7 @@ serve(async (req: Request) => {
       status: 'pending',
       tour_datetime: new Date(bookingDate).toISOString(),
       city: tour.city || null,
+      request_tanguy: requestTanguy,
       invitees: [{
         name: customerName,
         email: customerEmail,
@@ -101,6 +106,7 @@ serve(async (req: Request) => {
         numberOfPeople,
         language,
         specialRequests: specialRequests || null,
+        requestTanguy: requestTanguy,
         amount: tour.price * numberOfPeople,
         currency: 'eur',
       }],

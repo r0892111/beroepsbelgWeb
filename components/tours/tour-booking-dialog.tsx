@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { loadStripe } from '@stripe/stripe-js';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 import { CalendarIcon, Clock, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -52,6 +54,7 @@ export function TourBookingDialog({
     numberOfPeople: 1,
     language: 'nl',
     specialRequests: '',
+    requestTanguy: false,
   });
 
   // Generate time slots between 10:00 and 18:00 based on tour duration
@@ -143,6 +146,7 @@ export function TourBookingDialog({
           numberOfPeople: formData.numberOfPeople,
           language: formData.language,
           specialRequests: formData.specialRequests,
+          requestTanguy: formData.requestTanguy,
           userId: null,
           bookingType: 'B2C',
         }),
@@ -313,6 +317,43 @@ export function TourBookingDialog({
                   <SelectItem value="de">{tB2b('languages.de')}</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          {/* Request Tanguy Ottomer Section */}
+          <div className="rounded-lg border-2 p-4 transition-all hover:border-brass" style={{ borderColor: formData.requestTanguy ? 'var(--brass)' : '#e5e7eb' }}>
+            <div className="flex items-start gap-4">
+              <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-full ring-2 ring-brass/20">
+                <Image
+                  src="/headshot_tanguy.jpg"
+                  alt="Tanguy Ottomer"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="requestTanguy"
+                    checked={formData.requestTanguy}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, requestTanguy: checked === true })
+                    }
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <Label
+                      htmlFor="requestTanguy"
+                      className="cursor-pointer text-base font-semibold text-navy"
+                    >
+                      {t('requestTanguy')}
+                    </Label>
+                    <p className="mt-1 text-sm text-slate-blue">
+                      {t('requestTanguyDescription')}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
