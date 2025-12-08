@@ -17,12 +17,88 @@ export function useCart() {
 
     const { data, error } = await supabase
       .from('cart_items')
-      .select('*, products(*)')
+      .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
+    console.log('Cart items fetched:', data);
+    console.log('Cart error:', error);
+
     if (data && !error) {
-      setCartItems(data);
+      // Fetch product details for each cart item
+      const productIds = data.map((item: any) => item.product_id).filter(Boolean);
+      
+      console.log('Cart items product IDs:', productIds);
+      
+      if (productIds.length > 0) {
+        const { data: productsData, error: productsError } = await supabase
+          .from('webshop_data')
+          .select('uuid, "Name", "Category", "Price (EUR)", "Description", "Additional Info"')
+          .in('uuid', productIds);
+
+        console.log('Products fetched from webshop_data:', productsData);
+        console.log('Products fetch error:', productsError);
+
+        if (productsData && !productsError) {
+          // Map products by UUID
+          const productsMap = new Map(productsData.map((p: any) => [p.uuid, p]));
+          
+          // Attach product data to cart items
+          const cartItemsWithProducts = data.map((item: any) => {
+            const product = productsMap.get(item.product_id);
+            console.log(`Mapping product for item ${item.id}:`, { product_id: item.product_id, product });
+            
+            if (product) {
+              // Transform webshop_data format to match expected product format
+              const priceStr = product['Price (EUR)']?.toString() || '0';
+              const price = parseFloat(priceStr.replace(',', '.')) || 0;
+              
+              return {
+                ...item,
+                products: {
+                  id: product.uuid,
+                  uuid: product.uuid,
+                  slug: product.Name ? product.Name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : product.uuid,
+                  Name: product.Name || '',
+                  title_nl: product.Name || '',
+                  title_en: product.Name || '',
+                  title_fr: product.Name || '',
+                  title_de: product.Name || '',
+                  price: price,
+                  category: product.Category || 'Book',
+                  Category: product.Category || 'Book',
+                  description_nl: product.Description || '',
+                  description_en: product.Description || '',
+                  description_fr: product.Description || '',
+                  description_de: product.Description || '',
+                  Description: product.Description || '',
+                  image: null,
+                }
+              };
+            }
+            
+            // Return item without product if not found
+            console.warn(`Product not found for product_id: ${item.product_id}`);
+            return {
+              ...item,
+              products: null
+            };
+          });
+          
+          console.log('Cart items with products:', cartItemsWithProducts);
+          setCartItems(cartItemsWithProducts);
+        } else {
+          console.error('Error fetching products:', productsError);
+          // Set items without products
+          setCartItems(data.map((item: any) => ({ ...item, products: null })));
+        }
+      } else {
+        console.log('No product IDs found in cart items');
+        setCartItems(data);
+      }
+    } else if (error) {
+      console.error('Error fetching cart:', error);
+      setCartItems([]);
     }
     setLoading(false);
   }, [user]);
