@@ -337,5 +337,141 @@
     "localStoriesTitle": "Wichtige Informationen",
     "localStoriesTime": "Touren nur von 14:00 bis 16:00 Uhr verfügbar",
     "localStoriesMinimum": "Mindestens 4 Personen erforderlich"
+  },
+  "faq": {
+    "title": "FAQ"
+  },
+  "press": {
+    "title": "In der Presse",
+    "subtitle": "BeroepsBelg in den Medien"
+  },
+  "blog": {
+    "title": "Blog",
+    "readMore": "Weiterlesen"
+  },
+  "contact": {
+    "title": "Kontakt",
+    "address": "Adresse",
+    "email": "E-Mail",
+    "phone": "Telefon",
+    "sendMessage": "Senden Sie uns eine Nachricht",
+    "messageSent": "Nachricht gesendet!",
+    "addressLine1": "Groenplaats 1",
+    "addressLine2": "2000 Antwerpen",
+    "addressLine3": "Belgien",
+    "consent": "Ich stimme der Datenschutzrichtlinie zu"
+  },
+  "jobs": {
+    "title": "Werden Sie ein BeroepsBelg-Führer",
+    "applyNow": "Jetzt bewerben",
+    "description": "Sind Sie leidenschaftlich für belgische Kultur, Geschichte und Architektur? Haben Sie ein Talent fürs Geschichtenerzählen und teilen Sie gerne Ihr Wissen mit anderen? Dann suchen wir Sie! BeroepsBelg ist immer auf der Suche nach enthusiastischen Führern, die unsere Gäste auf eine unvergessliche Reise durch die faszinierende Geschichte unserer schönen Städte mitnehmen können.",
+    "name": "Name*",
+    "email": "E-Mail*",
+    "phone": "Telefon*",
+    "cities": "In welchen Städten möchten Sie Touren geben?*",
+    "citiesPlaceholder": "z.B. Antwerpen, Brüssel",
+    "motivation": "Warum möchten Sie BeroepsBelg-Führer werden?*",
+    "motivationMinLength": "Mindestens 50 Zeichen erforderlich",
+    "consent": "Ich stimme der Datenschutzrichtlinie und der Verarbeitung meiner personenbezogenen Daten zu",
+    "submit": "Bewerbung absenden",
+    "applicationSent": "Bewerbung gesendet!",
+    "required": "Dieses Feld ist erforderlich"
+  },
+  "lecture": {
+    "title": "Vortrag: Der Boerentoren",
+    "date": "Datum",
+    "onRequest": "Auf Anfrage",
+    "location": "Standort",
+    "antwerp": "Antwerpen",
+    "groupSize": "Gruppengröße",
+    "people": "10-50 Personen",
+    "description": "In diesem fesselnden Vortrag nimmt Sie Tanguy Ottomer mit auf eine Reise durch die faszinierende Geschichte des Boerentoren, Antwerpens ikonischstem Wolkenkratzer. Von seinem Bau in den 1930er Jahren bis zu seiner Rolle im heutigen Stadtbild entdecken Sie, wie dieses Gebäude die Stadt geprägt hat und ein Symbol für Ehrgeiz und Innovation bleibt.",
+    "bookLecture": "Diesen Vortrag buchen",
+    "moreInfo": "Mehr Informationen"
+  },
+  "disclaimer": {
+    "title": "Allgemeine Geschäftsbedingungen",
+    "scope": "Geltungsbereich",
+    "scopeContent": "Diese allgemeinen Geschäftsbedingungen gelten für alle Touren, Vorträge und andere Dienstleistungen von BeroepsBelg, sofern nicht ausdrücklich schriftlich anders vereinbart.",
+    "bookings": "Buchungen",
+    "bookingsContent": "Buchungen können über unsere Website, per E-Mail oder telefonisch vorgenommen werden. Eine Buchung ist erst nach schriftlicher Bestätigung unsererseits bestätigt.",
+    "payment": "Zahlung",
+    "paymentContent": "Die Zahlung muss im Voraus über die auf unserer Website angegebenen Zahlungsmethoden erfolgen. Für Gruppenbuchungen kann nach Absprache per Rechnung bezahlt werden.",
+    "cancellation": "Stornierung",
+    "cancellationContent": "Kostenlose Stornierung ist bis zu 48 Stunden vor Beginn der Tour möglich. Bei Stornierung innerhalb von 48 Stunden wird der volle Betrag berechnet. Bei Nichterscheinen ist keine Rückerstattung möglich.",
+    "liability": "Haftung",
+    "liabilityContent": "BeroepsBelg haftet nicht für Schäden oder Verletzungen an Personen oder Eigentum während der Tour, es sei denn, es liegt Vorsatz oder grobe Fahrlässigkeit unsererseits vor.",
+    "weatherConditions": "Wetterbedingungen",
+    "weatherConditionsContent": "Touren finden bei allen Wetterbedingungen statt. Bei extremen Wetterbedingungen behalten wir uns das Recht vor, die Tour zu verschieben oder abzusagen. In diesem Fall erhalten Sie eine vollständige Rückerstattung oder es wird ein alternatives Datum angeboten.",
+    "copyright": "Urheberrecht",
+    "copyrightContent": "Alle Inhalte auf unserer Website, einschließlich Texte, Bilder und Logos, sind urheberrechtlich geschützt und dürfen ohne vorherige schriftliche Genehmigung nicht verwendet werden."
+  },
+  "privacy": {
+    "title": "Datenschutzrichtlinie",
+    "intro": "BeroepsBelg respektiert Ihre Privatsphäre und geht sorgfältig mit Ihren personenbezogenen Daten um. Diese Datenschutzrichtlinie erklärt, welche Daten wir sammeln, warum wir sie sammeln und wie wir sie verwenden.",
+    "dataCollection": "Datenerfassung",
+    "dataCollectionContent": "Wir sammeln personenbezogene Daten, die Sie uns bei der Buchung einer Tour, beim Abonnieren unseres Newsletters oder bei der Kontaktaufnahme mit uns zur Verfügung stellen. Dazu gehören Ihr Name, Ihre E-Mail-Adresse, Telefonnummer und alle anderen Informationen, die Sie mit uns teilen.",
+    "dataUsage": "Datenverwendung",
+    "dataUsageContent": "Wir verwenden Ihre personenbezogenen Daten zur Bearbeitung Ihrer Buchung, zum Versenden von Bestätigungen und relevanten Informationen zu Ihrer Tour sowie zur Verbesserung unserer Dienstleistungen. Wir geben Ihre Daten niemals ohne Ihre ausdrückliche Zustimmung an Dritte weiter, es sei denn, dies ist gesetzlich vorgeschrieben.",
+    "dataRetention": "Datenspeicherung",
+    "dataRetentionContent": "Wir bewahren Ihre personenbezogenen Daten so lange auf, wie es für die in dieser Datenschutzrichtlinie beschriebenen Zwecke erforderlich ist oder wie gesetzlich vorgeschrieben.",
+    "yourRights": "Ihre Rechte",
+    "yourRightsContent": "Sie haben jederzeit das Recht, Ihre personenbezogenen Daten einzusehen, zu korrigieren oder zu löschen. Sie können auch der Verarbeitung Ihrer Daten widersprechen oder die Datenübertragbarkeit beantragen. Kontaktieren Sie uns, wenn Sie diese Rechte ausüben möchten.",
+    "cookies": "Cookies",
+    "cookiesContent": "Unsere Website verwendet Cookies, um Ihre Benutzererfahrung zu verbessern. Sie können Ihre Cookie-Einstellungen über das Cookie-Banner auf unserer Website verwalten.",
+    "contact": "Kontakt",
+    "contactContent": "Wenn Sie Fragen zu dieser Datenschutzrichtlinie oder zur Verarbeitung Ihrer personenbezogenen Daten haben, kontaktieren Sie uns bitte per E-Mail oder Telefon."
+  },
+  "bookingSuccess": {
+    "loading": "Buchungsdetails werden geladen...",
+    "notFound": "Buchung nicht gefunden",
+    "notFoundDesc": "Wir konnten Ihre Buchungsdetails nicht finden.",
+    "returnHome": "Zurück zur Startseite",
+    "confirmed": "Buchung bestätigt!",
+    "confirmedDesc": "Ihre Tour wurde erfolgreich gebucht. Sie erhalten in Kürze eine Bestätigungs-E-Mail.",
+    "bookingDetails": "Buchungsdetails",
+    "tour": "Tour",
+    "date": "Datum",
+    "time": "Uhrzeit",
+    "numberOfPeople": "Anzahl der Personen",
+    "language": "Sprache",
+    "totalPaid": "Gesamt bezahlt",
+    "contactInfo": "Kontaktinformationen",
+    "bookingReference": "Buchungsreferenz",
+    "specialRequests": "Besondere Wünsche",
+    "whatsNext": "Was kommt als Nächstes?",
+    "whatsNextDesc": "Sie erhalten eine Bestätigungs-E-Mail mit allen Details Ihrer Buchung. Wir freuen uns darauf, Sie auf der Tour willkommen zu heißen!",
+    "browseTours": "Weitere Touren durchsuchen"
+  },
+  "bookingCancelled": {
+    "title": "Buchung storniert",
+    "description": "Ihre Buchung wurde nicht abgeschlossen. Es wurden keine Gebühren erhoben.",
+    "supportMessage": "Wenn Sie Probleme hatten oder Fragen haben, zögern Sie bitte nicht, unser Support-Team zu kontaktieren.",
+    "browseTours": "Touren durchsuchen",
+    "contactUs": "Kontaktieren Sie uns"
+  },
+  "orderSuccess": {
+    "loading": "Bestelldetails werden geladen...",
+    "notFound": "Bestellung nicht gefunden",
+    "notFoundDesc": "Wir konnten Ihre Bestelldetails nicht finden.",
+    "returnHome": "Zurück zur Startseite",
+    "confirmed": "Bestellung bestätigt!",
+    "confirmedDesc": "Vielen Dank für Ihren Kauf. Sie erhalten in Kürze eine Bestätigungs-E-Mail.",
+    "orderDetails": "Bestelldetails",
+    "orderNumber": "Bestellnummer",
+    "orderDate": "Bestelldatum",
+    "items": "Artikel",
+    "totalPaid": "Gesamt bezahlt",
+    "shippingInfo": "Versandinformationen",
+    "whatsNext": "Was kommt als Nächstes?",
+    "whatsNextDesc": "Sie erhalten eine Bestätigungs-E-Mail mit allen Details Ihrer Bestellung. Ihre Artikel werden innerhalb von 2-3 Werktagen versandt.",
+    "continueShopping": "Weiter einkaufen"
+  },
+  "orderCancelled": {
+    "title": "Bestellung storniert",
+    "description": "Ihre Bestellung wurde nicht abgeschlossen. Ihr Konto wurde nicht belastet.",
+    "supportMessage": "Wenn Sie während des Bestellvorgangs Probleme hatten oder Fragen haben, kontaktieren Sie bitte unser Support-Team.",
+    "returnShop": "Zurück zum Shop",
+    "contactSupport": "Support kontaktieren"
   }
 }

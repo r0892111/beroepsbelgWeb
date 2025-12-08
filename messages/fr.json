@@ -337,5 +337,141 @@
     "localStoriesTitle": "Informations Importantes",
     "localStoriesTime": "Tours disponibles uniquement de 14:00h à 16:00h",
     "localStoriesMinimum": "Minimum de 4 personnes requis"
+  },
+  "faq": {
+    "title": "FAQ"
+  },
+  "press": {
+    "title": "Dans la Presse",
+    "subtitle": "BeroepsBelg dans les médias"
+  },
+  "blog": {
+    "title": "Blog",
+    "readMore": "Lire la suite"
+  },
+  "contact": {
+    "title": "Contact",
+    "address": "Adresse",
+    "email": "E-mail",
+    "phone": "Téléphone",
+    "sendMessage": "Envoyez-nous un message",
+    "messageSent": "Message envoyé !",
+    "addressLine1": "Groenplaats 1",
+    "addressLine2": "2000 Anvers",
+    "addressLine3": "Belgique",
+    "consent": "J'accepte la politique de confidentialité"
+  },
+  "jobs": {
+    "title": "Devenez un guide BeroepsBelg",
+    "applyNow": "Postuler maintenant",
+    "description": "Êtes-vous passionné par la culture, l'histoire et l'architecture belges ? Avez-vous un talent pour raconter des histoires et aimez-vous partager vos connaissances avec les autres ? Alors nous vous cherchons ! BeroepsBelg est toujours à la recherche de guides enthousiastes qui peuvent emmener nos invités dans un voyage inoubliable à travers l'histoire fascinante de nos belles villes.",
+    "name": "Nom*",
+    "email": "E-mail*",
+    "phone": "Téléphone*",
+    "cities": "Dans quelles villes souhaitez-vous donner des tours ?*",
+    "citiesPlaceholder": "par ex. Anvers, Bruxelles",
+    "motivation": "Pourquoi voulez-vous devenir guide BeroepsBelg ?*",
+    "motivationMinLength": "Minimum 50 caractères requis",
+    "consent": "J'accepte la politique de confidentialité et le traitement de mes données personnelles",
+    "submit": "Soumettre la candidature",
+    "applicationSent": "Candidature envoyée !",
+    "required": "Ce champ est obligatoire"
+  },
+  "lecture": {
+    "title": "Conférence : La Boerentoren",
+    "date": "Date",
+    "onRequest": "Sur demande",
+    "location": "Lieu",
+    "antwerp": "Anvers",
+    "groupSize": "Taille du groupe",
+    "people": "10-50 personnes",
+    "description": "Dans cette conférence captivante, Tanguy Ottomer vous emmène dans un voyage à travers l'histoire fascinante de la Boerentoren, le gratte-ciel le plus emblématique d'Anvers. De sa construction dans les années 1930 à son rôle dans le paysage urbain d'aujourd'hui, vous découvrirez comment ce bâtiment a façonné la ville et reste un symbole d'ambition et d'innovation.",
+    "bookLecture": "Réserver cette conférence",
+    "moreInfo": "Plus d'informations"
+  },
+  "disclaimer": {
+    "title": "Conditions Générales",
+    "scope": "Portée",
+    "scopeContent": "Ces conditions générales s'appliquent à tous les tours, conférences et autres services fournis par BeroepsBelg, sauf accord écrit explicite contraire.",
+    "bookings": "Réservations",
+    "bookingsContent": "Les réservations peuvent être effectuées via notre site web, par e-mail ou par téléphone. Une réservation n'est confirmée qu'après avoir reçu une confirmation écrite de notre part.",
+    "payment": "Paiement",
+    "paymentContent": "Le paiement doit être effectué à l'avance via les méthodes de paiement indiquées sur notre site web. Pour les réservations de groupe, le paiement peut être effectué par facture après consultation.",
+    "cancellation": "Annulation",
+    "cancellationContent": "L'annulation gratuite est possible jusqu'à 48 heures avant le début du tour. En cas d'annulation dans les 48 heures, le montant total sera facturé. Aucun remboursement n'est possible en cas de non-présentation.",
+    "liability": "Responsabilité",
+    "liabilityContent": "BeroepsBelg n'est pas responsable des dommages ou blessures aux personnes ou aux biens pendant le tour, sauf en cas d'intention ou de négligence grave de notre part.",
+    "weatherConditions": "Conditions météorologiques",
+    "weatherConditionsContent": "Les tours ont lieu par tous les temps. En cas de conditions météorologiques extrêmes, nous nous réservons le droit de reporter ou d'annuler le tour. Dans ce cas, vous recevrez un remboursement complet ou une date alternative sera proposée.",
+    "copyright": "Droits d'auteur",
+    "copyrightContent": "Tout le contenu de notre site web, y compris les textes, images et logos, est protégé par le droit d'auteur et ne peut être utilisé sans autorisation écrite préalable."
+  },
+  "privacy": {
+    "title": "Politique de Confidentialité",
+    "intro": "BeroepsBelg respecte votre vie privée et traite vos données personnelles avec soin. Cette politique de confidentialité explique quelles données nous collectons, pourquoi nous les collectons et comment nous les utilisons.",
+    "dataCollection": "Collecte de données",
+    "dataCollectionContent": "Nous collectons les données personnelles que vous nous fournissez lors de la réservation d'un tour, de l'abonnement à notre newsletter ou du contact avec nous. Cela inclut votre nom, adresse e-mail, numéro de téléphone et toute autre information que vous partagez avec nous.",
+    "dataUsage": "Utilisation des données",
+    "dataUsageContent": "Nous utilisons vos données personnelles pour traiter votre réservation, vous envoyer des confirmations et des informations pertinentes sur votre tour, et pour améliorer nos services. Nous ne partagerons jamais vos données avec des tiers sans votre consentement explicite, sauf si la loi l'exige.",
+    "dataRetention": "Conservation des données",
+    "dataRetentionContent": "Nous conservons vos données personnelles aussi longtemps que nécessaire aux fins décrites dans cette politique de confidentialité, ou comme requis par la loi.",
+    "yourRights": "Vos droits",
+    "yourRightsContent": "Vous avez le droit de consulter, corriger ou supprimer vos données personnelles à tout moment. Vous pouvez également vous opposer au traitement de vos données ou demander la portabilité des données. Contactez-nous si vous souhaitez exercer ces droits.",
+    "cookies": "Cookies",
+    "cookiesContent": "Notre site web utilise des cookies pour améliorer votre expérience utilisateur. Vous pouvez gérer vos préférences de cookies via la bannière de cookies sur notre site web.",
+    "contact": "Contact",
+    "contactContent": "Si vous avez des questions sur cette politique de confidentialité ou sur le traitement de vos données personnelles, veuillez nous contacter par e-mail ou par téléphone."
+  },
+  "bookingSuccess": {
+    "loading": "Chargement des détails de la réservation...",
+    "notFound": "Réservation introuvable",
+    "notFoundDesc": "Nous n'avons pas pu trouver les détails de votre réservation.",
+    "returnHome": "Retour à l'accueil",
+    "confirmed": "Réservation confirmée !",
+    "confirmedDesc": "Votre visite a été réservée avec succès. Vous recevrez un e-mail de confirmation sous peu.",
+    "bookingDetails": "Détails de la réservation",
+    "tour": "Tour",
+    "date": "Date",
+    "time": "Heure",
+    "numberOfPeople": "Nombre de personnes",
+    "language": "Langue",
+    "totalPaid": "Total payé",
+    "contactInfo": "Informations de contact",
+    "bookingReference": "Référence de réservation",
+    "specialRequests": "Demandes spéciales",
+    "whatsNext": "Et ensuite ?",
+    "whatsNextDesc": "Vous recevrez un e-mail de confirmation avec tous les détails de votre réservation. Nous avons hâte de vous accueillir pour la visite !",
+    "browseTours": "Découvrir plus de tours"
+  },
+  "bookingCancelled": {
+    "title": "Réservation annulée",
+    "description": "Votre réservation n'a pas été complétée. Aucun frais n'a été prélevé.",
+    "supportMessage": "Si vous avez rencontré des problèmes ou avez des questions, n'hésitez pas à contacter notre équipe de support.",
+    "browseTours": "Parcourir les tours",
+    "contactUs": "Nous contacter"
+  },
+  "orderSuccess": {
+    "loading": "Chargement des détails de la commande...",
+    "notFound": "Commande introuvable",
+    "notFoundDesc": "Nous n'avons pas pu trouver les détails de votre commande.",
+    "returnHome": "Retour à l'accueil",
+    "confirmed": "Commande confirmée !",
+    "confirmedDesc": "Merci pour votre achat. Vous recevrez un e-mail de confirmation sous peu.",
+    "orderDetails": "Détails de la commande",
+    "orderNumber": "Numéro de commande",
+    "orderDate": "Date de commande",
+    "items": "Articles",
+    "totalPaid": "Total payé",
+    "shippingInfo": "Informations de livraison",
+    "whatsNext": "Et ensuite ?",
+    "whatsNextDesc": "Vous recevrez un e-mail de confirmation avec tous les détails de votre commande. Vos articles seront expédiés dans les 2-3 jours ouvrables.",
+    "continueShopping": "Continuer les achats"
+  },
+  "orderCancelled": {
+    "title": "Commande annulée",
+    "description": "Votre commande n'a pas été complétée. Aucun frais n'a été prélevé sur votre compte.",
+    "supportMessage": "Si vous avez rencontré des problèmes lors du paiement ou avez des questions, veuillez contacter notre équipe de support.",
+    "returnShop": "Retour à la boutique",
+    "contactSupport": "Contacter le support"
   }
 }

@@ -337,5 +337,141 @@
     "localStoriesTitle": "Belangrijke Informatie",
     "localStoriesTime": "Tours zijn enkel beschikbaar van 14:00u tot 16:00u",
     "localStoriesMinimum": "Minimum van 4 personen vereist"
+  },
+  "faq": {
+    "title": "FAQ"
+  },
+  "press": {
+    "title": "In de Pers",
+    "subtitle": "BeroepsBelg in de media"
+  },
+  "blog": {
+    "title": "Blog",
+    "readMore": "Lees meer"
+  },
+  "contact": {
+    "title": "Contact",
+    "address": "Adres",
+    "email": "E-mail",
+    "phone": "Telefoon",
+    "sendMessage": "Stuur ons een bericht",
+    "messageSent": "Bericht verzonden!",
+    "addressLine1": "Groenplaats 1",
+    "addressLine2": "2000 Antwerpen",
+    "addressLine3": "België",
+    "consent": "Ik ga akkoord met de privacy policy"
+  },
+  "jobs": {
+    "title": "Word een BeroepsBelg gids",
+    "applyNow": "Solliciteer nu",
+    "description": "Ben je gepassioneerd over Belgische cultuur, geschiedenis en architectuur? Heb je een talent voor storytelling en deel je graag je kennis met anderen? Dan zijn we op zoek naar jou! BeroepsBelg is altijd op zoek naar enthousiaste gidsen die onze gasten kunnen meenemen op een onvergetelijke reis door de fascinerende geschiedenis van onze mooie steden.",
+    "name": "Naam*",
+    "email": "E-mail*",
+    "phone": "Telefoon*",
+    "cities": "In welke stad(en) wil je rondleidingen geven?*",
+    "citiesPlaceholder": "bijv. Antwerpen, Brussel",
+    "motivation": "Waarom wil je BeroepsBelg gids worden?*",
+    "motivationMinLength": "Minimaal 50 karakters vereist",
+    "consent": "Ik ga akkoord met de privacy policy en de verwerking van mijn gegevens",
+    "submit": "Verstuur sollicitatie",
+    "applicationSent": "Sollicitatie verzonden!",
+    "required": "Dit veld is verplicht"
+  },
+  "lecture": {
+    "title": "Lezing: De Boerentoren",
+    "date": "Datum",
+    "onRequest": "Op aanvraag",
+    "location": "Locatie",
+    "antwerp": "Antwerpen",
+    "groupSize": "Groepsgrootte",
+    "people": "10-50 personen",
+    "description": "In deze boeiende lezing neemt Tanguy Ottomer je mee op een reis door de fascinerende geschiedenis van de Boerentoren, Antwerpen's meest iconische wolkenkrabber. Van de bouw in de jaren '30 tot zijn rol in het hedendaagse stadsbeeld, ontdek je hoe dit gebouw de stad heeft gevormd en een symbool blijft van ambitie en innovatie.",
+    "bookLecture": "Boek deze lezing",
+    "moreInfo": "Meer informatie"
+  },
+  "disclaimer": {
+    "title": "Algemene Voorwaarden",
+    "scope": "Toepassingsgebied",
+    "scopeContent": "Deze algemene voorwaarden zijn van toepassing op alle tours, lezingen en andere diensten van BeroepsBelg, tenzij uitdrukkelijk schriftelijk anders overeengekomen.",
+    "bookings": "Boekingen",
+    "bookingsContent": "Boekingen kunnen worden gemaakt via onze website, per e-mail of telefonisch. Een boeking is pas definitief nadat we een schriftelijke bevestiging hebben verzonden.",
+    "payment": "Betaling",
+    "paymentContent": "Betaling dient vooraf te gebeuren via de op onze website aangegeven betaalmethodes. Voor groepsboekingen kan na overleg op factuur worden betaald.",
+    "cancellation": "Annulering",
+    "cancellationContent": "Gratis annuleren is mogelijk tot 48 uur voor aanvang van de tour. Bij annulering binnen 48 uur wordt het volledige bedrag aangerekend. Bij no-show is geen restitutie mogelijk.",
+    "liability": "Aansprakelijkheid",
+    "liabilityContent": "BeroepsBelg is niet aansprakelijk voor schade aan of letsel van personen of goederen tijdens de tour, tenzij er sprake is van opzet of grove nalatigheid van onze kant.",
+    "weatherConditions": "Weersomstandigheden",
+    "weatherConditionsContent": "Tours gaan door bij alle weersomstandigheden. Bij extreem weer behouden we ons het recht voor om de tour uit te stellen of te annuleren. In dat geval krijgt u volledige restitutie of wordt een alternatieve datum aangeboden.",
+    "copyright": "Auteursrecht",
+    "copyrightContent": "Alle content op onze website, inclusief teksten, afbeeldingen en logo's, is beschermd door auteursrecht en mag niet zonder voorafgaande schriftelijke toestemming worden gebruikt."
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "intro": "BeroepsBelg respecteert uw privacy en gaat zorgvuldig om met uw persoonlijke gegevens. Deze privacy policy legt uit welke gegevens we verzamelen, waarom we ze verzamelen en hoe we ze gebruiken.",
+    "dataCollection": "Gegevensverzameling",
+    "dataCollectionContent": "We verzamelen persoonlijke gegevens die u aan ons verstrekt bij het boeken van een tour, het inschrijven op onze nieuwsbrief of het contact opnemen met ons. Dit omvat uw naam, e-mailadres, telefoonnummer en andere informatie die u met ons deelt.",
+    "dataUsage": "Gegevensgebruik",
+    "dataUsageContent": "We gebruiken uw persoonlijke gegevens om uw boeking te verwerken, u bevestigingen en relevante informatie over uw tour te sturen, en om onze diensten te verbeteren. We delen uw gegevens nooit met derden zonder uw uitdrukkelijke toestemming, tenzij wettelijk verplicht.",
+    "dataRetention": "Gegevensbewaring",
+    "dataRetentionContent": "We bewaren uw persoonlijke gegevens zo lang als nodig is voor de doeleinden beschreven in deze privacy policy, of zoals wettelijk vereist.",
+    "yourRights": "Uw rechten",
+    "yourRightsContent": "U heeft het recht om uw persoonlijke gegevens op elk moment in te zien, te corrigeren of te verwijderen. U kunt ook bezwaar maken tegen de verwerking van uw gegevens of gegevensoverdraagbaarheid aanvragen. Neem contact met ons op als u deze rechten wilt uitoefenen.",
+    "cookies": "Cookies",
+    "cookiesContent": "Onze website gebruikt cookies om uw gebruikerservaring te verbeteren. U kunt uw cookievoorkeuren beheren via de cookiebanner op onze website.",
+    "contact": "Contact",
+    "contactContent": "Als u vragen heeft over deze privacy policy of de verwerking van uw persoonlijke gegevens, neem dan contact met ons op per e-mail of telefoon."
+  },
+  "bookingSuccess": {
+    "loading": "Boekingsgegevens laden...",
+    "notFound": "Boeking niet gevonden",
+    "notFoundDesc": "We konden uw boekingsgegevens niet vinden.",
+    "returnHome": "Terug naar home",
+    "confirmed": "Boeking bevestigd!",
+    "confirmedDesc": "Uw tour is succesvol geboekt. U ontvangt binnenkort een bevestigingsmail.",
+    "bookingDetails": "Boekingsgegevens",
+    "tour": "Tour",
+    "date": "Datum",
+    "time": "Tijd",
+    "numberOfPeople": "Aantal personen",
+    "language": "Taal",
+    "totalPaid": "Totaal betaald",
+    "contactInfo": "Contactinformatie",
+    "bookingReference": "Boekingreferentie",
+    "specialRequests": "Speciale verzoeken",
+    "whatsNext": "Wat nu?",
+    "whatsNextDesc": "U ontvangt een bevestigingsmail met alle details van uw boeking. We kijken ernaar uit u te verwelkomen op de tour!",
+    "browseTours": "Meer tours bekijken"
+  },
+  "bookingCancelled": {
+    "title": "Boeking geannuleerd",
+    "description": "Uw boeking is niet voltooid. Er zijn geen kosten in rekening gebracht.",
+    "supportMessage": "Als u problemen heeft ondervonden of vragen heeft, aarzel dan niet om contact op te nemen met ons support team.",
+    "browseTours": "Bekijk tours",
+    "contactUs": "Neem contact op"
+  },
+  "orderSuccess": {
+    "loading": "Bestelling laden...",
+    "notFound": "Bestelling niet gevonden",
+    "notFoundDesc": "We konden uw bestellingsgegevens niet vinden.",
+    "returnHome": "Terug naar home",
+    "confirmed": "Bestelling bevestigd!",
+    "confirmedDesc": "Bedankt voor uw aankoop. U ontvangt binnenkort een bevestigingsmail.",
+    "orderDetails": "Bestelgegevens",
+    "orderNumber": "Bestelnummer",
+    "orderDate": "Besteldatum",
+    "items": "Artikelen",
+    "totalPaid": "Totaal betaald",
+    "shippingInfo": "Verzendgegevens",
+    "whatsNext": "Wat nu?",
+    "whatsNextDesc": "U ontvangt een bevestigingsmail met alle details van uw bestelling. Uw artikelen worden binnen 2-3 werkdagen verzonden.",
+    "continueShopping": "Verder winkelen"
+  },
+  "orderCancelled": {
+    "title": "Bestelling geannuleerd",
+    "description": "Uw bestelling is niet voltooid. Uw account is niet belast.",
+    "supportMessage": "Als u problemen heeft ondervonden tijdens het afrekenen of vragen heeft, neem dan contact op met ons support team.",
+    "returnShop": "Terug naar shop",
+    "contactSupport": "Contact support"
   }
 }
