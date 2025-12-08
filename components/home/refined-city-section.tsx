@@ -93,7 +93,7 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-12">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
             {liveCities.map((city, index) => {
               const tourCount = cityTourCounts[city.slug];
               const isVisible = visibleCards.has(index);
@@ -105,85 +105,224 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
                   href={`/${locale}/tours-${city.slug}`}
                   onMouseEnter={() => setHoveredCard(index)}
                   onMouseLeave={() => setHoveredCard(null)}
-                  className={`group flex flex-col h-full overflow-hidden transition-all duration-500 hover:shadow-2xl relative ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                  className={`group flex flex-col h-full overflow-hidden relative bg-white ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                   style={{
                     transitionDelay: `${index * 100}ms`,
-                    borderRadius: '12px'
+                    borderRadius: '20px',
+                    transition: 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                    willChange: 'transform, box-shadow'
                   }}
                 >
-                  {/* Turquoise glow on hover */}
+                  {/* Multi-layered glow effect for depth */}
                   <div
-                    className="absolute -inset-0.5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10 blur-lg"
-                    style={{ backgroundColor: 'var(--green-accent)' }}
+                    className="absolute -inset-[2px] rounded-[22px] opacity-0 group-hover:opacity-100 -z-10 transition-opacity duration-700"
+                    style={{
+                      background: `radial-gradient(circle at 50% 50%, var(--green-accent), transparent 70%)`,
+                      filter: 'blur(20px)'
+                    }}
+                  />
+                  <div
+                    className="absolute -inset-[1px] rounded-[21px] opacity-0 group-hover:opacity-60 -z-10 transition-opacity duration-700"
+                    style={{
+                      background: `linear-gradient(135deg, var(--green-accent), transparent)`,
+                      filter: 'blur(12px)'
+                    }}
                   />
 
+                  {/* Image container with enhanced hover */}
                   {city.image && (
-                    <div className="relative h-72 w-full overflow-hidden mb-6 rounded-t-xl" style={{ backgroundColor: '#F5F5F5' }}>
-                      {/* Turquoise corner accent */}
+                    <div
+                      className="relative w-full overflow-hidden rounded-t-[20px] bg-gray-100"
+                      style={{
+                        height: '280px',
+                        transition: 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)'
+                      }}
+                    >
+                      {/* Animated corner accent with better timing */}
                       <div
-                        className="absolute top-0 right-0 w-16 h-16 opacity-0 group-hover:opacity-100 transition-all duration-500"
+                        className="absolute top-0 right-0 z-10 opacity-0 group-hover:opacity-100 transition-all duration-600"
                         style={{
+                          width: '80px',
+                          height: '80px',
                           background: `linear-gradient(135deg, transparent 50%, var(--green-accent) 50%)`,
-                          clipPath: 'polygon(100% 0, 100% 100%, 0 0)'
+                          clipPath: 'polygon(100% 0, 100% 100%, 0 0)',
+                          transitionDelay: '100ms'
                         }}
                       />
 
+                      {/* Image with improved zoom */}
                       <Image
                         src={city.image}
                         alt={city.name[locale]}
                         fill
                         loading="lazy"
                         sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-105"
+                        className="object-cover"
+                        style={{
+                          transition: 'transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), filter 0.6s ease-out',
+                          transform: 'scale(1)',
+                          filter: 'brightness(1)'
+                        }}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                      {/* Animated turquoise overlay */}
+                      {/* Sophisticated gradient overlays */}
                       <div
-                        className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500"
-                        style={{ backgroundColor: 'var(--green-accent)' }}
+                        className="absolute inset-0 bg-gradient-to-t from-black/30 via-black/10 to-transparent opacity-0 group-hover:opacity-100"
+                        style={{ transition: 'opacity 0.6s ease-out' }}
+                      />
+                      <div
+                        className="absolute inset-0 opacity-0 group-hover:opacity-[0.15]"
+                        style={{
+                          backgroundColor: 'var(--green-accent)',
+                          mixBlendMode: 'multiply',
+                          transition: 'opacity 0.6s ease-out'
+                        }}
+                      />
+
+                      {/* Shine effect on hover */}
+                      <div
+                        className="shine-effect absolute inset-0 opacity-0 group-hover:opacity-100"
+                        style={{
+                          background: 'linear-gradient(135deg, transparent 40%, rgba(255, 255, 255, 0.1) 50%, transparent 60%)',
+                          transition: 'opacity 0.6s ease-out, transform 0.6s ease-out',
+                          transform: 'translateX(-100%)'
+                        }}
                       />
                     </div>
                   )}
 
-                  <div className="relative flex flex-col flex-1 px-6 pb-6 bg-white rounded-b-xl">
-                    <h3 className="text-2xl md:text-3xl font-bold mb-3 transition-all duration-300 group-hover:text-[var(--green-accent)] group-hover:translate-x-1" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-primary)' }}>
+                  {/* Content area with refined spacing */}
+                  <div className="relative flex flex-col flex-1 p-6 md:p-7 bg-white rounded-b-[20px]">
+                    {/* City name with refined animation */}
+                    <h3
+                      className="text-2xl md:text-3xl font-bold mb-3 relative"
+                      style={{
+                        fontFamily: 'Montserrat, sans-serif',
+                        color: 'var(--text-primary)',
+                        transition: 'color 0.4s ease-out, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+                      }}
+                    >
                       {city.name[locale]}
+                      {/* Underline accent */}
+                      <div
+                        className="absolute -bottom-1 left-0 h-0.5 w-0 group-hover:w-full bg-gradient-to-r from-[var(--green-accent)] to-transparent"
+                        style={{ transition: 'width 0.5s cubic-bezier(0.16, 1, 0.3, 1)' }}
+                      />
                     </h3>
 
-                    <p className="text-base leading-relaxed mb-4 flex-1" style={{ fontFamily: 'Open Sans, sans-serif', color: 'var(--text-secondary)' }}>
+                    {/* Description */}
+                    <p
+                      className="text-base leading-relaxed mb-5 flex-1"
+                      style={{
+                        fontFamily: 'Open Sans, sans-serif',
+                        color: 'var(--text-secondary)',
+                        transition: 'color 0.3s ease-out'
+                      }}
+                    >
                       {city.teaser[locale]}
                     </p>
 
-                    <div
-                      className="flex items-center justify-between pt-4 mt-auto relative"
-                      style={{ borderTop: '3px solid var(--green-accent)' }}
-                    >
-                      {/* Animated border extension on hover */}
+                    {/* Footer section with refined border */}
+                    <div className="relative pt-4 mt-auto">
+                      {/* Animated border */}
                       <div
-                        className="absolute top-0 left-0 h-0.5 bg-gradient-to-r from-transparent via-[var(--green-accent)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                        style={{ width: '100%', transform: 'translateY(-3px)' }}
-                      />
-
-                      <div className="flex items-center gap-2 text-sm font-medium transition-all duration-300 group-hover:scale-105" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--green-accent)' }}>
-                        <div className="relative">
-                          <MapPin className="w-4 h-4 transition-transform duration-300 group-hover:scale-110" />
-                          <div
-                            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm"
-                            style={{ backgroundColor: 'var(--green-accent)' }}
-                          />
-                        </div>
-                        <span className="font-semibold">{t('toursCount', { count: tourCount })}</span>
+                        className="absolute top-0 left-0 right-0 h-[2px] overflow-hidden rounded-full"
+                        style={{ backgroundColor: 'rgba(61, 213, 152, 0.15)' }}
+                      >
+                        <div
+                          className="absolute inset-0 w-0 group-hover:w-full h-full rounded-full"
+                          style={{
+                            backgroundColor: 'var(--green-accent)',
+                            transition: 'width 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+                            boxShadow: '0 0 12px var(--green-accent)'
+                          }}
+                        />
                       </div>
 
-                      <div className="flex items-center gap-1.5 text-sm font-semibold transition-all duration-300 group-hover:gap-3 group-hover:scale-105" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--green-accent)' }}>
-                        <span>{t('viewTours')}</span>
-                        <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                        </svg>
+                      <div className="footer-section flex items-center justify-between">
+                        {/* Tour count */}
+                        <div
+                          className="flex items-center gap-2 text-sm font-medium"
+                          style={{
+                            fontFamily: 'Montserrat, sans-serif',
+                            color: 'var(--green-accent)',
+                            transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                          }}
+                        >
+                          <div className="relative">
+                            <MapPin
+                              className="icon-map w-4 h-4"
+                              style={{
+                                transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                              }}
+                            />
+                            <div
+                              className="absolute inset-0 opacity-0 group-hover:opacity-100 blur-sm"
+                              style={{
+                                backgroundColor: 'var(--green-accent)',
+                                transition: 'opacity 0.3s ease-out'
+                              }}
+                            />
+                          </div>
+                          <span className="font-semibold">{t('toursCount', { count: tourCount })}</span>
+                        </div>
+
+                        {/* View tours CTA */}
+                        <div
+                          className="flex items-center gap-2 text-sm font-semibold"
+                          style={{
+                            fontFamily: 'Montserrat, sans-serif',
+                            color: 'var(--green-accent)',
+                            transition: 'gap 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                          }}
+                        >
+                          <span>{t('viewTours')}</span>
+                          <svg
+                            className="arrow-icon w-5 h-5"
+                            style={{
+                              transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                            }}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            strokeWidth={2.5}
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
                       </div>
                     </div>
                   </div>
+
+                  {/* Hover styles via CSS */}
+                  <style jsx>{`
+                    a:hover {
+                      transform: translateY(-8px) !important;
+                      box-shadow: 0 20px 60px rgba(61, 213, 152, 0.25), 0 8px 30px rgba(0, 0, 0, 0.12) !important;
+                    }
+                    a:hover img {
+                      transform: scale(1.08) !important;
+                      filter: brightness(1.05) !important;
+                    }
+                    a:hover h3 {
+                      color: var(--green-accent) !important;
+                      transform: translateX(4px) !important;
+                    }
+                    a:hover .shine-effect {
+                      transform: translateX(100%) !important;
+                    }
+                    a:hover .icon-map {
+                      transform: scale(1.15) rotate(5deg) !important;
+                    }
+                    a:hover .arrow-icon {
+                      transform: translateX(6px) !important;
+                    }
+                    a:hover .footer-section {
+                      gap: 0.75rem !important;
+                      transform: scale(1.02) !important;
+                    }
+                  `}</style>
                 </Link>
               );
             })}
