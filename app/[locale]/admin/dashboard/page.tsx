@@ -344,7 +344,7 @@ export default function AdminDashboardPage() {
             <CardDescription>Manage tours and bookings</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <Link href={`/${locale}/admin/tours`}>
                 <Button className="w-full justify-start btn-primary" size="lg">
                   <Calendar className="h-5 w-5 mr-2" />
@@ -355,6 +355,12 @@ export default function AdminDashboardPage() {
                 <Button className="w-full justify-start btn-primary" size="lg">
                   <Calendar className="h-5 w-5 mr-2" />
                   Tour Bookings
+                </Button>
+              </Link>
+              <Link href={`/${locale}/admin/products`}>
+                <Button className="w-full justify-start btn-primary" size="lg">
+                  <Calendar className="h-5 w-5 mr-2" />
+                  Manage Products
                 </Button>
               </Link>
               <Link href={`/${locale}/admin/guides`}>

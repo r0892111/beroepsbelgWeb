@@ -51,7 +51,8 @@ export function ProductCard({ product }: ProductCardProps) {
 
     setIsAddingToCart(true);
     try {
-      await addToCart(product.slug, 1);
+      // Use UUID instead of slug for cart_items.product_id
+      await addToCart(product.uuid, 1);
       toast.success(t('addedToCart'));
     } catch (error) {
       toast.error(t('failedToAddToCart'));
@@ -75,7 +76,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <>
-      <Card className="flex flex-col hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setShowDialog(true)}>
+      <Card className="flex flex-col hover:shadow-lg transition-shadow">
         <CardHeader>
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -91,10 +92,7 @@ export function ProductCard({ product }: ProductCardProps) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleToggleFavorite();
-              }}
+              onClick={handleToggleFavorite}
               className={isFavorite(product.slug) ? 'text-red-500' : ''}
             >
               <Heart className={`h-5 w-5 ${isFavorite(product.slug) ? 'fill-current' : ''}`} />
@@ -111,12 +109,16 @@ export function ProductCard({ product }: ProductCardProps) {
             </span>
           )}
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex flex-col gap-2 px-6 pb-6 pt-4">
           <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleAddToCart();
-            }}
+            onClick={() => setShowDialog(true)}
+            variant="outline"
+            className="w-full"
+          >
+            Details
+          </Button>
+          <Button
+            onClick={handleAddToCart}
             disabled={isAddingToCart}
             className="w-full bg-[#0d1117] hover:bg-[#0d1117]/90 gap-2"
           >

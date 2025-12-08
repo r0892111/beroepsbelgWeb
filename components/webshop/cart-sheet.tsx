@@ -12,9 +12,18 @@ import { useTranslations } from 'next-intl';
 export function CartSheet() {
   const t = useTranslations('cart');
   const tAuth = useTranslations('auth');
-  const { cartItems, cartCount, updateQuantity, removeFromCart, loading } = useCartContext();
+  const { cartItems, cartCount, updateQuantity, removeFromCart, loading, refetch } = useCartContext();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  // Refetch cart when sheet opens
+  const handleSheetOpenChange = (open: boolean) => {
+    setSheetOpen(open);
+    if (open) {
+      // Refetch cart data when opening
+      void refetch();
+    }
+  };
 
   const totalAmount = cartItems.reduce((sum, item) => {
     return sum + (item.products?.price || 0) * item.quantity;
@@ -27,7 +36,7 @@ export function CartSheet() {
 
   return (
     <>
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+      <Sheet open={sheetOpen} onOpenChange={handleSheetOpenChange}>
         <SheetTrigger asChild>
           <Button variant="ghost" size="icon" className="relative">
             <ShoppingCart className="h-5 w-5" />
@@ -62,60 +71,64 @@ export function CartSheet() {
             ) : (
               <>
                 <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-                  {cartItems.map((item) => (
-                    <div key={item.id} className="flex gap-4 py-4 border-b">
-                      {item.products?.image && (
-                        <div className="relative w-20 h-20 flex-shrink-0">
-                          <Image
-                            src={item.products.image}
-                            alt={item.products.title_nl || 'Product'}
-                            fill
-                            className="object-cover rounded"
-                          />
+                  {cartItems.map((item) => {
+                    console.log('Cart item:', item); // Debug log
+                    const product = item.products;
+                    return (
+                      <div key={item.id} className="flex gap-4 py-4 border-b">
+                        {product?.image && (
+                          <div className="relative w-20 h-20 flex-shrink-0">
+                            <Image
+                              src={product.image}
+                              alt={product.title_nl || product.title_en || 'Product'}
+                              fill
+                              className="object-cover rounded"
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm mb-1">
+                            {product?.title_nl || product?.title_en || product?.title_fr || product?.title_de || 'Product'}
+                          </h4>
+                          <p className="text-sm text-muted-foreground">
+                            €{(product?.price || 0).toFixed(2)}
+                          </p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => updateQuantity(item.product_id, Math.max(0, item.quantity - 1))}
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <span className="text-sm w-8 text-center">{item.quantity}</span>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 ml-auto"
+                              onClick={() => removeFromCart(item.product_id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
                         </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm truncate">
-                          {item.products?.title_nl || 'Product'}
-                        </h4>
-                        <p className="text-sm text-muted-foreground">
-                          €{item.products?.price.toFixed(2)}
-                        </p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => updateQuantity(item.product_id, Math.max(0, item.quantity - 1))}
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="text-sm w-8 text-center">{item.quantity}</span>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 ml-auto"
-                            onClick={() => removeFromCart(item.product_id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                        <div className="text-right flex-shrink-0">
+                          <p className="font-medium text-sm">
+                            €{((product?.price || 0) * item.quantity).toFixed(2)}
+                          </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-medium">
-                          €{((item.products?.price || 0) * item.quantity).toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <div className="border-t pt-4 space-y-4">
