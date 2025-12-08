@@ -23,6 +23,7 @@ interface TourBookingDialogProps {
   tourTitle: string;
   tourPrice: number;
   tourDuration?: number; // Duration in minutes
+  isLocalStories?: boolean; // If true, only show 14:00-16:00 timeslot
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -32,6 +33,7 @@ export function TourBookingDialog({
   tourTitle,
   tourPrice,
   tourDuration = 120, // Default 2 hours
+  isLocalStories = false,
   open,
   onOpenChange,
 }: TourBookingDialogProps) {
@@ -53,21 +55,33 @@ export function TourBookingDialog({
   });
 
   // Generate time slots between 10:00 and 18:00 based on tour duration
+  // For Local Stories tours, only show 14:00-16:00 timeslot
   const timeSlots = useMemo(() => {
+    const slots: { value: string; label: string }[] = [];
+
+    // If this is a Local Stories tour, only show 14:00-16:00 slot
+    if (isLocalStories) {
+      slots.push({
+        value: '14:00',
+        label: '14:00 - 16:00'
+      });
+      return slots;
+    }
+
+    // Otherwise, generate regular time slots
     const durationMinutes = tourDuration;
     const startHour = 10; // 10:00
     const endHour = 18; // 18:00
-    const slots: { value: string; label: string }[] = [];
-    
+
     let currentMinutes = startHour * 60;
     const endMinutes = endHour * 60;
-    
+
     const formatTime = (mins: number) => {
       const h = Math.floor(mins / 60);
       const m = mins % 60;
       return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
     };
-    
+
     while (currentMinutes + durationMinutes <= endMinutes) {
       const startTime = formatTime(currentMinutes);
       const endTime = formatTime(currentMinutes + durationMinutes);
@@ -77,9 +91,9 @@ export function TourBookingDialog({
       });
       currentMinutes += durationMinutes;
     }
-    
+
     return slots;
-  }, [tourDuration]);
+  }, [tourDuration, isLocalStories]);
 
   // Format duration for display
   const formatDuration = (minutes: number) => {

@@ -163,6 +163,7 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
               tourTitle={tour.title}
               tourPrice={tour.price}
               tourDuration={tour.durationMinutes}
+              isLocalStories={tour.options?.local_stories === true}
             />
           </div>
         )}
