@@ -331,6 +331,9 @@
     "end": "Ende",
     "duration": "Dauer",
     "languages": "Sprachen",
-    "type": "Typ"
+    "type": "Typ",
+    "localStoriesTitle": "Wichtige Informationen",
+    "localStoriesTime": "Touren nur ab 14:00 Uhr verfügbar",
+    "localStoriesMinimum": "Mindestens 4 Personen erforderlich"
   }
 }

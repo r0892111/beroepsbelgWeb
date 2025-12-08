@@ -331,6 +331,9 @@
     "end": "Arrivée",
     "duration": "Durée",
     "languages": "Langues",
-    "type": "Type"
+    "type": "Type",
+    "localStoriesTitle": "Informations Importantes",
+    "localStoriesTime": "Tours disponibles uniquement à partir de 14:00h",
+    "localStoriesMinimum": "Minimum de 4 personnes requis"
   }
 }

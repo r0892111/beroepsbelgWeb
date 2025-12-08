@@ -126,6 +126,8 @@ export default function AdminDashboardPage() {
   };
 
   const handleTeamleaderConnect = async () => {
+    if (!user) return;
+
     setFeedbackMessage(null);
     setConnectInFlight(true);
     // Save locale for callback
