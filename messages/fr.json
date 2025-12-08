@@ -301,6 +301,8 @@
     "language": "Langue",
     "specialRequests": "Demandes spéciales",
     "specialRequestsPlaceholder": "Exigences ou demandes particulières...",
+    "requestTanguy": "Demander Tanguy Ottomer",
+    "requestTanguyDescription": "Souhaitez-vous que Tanguy Ottomer, fondateur de Beroepsbelg, accompagne personnellement votre visite?",
     "total": "Total",
     "processing": "Traitement...",
     "proceedToPayment": "Procéder au paiement",
