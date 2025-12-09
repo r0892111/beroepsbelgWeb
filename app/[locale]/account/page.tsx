@@ -48,7 +48,6 @@ export default function AccountPage() {
         setProducts(data);
         setProductsError(null);
       } catch (error) {
-        console.error('[AccountPage] Failed to load products', error);
         if (isMounted) {
           setProductsError(t('couldNotLoadProducts'));
         }
@@ -228,9 +227,17 @@ export default function AccountPage() {
                     {cartItems.map((item) => {
                       const product = item.products;
                       // Find product in products array for dialog if needed
-                      const productForDialog = product ? products.find((p) => p.slug === product.slug || p.uuid === product.uuid) : null;
+                      const productForDialog = product
+                        ? products.find((p) =>
+                            p.slug === product.slug
+                          )
+                        : null;
                       return (
-                        <Card key={item.id} className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => productForDialog && handleProductClick(productForDialog)}>
+                        <Card
+                          key={item.id}
+                          className="cursor-pointer hover:shadow-lg transition-shadow"
+                          onClick={() => productForDialog && handleProductClick(productForDialog)}
+                        >
                           <CardContent className="flex items-center justify-between p-6">
                             <div className="flex-1">
                               <h3 className="text-lg font-semibold text-[#0d1117]">

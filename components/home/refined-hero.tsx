@@ -41,7 +41,6 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
           setShowFallbackImage(true);
         }
       } catch (error) {
-        console.error('Error loading videos:', error);
         setShowFallbackImage(true);
       } finally {
         setIsLoading(false);
@@ -71,7 +70,6 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
     if (videos.length <= 1) return;
 
     const nextIndex = (currentVideoIndex + 1) % videos.length;
-    console.log('[Hero] Video ended, transitioning from', currentVideoIndex, 'to', nextIndex);
 
     if (videoRef.current && nextVideoRef.current) {
       // Fade out current video
@@ -84,13 +82,9 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
       // Play the next video
       const playPromise = nextVideoRef.current.play();
       if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            console.log('[Hero] Next video started playing');
-          })
-          .catch((error) => {
-            console.error('[Hero] Error playing next video:', error);
-          });
+        playPromise.catch(() => {
+          // Video play failed, fallback will handle
+        });
       }
 
       // Update index after transition completes
@@ -150,9 +144,10 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
               onEnded={handleVideoEnd}
               onError={() => setShowFallbackImage(true)}
               onLoadedData={() => {
-                console.log('[Hero] Current video loaded:', videos[currentVideoIndex]?.name);
                 if (videoRef.current) {
-                  videoRef.current.play().catch(err => console.error('[Hero] Play error:', err));
+                  videoRef.current.play().catch(() => {
+                    // Video play failed
+                  });
                 }
               }}
             />
@@ -167,14 +162,10 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
                 playsInline
                 preload="auto"
                 onLoadedData={() => {
-                  console.log('[Hero] Next video preloaded:', videos[(currentVideoIndex + 1) % videos.length]?.name);
                   // Ensure it's ready to play
                   if (nextVideoRef.current) {
                     nextVideoRef.current.currentTime = 0;
                   }
-                }}
-                onCanPlay={() => {
-                  console.log('[Hero] Next video can play');
                 }}
               />
             )}

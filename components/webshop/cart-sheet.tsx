@@ -72,7 +72,6 @@ export function CartSheet() {
               <>
                 <div className="flex-1 overflow-y-auto space-y-4 pr-2">
                   {cartItems.map((item) => {
-                    console.log('Cart item:', item); // Debug log
                     const product = item.products;
                     return (
                       <div key={item.id} className="flex gap-4 py-4 border-b">

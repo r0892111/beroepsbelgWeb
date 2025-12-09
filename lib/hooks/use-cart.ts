@@ -32,9 +32,6 @@ export function useCart() {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
-    console.log('Cart items fetched:', data);
-    console.log('Cart error:', error);
-
     if (data && !error) {
       // Transform cart items with joined product data
       const cartItemsWithProducts = data.map((item: any) => {
@@ -42,8 +39,6 @@ export function useCart() {
         const product = Array.isArray(item.webshop_data) 
           ? item.webshop_data[0] 
           : item.webshop_data;
-        
-        console.log(`Mapping product for item ${item.id}:`, { product_id: item.product_id, product });
         
         if (product) {
           // Transform webshop_data format to match expected product format
@@ -78,7 +73,6 @@ export function useCart() {
         }
         
         // Return item without product if not found
-        console.warn(`Product not found for product_id: ${item.product_id}`);
         const { webshop_data, ...itemWithoutWebshopData } = item;
         return {
           ...itemWithoutWebshopData,
@@ -86,10 +80,8 @@ export function useCart() {
         };
       });
       
-      console.log('Cart items with products:', cartItemsWithProducts);
       setCartItems(cartItemsWithProducts);
     } else if (error) {
-      console.error('Error fetching cart:', error);
       setCartItems([]);
     }
     setLoading(false);

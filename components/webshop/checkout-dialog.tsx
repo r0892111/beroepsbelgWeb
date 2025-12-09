@@ -85,7 +85,6 @@ export function CheckoutDialog({ open, onOpenChange, totalAmount }: CheckoutDial
       await clearCart();
       window.location.href = url;
     } catch (err) {
-      console.error('Checkout error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
       setLoading(false);
     }
