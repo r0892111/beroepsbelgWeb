@@ -80,7 +80,7 @@ export function CartSheet() {
                           <div className="relative w-20 h-20 flex-shrink-0">
                             <Image
                               src={product.image}
-                              alt={product.title_nl || product.title_en || 'Product'}
+                              alt={product.Name || product.title_nl || product.title_en || 'Product'}
                               fill
                               className="object-cover rounded"
                             />
@@ -88,7 +88,7 @@ export function CartSheet() {
                         )}
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-sm mb-1">
-                            {product?.title_nl || product?.title_en || product?.title_fr || product?.title_de || 'Product'}
+                            {product?.Name || product?.title_nl || product?.title_en || product?.title_fr || product?.title_de || 'Product'}
                           </h4>
                           <p className="text-sm text-muted-foreground">
                             €{(product?.price || 0).toFixed(2)}
