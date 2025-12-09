@@ -52,16 +52,12 @@ const parseNumber = (value: unknown): number | null => {
 };
 
 export async function getCities(): Promise<City[]> {
-  console.log('[Supabase API] Fetching cities...');
-  const startTime = performance.now();
-
   const { data, error } = await supabaseServer
     .from('cities')
     .select('*')
     .order('slug');
 
   if (error) {
-    console.error('[Supabase API] ❌ Error fetching cities:', error);
     throw error;
   }
 
@@ -89,36 +85,20 @@ export async function getCities(): Promise<City[]> {
     status: row.status,
   }));
 
-  const endTime = performance.now();
-  console.log(`[Supabase API] ✓ Fetched ${cities.length} cities in ${(endTime - startTime).toFixed(2)}ms`);
-  console.log('[Supabase API] Cities data:', cities.map(c => ({ slug: c.slug, status: c.status })));
-
   return cities;
 }
 
 export async function getTours(citySlug?: string): Promise<Tour[]> {
-  console.log(`[Supabase API] Fetching tours${citySlug ? ` for city: ${citySlug}` : ' (all cities)'}...`);
-  const startTime = performance.now();
-
   // Fetch all tours first, then filter client-side for better matching
   const { data, error } = await supabaseServer
     .from('tours_table_prod')
     .select('*');
   if (error) {
-    console.error('[Supabase API] ❌ Error fetching tours:', error);
     throw error;
   }
 
-  console.log(`[Supabase API] Raw database response - found ${data?.length || 0} total tours`);
-  console.log(`[Supabase API] Raw tours data:`, (data || []).map((row: any) => ({ 
-    title: row.title, 
-    city: row.city,
-    citySlugified: citySlugify(row.city)
-  })));
-
   const tours = (data || []).map((row: any): Tour => {
     const slugifiedCity = citySlugify(row.city);
-    console.log(`[Supabase API] Processing tour: "${row.title}" - City: "${row.city}" -> Slugified: "${slugifiedCity}"`);
     
     return {
       id: row.id,
@@ -141,35 +121,19 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
 
   // Filter by exact city slug if provided (for more accurate matching)
   const filteredTours = citySlug 
-    ? tours.filter(t => {
-        const matches = t.city === citySlug;
-        console.log(`[Supabase API] Comparing tour city "${t.city}" with filter "${citySlug}": ${matches}`);
-        return matches;
-      })
+    ? tours.filter(t => t.city === citySlug)
     : tours;
-
-  const endTime = performance.now();
-  console.log(`[Supabase API] ✓ Fetched ${filteredTours.length} tours (from ${tours.length} total) in ${(endTime - startTime).toFixed(2)}ms`);
-  if (citySlug) {
-    console.log(`[Supabase API] Looking for city: "${citySlug}"`);
-    console.log(`[Supabase API] Available cities in data:`, Array.from(new Set(tours.map(t => t.city))));
-    console.log(`[Supabase API] Tours for ${citySlug}:`, filteredTours.map(t => ({ slug: t.slug, city: t.city, title: t.title })));
-  }
 
   return filteredTours;
 }
 
 export async function getTourBySlug(citySlug: string, slug: string): Promise<Tour | null> {
-  console.log(`[Supabase API] Fetching tour: ${citySlug}/${slug}`);
-  const startTime = performance.now();
-
   // Fetch all tours for the city and find by generated slug
   const { data, error } = await supabaseServer
     .from('tours_table_prod')
     .select('*');
 
   if (error) {
-    console.error('[Supabase API] ❌ Error fetching tour:', error);
     throw error;
   }
 
@@ -181,12 +145,8 @@ export async function getTourBySlug(citySlug: string, slug: string): Promise<Tou
   });
 
   if (!matchingTour) {
-    console.warn(`[Supabase API] ⚠ Tour not found: ${citySlug}/${slug}`);
     return null;
   }
-
-  const endTime = performance.now();
-  console.log(`[Supabase API] ✓ Fetched tour in ${(endTime - startTime).toFixed(2)}ms`);
 
   return {
     id: matchingTour.id,
@@ -208,14 +168,10 @@ export async function getTourBySlug(citySlug: string, slug: string): Promise<Tou
 }
 
 export async function getProducts(): Promise<Product[]> {
-  console.log('[Supabase API] Fetching products...');
-  const startTime = performance.now();
-
   const { data, error } = await supabaseServer
     .from('webshop_data')
     .select('*');
   if (error) {
-    console.error('[Supabase API] ❌ Error fetching products:', error);
     throw error;
   }
 
@@ -275,27 +231,16 @@ export async function getProducts(): Promise<Product[]> {
     } satisfies Product;
   });
 
-  const endTime = performance.now();
-  console.log(`[Supabase API] ✓ Fetched ${products.length} products in ${(endTime - startTime).toFixed(2)}ms`);
-  console.log('[Supabase API] Products by category:', products.reduce((acc, p) => {
-    acc[p.category] = (acc[p.category] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>));
-
   return products;
 }
 
 export async function getBlogPosts(): Promise<BlogPost[]> {
-  console.log('[Supabase API] Fetching blog posts...');
-  const startTime = performance.now();
-
   const { data, error } = await supabaseServer
     .from('blog_posts')
     .select('*')
     .order('date', { ascending: false });
 
   if (error) {
-    console.error('[Supabase API] ❌ Error fetching blog posts:', error);
     throw error;
   }
 
@@ -316,16 +261,10 @@ export async function getBlogPosts(): Promise<BlogPost[]> {
     date: row.date,
   }));
 
-  const endTime = performance.now();
-  console.log(`[Supabase API] ✓ Fetched ${posts.length} blog posts in ${(endTime - startTime).toFixed(2)}ms`);
-
   return posts;
 }
 
 export async function getPressLinks(): Promise<PressLink[]> {
-  console.log('[Supabase API] Fetching press links...');
-  const startTime = performance.now();
-
   try {
     const { data, error } = await supabaseServer
       .from('press_links')
@@ -333,7 +272,6 @@ export async function getPressLinks(): Promise<PressLink[]> {
       .order('sort_order');
 
     if (error) {
-      console.error('[Supabase API] ❌ Error fetching press links:', error);
       return []; // Return empty array instead of throwing
     }
 
@@ -343,20 +281,13 @@ export async function getPressLinks(): Promise<PressLink[]> {
       logo: row.logo,
     }));
 
-    const endTime = performance.now();
-    console.log(`[Supabase API] ✓ Fetched ${links.length} press links in ${(endTime - startTime).toFixed(2)}ms`);
-
     return links;
   } catch (err) {
-    console.error('[Supabase API] ❌ Failed to fetch press links:', err);
     return [];
   }
 }
 
 export async function getFaqItems(): Promise<FaqItem[]> {
-  console.log('[Supabase API] Fetching FAQ items...');
-  const startTime = performance.now();
-
   try {
     const { data, error } = await supabaseServer
       .from('faq_items')
@@ -364,7 +295,6 @@ export async function getFaqItems(): Promise<FaqItem[]> {
       .order('sort_order');
 
     if (error) {
-      console.error('[Supabase API] ❌ Error fetching FAQ items:', error);
       return [];
     }
 
@@ -383,12 +313,8 @@ export async function getFaqItems(): Promise<FaqItem[]> {
       },
     }));
 
-    const endTime = performance.now();
-    console.log(`[Supabase API] ✓ Fetched ${items.length} FAQ items in ${(endTime - startTime).toFixed(2)}ms`);
-
     return items;
   } catch (err) {
-    console.error('[Supabase API] ❌ Failed to fetch FAQ items:', err);
     return [];
   }
 }

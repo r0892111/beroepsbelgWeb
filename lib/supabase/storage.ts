@@ -8,7 +8,6 @@ export interface VideoFile {
 
 export async function getHeroVideos(): Promise<VideoFile[]> {
   try {
-    console.log('[Storage] Fetching videos from Hero-droneshots bucket...');
     const { data: files, error } = await supabase.storage
       .from('Hero-droneshots')
       .list('', {
@@ -18,14 +17,10 @@ export async function getHeroVideos(): Promise<VideoFile[]> {
       });
 
     if (error) {
-      console.error('[Storage] Error fetching videos from storage:', error);
       return [];
     }
 
-    console.log('[Storage] Files found:', files?.length || 0);
-
     if (!files || files.length === 0) {
-      console.log('[Storage] No files found in bucket');
       return [];
     }
 
@@ -52,12 +47,9 @@ export async function getHeroVideos(): Promise<VideoFile[]> {
 
             if (!signedError && signedData) {
               videoUrl = signedData.signedUrl;
-              console.log(`[Storage] Using signed URL for ${file.name}`);
-            } else {
-              console.log(`[Storage] Using public URL for ${file.name}:`, videoUrl);
             }
           } catch (err) {
-            console.warn(`[Storage] Could not create signed URL for ${file.name}, using public URL`);
+            // Fallback to public URL
           }
 
           const videoFile = {
@@ -66,15 +58,12 @@ export async function getHeroVideos(): Promise<VideoFile[]> {
             path: file.name,
           };
           
-          console.log(`[Storage] Video file: ${file.name} -> ${videoUrl.substring(0, 100)}...`);
           return videoFile;
         })
     );
 
-    console.log('[Storage] Total video files:', videoFiles.length);
     return videoFiles;
   } catch (error) {
-    console.error('[Storage] Error in getHeroVideos:', error);
     return [];
   }
 }
