@@ -109,13 +109,9 @@ export default function AccountPage() {
     favorites.some((fav) => fav.product_id === p.slug)
   );
 
-  const cartProducts = cartItems.map((item) => {
-    const product = products.find((p) => p.slug === item.product_id);
-    return { ...item, product };
-  });
-
-  const cartTotal = cartProducts.reduce((total, item) => {
-    return total + (item.product?.price || 0) * item.quantity;
+  // Use cart items directly - they already have products populated from JOIN
+  const cartTotal = cartItems.reduce((total, item) => {
+    return total + (item.products?.price || 0) * item.quantity;
   }, 0);
 
   return (
@@ -144,6 +140,11 @@ export default function AccountPage() {
               <TabsTrigger value="favorites" className="gap-2">
                 <Heart className="h-4 w-4" />
                 {t('myFavorites')}
+                {favoritesCount > 0 && (
+                  <span className="ml-1 rounded-full bg-[#92F0B1] px-2 py-0.5 text-xs text-[#0d1117]">
+                    {favoritesCount}
+                  </span>
+                )}
               </TabsTrigger>
               <TabsTrigger value="cart" className="gap-2">
                 <ShoppingCart className="h-4 w-4" />
@@ -210,7 +211,7 @@ export default function AccountPage() {
             </TabsContent>
 
             <TabsContent value="cart">
-              {cartProducts.length === 0 ? (
+              {cartItems.length === 0 ? (
                 <Card>
                   <CardContent className="flex flex-col items-center justify-center py-16">
                     <ShoppingCart className="mb-4 h-16 w-16 text-[#6b7280]" />
@@ -224,59 +225,64 @@ export default function AccountPage() {
               ) : (
                 <div className="space-y-6">
                   <div className="space-y-4">
-                    {cartProducts.map((item) => (
-                      <Card key={item.id} className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => item.product && handleProductClick(item.product)}>
-                        <CardContent className="flex items-center justify-between p-6">
-                          <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-[#0d1117]">
-                              {item.product?.title[locale as 'nl' | 'en' | 'fr' | 'de']}
-                            </h3>
-                            <p className="text-[#6b7280]">€{item.product?.price.toFixed(2)}</p>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2">
+                    {cartItems.map((item) => {
+                      const product = item.products;
+                      // Find product in products array for dialog if needed
+                      const productForDialog = product ? products.find((p) => p.slug === product.slug || p.uuid === product.uuid) : null;
+                      return (
+                        <Card key={item.id} className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => productForDialog && handleProductClick(productForDialog)}>
+                          <CardContent className="flex items-center justify-between p-6">
+                            <div className="flex-1">
+                              <h3 className="text-lg font-semibold text-[#0d1117]">
+                                {product?.Name || product?.title_nl || product?.title_en || product?.title_fr || product?.title_de || 'Product'}
+                              </h3>
+                              <p className="text-[#6b7280]">€{(product?.price || 0).toFixed(2)}</p>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateQuantity(item.product_id, item.quantity - 1);
+                                  }}
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                >
+                                  <Minus className="h-4 w-4" />
+                                </Button>
+                                <span className="w-8 text-center font-medium">{item.quantity}</span>
+                                <Button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateQuantity(item.product_id, item.quantity + 1);
+                                  }}
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              <div className="w-24 text-right font-semibold">
+                                €{((product?.price || 0) * item.quantity).toFixed(2)}
+                              </div>
                               <Button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  updateQuantity(item.product_id, item.quantity - 1);
+                                  removeFromCart(item.product_id);
+                                  toast.success(t('removeFromCart'));
                                 }}
-                                variant="outline"
+                                variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
                               >
-                                <Minus className="h-4 w-4" />
-                              </Button>
-                              <span className="w-8 text-center font-medium">{item.quantity}</span>
-                              <Button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  updateQuantity(item.product_id, item.quantity + 1);
-                                }}
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8"
-                              >
-                                <Plus className="h-4 w-4" />
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
-                            <div className="w-24 text-right font-semibold">
-                              €{((item.product?.price || 0) * item.quantity).toFixed(2)}
-                            </div>
-                            <Button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                removeFromCart(item.product_id);
-                                toast.success(t('removeFromCart'));
-                              }}
-                              variant="ghost"
-                              size="icon"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
 
                   <Card className="bg-[#92F0B1]/10">

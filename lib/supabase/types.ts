@@ -20,6 +20,7 @@ export interface Product {
   id: string;
   slug: string;
   uuid_legacy: string | null;
+  Name?: string; // Product name from webshop_data
   title_nl: string;
   title_en: string;
   title_fr: string;
