@@ -33,6 +33,7 @@ export type Tour = {
   description: string;
   notes?: string;
   options?: TourOptions;
+  local_stories?: boolean;
   createdAt?: string;
   updatedAt?: string;
 };
