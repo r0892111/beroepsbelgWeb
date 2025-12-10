@@ -157,7 +157,18 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
                       {city.teaser[locale]}
                     </p>
 
-                    <div className="relative pt-4 mt-auto border-t border-gray-100">
+                    <div className="relative pt-4 mt-auto">
+                      {/* Animated border expanding from center */}
+                      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gray-100 overflow-hidden">
+                        <div
+                          className="absolute top-0 left-1/2 h-full w-0 -translate-x-1/2 group-hover:w-full transition-all duration-500 ease-out"
+                          style={{
+                            backgroundColor: 'var(--green-accent)',
+                            boxShadow: '0 0 8px var(--green-accent)'
+                          }}
+                        />
+                      </div>
+
                       <div className="flex items-center justify-between">
                         <div
                           className="flex items-center gap-2 text-sm font-medium"
