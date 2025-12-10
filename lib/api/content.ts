@@ -114,7 +114,6 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
       description: row.description,
       notes: row.notes,
       options: row.options as TourOptions,
-      local_stories: row.local_stories,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };
@@ -163,7 +162,6 @@ export async function getTourBySlug(citySlug: string, slug: string): Promise<Tou
     description: matchingTour.description,
     notes: matchingTour.notes,
     options: matchingTour.options as TourOptions,
-    local_stories: matchingTour.local_stories,
     createdAt: matchingTour.created_at,
     updatedAt: matchingTour.updated_at,
   };
