@@ -37,7 +37,6 @@ serve(async (req: Request) => {
       specialRequests,
       requestTanguy = false,
       userId,
-      bookingType = 'B2C', // Default to B2C for consumer bookings
     } = await req.json()
 
     const { data: tour, error: tourError } = await supabase
@@ -90,9 +89,8 @@ serve(async (req: Request) => {
       },
     })
 
-    // Try to insert with booking_type, fall back without if column doesn't exist
-    let bookingError;
-    const bookingData = {
+    // Prepare booking data based on actual table schema
+    const bookingData: any = {
       tour_id: tourId,
       stripe_session_id: session.id,
       status: 'pending',
@@ -112,18 +110,15 @@ serve(async (req: Request) => {
       }],
     };
 
-    // Try with booking_type first
-    const result1 = await supabase.from('tourbooking').insert({
-      ...bookingData,
-      booking_type: bookingType,
-    });
-
-    if (result1.error) {
-      console.error('Error with booking_type, trying without:', result1.error);
-      // Try without booking_type in case column doesn't exist
-      const result2 = await supabase.from('tourbooking').insert(bookingData);
-      bookingError = result2.error;
+    // Add user_id if provided (for logged-in users)
+    if (userId) {
+      bookingData.user_id = userId;
     }
+
+    // Insert booking into tourbooking table
+    const { error: bookingError } = await supabase
+      .from('tourbooking')
+      .insert(bookingData);
 
     if (bookingError) {
       console.error('Error creating booking:', bookingError)

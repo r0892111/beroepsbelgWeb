@@ -9,12 +9,14 @@ import { useCartContext } from '@/lib/contexts/cart-context';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Heart, ShoppingCart, User, LogOut, Package, Trash2, Plus, Minus } from 'lucide-react';
+import { Heart, ShoppingCart, User, LogOut, Package, Trash2, Plus, Minus, Calendar, Receipt, MapPin } from 'lucide-react';
 import { getProducts } from '@/lib/api/content';
 import type { Product } from '@/lib/data/types';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { ProductDetailDialog } from '@/components/webshop/product-detail-dialog';
+import { supabase } from '@/lib/supabase/client';
+import { Badge } from '@/components/ui/badge';
 
 export default function AccountPage() {
   const t = useTranslations('auth');
@@ -32,6 +34,11 @@ export default function AccountPage() {
   const [productsError, setProductsError] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showProductDialog, setShowProductDialog] = useState(false);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [tours, setTours] = useState<Map<string, any>>(new Map());
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
 
   const handleProductClick = (product: Product) => {
     setSelectedProduct(product);
@@ -66,10 +73,133 @@ export default function AccountPage() {
   }, []);
 
   useEffect(() => {
-    if (tabFromUrl === 'cart' || tabFromUrl === 'favorites') {
+    if (tabFromUrl === 'cart' || tabFromUrl === 'favorites' || tabFromUrl === 'orders' || tabFromUrl === 'tours') {
       setActiveTab(tabFromUrl);
     }
   }, [tabFromUrl]);
+
+  // Fetch orders when orders tab is active
+  useEffect(() => {
+    if (activeTab === 'orders' && user) {
+      fetchOrders();
+    }
+  }, [activeTab, user]);
+
+  // Fetch bookings and tours when tours tab is active
+  useEffect(() => {
+    if (activeTab === 'tours' && user) {
+      fetchBookings();
+      fetchTours();
+    }
+  }, [activeTab, user]);
+
+  const fetchTours = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tours_table_prod')
+        .select('id, title, city, type, duration_minutes, price');
+
+      if (error) throw error;
+
+      const toursMap = new Map<string, any>();
+      (data || []).forEach((tour: any) => {
+        toursMap.set(tour.id, tour);
+      });
+      setTours(toursMap);
+    } catch (error) {
+      console.error('Error fetching tours:', error);
+    }
+  };
+
+  const fetchOrders = async () => {
+    if (!user) return;
+    setOrdersLoading(true);
+    try {
+      console.log('Fetching orders for user:', user.id);
+      const { data, error } = await supabase
+        .from('stripe_orders')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching orders:', error);
+        throw error;
+      }
+      
+      console.log('Orders fetched:', data?.length || 0, 'orders');
+      setOrders(data || []);
+    } catch (error: any) {
+      console.error('Error fetching orders:', error);
+      toast.error(t('couldNotLoadOrders') || 'Could not load orders');
+      // If RLS error, show more helpful message
+      if (error?.message?.includes('permission') || error?.code === '42501') {
+        console.error('RLS policy error - user may not have permission to view orders');
+      }
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
+
+  const fetchBookings = async () => {
+    if (!user) return;
+    setBookingsLoading(true);
+    try {
+      console.log('Fetching bookings for user:', user.id, 'email:', user.email);
+      
+      // Try to fetch by user_id first (most efficient)
+      let query = supabase
+        .from('tourbooking')
+        .select('*')
+        .order('tour_datetime', { ascending: false })
+        .limit(100);
+
+      // If user_id column exists, filter by it
+      const { data: userBookings, error: userError } = await query
+        .eq('user_id', user.id);
+
+      if (!userError && userBookings && userBookings.length > 0) {
+        console.log('Found bookings by user_id:', userBookings.length);
+        setBookings(userBookings);
+        setBookingsLoading(false);
+        return;
+      }
+
+      // If no bookings found by user_id, try fetching all and filtering by email
+      console.log('No bookings by user_id, trying email filter...');
+      const { data: allBookings, error: allError } = await supabase
+        .from('tourbooking')
+        .select('*')
+        .order('tour_datetime', { ascending: false })
+        .limit(100);
+
+      if (allError) throw allError;
+
+      // Filter bookings where user email is in invitees
+      const userEmail = user.email || profile?.email;
+      const filteredBookings = (allBookings || []).filter((booking: any) => {
+        // Check if user_id matches (in case it was set)
+        if (booking.user_id && booking.user_id === user.id) return true;
+        
+        // Check if user email is in invitees
+        if (booking.invitees && Array.isArray(booking.invitees) && userEmail) {
+          return booking.invitees.some((invitee: any) => 
+            invitee.email && invitee.email.toLowerCase() === userEmail.toLowerCase()
+          );
+        }
+        
+        return false;
+      });
+
+      console.log('Found bookings by email:', filteredBookings.length);
+      setBookings(filteredBookings);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+      toast.error(t('couldNotLoadBookings') || 'Could not load bookings');
+    } finally {
+      setBookingsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -135,7 +265,7 @@ export default function AccountPage() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="favorites" className="gap-2">
                 <Heart className="h-4 w-4" />
                 {t('myFavorites')}
@@ -153,6 +283,14 @@ export default function AccountPage() {
                     {cartCount}
                   </span>
                 )}
+              </TabsTrigger>
+              <TabsTrigger value="orders" className="gap-2">
+                <Receipt className="h-4 w-4" />
+                {t('myOrders') || 'My Orders'}
+              </TabsTrigger>
+              <TabsTrigger value="tours" className="gap-2">
+                <MapPin className="h-4 w-4" />
+                {t('myTours') || 'My Tours'}
               </TabsTrigger>
             </TabsList>
 
@@ -180,7 +318,7 @@ export default function AccountPage() {
                         <Button
                           onClick={async (e) => {
                             e.stopPropagation();
-                            await addToCart(product.slug, 1);
+                            await addToCart(product.uuid, 1);
                             toast.success(t('addToCart'));
                           }}
                           size="sm"
@@ -308,6 +446,203 @@ export default function AccountPage() {
                       </div>
                     </CardContent>
                   </Card>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="orders">
+              {ordersLoading ? (
+                <Card>
+                  <CardContent className="flex items-center justify-center py-16">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#92F0B1] border-t-transparent"></div>
+                  </CardContent>
+                </Card>
+              ) : orders.length === 0 ? (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-16">
+                    <Receipt className="mb-4 h-16 w-16 text-[#6b7280]" />
+                    <h3 className="mb-2 text-xl font-semibold text-[#0d1117]">{t('noOrders') || 'No Orders'}</h3>
+                    <p className="mb-6 text-center text-[#6b7280]">{t('noOrdersDesc') || 'You haven\'t placed any orders yet.'}</p>
+                    <Button asChild className="bg-[#92F0B1] text-[#0d1117] hover:bg-[#6ee7a8]">
+                      <Link href={`/${locale}/webshop`}>{t('browseProducts')}</Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {orders.map((order) => (
+                    <Card key={order.id}>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle className="text-lg">{t('order') || 'Order'} #{String(order.id).slice(0, 8)}</CardTitle>
+                            <CardDescription>
+                              {new Date(order.created_at).toLocaleDateString(locale, {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                              })}
+                            </CardDescription>
+                          </div>
+                          <Badge
+                            className={
+                              order.status === 'completed'
+                                ? 'bg-green-100 text-green-800'
+                                : order.status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }
+                          >
+                            {order.status}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          {order.items && Array.isArray(order.items) && order.items.length > 0 && (
+                            <div>
+                              <h4 className="mb-2 font-semibold">{t('orderItems') || 'Items'}:</h4>
+                              <div className="space-y-2">
+                                {order.items.map((item: any, index: number) => (
+                                  <div key={index} className="flex justify-between text-sm">
+                                    <span>
+                                      {item.title} {item.quantity > 1 && `× ${item.quantity}`}
+                                    </span>
+                                    <span className="font-medium">€{(item.price * item.quantity).toFixed(2)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex justify-between border-t pt-2 font-bold">
+                          <span>{t('total')}:</span>
+                          <span>€{order.total_amount ? Number(order.total_amount).toFixed(2) : order.amount_total ? (Number(order.amount_total) / 100).toFixed(2) : '0.00'}</span>
+                        </div>
+                        {order.shipping_address && (
+                          <div className="rounded-lg bg-[#92F0B1]/10 p-3 text-sm">
+                            <p className="font-semibold mb-1">{t('shippingAddress') || 'Shipping Address'}:</p>
+                            <p>{order.shipping_address.street}</p>
+                            <p>
+                              {order.shipping_address.city}, {order.shipping_address.postalCode}
+                            </p>
+                            <p>{order.shipping_address.country}</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="tours">
+              {bookingsLoading ? (
+                <Card>
+                  <CardContent className="flex items-center justify-center py-16">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#92F0B1] border-t-transparent"></div>
+                  </CardContent>
+                </Card>
+              ) : bookings.length === 0 ? (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-16">
+                    <MapPin className="mb-4 h-16 w-16 text-[#6b7280]" />
+                    <h3 className="mb-2 text-xl font-semibold text-[#0d1117]">{t('noBookings') || 'No Tour Bookings'}</h3>
+                    <p className="mb-6 text-center text-[#6b7280]">{t('noBookingsDesc') || 'You haven\'t booked any tours yet.'}</p>
+                    <Button asChild className="bg-[#92F0B1] text-[#0d1117] hover:bg-[#6ee7a8]">
+                      <Link href={`/${locale}/tours`}>{t('browseTours') || 'Browse Tours'}</Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {bookings.map((booking) => {
+                    const tour = booking.tour_id ? tours.get(booking.tour_id) : null;
+                    const isPast = booking.tour_datetime ? new Date(booking.tour_datetime) < new Date() : false;
+                    
+                    return (
+                      <Card key={booking.id}>
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <CardTitle className="text-lg flex items-center gap-2">
+                                <Calendar className="h-5 w-5" />
+                                {tour?.title || booking.city || t('tourBooking') || 'Tour Booking'} #{booking.id}
+                              </CardTitle>
+                              <CardDescription>
+                                {booking.tour_datetime
+                                  ? new Date(booking.tour_datetime).toLocaleDateString(locale, {
+                                      year: 'numeric',
+                                      month: 'long',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                    })
+                                  : t('dateTBD') || 'Date TBD'}
+                                {booking.city && ` • ${booking.city}`}
+                                {tour && ` • ${tour.type}`}
+                                {tour?.duration_minutes && ` • ${Math.floor(tour.duration_minutes / 60)}h ${tour.duration_minutes % 60}m`}
+                              </CardDescription>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                              {isPast && (
+                                <Badge variant="outline" className="text-xs">
+                                  {t('past') || 'Past'}
+                                </Badge>
+                              )}
+                              <Badge
+                                className={
+                                  booking.status === 'completed'
+                                    ? 'bg-green-100 text-green-800'
+                                    : booking.status === 'pending'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-gray-100 text-gray-800'
+                                }
+                              >
+                                {booking.status}
+                              </Badge>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          {tour && (
+                            <div className="rounded-lg bg-[#92F0B1]/10 p-3 text-sm">
+                              <p className="font-semibold mb-1">{t('tourDetails') || 'Tour Details'}:</p>
+                              <p>{tour.title}</p>
+                              {tour.price && (
+                                <p className="text-muted-foreground">€{Number(tour.price).toFixed(2)}</p>
+                              )}
+                            </div>
+                          )}
+                          {booking.invitees && Array.isArray(booking.invitees) && booking.invitees.length > 0 && (
+                            <div>
+                              <h4 className="mb-2 font-semibold">{t('participants') || 'Participants'}:</h4>
+                              <div className="space-y-1">
+                                {booking.invitees.map((invitee: any, index: number) => (
+                                  <div key={index} className="text-sm">
+                                    {invitee.name} {invitee.email && `(${invitee.email})`}
+                                    {invitee.numberOfPeople > 1 && ` - ${invitee.numberOfPeople} ${t('people') || 'people'}`}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {booking.google_calendar_link && (
+                            <Button asChild variant="outline" size="sm">
+                              <a
+                                href={booking.google_calendar_link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <Calendar className="mr-2 h-4 w-4" />
+                                {t('viewInCalendar') || 'View in Calendar'}
+                              </a>
+                            </Button>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
             </TabsContent>

@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { useCartContext } from '@/lib/contexts/cart-context';
+import { useAuth } from '@/lib/contexts/auth-context';
 import { useTranslations } from 'next-intl';
 
 interface CheckoutDialogProps {
@@ -17,6 +19,9 @@ interface CheckoutDialogProps {
 
 export function CheckoutDialog({ open, onOpenChange, totalAmount }: CheckoutDialogProps) {
   const t = useTranslations('checkout');
+  const params = useParams();
+  const locale = params.locale as string;
+  const { user } = useAuth();
   const { cartItems, clearCart } = useCartContext();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,7 +72,8 @@ export function CheckoutDialog({ open, onOpenChange, totalAmount }: CheckoutDial
           customerEmail: formData.customerEmail,
           shippingAddress,
           billingAddress: shippingAddress,
-          userId: null,
+          userId: user?.id || null,
+          locale: locale || 'nl',
         }),
       });
 

@@ -17,6 +17,7 @@ import { CalendarIcon, Clock, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
+import { useAuth } from '@/lib/contexts/auth-context';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
@@ -40,6 +41,7 @@ export function TourBookingDialog({
   onOpenChange,
 }: TourBookingDialogProps) {
   const router = useRouter();
+  const { user } = useAuth();
   const t = useTranslations('booking');
   const tB2b = useTranslations('b2b');
   const [loading, setLoading] = useState(false);
@@ -147,8 +149,7 @@ export function TourBookingDialog({
           language: formData.language,
           specialRequests: formData.specialRequests,
           requestTanguy: formData.requestTanguy,
-          userId: null,
-          bookingType: 'B2C',
+          userId: user?.id || null,
         }),
       });
 

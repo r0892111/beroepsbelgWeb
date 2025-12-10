@@ -26,7 +26,9 @@ export function useCart() {
           "Category",
           "Price (EUR)",
           "Description",
-          "Additional Info"
+          "Additional Info",
+          stripe_product_id,
+          stripe_price_id
         )
       `)
       .eq('user_id', user.id)
@@ -68,6 +70,8 @@ export function useCart() {
               description_de: product.Description || '',
               Description: product.Description || '',
               image: null,
+              stripe_product_id: product.stripe_product_id || null,
+              stripe_price_id: product.stripe_price_id || null,
             }
           };
         }

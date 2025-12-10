@@ -1,15 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from 'next-intl';
+import { supabase } from '@/lib/supabase/client';
 
 export default function OrderSuccessPage() {
   const t = useTranslations('orderSuccess');
+  const params = useParams();
+  const locale = params.locale as string;
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
   const [loading, setLoading] = useState(true);
@@ -22,31 +25,58 @@ export default function OrderSuccessPage() {
         return;
       }
 
-      try {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      // Retry logic - sometimes the order takes a moment to be created/updated by webhook
+      let retries = 3;
+      let delay = 1000;
 
-        const response = await fetch(
-          `${supabaseUrl}/rest/v1/orders?stripe_session_id=eq.${sessionId}&select=*`,
-          {
-            headers: {
-              'apikey': supabaseAnonKey || '',
-              'Authorization': `Bearer ${supabaseAnonKey}`,
-            },
-          }
-        );
+      const attemptFetch = async (): Promise<void> => {
+        try {
+          console.log('Fetching order for session:', sessionId, `(attempt ${4 - retries}/3)`);
+          
+          // Use Supabase client which handles RLS properly
+          const { data, error } = await supabase
+            .from('stripe_orders')
+            .select('*')
+            .eq('checkout_session_id', sessionId)
+            .maybeSingle(); // Use maybeSingle() instead of single() to avoid error if not found
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.length > 0) {
-            setOrder(data[0]);
+          if (error) {
+            console.error('Error fetching order:', error);
+            throw error;
           }
+
+          if (data) {
+            console.log('Order found:', data);
+            setOrder(data);
+            setLoading(false);
+            return;
+          }
+
+          // If no data and we have retries left, retry
+          if (retries > 0) {
+            retries--;
+            console.log(`Order not found, retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            delay *= 2; // Exponential backoff
+            return attemptFetch();
+          }
+
+          // No order found after all retries
+          console.warn('Order not found after retries');
+          setLoading(false);
+        } catch (error) {
+          console.error('Error fetching order:', error);
+          if (retries > 0) {
+            retries--;
+            await new Promise(resolve => setTimeout(resolve, delay));
+            delay *= 2;
+            return attemptFetch();
+          }
+          setLoading(false);
         }
-      } catch (error) {
-        console.error('Error fetching order:', error);
-      } finally {
-        setLoading(false);
-      }
+      };
+
+      attemptFetch();
     };
 
     fetchOrder();
@@ -69,12 +99,27 @@ export default function OrderSuccessPage() {
         <Card className="max-w-2xl mx-auto">
           <CardHeader>
             <CardTitle>{t('notFoundTitle')}</CardTitle>
-            <CardDescription>{t('notFoundDescription')}</CardDescription>
+            <CardDescription>
+              {t('notFoundDescription')}
+              {sessionId && (
+                <span className="block mt-2 text-xs font-mono text-muted-foreground">
+                  Session ID: {sessionId}
+                </span>
+              )}
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button asChild>
-              <Link href="/">{t('returnHome')}</Link>
-            </Button>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {t('orderMayBeProcessing') || 'Your order may still be processing. Please check your email for confirmation or contact support if you have questions.'}
+            </p>
+            <div className="flex gap-3">
+              <Button asChild>
+                <Link href={`/${locale}`}>{t('returnHome')}</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href={`/${locale}/account?tab=orders`}>{t('viewMyOrders') || 'View My Orders'}</Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -97,7 +142,7 @@ export default function OrderSuccessPage() {
           <div className="space-y-4">
             <div className="flex justify-between border-b pb-2">
               <span className="font-medium">{t('orderId')}</span>
-              <span className="text-muted-foreground font-mono text-sm">{order.id.slice(0, 8)}</span>
+              <span className="text-muted-foreground font-mono text-sm">{String(order.id).slice(0, 8)}</span>
             </div>
             <div className="flex justify-between border-b pb-2">
               <span className="font-medium">{t('customerName')}</span>
@@ -165,10 +210,10 @@ export default function OrderSuccessPage() {
 
           <div className="flex gap-4">
             <Button asChild className="flex-1">
-              <Link href="/">{t('returnHome')}</Link>
+              <Link href={`/${locale}`}>{t('returnHome')}</Link>
             </Button>
             <Button asChild variant="outline" className="flex-1">
-              <Link href="/webshop">{t('continueShopping')}</Link>
+              <Link href={`/${locale}/webshop`}>{t('continueShopping')}</Link>
             </Button>
           </div>
         </CardContent>

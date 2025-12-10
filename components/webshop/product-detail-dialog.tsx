@@ -59,7 +59,8 @@ export function ProductDetailDialog({ product, open, onOpenChange }: ProductDeta
 
     setIsAddingToCart(true);
     try {
-      await addToCart(product.slug, 1);
+      // Use UUID instead of slug for cart_items.product_id
+      await addToCart(product.uuid, 1);
       toast.success(t('addedToCart'));
     } catch (error) {
       toast.error(t('failedToAddToCart'));

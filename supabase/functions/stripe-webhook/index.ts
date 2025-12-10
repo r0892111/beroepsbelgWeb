@@ -89,12 +89,12 @@ async function handleEvent(event: Stripe.Event) {
 
       // If no tour booking found, try to update a webshop order
       const { data: order, error: orderError } = await supabase
-        .from('orders')
+        .from('stripe_orders')
         .update({ 
           status: 'completed',
           updated_at: new Date().toISOString()
         })
-        .eq('stripe_session_id', sessionId)
+        .eq('checkout_session_id', sessionId)
         .select()
         .single();
 
