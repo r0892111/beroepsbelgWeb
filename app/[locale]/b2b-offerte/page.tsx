@@ -89,19 +89,28 @@ export default function B2BQuotePage() {
   // Generate time slots between 10:00 and 18:00 based on tour duration
   const generateTimeSlots = () => {
     const durationMinutes = selectedTour?.durationMinutes ?? 120; // Default 2 hours
+
+    // Check if this is a "Local Stories" tour - restrict to 14:00-16:00 only
+    if (selectedTour?.local_stories === true) {
+      return [{
+        value: '14:00',
+        label: '14:00 - 16:00'
+      }];
+    }
+
     const startHour = 10; // 10:00
     const endHour = 18; // 18:00
     const slots: { value: string; label: string }[] = [];
-    
+
     let currentMinutes = startHour * 60; // Start at 10:00 in minutes
     const endMinutes = endHour * 60; // End at 18:00 in minutes
-    
+
     const formatTime = (mins: number) => {
       const h = Math.floor(mins / 60);
       const m = mins % 60;
       return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
     };
-    
+
     while (currentMinutes + durationMinutes <= endMinutes) {
       const startTime = formatTime(currentMinutes);
       const endTime = formatTime(currentMinutes + durationMinutes);
@@ -111,7 +120,7 @@ export default function B2BQuotePage() {
       });
       currentMinutes += durationMinutes;
     }
-    
+
     return slots;
   };
 
@@ -555,7 +564,10 @@ export default function B2BQuotePage() {
                     </Select>
                     {selectedTour && (
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Tourduur: {formatDuration(selectedTour.durationMinutes)}
+                        {selectedTour.local_stories
+                          ? 'Tours zijn enkel beschikbaar van 14:00u tot 16:00u'
+                          : `Tourduur: ${formatDuration(selectedTour.durationMinutes)}`
+                        }
                       </p>
                     )}
                   </div>
