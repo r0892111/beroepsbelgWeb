@@ -1,6 +1,6 @@
 # Stripe Webshop Sync Edge Function
 
-This edge function automatically syncs webshop items with Stripe products and prices when items are created or updated in the `webshop_data` table.
+This edge function automatically syncs webshop items with Stripe products and prices when items are created, updated, or deleted in the `webshop_data` table.
 
 ## How It Works
 
@@ -13,6 +13,12 @@ This edge function automatically syncs webshop items with Stripe products and pr
    - Updates the Stripe Product name, description, and metadata
    - If price changed: Archives old price, creates new price
    - Updates webshop_data record with new Stripe IDs
+   - If no Stripe product exists, creates one automatically
+
+3. **On Webshop Item Deletion (DELETE)**:
+   - Deactivates the Stripe Product (sets `active: false`)
+   - Deactivates the associated Stripe Price
+   - Products are deactivated rather than deleted to preserve order history
 
 ## Setup Instructions
 
@@ -50,7 +56,7 @@ STRIPE_SECRET_KEY=sk_test_...
    **Basic Settings:**
    - Name: `Sync Webshop to Stripe`
    - Table: `webshop_data`
-   - Events: Check both ✅ **Insert** and ✅ **Update**
+   - Events: Check ✅ **Insert**, ✅ **Update**, and ✅ **Delete**
 
    **HTTP Request:**
    - Type: `HTTP Request`
@@ -66,6 +72,8 @@ STRIPE_SECRET_KEY=sk_test_...
    ```
    
    Replace `YOUR_SERVICE_ROLE_KEY` with your service role key (found in Project Settings → API → service_role secret)
+
+   **Important:** Make sure the webhook is configured to send the `old_record` in UPDATE events. In Supabase Dashboard, when creating the webhook, ensure "Include old record" is enabled for UPDATE events. This is required for the price change detection to work properly.
 
 4. Click **Create webhook**
 
@@ -95,6 +103,12 @@ STRIPE_SECRET_KEY=sk_test_...
 
 1. Edit the product and change the price
 2. Verify in Stripe that a new price was created and the old one was archived
+
+### Test Deleting:
+
+1. Delete a product from the admin panel
+2. Verify in Stripe Dashboard that the product is deactivated (active: false)
+3. The product will still exist in Stripe but won't be available for new purchases
 
 ## Troubleshooting
 

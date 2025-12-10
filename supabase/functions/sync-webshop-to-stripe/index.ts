@@ -194,17 +194,46 @@ Deno.serve(async (req: Request) => {
       console.log('Stripe product updated:', stripeProductId);
 
       // Check if price changed
-      const oldPriceStr = old_record?.['Price (EUR)']?.toString() || '0';
+      // If old_record is missing, we'll fetch the current price from Stripe to compare
+      let oldPriceFromStripe: number | null = null;
+      if (!old_record && record.stripe_price_id) {
+        try {
+          const currentPrice = await stripe.prices.retrieve(record.stripe_price_id);
+          oldPriceFromStripe = currentPrice.unit_amount / 100; // Convert from cents
+          console.log('Fetched current Stripe price:', oldPriceFromStripe);
+        } catch (err) {
+          console.warn('Could not fetch current Stripe price:', err);
+        }
+      }
+
+      const oldPriceStr = old_record?.['Price (EUR)']?.toString() || (oldPriceFromStripe !== null ? oldPriceFromStripe.toString() : record['Price (EUR)']?.toString()) || '0';
       const newPriceStr = record['Price (EUR)']?.toString() || '0';
-      const oldPrice = parseFloat(oldPriceStr.replace(',', '.'));
-      const newPrice = parseFloat(newPriceStr.replace(',', '.'));
+      const oldPrice = parseFloat(oldPriceStr.replace(',', '.').trim()) || 0;
+      const newPrice = parseFloat(newPriceStr.replace(',', '.').trim()) || 0;
       let newPriceId = old_record?.stripe_price_id || record.stripe_price_id;
 
-      if (oldPrice !== newPrice && newPrice > 0) {
-        console.log('Price changed, creating new Stripe price');
+      console.log('Price comparison:', {
+        hasOldRecord: !!old_record,
+        oldPriceStr,
+        newPriceStr,
+        oldPrice,
+        newPrice,
+        oldPriceId: old_record?.stripe_price_id,
+        currentPriceId: record.stripe_price_id,
+        oldPriceFromStripe,
+      });
+
+      // Always check if we need to update the price
+      // Use a small epsilon for floating point comparison
+      const priceChanged = Math.abs(oldPrice - newPrice) > 0.01;
+      const hasNoPrice = !newPriceId && newPrice > 0;
+      const needsPriceUpdate = (priceChanged || hasNoPrice) && newPrice > 0;
+
+      if (needsPriceUpdate) {
+        console.log('Price needs update - changed:', priceChanged, 'hasNoPrice:', hasNoPrice);
         
-        // Archive old price if exists
-        if (old_record?.stripe_price_id) {
+        // Archive old price if exists and price changed
+        if (priceChanged && old_record?.stripe_price_id) {
           try {
             await stripe.prices.update(old_record.stripe_price_id, {
               active: false,
@@ -212,36 +241,49 @@ Deno.serve(async (req: Request) => {
             console.log('Old price archived:', old_record.stripe_price_id);
           } catch (err) {
             console.error('Failed to archive old price:', err);
+            // Continue even if archiving fails
           }
         }
 
         // Create new price
-        const price = await stripe.prices.create({
-          product: stripeProductId,
-          unit_amount: Math.round(newPrice * 100),
-          currency: 'eur',
-          metadata: {
-            webshop_uuid: record.uuid,
-          },
-        });
+        try {
+          const price = await stripe.prices.create({
+            product: stripeProductId,
+            unit_amount: Math.round(newPrice * 100),
+            currency: 'eur',
+            metadata: {
+              webshop_uuid: record.uuid,
+            },
+          });
 
-        newPriceId = price.id;
-        console.log('New Stripe price created:', newPriceId);
+          newPriceId = price.id;
+          console.log('New Stripe price created:', newPriceId, 'for amount:', newPrice);
 
-        // Set new price as default
-        await stripe.products.update(stripeProductId, {
-          default_price: newPriceId,
-        });
-        console.log('Set new price as default for product:', stripeProductId);
+          // Set new price as default
+          await stripe.products.update(stripeProductId, {
+            default_price: newPriceId,
+          });
+          console.log('Set new price as default for product:', stripeProductId);
 
-        // Update webshop_data with new price ID
-        await supabase
-          .from('webshop_data')
-          .update({
-            stripe_product_id: stripeProductId,
-            stripe_price_id: newPriceId,
-          })
-          .eq('uuid', record.uuid);
+          // Update webshop_data with new price ID
+          const { error: updatePriceError } = await supabase
+            .from('webshop_data')
+            .update({
+              stripe_price_id: newPriceId,
+            })
+            .eq('uuid', record.uuid);
+
+          if (updatePriceError) {
+            console.error('Failed to update webshop_data with new price ID:', updatePriceError);
+          } else {
+            console.log('Successfully updated webshop_data with new price ID');
+          }
+        } catch (priceErr) {
+          console.error('Failed to create new Stripe price:', priceErr);
+          throw priceErr;
+        }
+      } else {
+        console.log('Price unchanged or zero, skipping price update');
       }
 
       return new Response(
@@ -258,6 +300,69 @@ Deno.serve(async (req: Request) => {
           },
         }
       );
+    }
+
+    // Handle DELETE - Archive/deactivate Stripe product
+    if (type === 'DELETE') {
+      console.log('Deleting/archiving Stripe product for webshop item:', old_record?.uuid);
+
+      const stripeProductId = old_record?.stripe_product_id;
+
+      if (!stripeProductId) {
+        console.log('No Stripe product ID found, nothing to delete');
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: 'No Stripe product to delete',
+          }),
+          {
+            headers: {
+              ...corsHeaders,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+      }
+
+      try {
+        // Deactivate the product in Stripe (don't delete, as it may have order history)
+        await stripe.products.update(stripeProductId, {
+          active: false,
+        });
+        console.log('Stripe product deactivated:', stripeProductId);
+
+        // Also deactivate the price if it exists
+        const stripePriceId = old_record?.stripe_price_id;
+        if (stripePriceId) {
+          try {
+            await stripe.prices.update(stripePriceId, {
+              active: false,
+            });
+            console.log('Stripe price deactivated:', stripePriceId);
+          } catch (priceErr) {
+            console.error('Failed to deactivate price:', priceErr);
+            // Continue even if price deactivation fails
+          }
+        }
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            product_id: stripeProductId,
+            action: 'deleted',
+            message: 'Product deactivated in Stripe',
+          }),
+          {
+            headers: {
+              ...corsHeaders,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+      } catch (err) {
+        console.error('Failed to deactivate Stripe product:', err);
+        throw err;
+      }
     }
 
     throw new Error(`Unsupported webhook type: ${type}`);

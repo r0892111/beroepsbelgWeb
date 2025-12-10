@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, Package, X, Search } from 'lucide-react';
+import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, Package, X, Search, RefreshCcw } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
@@ -24,6 +24,8 @@ interface Product {
   "Price (EUR)": string;
   Description: string;
   "Additional Info": string | null;
+  stripe_product_id?: string | null;
+  stripe_price_id?: string | null;
 }
 
 interface ProductFormData {
@@ -143,13 +145,18 @@ export default function AdminProductsPage() {
 
       if (editingProduct) {
         // Update existing product
+        // Note: This will trigger the webhook which syncs to Stripe
         const { error } = await supabase
           .from('webshop_data')
           .update(payload)
           .eq('uuid', editingProduct.uuid);
 
         if (error) throw error;
-        toast.success('Product updated successfully');
+        
+        // Wait a moment for webhook to process
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        toast.success('Product updated successfully. Syncing to Stripe...');
       } else {
         // Create new product
         const { error } = await supabase
@@ -171,7 +178,7 @@ export default function AdminProductsPage() {
   };
 
   const handleDelete = async (product: Product) => {
-    if (!confirm(`Are you sure you want to delete "${product.Name}"?`)) {
+    if (!confirm(`Are you sure you want to delete "${product.Name}"? This will also deactivate it in Stripe.`)) {
       return;
     }
 
@@ -182,11 +189,48 @@ export default function AdminProductsPage() {
         .eq('uuid', product.uuid);
 
       if (error) throw error;
-      toast.success('Product deleted successfully');
+      toast.success('Product deleted successfully. Stripe product will be deactivated automatically.');
       void fetchProducts();
     } catch (err) {
       console.error('Failed to delete product:', err);
       toast.error('Failed to delete product');
+    }
+  };
+
+  const handleSyncToStripe = async (product: Product) => {
+    try {
+      toast.info('Syncing to Stripe...');
+      
+      // Trigger an update to the product to force webhook sync
+      // Update a timestamp-like field or the same value to trigger webhook
+      // We'll update the Description field slightly to ensure webhook fires
+      const currentDesc = product.Description || '';
+      const { error } = await supabase
+        .from('webshop_data')
+        .update({
+          Description: currentDesc + (currentDesc.endsWith(' ') ? '' : ' '), // Add/remove space to trigger update
+        })
+        .eq('uuid', product.uuid);
+
+      if (error) throw error;
+      
+      // Immediately revert the description change
+      await supabase
+        .from('webshop_data')
+        .update({
+          Description: currentDesc,
+        })
+        .eq('uuid', product.uuid);
+      
+      // Wait a moment for webhook to process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Refresh to see updated Stripe IDs
+      await fetchProducts();
+      toast.success('Product synced to Stripe successfully');
+    } catch (err) {
+      console.error('Failed to sync product:', err);
+      toast.error('Failed to sync product to Stripe. Check webhook configuration.');
     }
   };
 
@@ -247,7 +291,7 @@ export default function AdminProductsPage() {
                   All Products
                 </CardTitle>
                 <CardDescription>
-                  Manage webshop products
+                  Manage webshop products. Changes automatically sync to Stripe via webhook.
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
@@ -338,6 +382,7 @@ export default function AdminProductsPage() {
                       <TableHead>Name</TableHead>
                       <TableHead>Category</TableHead>
                       <TableHead>Price</TableHead>
+                      <TableHead>Stripe IDs</TableHead>
                       <TableHead>UUID</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -352,6 +397,41 @@ export default function AdminProductsPage() {
                           <Badge className="bg-blue-100 text-blue-900">{product.Category}</Badge>
                         </TableCell>
                         <TableCell>€{parseFloat(product["Price (EUR)"]?.replace(',', '.') || '0').toFixed(2)}</TableCell>
+                        <TableCell className="text-xs">
+                          {product.stripe_product_id ? (
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-1 text-green-600" title={product.stripe_product_id}>
+                                <span className="text-xs">✓</span>
+                                <span className="font-mono text-[10px] truncate max-w-[120px]">
+                                  {product.stripe_product_id.slice(0, 20)}...
+                                </span>
+                              </div>
+                              {product.stripe_price_id ? (
+                                <div className="flex items-center gap-1 text-blue-600" title={product.stripe_price_id}>
+                                  <span className="text-xs">€</span>
+                                  <span className="font-mono text-[10px] truncate max-w-[120px]">
+                                    {product.stripe_price_id.slice(0, 20)}...
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-orange-600 text-[10px]">No price</span>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground text-xs">Not synced</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleSyncToStripe(product)}
+                                className="h-6 px-2 text-xs"
+                                title="Sync to Stripe"
+                              >
+                                <RefreshCcw className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell className="text-sm text-muted-foreground max-w-xs truncate font-mono text-xs">
                           {product.uuid.slice(0, 8)}...
                         </TableCell>
@@ -361,14 +441,27 @@ export default function AdminProductsPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => openEditDialog(product)}
+                              title="Edit product"
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
+                            {!product.stripe_product_id && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleSyncToStripe(product)}
+                                title="Sync to Stripe"
+                                className="text-blue-600 hover:text-blue-700"
+                              >
+                                <RefreshCcw className="h-4 w-4" />
+                              </Button>
+                            )}
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleDelete(product)}
                               className="text-destructive hover:text-destructive"
+                              title="Delete product"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

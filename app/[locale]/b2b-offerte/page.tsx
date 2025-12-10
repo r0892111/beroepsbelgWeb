@@ -699,7 +699,11 @@ export default function B2BQuotePage() {
                   {products.map((product) => (
                     <div
                       key={product.uuid}
-                      onClick={() => toggleUpsell(product.uuid)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleUpsell(product.uuid);
+                      }}
                       className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
                         selectedUpsell.includes(product.uuid)
                           ? 'border-brass bg-brass/5'
@@ -719,7 +723,13 @@ export default function B2BQuotePage() {
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm truncate">{product.title.nl}</p>
                         </div>
-                        <Checkbox checked={selectedUpsell.includes(product.uuid)} className="pointer-events-none" />
+                        <div className="flex-shrink-0">
+                          {selectedUpsell.includes(product.uuid) ? (
+                            <CheckCircle2 className="h-5 w-5 text-brass" />
+                          ) : (
+                            <div className="h-5 w-5 rounded border-2 border-gray-300" />
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}

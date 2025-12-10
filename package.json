@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "import-stripe": "tsx scripts/import-tours-to-stripe.ts"
+    "import-stripe": "tsx scripts/import-tours-to-stripe.ts",
+    "import-webshop-stripe": "tsx scripts/import-webshop-to-stripe.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

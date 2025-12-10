@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Minus, Plus, Trash2 } from 'lucide-react';
+import { ShoppingCart, Minus, Plus, Trash2, CreditCard, ArrowRight } from 'lucide-react';
 import { useCartContext } from '@/lib/contexts/cart-context';
 import { CheckoutDialog } from './checkout-dialog';
 import Image from 'next/image';
@@ -55,7 +55,7 @@ export function CartSheet() {
             </SheetDescription>
           </SheetHeader>
 
-          <div className="mt-8 flex flex-col h-full">
+          <div className="mt-8 flex flex-col" style={{ height: 'calc(100% - 4rem)' }}>
             {loading ? (
               <div className="flex-1 flex items-center justify-center">
                 <p className="text-muted-foreground">{t('loading')}</p>
@@ -70,7 +70,7 @@ export function CartSheet() {
               </div>
             ) : (
               <>
-                <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+                <div className="flex-1 overflow-y-auto space-y-4 pr-2 mb-4">
                   {cartItems.map((item) => {
                     const product = item.products;
                     return (
@@ -130,17 +130,19 @@ export function CartSheet() {
                   })}
                 </div>
 
-                <div className="border-t pt-4 space-y-4">
+                <div className="border-t pt-4 space-y-4 bg-background sticky bottom-0">
                   <div className="flex justify-between text-lg font-bold">
                     <span>{t('total')}:</span>
                     <span>€{totalAmount.toFixed(2)}</span>
                   </div>
                   <Button
-                    className="w-full"
+                    className="w-full btn-primary"
                     size="lg"
                     onClick={handleCheckout}
                   >
-                    {t('proceedToCheckout')}
+                    <CreditCard className="mr-2 h-5 w-5" />
+                    {t('proceedToCheckout') || 'Go to Payment'}
+                    <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </div>
               </>
