@@ -296,7 +296,7 @@ async function importWebshopToStripe() {
           // Check if price needs updating
           if (existingItem.stripe_price_id) {
             const existingPrice = await stripe.prices.retrieve(existingItem.stripe_price_id);
-            const existingPriceValue = existingPrice.unit_amount / 100;
+            const existingPriceValue = existingPrice.unit_amount ? existingPrice.unit_amount / 100 : 0;
             
             if (Math.abs(existingPriceValue - priceValue) > 0.01) {
               // Price changed, archive old price and create new one
