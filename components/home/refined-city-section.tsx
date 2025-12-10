@@ -109,180 +109,77 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
                   style={{
                     transitionDelay: `${index * 100}ms`,
                     borderRadius: '20px',
-                    transition: 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
-                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-                    willChange: 'transform, box-shadow'
+                    transition: 'all 0.3s ease-out',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
                   }}
                 >
-                  {/* Multi-layered glow effect for depth */}
-                  <div
-                    className="absolute -inset-[2px] rounded-[22px] opacity-0 group-hover:opacity-100 -z-10 transition-opacity duration-700"
-                    style={{
-                      background: `radial-gradient(circle at 50% 50%, var(--green-accent), transparent 70%)`,
-                      filter: 'blur(20px)'
-                    }}
-                  />
-                  <div
-                    className="absolute -inset-[1px] rounded-[21px] opacity-0 group-hover:opacity-60 -z-10 transition-opacity duration-700"
-                    style={{
-                      background: `linear-gradient(135deg, var(--green-accent), transparent)`,
-                      filter: 'blur(12px)'
-                    }}
-                  />
 
                   {/* Image container with enhanced hover */}
                   {city.image && (
                     <div
                       className="relative w-full overflow-hidden rounded-t-[20px] bg-gray-100"
-                      style={{
-                        height: '280px',
-                        transition: 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)'
-                      }}
+                      style={{ height: '280px' }}
                     >
-                      {/* Animated corner accent with better timing */}
-                      <div
-                        className="absolute top-0 right-0 z-10 opacity-0 group-hover:opacity-100 transition-all duration-600"
-                        style={{
-                          width: '80px',
-                          height: '80px',
-                          background: `linear-gradient(135deg, transparent 50%, var(--green-accent) 50%)`,
-                          clipPath: 'polygon(100% 0, 100% 100%, 0 0)',
-                          transitionDelay: '100ms'
-                        }}
-                      />
-
-                      {/* Image with improved zoom */}
                       <Image
                         src={city.image}
                         alt={city.name[locale]}
                         fill
                         loading="lazy"
                         sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        className="object-cover"
-                        style={{
-                          transition: 'transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), filter 0.6s ease-out',
-                          transform: 'scale(1)',
-                          filter: 'brightness(1)'
-                        }}
+                        className="object-cover transition-transform duration-300 ease-out group-hover:scale-105"
                       />
 
-                      {/* Sophisticated gradient overlays */}
                       <div
-                        className="absolute inset-0 bg-gradient-to-t from-black/30 via-black/10 to-transparent opacity-0 group-hover:opacity-100"
-                        style={{ transition: 'opacity 0.6s ease-out' }}
-                      />
-                      <div
-                        className="absolute inset-0 opacity-0 group-hover:opacity-[0.15]"
-                        style={{
-                          backgroundColor: 'var(--green-accent)',
-                          mixBlendMode: 'multiply',
-                          transition: 'opacity 0.6s ease-out'
-                        }}
-                      />
-
-                      {/* Shine effect on hover */}
-                      <div
-                        className="shine-effect absolute inset-0 opacity-0 group-hover:opacity-100"
-                        style={{
-                          background: 'linear-gradient(135deg, transparent 40%, rgba(255, 255, 255, 0.1) 50%, transparent 60%)',
-                          transition: 'opacity 0.6s ease-out, transform 0.6s ease-out',
-                          transform: 'translateX(-100%)'
-                        }}
+                        className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                       />
                     </div>
                   )}
 
                   {/* Content area with refined spacing */}
                   <div className="relative flex flex-col flex-1 p-6 md:p-7 bg-white rounded-b-[20px]">
-                    {/* City name with refined animation */}
                     <h3
-                      className="text-2xl md:text-3xl font-bold mb-3 relative"
+                      className="text-2xl md:text-3xl font-bold mb-3 transition-colors duration-300 group-hover:text-[var(--green-accent)]"
                       style={{
                         fontFamily: 'Montserrat, sans-serif',
-                        color: 'var(--text-primary)',
-                        transition: 'color 0.4s ease-out, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+                        color: 'var(--text-primary)'
                       }}
                     >
                       {city.name[locale]}
-                      {/* Underline accent */}
-                      <div
-                        className="absolute -bottom-1 left-0 h-0.5 w-0 group-hover:w-full bg-gradient-to-r from-[var(--green-accent)] to-transparent"
-                        style={{ transition: 'width 0.5s cubic-bezier(0.16, 1, 0.3, 1)' }}
-                      />
                     </h3>
 
-                    {/* Description */}
                     <p
                       className="text-base leading-relaxed mb-5 flex-1"
                       style={{
                         fontFamily: 'Open Sans, sans-serif',
-                        color: 'var(--text-secondary)',
-                        transition: 'color 0.3s ease-out'
+                        color: 'var(--text-secondary)'
                       }}
                     >
                       {city.teaser[locale]}
                     </p>
 
-                    {/* Footer section with refined border */}
-                    <div className="relative pt-4 mt-auto">
-                      {/* Animated border */}
-                      <div
-                        className="absolute top-0 left-0 right-0 h-[2px] overflow-hidden rounded-full"
-                        style={{ backgroundColor: 'rgba(61, 213, 152, 0.15)' }}
-                      >
-                        <div
-                          className="absolute inset-0 w-0 group-hover:w-full h-full rounded-full"
-                          style={{
-                            backgroundColor: 'var(--green-accent)',
-                            transition: 'width 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
-                            boxShadow: '0 0 12px var(--green-accent)'
-                          }}
-                        />
-                      </div>
-
-                      <div className="footer-section flex items-center justify-between">
-                        {/* Tour count */}
+                    <div className="relative pt-4 mt-auto border-t border-gray-100">
+                      <div className="flex items-center justify-between">
                         <div
                           className="flex items-center gap-2 text-sm font-medium"
                           style={{
                             fontFamily: 'Montserrat, sans-serif',
-                            color: 'var(--green-accent)',
-                            transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                            color: 'var(--green-accent)'
                           }}
                         >
-                          <div className="relative">
-                            <MapPin
-                              className="icon-map w-4 h-4"
-                              style={{
-                                transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
-                              }}
-                            />
-                            <div
-                              className="absolute inset-0 opacity-0 group-hover:opacity-100 blur-sm"
-                              style={{
-                                backgroundColor: 'var(--green-accent)',
-                                transition: 'opacity 0.3s ease-out'
-                              }}
-                            />
-                          </div>
+                          <MapPin className="w-4 h-4" />
                           <span className="font-semibold">{t('toursCount', { count: tourCount })}</span>
                         </div>
 
-                        {/* View tours CTA */}
                         <div
-                          className="flex items-center gap-2 text-sm font-semibold"
+                          className="flex items-center gap-2 text-sm font-semibold transition-all duration-300 group-hover:gap-3"
                           style={{
                             fontFamily: 'Montserrat, sans-serif',
-                            color: 'var(--green-accent)',
-                            transition: 'gap 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                            color: 'var(--green-accent)'
                           }}
                         >
                           <span>{t('viewTours')}</span>
                           <svg
-                            className="arrow-icon w-5 h-5"
-                            style={{
-                              transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
-                            }}
+                            className="arrow-icon w-5 h-5 transition-transform duration-300 group-hover:translate-x-1"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -298,29 +195,8 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
                   {/* Hover styles via CSS */}
                   <style jsx>{`
                     a:hover {
-                      transform: translateY(-8px) !important;
-                      box-shadow: 0 20px 60px rgba(61, 213, 152, 0.25), 0 8px 30px rgba(0, 0, 0, 0.12) !important;
-                    }
-                    a:hover img {
-                      transform: scale(1.08) !important;
-                      filter: brightness(1.05) !important;
-                    }
-                    a:hover h3 {
-                      color: var(--green-accent) !important;
-                      transform: translateX(4px) !important;
-                    }
-                    a:hover .shine-effect {
-                      transform: translateX(100%) !important;
-                    }
-                    a:hover .icon-map {
-                      transform: scale(1.15) rotate(5deg) !important;
-                    }
-                    a:hover .arrow-icon {
-                      transform: translateX(6px) !important;
-                    }
-                    a:hover .footer-section {
-                      gap: 0.75rem !important;
-                      transform: scale(1.02) !important;
+                      transform: translateY(-6px) scale(1.02) !important;
+                      box-shadow: 0 16px 48px rgba(61, 213, 152, 0.2), 0 8px 24px rgba(0, 0, 0, 0.1) !important;
                     }
                   `}</style>
                 </Link>
