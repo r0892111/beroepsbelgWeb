@@ -12,10 +12,10 @@ export function RefinedCTASection({ locale }: RefinedCTASectionProps) {
   const t = useTranslations('home.cta');
 
   return (
-    <section className="py-20 md:py-32 relative overflow-hidden">
+    <section className="py-20 md:py-32 relative overflow-hidden" style={{ backgroundColor: 'var(--bg-light)' }}>
       {/* Sophisticated gradient background with depth */}
       <div className="absolute inset-0" style={{
-        background: 'radial-gradient(circle at 30% 50%, rgba(61, 213, 152, 0.08) 0%, transparent 50%), radial-gradient(circle at 70% 50%, rgba(61, 213, 152, 0.06) 0%, transparent 50%), linear-gradient(180deg, #FFFFFF 0%, #F8FBF9 100%)'
+        background: 'radial-gradient(circle at 30% 50%, rgba(61, 213, 152, 0.06) 0%, transparent 50%), radial-gradient(circle at 70% 50%, rgba(61, 213, 152, 0.04) 0%, transparent 50%)'
       }} />
 
       {/* Animated decorative elements */}
@@ -49,21 +49,21 @@ export function RefinedCTASection({ locale }: RefinedCTASectionProps) {
         {/* Content card with sophisticated design */}
         <div className="max-w-5xl mx-auto">
           <div
-            className="relative bg-white rounded-3xl shadow-xl overflow-hidden"
+            className="relative rounded-3xl overflow-hidden"
             style={{
-              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.1)',
-              border: '1px solid rgba(61, 213, 152, 0.1)'
+              backgroundColor: 'var(--surface-elevated-1)',
+              boxShadow: 'var(--shadow-large)'
             }}
           >
             {/* Decorative top border with animation */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[var(--green-accent)] to-transparent opacity-60" />
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[var(--primary-base)] to-transparent opacity-60" />
 
             {/* Subtle corner accents */}
             <div className="absolute top-0 right-0 w-32 h-32 opacity-[0.06]" style={{
-              background: 'radial-gradient(circle at top right, var(--green-accent) 0%, transparent 70%)'
+              background: 'radial-gradient(circle at top right, var(--primary-base) 0%, transparent 70%)'
             }} />
             <div className="absolute bottom-0 left-0 w-32 h-32 opacity-[0.06]" style={{
-              background: 'radial-gradient(circle at bottom left, var(--green-accent) 0%, transparent 70%)'
+              background: 'radial-gradient(circle at bottom left, var(--primary-base) 0%, transparent 70%)'
             }} />
 
             <div className="relative px-8 md:px-16 py-12 md:py-16">
