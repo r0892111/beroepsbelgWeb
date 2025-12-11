@@ -111,22 +111,22 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
   };
 
   return (
-    <section className="relative overflow-hidden min-h-screen flex flex-col" style={{ backgroundColor: 'var(--white)' }}>
+    <section className="relative overflow-hidden min-h-screen flex flex-col" style={{ backgroundColor: 'var(--bg-base)' }}>
       {/* Animated turquoise gradient orbs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div
-          className="absolute top-1/4 -left-32 w-96 h-96 rounded-full opacity-10"
+          className="absolute top-1/4 -left-32 w-96 h-96 rounded-full opacity-8"
           style={{
-            backgroundColor: 'var(--green-accent)',
-            filter: 'blur(100px)',
+            backgroundColor: 'var(--primary-base)',
+            filter: 'blur(120px)',
             animation: 'float 25s ease-in-out infinite'
           }}
         />
         <div
-          className="absolute bottom-1/4 -right-32 w-80 h-80 rounded-full opacity-10"
+          className="absolute bottom-1/4 -right-32 w-80 h-80 rounded-full opacity-8"
           style={{
-            backgroundColor: 'var(--green-accent)',
-            filter: 'blur(100px)',
+            backgroundColor: 'var(--primary-base)',
+            filter: 'blur(120px)',
             animation: 'float 30s ease-in-out infinite reverse'
           }}
         />

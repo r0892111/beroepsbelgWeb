@@ -53,30 +53,30 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
   }, [liveCities]);
 
   return (
-    <section className="py-20 md:py-32 relative overflow-hidden" style={{ backgroundColor: 'var(--white)' }}>
+    <section className="py-20 md:py-32 relative overflow-hidden" style={{ backgroundColor: 'var(--bg-dark)' }}>
       {/* Decorative background elements */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div
-          className="absolute -top-24 -left-24 w-96 h-96 rounded-full opacity-5"
+          className="absolute -top-24 -left-24 w-96 h-96 rounded-full opacity-6"
           style={{
-            backgroundColor: 'var(--green-accent)',
-            filter: 'blur(80px)',
+            backgroundColor: 'var(--primary-base)',
+            filter: 'blur(100px)',
             animation: 'float 20s ease-in-out infinite'
           }}
         />
         <div
-          className="absolute top-1/2 -right-32 w-80 h-80 rounded-full opacity-5"
+          className="absolute top-1/2 -right-32 w-80 h-80 rounded-full opacity-6"
           style={{
-            backgroundColor: 'var(--green-accent)',
-            filter: 'blur(80px)',
+            backgroundColor: 'var(--primary-base)',
+            filter: 'blur(100px)',
             animation: 'float 25s ease-in-out infinite reverse'
           }}
         />
         <div
-          className="absolute -bottom-24 left-1/3 w-72 h-72 rounded-full opacity-5"
+          className="absolute -bottom-24 left-1/3 w-72 h-72 rounded-full opacity-6"
           style={{
-            backgroundColor: 'var(--green-accent)',
-            filter: 'blur(80px)',
+            backgroundColor: 'var(--primary-base)',
+            filter: 'blur(100px)',
             animation: 'float 30s ease-in-out infinite'
           }}
         />
@@ -105,12 +105,13 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
                   href={`/${locale}/tours-${city.slug}`}
                   onMouseEnter={() => setHoveredCard(index)}
                   onMouseLeave={() => setHoveredCard(null)}
-                  className={`group flex flex-col h-full overflow-hidden relative bg-white ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                  className={`group flex flex-col h-full overflow-hidden relative ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                   style={{
                     transitionDelay: `${index * 100}ms`,
                     borderRadius: '20px',
-                    transition: 'all 0.3s ease-out',
-                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+                    transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                    backgroundColor: 'var(--surface-elevated-1)',
+                    boxShadow: 'var(--shadow-medium)'
                   }}
                 >
 
@@ -136,9 +137,9 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
                   )}
 
                   {/* Content area with refined spacing */}
-                  <div className="relative flex flex-col flex-1 p-6 md:p-7 bg-white rounded-b-[20px]">
+                  <div className="relative flex flex-col flex-1 p-6 md:p-7 rounded-b-[20px]" style={{ backgroundColor: 'var(--surface-elevated-2)' }}>
                     <h3
-                      className="text-2xl md:text-3xl font-bold mb-3 transition-colors duration-300 group-hover:text-[var(--green-accent)]"
+                      className="text-2xl md:text-3xl font-bold mb-3 transition-colors duration-300 group-hover:text-[var(--primary-base)]"
                       style={{
                         fontFamily: 'Montserrat, sans-serif',
                         color: 'var(--text-primary)'
@@ -151,7 +152,7 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
                       className="text-base leading-relaxed mb-5 flex-1"
                       style={{
                         fontFamily: 'Open Sans, sans-serif',
-                        color: 'var(--text-secondary)'
+                        color: 'var(--text-tertiary)'
                       }}
                     >
                       {city.teaser[locale]}
@@ -159,12 +160,12 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
 
                     <div className="relative pt-4 mt-auto">
                       {/* Animated border expanding from center */}
-                      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gray-100 overflow-hidden">
+                      <div className="absolute top-0 left-0 right-0 h-[2px] overflow-hidden" style={{ backgroundColor: 'var(--bg-dark)' }}>
                         <div
                           className="absolute top-0 left-1/2 h-full w-0 -translate-x-1/2 group-hover:w-full transition-all duration-500 ease-out"
                           style={{
-                            backgroundColor: 'var(--green-accent)',
-                            boxShadow: '0 0 8px var(--green-accent)'
+                            backgroundColor: 'var(--primary-base)',
+                            boxShadow: 'var(--shadow-glow-small)'
                           }}
                         />
                       </div>
@@ -174,7 +175,7 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
                           className="flex items-center gap-2 text-sm font-medium"
                           style={{
                             fontFamily: 'Montserrat, sans-serif',
-                            color: 'var(--green-accent)'
+                            color: 'var(--primary-base)'
                           }}
                         >
                           <MapPin className="w-4 h-4" />
@@ -185,7 +186,7 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
                           className="flex items-center gap-2 text-sm font-semibold transition-all duration-300 group-hover:gap-3"
                           style={{
                             fontFamily: 'Montserrat, sans-serif',
-                            color: 'var(--green-accent)'
+                            color: 'var(--primary-base)'
                           }}
                         >
                           <span>{t('viewTours')}</span>
@@ -206,8 +207,8 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
                   {/* Hover styles via CSS */}
                   <style jsx>{`
                     a:hover {
-                      transform: translateY(-6px) scale(1.02) !important;
-                      box-shadow: 0 16px 48px rgba(61, 213, 152, 0.2), 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+                      transform: translateY(-6px) scale(1.01) !important;
+                      box-shadow: var(--shadow-hover-glow) !important;
                     }
                   `}</style>
                 </Link>
