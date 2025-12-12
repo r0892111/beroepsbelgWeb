@@ -8,6 +8,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { TourImageGallery } from '@/components/tours/tour-image-gallery';
 import { TourBookingButton } from '@/components/tours/tour-booking-button';
+import { LocalToursBooking } from '@/components/tours/local-tours-booking';
 
 interface TourDetailPageProps {
   params: { locale: Locale; slug: string };
@@ -46,9 +47,6 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
 
   const t = await getTranslations('common');
   const tTour = await getTranslations('tourDetail');
-  
-  const images = tour.options?.images || [];
-  const badge = tour.options?.badge;
 
   return (
     <div className="bg-ivory min-h-screen">
@@ -74,12 +72,12 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
                     {tTour('bikeTour')}
                   </Badge>
                 )}
-                {badge && (
+                {tour.op_maat && (
                   <Badge
                     className="text-sm font-semibold"
                     style={{ backgroundColor: 'var(--brass)', color: 'var(--belgian-navy)' }}
                   >
-                    {badge}
+                    Op Maat
                   </Badge>
                 )}
               </div>
@@ -90,10 +88,6 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
               </p>
             )}
           </div>
-
-        {images.length > 0 && (
-          <TourImageGallery images={images} title={tour.title} />
-        )}
 
         <div className="mb-12 space-y-6">
           {tour.description && (
@@ -147,31 +141,28 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
                 </div>
               </div>
             )}
-            {tour.options?.extraInfo && (
-              <div className="md:col-span-2">
-                <p className="text-sm font-semibold" style={{ color: 'var(--brass)' }}>{tour.options.extraInfo}</p>
-              </div>
-            )}
-            {tour.options?.local_stories === true && (
-              <div className="md:col-span-2 mt-4 p-4 rounded-lg bg-white/50 border-2" style={{ borderColor: 'var(--brass)' }}>
-                <p className="text-sm font-semibold text-navy mb-2">{tTour('localStoriesTitle')}</p>
-                <ul className="text-sm space-y-1" style={{ color: 'var(--slate-blue)' }}>
-                  <li>• {tTour('localStoriesTime')}</li>
-                  <li>• {tTour('localStoriesMinimum')}</li>
-                </ul>
-              </div>
-            )}
           </div>
         </div>
 
-        {tour.price && (
+        {tour.local_stories && (
+          <LocalToursBooking 
+            tourId={tour.id} 
+            tourTitle={tour.title}
+            tourPrice={tour.price || 0}
+            tourDuration={tour.durationMinutes}
+            citySlug="gent"
+          />
+        )}
+
+        {tour.price && !tour.local_stories && (
           <div className="mb-12">
             <TourBookingButton
               tourId={tour.id}
               tourTitle={tour.title}
               tourPrice={tour.price}
               tourDuration={tour.durationMinutes}
-              isLocalStories={tour.options?.local_stories === true}
+              isLocalStories={false}
+              citySlug="gent"
             />
           </div>
         )}

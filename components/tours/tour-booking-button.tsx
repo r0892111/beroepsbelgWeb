@@ -11,9 +11,10 @@ interface TourBookingButtonProps {
   tourPrice: number;
   tourDuration?: number;
   isLocalStories?: boolean;
+  citySlug?: string;
 }
 
-export function TourBookingButton({ tourId, tourTitle, tourPrice, tourDuration, isLocalStories }: TourBookingButtonProps) {
+export function TourBookingButton({ tourId, tourTitle, tourPrice, tourDuration, isLocalStories, citySlug }: TourBookingButtonProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const t = useTranslations('booking');
 
@@ -34,6 +35,7 @@ export function TourBookingButton({ tourId, tourTitle, tourPrice, tourDuration, 
         isLocalStories={isLocalStories}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+        citySlug={citySlug}
       />
     </>
   );
