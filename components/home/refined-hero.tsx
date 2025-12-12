@@ -111,22 +111,22 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
   };
 
   return (
-    <section className="relative overflow-hidden min-h-screen flex flex-col" style={{ backgroundColor: 'var(--white)' }}>
+    <section className="relative overflow-hidden min-h-screen flex flex-col" style={{ backgroundColor: 'var(--bg-base)' }}>
       {/* Animated turquoise gradient orbs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div
-          className="absolute top-1/4 -left-32 w-96 h-96 rounded-full opacity-10"
+          className="absolute top-1/4 -left-32 w-96 h-96 rounded-full opacity-8"
           style={{
-            backgroundColor: 'var(--green-accent)',
-            filter: 'blur(100px)',
+            backgroundColor: 'var(--primary-base)',
+            filter: 'blur(120px)',
             animation: 'float 25s ease-in-out infinite'
           }}
         />
         <div
-          className="absolute bottom-1/4 -right-32 w-80 h-80 rounded-full opacity-10"
+          className="absolute bottom-1/4 -right-32 w-80 h-80 rounded-full opacity-8"
           style={{
-            backgroundColor: 'var(--green-accent)',
-            filter: 'blur(100px)',
+            backgroundColor: 'var(--primary-base)',
+            filter: 'blur(120px)',
             animation: 'float 30s ease-in-out infinite reverse'
           }}
         />
@@ -194,47 +194,74 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
         )}
       </div>
       
-      {/* Gradient overlays - Above video, below text */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/30 to-white/80" style={{ zIndex: 1 }} />
-      <div className="absolute inset-0 bg-gradient-to-br from-[var(--green-accent)]/5 via-transparent to-transparent" style={{ zIndex: 1 }} />
+      {/* Subtle gradient overlays - Above video, below text */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30" style={{ zIndex: 1 }} />
+      <div className="absolute inset-0 bg-gradient-to-br from-[var(--green-accent)]/3 via-transparent to-transparent" style={{ zIndex: 1 }} />
 
       {/* Hero Content - Above video and gradients */}
-      <div className="container mx-auto px-6 md:px-12 py-24 md:py-32 lg:py-40 relative flex-1 flex items-center" style={{ zIndex: 10, position: 'relative' }}>
-        <div className="max-w-5xl mx-auto text-center">
-          {/* Animated turquoise accent */}
-          <div className="inline-block mb-6 relative">
-            <div
-              className="h-1 w-24 mx-auto rounded-full"
+      <div className="container mx-auto px-6 md:px-12 relative flex-1 flex items-center justify-center" style={{ zIndex: 10, position: 'relative' }}>
+        <div className="w-full max-w-4xl flex flex-col items-center gap-6">
+          {/* Box 1: CNN Quote */}
+          <div
+            className="backdrop-blur-md rounded-2xl px-4 py-3 md:px-5 md:py-3.5 border w-full text-center"
+            style={{
+              backgroundColor: 'rgba(255, 252, 248, 0.82)',
+              borderColor: 'rgba(0, 0, 0, 0.06)',
+              boxShadow: '0 25px 70px rgba(0, 0, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 3px rgba(0, 0, 0, 0.08)',
+              transform: 'translateZ(0)',
+              willChange: 'transform'
+            }}
+          >
+            <h1
+              className="text-2xl md:text-3xl lg:text-4xl font-bold leading-tight"
               style={{
-                backgroundColor: 'var(--green-accent)',
-                boxShadow: '0 0 20px rgba(61, 213, 152, 0.6)'
+                fontFamily: 'Georgia, "Times New Roman", serif',
+                color: '#2c1810',
+                textShadow: '0 2px 4px rgba(0, 0, 0, 0.08)',
+                letterSpacing: '-0.02em',
+                fontWeight: 600
               }}
-            />
-            <div
-              className="absolute inset-0 h-1 w-24 mx-auto rounded-full animate-pulse"
+            >
+              "One of the 7 savviest guides in the world"
+            </h1>
+            <p
+              className="text-sm md:text-base mt-3 font-light"
               style={{
-                backgroundColor: 'var(--green-accent)',
-                opacity: 0.4
+                fontFamily: 'Georgia, "Times New Roman", serif',
+                color: '#5a4a42',
+                fontWeight: 400
               }}
-            />
+            >
+              — CNN
+            </p>
           </div>
 
-          <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-8 leading-tight tracking-tight relative inline-block" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-primary)' }}>
-            {t('headline')}
-            <div
-              className="absolute -bottom-3 left-1/2 -translate-x-1/2 h-2 w-3/4 opacity-10"
+          {/* Box 2: Main Tagline */}
+          <div
+            className="backdrop-blur-md rounded-2xl px-4 py-3 md:px-5 md:py-3.5 border w-full text-center"
+            style={{
+              backgroundColor: 'rgba(255, 252, 248, 0.82)',
+              borderColor: 'rgba(0, 0, 0, 0.06)',
+              boxShadow: '0 25px 70px rgba(0, 0, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 3px rgba(0, 0, 0, 0.08)',
+              transform: 'translateZ(0)',
+              willChange: 'transform'
+            }}
+          >
+            <p
+              className="text-lg md:text-xl lg:text-2xl font-light leading-relaxed"
               style={{
-                backgroundColor: 'var(--green-accent)',
-                filter: 'blur(12px)'
+                fontFamily: 'Georgia, "Times New Roman", serif',
+                color: '#5a4a42',
+                lineHeight: '1.7',
+                fontWeight: 400
               }}
-            />
-          </h1>
+            >
+              {t('headline')}
+            </p>
+          </div>
 
-          <p className="text-lg md:text-xl lg:text-2xl mb-16 max-w-3xl mx-auto font-light leading-relaxed" style={{ fontFamily: 'Open Sans, sans-serif', color: 'var(--text-secondary)' }}>
-            {t('subtitle') || 'Curated cultural walking tours that reveal the hidden stories of Belgian cities'}
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-5 justify-center items-center">
+          {/* Buttons - No Box */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center w-full">
             <div className="relative group">
               <div
                 className="absolute -inset-2 rounded-lg opacity-0 group-hover:opacity-40 transition-opacity duration-500 blur-xl"
@@ -242,7 +269,7 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
               />
               <Link
                 href={`/${locale}/tours`}
-                className="btn-primary relative inline-flex items-center gap-2 group"
+                className="btn-primary relative inline-flex items-center gap-2 group w-full sm:w-auto justify-center"
               >
                 {t('ctaPrimary') || 'Explore Tours'}
                 <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
@@ -252,7 +279,13 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
             </div>
             <Link
               href={`/${locale}/b2b-offerte`}
-              className="btn-secondary group relative overflow-hidden"
+              className="group relative overflow-hidden w-full sm:w-auto justify-center inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-300"
+              style={{
+                backgroundColor: 'rgba(255, 252, 248, 0.95)',
+                color: '#2c1810',
+                border: '2px solid #2c1810',
+                boxShadow: '0 4px 12px rgba(44, 24, 16, 0.2)',
+              }}
             >
               <span className="relative z-10 flex items-center gap-2">
                 {t('ctaSecondary') || 'Business Inquiries'}

@@ -24,30 +24,30 @@ export function SpotlightCarousel({ products }: SpotlightCarouselProps) {
   const locale = params.locale as string;
 
   return (
-    <section className="py-20 md:py-32 relative overflow-hidden" style={{ backgroundColor: 'var(--white)' }}>
+    <section className="py-20 md:py-32 relative overflow-hidden" style={{ backgroundColor: 'var(--bg-lighter)' }}>
       {/* Decorative background elements */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div
-          className="absolute -top-24 -left-24 w-96 h-96 rounded-full opacity-5"
+          className="absolute -top-24 -left-24 w-96 h-96 rounded-full opacity-6"
           style={{
-            backgroundColor: 'var(--green-accent)',
-            filter: 'blur(80px)',
+            backgroundColor: 'var(--primary-base)',
+            filter: 'blur(100px)',
             animation: 'float 20s ease-in-out infinite'
           }}
         />
         <div
-          className="absolute top-1/2 -right-32 w-80 h-80 rounded-full opacity-5"
+          className="absolute top-1/2 -right-32 w-80 h-80 rounded-full opacity-6"
           style={{
-            backgroundColor: 'var(--green-accent)',
-            filter: 'blur(80px)',
+            backgroundColor: 'var(--primary-base)',
+            filter: 'blur(100px)',
             animation: 'float 25s ease-in-out infinite reverse'
           }}
         />
         <div
-          className="absolute -bottom-24 left-1/3 w-72 h-72 rounded-full opacity-5"
+          className="absolute -bottom-24 left-1/3 w-72 h-72 rounded-full opacity-6"
           style={{
-            backgroundColor: 'var(--green-accent)',
-            filter: 'blur(80px)',
+            backgroundColor: 'var(--primary-base)',
+            filter: 'blur(100px)',
             animation: 'float 30s ease-in-out infinite'
           }}
         />
@@ -56,13 +56,13 @@ export function SpotlightCarousel({ products }: SpotlightCarouselProps) {
       <div className="container mx-auto px-6 md:px-12 relative" style={{ position: 'relative', zIndex: 1 }}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16 md:mb-20 relative">
-            <p className="text-sm uppercase tracking-[0.2em] font-semibold mb-3" style={{ color: 'var(--green-accent)' }}>
+            <p className="text-sm uppercase tracking-[0.2em] font-semibold mb-3" style={{ color: 'var(--primary-base)' }}>
               {t('inSpotlight')}
             </p>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-primary)' }}>
               {t('featuredProducts')}
             </h2>
-            <p className="text-lg md:text-xl max-w-3xl mx-auto font-light" style={{ fontFamily: 'Open Sans, sans-serif', color: 'var(--text-secondary)' }}>
+            <p className="text-lg md:text-xl max-w-3xl mx-auto font-light" style={{ fontFamily: 'Open Sans, sans-serif', color: 'var(--text-tertiary)' }}>
               {t('featuredProductsDesc')}
             </p>
           </div>
@@ -82,8 +82,8 @@ export function SpotlightCarousel({ products }: SpotlightCarouselProps) {
               ))}
             </CarouselContent>
             <div className="flex justify-center gap-4 mt-8">
-              <CarouselPrevious className="static translate-y-0 border-[var(--green-accent)] text-[#0d1117] hover:bg-[var(--green-accent)] hover:text-white transition-all duration-300" />
-              <CarouselNext className="static translate-y-0 border-[var(--green-accent)] text-[#0d1117] hover:bg-[var(--green-accent)] hover:text-white transition-all duration-300" />
+              <CarouselPrevious className="static translate-y-0 border-[var(--primary-base)] text-[#0d1117] hover:bg-[var(--primary-base)] hover:text-white transition-all duration-300" />
+              <CarouselNext className="static translate-y-0 border-[var(--primary-base)] text-[#0d1117] hover:bg-[var(--primary-base)] hover:text-white transition-all duration-300" />
             </div>
           </Carousel>
 
@@ -92,16 +92,17 @@ export function SpotlightCarousel({ products }: SpotlightCarouselProps) {
               {/* Animated turquoise glow */}
               <div
                 className="absolute -inset-2 rounded-full opacity-0 group-hover:opacity-30 transition-opacity duration-500 blur-xl"
-                style={{ backgroundColor: 'var(--green-accent)' }}
+                style={{ backgroundColor: 'var(--primary-base)' }}
               />
               <Link
                 href={`/${locale}/webshop`}
-                className="btn-primary relative inline-flex items-center gap-2 px-8 py-4 font-semibold text-lg transition-all duration-300 group-hover:scale-105 group-hover:shadow-xl"
+                className="btn-primary relative inline-flex items-center gap-2 px-8 py-4 font-semibold text-lg transition-all duration-300 group-hover:scale-105"
                 style={{
-                  backgroundColor: 'var(--green-accent)',
+                  backgroundColor: 'var(--primary-base)',
                   color: 'white',
                   borderRadius: '9999px',
-                  fontFamily: 'Montserrat, sans-serif'
+                  fontFamily: 'Montserrat, sans-serif',
+                  boxShadow: 'var(--shadow-medium)'
                 }}
               >
                 {tCommon('goToWebshop')}
