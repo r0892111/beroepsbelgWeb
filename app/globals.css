@@ -17,15 +17,22 @@
     --hover: #2ABE7D;
     --border-light: #E5E5E5;
 
-    --bg-darkest: #F5F5F5;
-    --bg-dark: #F8F8F8;
-    --bg-base: #FAFAFA;
-    --bg-light: #FCFCFC;
+    --bg-darkest: #EEEEEE;
+    --bg-dark: #F2F2F2;
+    --bg-base: #F7F7F7;
+    --bg-light: #FBFBFB;
     --bg-lighter: #FFFFFF;
 
     --surface-elevated-1: #FFFFFF;
-    --surface-elevated-2: #FEFEFE;
+    --surface-elevated-2: #FFFFFF;
     --surface-elevated-3: #FDFDFD;
+
+    --card-header-bg: #F5F5F5;
+    --card-content-bg: #FAFAFA;
+    --card-footer-bg: #F9F9F9;
+
+    --border-subtle: #E8E8E8;
+    --border-light: #ECECEC;
 
     --text-primary: #000000;
     --text-secondary: #3A3A3A;
