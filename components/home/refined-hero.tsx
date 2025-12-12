@@ -203,7 +203,7 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
         <div className="w-full max-w-4xl flex flex-col items-center gap-6">
           {/* Box 1: CNN Quote */}
           <div
-            className="backdrop-blur-md rounded-2xl p-8 md:p-10 border w-full text-center"
+            className="backdrop-blur-md rounded-2xl px-6 py-5 md:px-8 md:py-6 border w-full text-center"
             style={{
               backgroundColor: 'rgba(255, 252, 248, 0.82)',
               borderColor: 'rgba(0, 0, 0, 0.06)',
@@ -238,7 +238,7 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
 
           {/* Box 2: Main Tagline */}
           <div
-            className="backdrop-blur-md rounded-2xl p-8 md:p-10 border w-full text-center"
+            className="backdrop-blur-md rounded-2xl px-6 py-5 md:px-8 md:py-6 border w-full text-center"
             style={{
               backgroundColor: 'rgba(255, 252, 248, 0.82)',
               borderColor: 'rgba(0, 0, 0, 0.06)',
@@ -260,45 +260,40 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
             </p>
           </div>
 
-          {/* Box 3: Buttons */}
-          <div
-            className="backdrop-blur-md rounded-2xl p-8 md:p-10 border w-full"
-            style={{
-              backgroundColor: 'rgba(255, 252, 248, 0.82)',
-              borderColor: 'rgba(0, 0, 0, 0.06)',
-              boxShadow: '0 25px 70px rgba(0, 0, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 3px rgba(0, 0, 0, 0.08)',
-              transform: 'translateZ(0)',
-              willChange: 'transform'
-            }}
-          >
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <div className="relative group">
-                <div
-                  className="absolute -inset-2 rounded-lg opacity-0 group-hover:opacity-40 transition-opacity duration-500 blur-xl"
-                  style={{ backgroundColor: 'var(--green-accent)' }}
-                />
-                <Link
-                  href={`/${locale}/tours`}
-                  className="btn-primary relative inline-flex items-center gap-2 group w-full sm:w-auto justify-center"
-                >
-                  {t('ctaPrimary') || 'Explore Tours'}
-                  <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </Link>
-              </div>
+          {/* Buttons - No Box */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center w-full">
+            <div className="relative group">
+              <div
+                className="absolute -inset-2 rounded-lg opacity-0 group-hover:opacity-40 transition-opacity duration-500 blur-xl"
+                style={{ backgroundColor: 'var(--green-accent)' }}
+              />
               <Link
-                href={`/${locale}/b2b-offerte`}
-                className="btn-secondary group relative overflow-hidden w-full sm:w-auto justify-center"
+                href={`/${locale}/tours`}
+                className="btn-primary relative inline-flex items-center gap-2 group w-full sm:w-auto justify-center"
               >
-                <span className="relative z-10 flex items-center gap-2">
-                  {t('ctaSecondary') || 'Business Inquiries'}
-                  <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                </span>
+                {t('ctaPrimary') || 'Explore Tours'}
+                <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
               </Link>
             </div>
+            <Link
+              href={`/${locale}/b2b-offerte`}
+              className="group relative overflow-hidden w-full sm:w-auto justify-center inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-300"
+              style={{
+                backgroundColor: 'rgba(255, 252, 248, 0.95)',
+                color: '#2c1810',
+                border: '2px solid #2c1810',
+                boxShadow: '0 4px 12px rgba(44, 24, 16, 0.2)',
+              }}
+            >
+              <span className="relative z-10 flex items-center gap-2">
+                {t('ctaSecondary') || 'Business Inquiries'}
+                <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </span>
+            </Link>
           </div>
         </div>
       </div>
