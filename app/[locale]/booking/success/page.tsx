@@ -1,19 +1,26 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle2, Loader2 } from 'lucide-react';
+import { CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from 'next-intl';
+import { TourUpsellCard } from '@/components/upsells/tour-upsell-card';
+import { ProductUpsellCard } from '@/components/upsells/product-upsell-card';
+import type { Tour, Product, Locale } from '@/lib/data/types';
 
 export default function BookingSuccessPage() {
   const t = useTranslations('bookingSuccess');
+  const params = useParams();
+  const locale = params.locale as Locale;
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState<any>(null);
+  const [relatedTours, setRelatedTours] = useState<Tour[]>([]);
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
 
   useEffect(() => {
     const fetchBooking = async () => {
@@ -89,7 +96,75 @@ export default function BookingSuccessPage() {
       }
     };
 
+    const fetchUpsells = async () => {
+      try {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+        const [toursRes, productsRes] = await Promise.all([
+          fetch(`${supabaseUrl}/rest/v1/tours_table_prod?limit=3&select=*`, {
+            headers: {
+              'apikey': supabaseAnonKey || '',
+              'Authorization': `Bearer ${supabaseAnonKey}`,
+            },
+          }),
+          fetch(`${supabaseUrl}/rest/v1/products?limit=3&select=*`, {
+            headers: {
+              'apikey': supabaseAnonKey || '',
+              'Authorization': `Bearer ${supabaseAnonKey}`,
+            },
+          }),
+        ]);
+
+        if (toursRes.ok) {
+          const toursData = await toursRes.json();
+          const mappedTours = toursData.map((row: any) => ({
+            id: row.id,
+            city: row.city?.toLowerCase() || '',
+            slug: row.title.toLowerCase().replace(/\s+/g, '-'),
+            title: row.title,
+            type: row.type,
+            durationMinutes: row.duration_minutes,
+            price: row.price ? Number(row.price) : undefined,
+            startLocation: row.start_location,
+            endLocation: row.end_location,
+            languages: row.languages || [],
+            description: row.description,
+            options: row.options,
+          }));
+          setRelatedTours(mappedTours);
+        }
+
+        if (productsRes.ok) {
+          const productsData = await productsRes.json();
+          const mappedProducts = productsData.map((row: any) => ({
+            slug: row.slug,
+            uuid: row.id,
+            title: {
+              nl: row.title_nl,
+              en: row.title_en,
+              fr: row.title_fr,
+              de: row.title_de,
+            },
+            category: row.category as 'Book' | 'Merchandise' | 'Game',
+            price: row.price,
+            description: {
+              nl: row.description_nl,
+              en: row.description_en,
+              fr: row.description_fr,
+              de: row.description_de,
+            },
+            label: row.label,
+          }));
+          setFeaturedProducts(mappedProducts);
+        }
+      } catch (error) {
+        console.error('Error fetching upsells:', error);
+      }
+    };
+
     fetchBooking();
+    fetchUpsells();
   }, [sessionId]);
 
   if (loading) {
@@ -197,6 +272,48 @@ export default function BookingSuccessPage() {
           </div>
         </CardContent>
       </Card>
+
+      {(relatedTours.length > 0 || featuredProducts.length > 0) && (
+        <div className="mt-16 max-w-6xl mx-auto">
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 mb-3">
+              <Sparkles className="w-5 h-5" style={{ color: 'var(--primary-base)' }} />
+              <h2 className="text-2xl md:text-3xl font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'Montserrat, sans-serif' }}>
+                Discover More
+              </h2>
+            </div>
+            <p className="text-lg" style={{ color: 'var(--text-tertiary)' }}>
+              Continue your journey with more tours and exclusive items
+            </p>
+          </div>
+
+          {relatedTours.length > 0 && (
+            <div className="mb-12">
+              <h3 className="text-xl font-semibold mb-6" style={{ color: 'var(--text-primary)' }}>
+                More Tours You'll Love
+              </h3>
+              <div className="grid md:grid-cols-3 gap-6">
+                {relatedTours.map((tour) => (
+                  <TourUpsellCard key={tour.id} tour={tour} locale={locale} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {featuredProducts.length > 0 && (
+            <div>
+              <h3 className="text-xl font-semibold mb-6" style={{ color: 'var(--text-primary)' }}>
+                Take Home a Memory
+              </h3>
+              <div className="grid md:grid-cols-3 gap-6">
+                {featuredProducts.map((product) => (
+                  <ProductUpsellCard key={product.uuid} product={product} locale={locale} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
