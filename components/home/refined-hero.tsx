@@ -194,73 +194,88 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
         )}
       </div>
       
-      {/* Gradient overlays - Above video, below text */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/30 to-white/80" style={{ zIndex: 1 }} />
-      <div className="absolute inset-0 bg-gradient-to-br from-[var(--green-accent)]/5 via-transparent to-transparent" style={{ zIndex: 1 }} />
+      {/* Subtle gradient overlays - Above video, below text */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30" style={{ zIndex: 1 }} />
+      <div className="absolute inset-0 bg-gradient-to-br from-[var(--green-accent)]/3 via-transparent to-transparent" style={{ zIndex: 1 }} />
 
       {/* Hero Content - Above video and gradients */}
-      <div className="container mx-auto px-6 md:px-12 py-24 md:py-32 lg:py-40 relative flex-1 flex items-center" style={{ zIndex: 10, position: 'relative' }}>
-        <div className="max-w-5xl mx-auto text-center">
-          {/* Animated turquoise accent */}
-          <div className="inline-block mb-6 relative">
-            <div
-              className="h-1 w-24 mx-auto rounded-full"
-              style={{
-                backgroundColor: 'var(--green-accent)',
-                boxShadow: '0 0 20px rgba(61, 213, 152, 0.6)'
-              }}
-            />
-            <div
-              className="absolute inset-0 h-1 w-24 mx-auto rounded-full animate-pulse"
-              style={{
-                backgroundColor: 'var(--green-accent)',
-                opacity: 0.4
-              }}
-            />
-          </div>
-
-          <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-8 leading-tight tracking-tight relative inline-block" style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-primary)' }}>
-            {t('headline')}
-            <div
-              className="absolute -bottom-3 left-1/2 -translate-x-1/2 h-2 w-3/4 opacity-10"
-              style={{
-                backgroundColor: 'var(--green-accent)',
-                filter: 'blur(12px)'
-              }}
-            />
-          </h1>
-
-          <p className="text-lg md:text-xl lg:text-2xl mb-16 max-w-3xl mx-auto font-light leading-relaxed" style={{ fontFamily: 'Open Sans, sans-serif', color: 'var(--text-secondary)' }}>
-            {t('subtitle') || 'Curated cultural walking tours that reveal the hidden stories of Belgian cities'}
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-5 justify-center items-center">
-            <div className="relative group">
+      <div className="container mx-auto px-6 md:px-12 py-24 md:py-32 lg:py-40 relative flex-1 flex items-end md:items-center" style={{ zIndex: 10, position: 'relative' }}>
+        <div className="w-full md:w-auto md:max-w-2xl lg:max-w-3xl md:ml-0">
+          {/* Content Box with elegant white/light grey background */}
+          <div
+            className="backdrop-blur-sm rounded-2xl p-8 md:p-10 lg:p-12 shadow-2xl border"
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              borderColor: 'rgba(0, 0, 0, 0.08)',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1)'
+            }}
+          >
+            {/* Animated turquoise accent */}
+            <div className="inline-block mb-5 relative">
               <div
-                className="absolute -inset-2 rounded-lg opacity-0 group-hover:opacity-40 transition-opacity duration-500 blur-xl"
-                style={{ backgroundColor: 'var(--green-accent)' }}
+                className="h-1 w-20 rounded-full"
+                style={{
+                  backgroundColor: 'var(--green-accent)',
+                  boxShadow: '0 0 16px rgba(61, 213, 152, 0.5)'
+                }}
               />
+              <div
+                className="absolute inset-0 h-1 w-20 rounded-full animate-pulse"
+                style={{
+                  backgroundColor: 'var(--green-accent)',
+                  opacity: 0.4
+                }}
+              />
+            </div>
+
+            <h1
+              className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 leading-tight tracking-tight"
+              style={{
+                fontFamily: 'Montserrat, sans-serif',
+                color: 'var(--text-primary)'
+              }}
+            >
+              {t('headline')}
+            </h1>
+
+            <p
+              className="text-base md:text-lg lg:text-xl mb-8 font-light leading-relaxed"
+              style={{
+                fontFamily: 'Open Sans, sans-serif',
+                color: 'var(--text-secondary)'
+              }}
+            >
+              {t('subtitle') || 'Curated cultural walking tours that reveal the hidden stories of Belgian cities'}
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative group">
+                <div
+                  className="absolute -inset-2 rounded-lg opacity-0 group-hover:opacity-40 transition-opacity duration-500 blur-xl"
+                  style={{ backgroundColor: 'var(--green-accent)' }}
+                />
+                <Link
+                  href={`/${locale}/tours`}
+                  className="btn-primary relative inline-flex items-center gap-2 group w-full sm:w-auto justify-center"
+                >
+                  {t('ctaPrimary') || 'Explore Tours'}
+                  <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </Link>
+              </div>
               <Link
-                href={`/${locale}/tours`}
-                className="btn-primary relative inline-flex items-center gap-2 group"
+                href={`/${locale}/b2b-offerte`}
+                className="btn-secondary group relative overflow-hidden w-full sm:w-auto justify-center"
               >
-                {t('ctaPrimary') || 'Explore Tours'}
-                <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
+                <span className="relative z-10 flex items-center gap-2">
+                  {t('ctaSecondary') || 'Business Inquiries'}
+                  <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </span>
               </Link>
             </div>
-            <Link
-              href={`/${locale}/b2b-offerte`}
-              className="btn-secondary group relative overflow-hidden"
-            >
-              <span className="relative z-10 flex items-center gap-2">
-                {t('ctaSecondary') || 'Business Inquiries'}
-                <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              </span>
-            </Link>
           </div>
         </div>
       </div>
