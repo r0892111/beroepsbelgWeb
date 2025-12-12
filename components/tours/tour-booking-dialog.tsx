@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { loadStripe } from '@stripe/stripe-js';
 import Image from 'next/image';
@@ -29,6 +29,8 @@ interface TourBookingDialogProps {
   isLocalStories?: boolean; // If true, only show 14:00-16:00 timeslot
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  defaultBookingDate?: string; // Pre-fill booking date (for local stories)
+  citySlug?: string; // City slug for the tour
 }
 
 export function TourBookingDialog({
@@ -39,6 +41,8 @@ export function TourBookingDialog({
   isLocalStories = false,
   open,
   onOpenChange,
+  defaultBookingDate,
+  citySlug,
 }: TourBookingDialogProps) {
   const router = useRouter();
   const { user } = useAuth();
@@ -52,12 +56,30 @@ export function TourBookingDialog({
     customerName: '',
     customerEmail: '',
     customerPhone: '',
-    bookingDate: undefined as Date | undefined,
+    bookingDate: defaultBookingDate ? new Date(defaultBookingDate) : undefined as Date | undefined,
     numberOfPeople: 1,
     language: 'nl',
     specialRequests: '',
     requestTanguy: false,
   });
+
+  // Update booking date when defaultBookingDate changes
+  useEffect(() => {
+    if (defaultBookingDate && open) {
+      setFormData(prev => ({
+        ...prev,
+        bookingDate: new Date(defaultBookingDate),
+      }));
+      setSelectedTimeSlot('14:00');
+    }
+  }, [defaultBookingDate, open]);
+
+  // For local stories tours, always set time to 14:00 and prevent changes
+  useEffect(() => {
+    if (isLocalStories) {
+      setSelectedTimeSlot('14:00');
+    }
+  }, [isLocalStories, open]);
 
   // Generate time slots between 10:00 and 18:00 based on tour duration
   // For Local Stories tours, only show 14:00-16:00 timeslot
@@ -112,7 +134,8 @@ export function TourBookingDialog({
   // Form validation
   const [showValidation, setShowValidation] = useState(false);
   const isDateValid = !!formData.bookingDate;
-  const isTimeValid = !!selectedTimeSlot;
+  // For local stories, time is always valid (14:00 is set automatically)
+  const isTimeValid = isLocalStories ? true : !!selectedTimeSlot;
   const isFormValid = isDateValid && isTimeValid && formData.customerName && formData.customerEmail;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -144,12 +167,13 @@ export function TourBookingDialog({
           customerEmail: formData.customerEmail,
           customerPhone: formData.customerPhone,
           bookingDate: formData.bookingDate ? format(formData.bookingDate, 'yyyy-MM-dd') : '',
-          bookingTime: selectedTimeSlot,
+          bookingTime: isLocalStories ? '14:00' : selectedTimeSlot,
           numberOfPeople: formData.numberOfPeople,
           language: formData.language,
           specialRequests: formData.specialRequests,
           requestTanguy: formData.requestTanguy,
           userId: user?.id || null,
+          citySlug: citySlug || null,
         }),
       });
 
@@ -222,33 +246,41 @@ export function TourBookingDialog({
                 <CalendarIcon className="h-3 w-3" />
                 {t('tourDate')} *
               </Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      'w-full h-10 justify-start text-left font-normal',
-                      !formData.bookingDate && 'text-muted-foreground',
-                      showValidation && !isDateValid && 'border-red-500 ring-1 ring-red-500'
-                    )}
-                  >
-                    {formData.bookingDate ? format(formData.bookingDate, 'PP') : t('selectDate')}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={formData.bookingDate}
-                    onSelect={(date) => {
-                      setFormData({ ...formData, bookingDate: date });
-                      setSelectedTimeSlot(''); // Reset time slot when date changes
-                    }}
-                    disabled={(date) => date < new Date()}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              {showValidation && !isDateValid && (
+              {isLocalStories ? (
+                <div className="flex h-10 items-center rounded-md border border-input bg-muted px-3 text-sm">
+                  <span className="text-muted-foreground">
+                    {formData.bookingDate ? format(formData.bookingDate, 'PP') : 'Datum geselecteerd'}
+                  </span>
+                </div>
+              ) : (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        'w-full h-10 justify-start text-left font-normal',
+                        !formData.bookingDate && 'text-muted-foreground',
+                        showValidation && !isDateValid && 'border-red-500 ring-1 ring-red-500'
+                      )}
+                    >
+                      {formData.bookingDate ? format(formData.bookingDate, 'PP') : t('selectDate')}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={formData.bookingDate}
+                      onSelect={(date) => {
+                        setFormData({ ...formData, bookingDate: date });
+                        setSelectedTimeSlot(''); // Reset time slot when date changes
+                      }}
+                      disabled={(date) => date < new Date()}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              )}
+              {showValidation && !isDateValid && !isLocalStories && (
                 <p className="text-xs text-red-500">Selecteer een datum</p>
               )}
             </div>
@@ -258,26 +290,32 @@ export function TourBookingDialog({
                 <Clock className="h-3 w-3" />
                 Tijdslot *
               </Label>
-              <Select 
-                value={selectedTimeSlot} 
-                onValueChange={setSelectedTimeSlot}
-                disabled={!formData.bookingDate}
-              >
-                <SelectTrigger className={cn(
-                  "h-10",
-                  showValidation && !isTimeValid && formData.bookingDate && 'border-red-500 ring-1 ring-red-500'
-                )}>
-                  <SelectValue placeholder={formData.bookingDate ? "Kies tijd" : "Kies eerst datum"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {timeSlots.map((slot) => (
-                    <SelectItem key={slot.value} value={slot.value}>
-                      {slot.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {showValidation && !isTimeValid && formData.bookingDate && (
+              {isLocalStories ? (
+                <div className="flex h-10 items-center rounded-md border border-input bg-muted px-3 text-sm">
+                  <span className="text-muted-foreground">14:00 - 16:00 (Vast)</span>
+                </div>
+              ) : (
+                <Select 
+                  value={selectedTimeSlot} 
+                  onValueChange={setSelectedTimeSlot}
+                  disabled={!formData.bookingDate}
+                >
+                  <SelectTrigger className={cn(
+                    "h-10",
+                    showValidation && !isTimeValid && formData.bookingDate && 'border-red-500 ring-1 ring-red-500'
+                  )}>
+                    <SelectValue placeholder={formData.bookingDate ? "Kies tijd" : "Kies eerst datum"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timeSlots.map((slot) => (
+                      <SelectItem key={slot.value} value={slot.value}>
+                        {slot.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {showValidation && !isTimeValid && formData.bookingDate && !isLocalStories && (
                 <p className="text-xs text-red-500">Selecteer een tijdslot</p>
               )}
             </div>

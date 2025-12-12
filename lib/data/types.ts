@@ -11,14 +11,6 @@ export type City = {
   ctaText?: Record<Locale, string>;
 };
 
-export type TourOptions = {
-  thumbnail?: string;
-  images?: string[];
-  badge?: 'EXCLUSIEF' | 'UITVERKOCHT' | 'NIEUW';
-  extraInfo?: string;
-  [key: string]: unknown;
-};
-
 export type Tour = {
   id: string;
   city: string;
@@ -32,7 +24,7 @@ export type Tour = {
   languages: string[];
   description: string;
   notes?: string;
-  options?: TourOptions;
+  op_maat?: boolean;
   local_stories?: boolean;
   createdAt?: string;
   updatedAt?: string;
