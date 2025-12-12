@@ -137,8 +137,8 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         </CardHeader>
         <CardContent
-          className="flex-1"
-          style={{ backgroundColor: 'var(--card-content-bg)' }}
+          className="flex-1 flex flex-col justify-center"
+          style={{ backgroundColor: 'var(--card-content-bg)', paddingTop: '1.75rem', paddingBottom: '1.75rem' }}
         >
           <p
             className="text-sm line-clamp-3 leading-relaxed"

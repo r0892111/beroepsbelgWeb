@@ -67,10 +67,12 @@ export function TourCard({ tour, locale }: TourCardProps) {
         </div>
       )}
       <CardHeader
-        className="flex-1"
+        className="flex-1 flex flex-col justify-center"
         style={{
           backgroundColor: 'var(--card-header-bg)',
-          borderBottom: '1px solid var(--border-light)'
+          borderBottom: '1px solid var(--border-light)',
+          paddingTop: '1.75rem',
+          paddingBottom: '1.75rem'
         }}
       >
         <div className="mb-2 flex items-center justify-between">
