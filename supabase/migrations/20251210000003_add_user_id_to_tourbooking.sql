@@ -43,3 +43,5 @@ CREATE POLICY "Users can view own bookings"
 -- Keep the existing policy for viewing by session (for success page)
 -- This is already created in 20251130160000_add_rls_policies_to_tourbooking.sql
 
+
+

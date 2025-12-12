@@ -18,3 +18,5 @@ WHERE event_object_table = 'tours_table_prod';
 
 -- This query should return empty results if cleanup was successful
 
+
+

@@ -42,3 +42,5 @@ CREATE POLICY "Service role can update bookings"
 
 
 
+
+

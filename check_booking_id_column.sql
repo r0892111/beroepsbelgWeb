@@ -11,3 +11,5 @@ WHERE table_name = 'local_tours_bookings'
 -- If the above returns no rows, the column doesn't exist yet
 -- Run the migration: 20250116000000_add_booking_id_to_local_tours_bookings.sql
 
+
+

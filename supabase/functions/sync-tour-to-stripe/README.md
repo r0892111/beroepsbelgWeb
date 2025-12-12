@@ -196,3 +196,5 @@ Or in Supabase Dashboard → Edge Functions → sync-tour-to-stripe → Logs
 - [ ] Sync tour images to Stripe product images
 - [ ] Handle Stripe webhook errors with retry logic
 
+
+
