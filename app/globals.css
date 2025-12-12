@@ -144,34 +144,37 @@
 @layer utilities {
   .btn-primary {
     @apply inline-flex items-center justify-center px-10 py-4 font-medium rounded-sm transition-all duration-300 ease-out;
-    background-color: var(--green-accent);
+    background-color: var(--primary-base);
     color: white;
     font-family: 'Montserrat', sans-serif;
     font-size: 0.95rem;
     letter-spacing: 0.025em;
-    will-change: background-color, transform;
+    will-change: background-color, transform, box-shadow;
+    box-shadow: var(--shadow-small);
   }
 
   .btn-primary:hover {
-    background-color: var(--green-dark);
+    background-color: var(--primary-dark);
     transform: translateY(-2px);
+    box-shadow: var(--shadow-hover-glow);
   }
 
   .btn-secondary {
     @apply inline-flex items-center justify-center px-10 py-4 font-medium rounded-sm transition-all duration-300 ease-out;
     background-color: transparent;
-    border: 1.5px solid var(--charcoal);
-    color: var(--charcoal);
+    border: 1.5px solid var(--primary-base);
+    color: var(--primary-base);
     font-family: 'Montserrat', sans-serif;
     font-size: 0.95rem;
     letter-spacing: 0.025em;
-    will-change: background-color, color, transform;
+    will-change: background-color, color, transform, box-shadow;
   }
 
   .btn-secondary:hover {
-    background-color: var(--charcoal);
+    background-color: var(--primary-base);
     color: white;
     transform: translateY(-2px);
+    box-shadow: var(--shadow-small);
   }
 
   .brass-accent {
