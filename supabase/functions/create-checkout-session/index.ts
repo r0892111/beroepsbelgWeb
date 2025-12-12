@@ -180,6 +180,7 @@ serve(async (req: Request) => {
           customer_phone: customerPhone || null,
           stripe_session_id: session.id,
           booking_id: createdBooking.id, // Link to the tourbooking entry
+          amnt_of_people: numberOfPeople, // Store the number of people for this booking
         };
         
         if (userId) {

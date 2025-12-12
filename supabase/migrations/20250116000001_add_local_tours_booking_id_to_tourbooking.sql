@@ -29,3 +29,5 @@ END $$;
 CREATE INDEX IF NOT EXISTS idx_tourbooking_local_tours_booking_id 
 ON tourbooking(local_tours_booking_id);
 
+
+

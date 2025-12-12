@@ -97,3 +97,5 @@ CREATE INDEX IF NOT EXISTS idx_stripe_orders_checkout_session_id ON stripe_order
 CREATE INDEX IF NOT EXISTS idx_stripe_orders_status ON stripe_orders(status);
 CREATE INDEX IF NOT EXISTS idx_stripe_orders_created_at ON stripe_orders(created_at DESC);
 
+
+

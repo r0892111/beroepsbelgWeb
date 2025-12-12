@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { type Locale, type Tour } from '@/lib/data';
@@ -14,8 +16,9 @@ interface TourCardProps {
 
 export function TourCard({ tour, locale }: TourCardProps) {
   const t = useTranslations('common');
-  const thumbnail = tour.options?.thumbnail;
-  const badge = tour.options?.badge;
+  // Note: thumbnail and badge fields removed with options field
+  const thumbnail = undefined;
+  const badge = undefined;
 
   // Format duration
   const formatDuration = (minutes: number) => {

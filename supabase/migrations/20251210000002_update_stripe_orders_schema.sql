@@ -156,3 +156,5 @@ CREATE POLICY "Service role can update orders"
 -- Create index on user_id for performance (if it doesn't exist)
 CREATE INDEX IF NOT EXISTS idx_stripe_orders_user_id ON stripe_orders(user_id);
 
+
+
