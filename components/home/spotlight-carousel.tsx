@@ -25,34 +25,6 @@ export function SpotlightCarousel({ products }: SpotlightCarouselProps) {
 
   return (
     <section className="py-20 md:py-32 relative overflow-hidden" style={{ backgroundColor: 'var(--bg-lighter)' }}>
-      {/* Decorative background elements */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div
-          className="absolute -top-24 -left-24 w-96 h-96 rounded-full opacity-6"
-          style={{
-            backgroundColor: 'var(--primary-base)',
-            filter: 'blur(100px)',
-            animation: 'float 20s ease-in-out infinite'
-          }}
-        />
-        <div
-          className="absolute top-1/2 -right-32 w-80 h-80 rounded-full opacity-6"
-          style={{
-            backgroundColor: 'var(--primary-base)',
-            filter: 'blur(100px)',
-            animation: 'float 25s ease-in-out infinite reverse'
-          }}
-        />
-        <div
-          className="absolute -bottom-24 left-1/3 w-72 h-72 rounded-full opacity-6"
-          style={{
-            backgroundColor: 'var(--primary-base)',
-            filter: 'blur(100px)',
-            animation: 'float 30s ease-in-out infinite'
-          }}
-        />
-      </div>
-
       <div className="container mx-auto px-6 md:px-12 relative" style={{ position: 'relative', zIndex: 1 }}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16 md:mb-20 relative">
@@ -89,11 +61,6 @@ export function SpotlightCarousel({ products }: SpotlightCarouselProps) {
 
           <div className="mt-16 md:mt-20 text-center relative">
             <div className="inline-block relative group">
-              {/* Animated turquoise glow */}
-              <div
-                className="absolute -inset-2 rounded-full opacity-0 group-hover:opacity-30 transition-opacity duration-500 blur-xl"
-                style={{ backgroundColor: 'var(--primary-base)' }}
-              />
               <Link
                 href={`/${locale}/webshop`}
                 className="btn-primary relative inline-flex items-center gap-2 px-8 py-4 font-semibold text-lg transition-all duration-300 group-hover:scale-105"
