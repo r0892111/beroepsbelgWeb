@@ -199,11 +199,11 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
       <div className="absolute inset-0 bg-gradient-to-br from-[var(--green-accent)]/3 via-transparent to-transparent" style={{ zIndex: 1 }} />
 
       {/* Hero Content - Above video and gradients */}
-      <div className="container mx-auto px-6 md:px-12 py-24 md:py-32 lg:py-40 relative flex-1 flex items-end md:items-center" style={{ zIndex: 10, position: 'relative' }}>
-        <div className="w-full md:w-auto md:max-w-2xl lg:max-w-3xl md:ml-0">
-          {/* Content Box with elegant white/light grey background */}
+      <div className="container mx-auto px-6 md:px-12 relative flex-1 flex items-center justify-center" style={{ zIndex: 10, position: 'relative' }}>
+        <div className="w-full max-w-4xl flex flex-col items-center gap-6">
+          {/* Box 1: CNN Quote */}
           <div
-            className="backdrop-blur-md rounded-2xl p-8 md:p-10 lg:p-12 border"
+            className="backdrop-blur-md rounded-2xl p-8 md:p-10 border w-full text-center"
             style={{
               backgroundColor: 'rgba(255, 252, 248, 0.82)',
               borderColor: 'rgba(0, 0, 0, 0.06)',
@@ -212,26 +212,8 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
               willChange: 'transform'
             }}
           >
-            {/* Animated turquoise accent */}
-            <div className="inline-block mb-5 relative">
-              <div
-                className="h-1 w-20 rounded-full"
-                style={{
-                  backgroundColor: 'var(--green-accent)',
-                  boxShadow: '0 0 20px rgba(61, 213, 152, 0.6), 0 4px 12px rgba(61, 213, 152, 0.3)'
-                }}
-              />
-              <div
-                className="absolute inset-0 h-1 w-20 rounded-full animate-pulse"
-                style={{
-                  backgroundColor: 'var(--green-accent)',
-                  opacity: 0.4
-                }}
-              />
-            </div>
-
             <h1
-              className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 leading-tight"
+              className="text-2xl md:text-3xl lg:text-4xl font-bold leading-tight"
               style={{
                 fontFamily: 'Georgia, "Times New Roman", serif',
                 color: '#2c1810',
@@ -240,11 +222,33 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
                 fontWeight: 600
               }}
             >
-              {t('headline')}
+              "One of the 7 savviest guides in the world"
             </h1>
-
             <p
-              className="text-base md:text-lg lg:text-xl mb-8 font-light leading-relaxed"
+              className="text-sm md:text-base mt-3 font-light"
+              style={{
+                fontFamily: 'Georgia, "Times New Roman", serif',
+                color: '#5a4a42',
+                fontWeight: 400
+              }}
+            >
+              — CNN
+            </p>
+          </div>
+
+          {/* Box 2: Main Tagline */}
+          <div
+            className="backdrop-blur-md rounded-2xl p-8 md:p-10 border w-full text-center"
+            style={{
+              backgroundColor: 'rgba(255, 252, 248, 0.82)',
+              borderColor: 'rgba(0, 0, 0, 0.06)',
+              boxShadow: '0 25px 70px rgba(0, 0, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 3px rgba(0, 0, 0, 0.08)',
+              transform: 'translateZ(0)',
+              willChange: 'transform'
+            }}
+          >
+            <p
+              className="text-lg md:text-xl lg:text-2xl font-light leading-relaxed"
               style={{
                 fontFamily: 'Georgia, "Times New Roman", serif',
                 color: '#5a4a42',
@@ -252,10 +256,22 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
                 fontWeight: 400
               }}
             >
-              {t('subtitle') || 'Curated cultural walking tours that reveal the hidden stories of Belgian cities'}
+              {t('headline')}
             </p>
+          </div>
 
-            <div className="flex flex-col sm:flex-row gap-4">
+          {/* Box 3: Buttons */}
+          <div
+            className="backdrop-blur-md rounded-2xl p-8 md:p-10 border w-full"
+            style={{
+              backgroundColor: 'rgba(255, 252, 248, 0.82)',
+              borderColor: 'rgba(0, 0, 0, 0.06)',
+              boxShadow: '0 25px 70px rgba(0, 0, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 3px rgba(0, 0, 0, 0.08)',
+              transform: 'translateZ(0)',
+              willChange: 'transform'
+            }}
+          >
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <div className="relative group">
                 <div
                   className="absolute -inset-2 rounded-lg opacity-0 group-hover:opacity-40 transition-opacity duration-500 blur-xl"
