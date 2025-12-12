@@ -203,7 +203,7 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
         <div className="w-full max-w-4xl flex flex-col items-center gap-6">
           {/* Box 1: CNN Quote */}
           <div
-            className="backdrop-blur-md rounded-2xl px-6 py-5 md:px-8 md:py-6 border w-full text-center"
+            className="backdrop-blur-md rounded-2xl px-4 py-3 md:px-5 md:py-3.5 border w-full text-center"
             style={{
               backgroundColor: 'rgba(255, 252, 248, 0.82)',
               borderColor: 'rgba(0, 0, 0, 0.06)',
@@ -238,7 +238,7 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
 
           {/* Box 2: Main Tagline */}
           <div
-            className="backdrop-blur-md rounded-2xl px-6 py-5 md:px-8 md:py-6 border w-full text-center"
+            className="backdrop-blur-md rounded-2xl px-4 py-3 md:px-5 md:py-3.5 border w-full text-center"
             style={{
               backgroundColor: 'rgba(255, 252, 248, 0.82)',
               borderColor: 'rgba(0, 0, 0, 0.06)',
