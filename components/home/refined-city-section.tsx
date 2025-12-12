@@ -54,34 +54,6 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
 
   return (
     <section className="py-20 md:py-32 relative overflow-hidden" style={{ backgroundColor: 'var(--bg-dark)' }}>
-      {/* Decorative background elements */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div
-          className="absolute -top-24 -left-24 w-96 h-96 rounded-full opacity-6"
-          style={{
-            backgroundColor: 'var(--primary-base)',
-            filter: 'blur(100px)',
-            animation: 'float 20s ease-in-out infinite'
-          }}
-        />
-        <div
-          className="absolute top-1/2 -right-32 w-80 h-80 rounded-full opacity-6"
-          style={{
-            backgroundColor: 'var(--primary-base)',
-            filter: 'blur(100px)',
-            animation: 'float 25s ease-in-out infinite reverse'
-          }}
-        />
-        <div
-          className="absolute -bottom-24 left-1/3 w-72 h-72 rounded-full opacity-6"
-          style={{
-            backgroundColor: 'var(--primary-base)',
-            filter: 'blur(100px)',
-            animation: 'float 30s ease-in-out infinite'
-          }}
-        />
-      </div>
-
       <div className="container mx-auto px-6 md:px-12 relative" style={{ position: 'relative', zIndex: 1 }}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16 md:mb-20 relative">

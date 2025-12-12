@@ -112,26 +112,6 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
 
   return (
     <section className="relative overflow-hidden min-h-screen flex flex-col" style={{ backgroundColor: 'var(--bg-base)' }}>
-      {/* Animated turquoise gradient orbs */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div
-          className="absolute top-1/4 -left-32 w-96 h-96 rounded-full opacity-8"
-          style={{
-            backgroundColor: 'var(--primary-base)',
-            filter: 'blur(120px)',
-            animation: 'float 25s ease-in-out infinite'
-          }}
-        />
-        <div
-          className="absolute bottom-1/4 -right-32 w-80 h-80 rounded-full opacity-8"
-          style={{
-            backgroundColor: 'var(--primary-base)',
-            filter: 'blur(120px)',
-            animation: 'float 30s ease-in-out infinite reverse'
-          }}
-        />
-      </div>
-
       {/* Video Background - Behind everything */}
       <div className="absolute inset-0" style={{ zIndex: 0 }}>
         {!isLoading && videos.length > 0 && !showFallbackImage ? (
@@ -196,7 +176,6 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
       
       {/* Subtle gradient overlays - Above video, below text */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30" style={{ zIndex: 1 }} />
-      <div className="absolute inset-0 bg-gradient-to-br from-[var(--green-accent)]/3 via-transparent to-transparent" style={{ zIndex: 1 }} />
 
       {/* Hero Content - Above video and gradients */}
       <div className="container mx-auto px-6 md:px-12 relative flex-1 flex items-center justify-center" style={{ zIndex: 10, position: 'relative' }}>

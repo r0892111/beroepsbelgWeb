@@ -13,38 +13,6 @@ export function RefinedCTASection({ locale }: RefinedCTASectionProps) {
 
   return (
     <section className="py-20 md:py-32 relative overflow-hidden" style={{ backgroundColor: 'var(--bg-light)' }}>
-      {/* Sophisticated gradient background with depth */}
-      <div className="absolute inset-0" style={{
-        background: 'radial-gradient(circle at 30% 50%, rgba(61, 213, 152, 0.06) 0%, transparent 50%), radial-gradient(circle at 70% 50%, rgba(61, 213, 152, 0.04) 0%, transparent 50%)'
-      }} />
-
-      {/* Animated decorative elements */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Large floating orb */}
-        <div
-          className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-[0.15]"
-          style={{
-            background: 'radial-gradient(circle, var(--green-accent) 0%, transparent 70%)',
-            filter: 'blur(80px)',
-            animation: 'float 25s ease-in-out infinite'
-          }}
-        />
-        {/* Smaller accent orb */}
-        <div
-          className="absolute -bottom-24 -left-24 w-64 h-64 rounded-full opacity-[0.12]"
-          style={{
-            background: 'radial-gradient(circle, var(--green-accent) 0%, transparent 70%)',
-            filter: 'blur(60px)',
-            animation: 'float 30s ease-in-out infinite reverse'
-          }}
-        />
-        {/* Subtle grid pattern */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: 'linear-gradient(var(--green-accent) 1px, transparent 1px), linear-gradient(90deg, var(--green-accent) 1px, transparent 1px)',
-          backgroundSize: '60px 60px'
-        }} />
-      </div>
-
       <div className="container mx-auto px-6 md:px-12 relative z-10">
         {/* Content card with sophisticated design */}
         <div className="max-w-5xl mx-auto">
