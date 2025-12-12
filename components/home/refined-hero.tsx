@@ -203,11 +203,13 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
         <div className="w-full md:w-auto md:max-w-2xl lg:max-w-3xl md:ml-0">
           {/* Content Box with elegant white/light grey background */}
           <div
-            className="backdrop-blur-sm rounded-2xl p-8 md:p-10 lg:p-12 shadow-2xl border"
+            className="backdrop-blur-md rounded-2xl p-8 md:p-10 lg:p-12 border"
             style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              borderColor: 'rgba(0, 0, 0, 0.08)',
-              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1)'
+              backgroundColor: 'rgba(255, 252, 248, 0.82)',
+              borderColor: 'rgba(0, 0, 0, 0.06)',
+              boxShadow: '0 25px 70px rgba(0, 0, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 3px rgba(0, 0, 0, 0.08)',
+              transform: 'translateZ(0)',
+              willChange: 'transform'
             }}
           >
             {/* Animated turquoise accent */}
@@ -216,7 +218,7 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
                 className="h-1 w-20 rounded-full"
                 style={{
                   backgroundColor: 'var(--green-accent)',
-                  boxShadow: '0 0 16px rgba(61, 213, 152, 0.5)'
+                  boxShadow: '0 0 20px rgba(61, 213, 152, 0.6), 0 4px 12px rgba(61, 213, 152, 0.3)'
                 }}
               />
               <div
@@ -232,7 +234,8 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
               className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 leading-tight tracking-tight"
               style={{
                 fontFamily: 'Montserrat, sans-serif',
-                color: 'var(--text-primary)'
+                color: '#1a1a1a',
+                textShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
               }}
             >
               {t('headline')}
@@ -242,7 +245,8 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
               className="text-base md:text-lg lg:text-xl mb-8 font-light leading-relaxed"
               style={{
                 fontFamily: 'Open Sans, sans-serif',
-                color: 'var(--text-secondary)'
+                color: '#4a4a4a',
+                lineHeight: '1.7'
               }}
             >
               {t('subtitle') || 'Curated cultural walking tours that reveal the hidden stories of Belgian cities'}
