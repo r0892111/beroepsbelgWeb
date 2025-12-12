@@ -31,14 +31,17 @@ export function TourCard({ tour, locale }: TourCardProps) {
       className="group flex h-full flex-col overflow-hidden"
       style={{
         transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+        border: '1px solid var(--border-subtle)',
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = 'translateY(-6px)';
         e.currentTarget.style.boxShadow = 'var(--shadow-hover-glow)';
+        e.currentTarget.style.borderColor = 'var(--border-light)';
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.transform = 'translateY(0)';
         e.currentTarget.style.boxShadow = 'var(--shadow-medium)';
+        e.currentTarget.style.borderColor = 'var(--border-subtle)';
       }}
     >
       {thumbnail && (
@@ -65,7 +68,10 @@ export function TourCard({ tour, locale }: TourCardProps) {
       )}
       <CardHeader
         className="flex-1"
-        style={{ backgroundColor: 'var(--bg-light)' }}
+        style={{
+          backgroundColor: 'var(--card-header-bg)',
+          borderBottom: '1px solid var(--border-light)'
+        }}
       >
         <div className="mb-2 flex items-center justify-between">
           <CardTitle
@@ -106,7 +112,10 @@ export function TourCard({ tour, locale }: TourCardProps) {
       </CardHeader>
       <CardFooter
         className="mt-auto flex items-center justify-between gap-4"
-        style={{ backgroundColor: 'var(--bg-base)' }}
+        style={{
+          backgroundColor: 'var(--card-footer-bg)',
+          borderTop: '1px solid var(--border-light)'
+        }}
       >
         <span
           className="text-xl font-bold"
