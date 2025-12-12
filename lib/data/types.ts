@@ -28,6 +28,13 @@ export type Tour = {
   local_stories?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  options?: {
+    thumbnail?: string;
+    badge?: string;
+    stripe_product_id?: string;
+    stripe_price_id?: string;
+    [key: string]: any;
+  };
 };
 
 export type Product = {

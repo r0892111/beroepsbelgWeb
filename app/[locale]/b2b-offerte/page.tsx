@@ -91,7 +91,7 @@ export default function B2BQuotePage() {
     const durationMinutes = selectedTour?.durationMinutes ?? 120; // Default 2 hours
 
     // Check if this is a "Local Stories" tour - restrict to 14:00-16:00 only
-    if (selectedTour?.options?.local_stories === true) {
+    if (selectedTour?.local_stories === true) {
       return [{
         value: '14:00',
         label: '14:00 - 16:00'
@@ -564,7 +564,7 @@ export default function B2BQuotePage() {
                     </Select>
                     {selectedTour && (
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {selectedTour.options?.local_stories
+                        {selectedTour.local_stories
                           ? 'Tours zijn enkel beschikbaar van 14:00u tot 16:00u'
                           : `Tourduur: ${formatDuration(selectedTour.durationMinutes)}`
                         }

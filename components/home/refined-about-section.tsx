@@ -12,26 +12,6 @@ export function RefinedAboutSection({ locale }: RefinedAboutSectionProps) {
 
   return (
     <section className="py-24 relative overflow-hidden" style={{ backgroundColor: 'var(--bg-base)' }}>
-      {/* Turquoise decorative elements */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div
-          className="absolute top-20 -right-20 w-72 h-72 rounded-full opacity-6"
-          style={{
-            backgroundColor: 'var(--primary-base)',
-            filter: 'blur(100px)',
-            animation: 'float 20s ease-in-out infinite'
-          }}
-        />
-        <div
-          className="absolute bottom-20 -left-20 w-64 h-64 rounded-full opacity-6"
-          style={{
-            backgroundColor: 'var(--primary-base)',
-            filter: 'blur(100px)',
-            animation: 'float 25s ease-in-out infinite reverse'
-          }}
-        />
-      </div>
-
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-2 gap-16 items-center">

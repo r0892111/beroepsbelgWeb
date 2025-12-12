@@ -136,6 +136,7 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
       local_stories: row.local_stories === true || row.local_stories === 'true' || row.local_stories === 1,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
+      options: row.options,
     };
   });
 
@@ -197,6 +198,7 @@ export async function getTourBySlug(citySlug: string, slug: string): Promise<Tou
     local_stories: localStoriesValue,
     createdAt: matchingTour.created_at,
     updatedAt: matchingTour.updated_at,
+    options: matchingTour.options,
   };
 }
 
