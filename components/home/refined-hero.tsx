@@ -231,11 +231,13 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
             </div>
 
             <h1
-              className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 leading-tight tracking-tight"
+              className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 leading-tight"
               style={{
-                fontFamily: 'Montserrat, sans-serif',
-                color: '#1a1a1a',
-                textShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
+                fontFamily: 'Georgia, "Times New Roman", serif',
+                color: '#2c1810',
+                textShadow: '0 2px 4px rgba(0, 0, 0, 0.08)',
+                letterSpacing: '-0.02em',
+                fontWeight: 600
               }}
             >
               {t('headline')}
@@ -244,9 +246,10 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
             <p
               className="text-base md:text-lg lg:text-xl mb-8 font-light leading-relaxed"
               style={{
-                fontFamily: 'Open Sans, sans-serif',
-                color: '#4a4a4a',
-                lineHeight: '1.7'
+                fontFamily: 'Georgia, "Times New Roman", serif',
+                color: '#5a4a42',
+                lineHeight: '1.7',
+                fontWeight: 400
               }}
             >
               {t('subtitle') || 'Curated cultural walking tours that reveal the hidden stories of Belgian cities'}
