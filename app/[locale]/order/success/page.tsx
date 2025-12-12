@@ -3,20 +3,23 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle2, Loader2 } from 'lucide-react';
+import { CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from 'next-intl';
 import { supabase } from '@/lib/supabase/client';
+import { TourUpsellCard } from '@/components/upsells/tour-upsell-card';
+import type { Tour, Locale } from '@/lib/data/types';
 
 export default function OrderSuccessPage() {
   const t = useTranslations('orderSuccess');
   const params = useParams();
-  const locale = params.locale as string;
+  const locale = params.locale as Locale;
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState<any>(null);
+  const [featuredTours, setFeaturedTours] = useState<Tour[]>([]);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -79,7 +82,43 @@ export default function OrderSuccessPage() {
       attemptFetch();
     };
 
+    const fetchFeaturedTours = async () => {
+      try {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+        const toursRes = await fetch(`${supabaseUrl}/rest/v1/tours_table_prod?limit=3&select=*`, {
+          headers: {
+            'apikey': supabaseAnonKey || '',
+            'Authorization': `Bearer ${supabaseAnonKey}`,
+          },
+        });
+
+        if (toursRes.ok) {
+          const toursData = await toursRes.json();
+          const mappedTours = toursData.map((row: any) => ({
+            id: row.id,
+            city: row.city?.toLowerCase() || '',
+            slug: row.title.toLowerCase().replace(/\s+/g, '-'),
+            title: row.title,
+            type: row.type,
+            durationMinutes: row.duration_minutes,
+            price: row.price ? Number(row.price) : undefined,
+            startLocation: row.start_location,
+            endLocation: row.end_location,
+            languages: row.languages || [],
+            description: row.description,
+            options: row.options,
+          }));
+          setFeaturedTours(mappedTours);
+        }
+      } catch (error) {
+        console.error('Error fetching tours:', error);
+      }
+    };
+
     fetchOrder();
+    fetchFeaturedTours();
   }, [sessionId]);
 
   if (loading) {
@@ -218,6 +257,36 @@ export default function OrderSuccessPage() {
           </div>
         </CardContent>
       </Card>
+
+      {featuredTours.length > 0 && (
+        <div className="mt-16 max-w-6xl mx-auto">
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 mb-3">
+              <Sparkles className="w-5 h-5" style={{ color: 'var(--primary-base)' }} />
+              <h2 className="text-2xl md:text-3xl font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'Montserrat, sans-serif' }}>
+                Experience Belgium in Person
+              </h2>
+            </div>
+            <p className="text-lg" style={{ color: 'var(--text-tertiary)' }}>
+              Love Belgian culture? Join one of our expertly guided tours
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {featuredTours.map((tour) => (
+              <TourUpsellCard key={tour.id} tour={tour} locale={locale} />
+            ))}
+          </div>
+
+          <div className="text-center mt-10">
+            <Button asChild size="lg" style={{ backgroundColor: 'var(--primary-base)' }}>
+              <Link href={`/${locale}/tours`}>
+                View All Tours
+              </Link>
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
