@@ -380,7 +380,7 @@ function getNextSaturdays(count: number = 8): Date[] {
 /**
  * Get local tours bookings for a specific tour
  * Returns availability for the next 8 Saturdays
- * Automatically creates bookings for upcoming Saturdays if they don't exist (with 0 people, status 'booked')
+ * Aggregates multiple local_tours_bookings entries per Saturday (one-to-many relationship)
  */
 export async function getLocalToursBookings(tourId: string): Promise<LocalTourBooking[]> {
   console.log('getLocalToursBookings called for tourId:', tourId);
@@ -389,11 +389,11 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
     const nextSaturdays = getNextSaturdays(8);
     console.log('getLocalToursBookings: Next Saturdays:', nextSaturdays.map(d => d.toISOString().split('T')[0]));
     
-    // Fetch existing bookings for these dates
+    // Fetch all local_tours_bookings entries for these dates
     const saturdayDates = nextSaturdays.map(d => d.toISOString().split('T')[0]);
     
-    console.log('getLocalToursBookings: Fetching existing bookings for dates:', saturdayDates);
-    const { data: existingBookings, error } = await supabaseServer
+    console.log('getLocalToursBookings: Fetching all bookings for dates:', saturdayDates);
+    const { data: allBookings, error } = await supabaseServer
       .from('local_tours_bookings')
       .select('*')
       .eq('tour_id', tourId)
@@ -401,8 +401,8 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
       .order('booking_date', { ascending: true });
     
     console.log('getLocalToursBookings: Supabase query result:', {
-      existingBookingsCount: existingBookings?.length || 0,
-      existingBookings,
+      allBookingsCount: allBookings?.length || 0,
+      allBookings,
       error,
     });
     
@@ -411,158 +411,82 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
       return [];
     }
     
-    // Fetch tourbooking entries to count number of people per date
-    // Query all bookings for this tour and filter by date in JavaScript
-    // since tour_datetime is a timestamp and we need to match by date
-    const { data: tourBookings, error: tourBookingsError } = await supabaseServer
-      .from('tourbooking')
-      .select('tour_datetime, invitees')
-      .eq('tour_id', tourId);
+    // Aggregate bookings by date: sum up amnt_of_people and collect booking info
+    const bookingsByDate = new Map<string, {
+      totalPeople: number;
+      bookingIds: string[];
+      hasBookings: boolean;
+      firstBooking: any; // Keep first booking for metadata
+    }>();
     
-    console.log('getLocalToursBookings: Tour bookings query result:', {
-      tourBookingsCount: tourBookings?.length || 0,
-      tourBookings,
-      tourBookingsError,
-    });
-    
-    // Calculate number of people per date from tourbooking
-    const peopleCountByDate = new Map<string, number>();
-    const saturdayDateStrings = saturdayDates; // Already formatted as YYYY-MM-DD
-    
-    (tourBookings || []).forEach((booking: any) => {
-      if (booking.tour_datetime && booking.invitees) {
-        const bookingDate = new Date(booking.tour_datetime);
-        const dateStr = bookingDate.toISOString().split('T')[0];
-        
-        // Only count bookings that match our Saturday dates
-        if (!saturdayDateStrings.includes(dateStr)) {
-          return;
-        }
-        
-        // Sum up numberOfPeople from all invitees
-        let totalPeople = 0;
-        if (Array.isArray(booking.invitees)) {
-          booking.invitees.forEach((invitee: any) => {
-            if (invitee && typeof invitee.numberOfPeople === 'number') {
-              totalPeople += invitee.numberOfPeople;
-            }
-          });
-        }
-        
-        const currentCount = peopleCountByDate.get(dateStr) || 0;
-        peopleCountByDate.set(dateStr, currentCount + totalPeople);
-      }
-    });
-    
-    console.log('getLocalToursBookings: People count by date:', Array.from(peopleCountByDate.entries()));
-    
-    // Create a map of existing bookings by date
-    const bookingsMap = new Map<string, LocalTourBooking>();
-    (existingBookings || []).forEach((booking: any) => {
+    (allBookings || []).forEach((booking: any) => {
       const dateStr = booking.booking_date;
-      const numberOfPeople = peopleCountByDate.get(dateStr) || 0;
+      const amntOfPeople = booking.amnt_of_people || 0;
       
-      bookingsMap.set(dateStr, {
-        id: booking.id,
-        tour_id: booking.tour_id,
-        booking_date: dateStr,
-        booking_time: booking.booking_time || '14:00:00',
-        is_booked: booking.is_booked !== undefined ? booking.is_booked : true, // Default to booked
-        user_id: booking.user_id,
-        customer_name: booking.customer_name,
-        customer_email: booking.customer_email,
-        customer_phone: booking.customer_phone,
-        stripe_session_id: booking.stripe_session_id,
-        booking_id: booking.booking_id || undefined, // Reference to tourbooking.id
-        status: booking.status || 'booked', // Default to booked
-        number_of_people: numberOfPeople,
-        created_at: booking.created_at,
-        updated_at: booking.updated_at,
-      });
-    });
-    
-    // Create missing bookings for upcoming Saturdays (with 0 people, status 'booked')
-    const bookingsToCreate: any[] = [];
-    const bookings: LocalTourBooking[] = nextSaturdays.map(saturday => {
-      const dateStr = saturday.toISOString().split('T')[0];
-      const existing = bookingsMap.get(dateStr);
-      
-      if (existing) {
-        return existing;
-      }
-      
-      // Get number of people for this date
-      const numberOfPeople = peopleCountByDate.get(dateStr) || 0;
-      
-      // Prepare booking to create (status 'booked' but no customer info yet)
-      const newBooking = {
-        tour_id: tourId,
-        booking_date: dateStr,
-        booking_time: '14:00:00',
-        is_booked: true, // Always show as booked
-        status: 'booked', // Status is booked even without customer info
-        customer_name: null,
-        customer_email: null,
-        customer_phone: null,
-        stripe_session_id: null,
-      };
-      
-      bookingsToCreate.push(newBooking);
-      
-      // Return placeholder that will be replaced after creation
-      return {
-        id: `temp-${dateStr}`,
-        tour_id: tourId,
-        booking_date: dateStr,
-        booking_time: '14:00:00',
-        is_booked: true,
-        status: 'booked',
-        number_of_people: numberOfPeople,
-      };
-    });
-    
-    // Create missing bookings in the database
-    if (bookingsToCreate.length > 0) {
-      console.log('getLocalToursBookings: Creating missing bookings:', {
-        count: bookingsToCreate.length,
-        bookingsToCreate,
-      });
-      const { data: createdBookings, error: createError } = await supabaseServer
-        .from('local_tours_bookings')
-        .insert(bookingsToCreate)
-        .select();
-      
-      console.log('getLocalToursBookings: Create result:', {
-        createdBookingsCount: createdBookings?.length || 0,
-        createdBookings,
-        createError,
-      });
-      
-      if (createError) {
-        console.error('Error creating local tours bookings:', createError);
-      } else if (createdBookings) {
-        // Update the bookings array with the created booking IDs
-        createdBookings.forEach((created: any) => {
-          const index = bookings.findIndex(b => b.booking_date === created.booking_date && b.id?.startsWith('temp-'));
-          if (index !== -1) {
-            const dateStr = created.booking_date;
-            const numberOfPeople = peopleCountByDate.get(dateStr) || 0;
-            
-            bookings[index] = {
-              id: created.id,
-              tour_id: created.tour_id,
-              booking_date: dateStr,
-              booking_time: created.booking_time || '14:00:00',
-              is_booked: true,
-              status: 'booked',
-              number_of_people: numberOfPeople,
-              created_at: created.created_at,
-              updated_at: created.updated_at,
-            };
-          }
+      if (!bookingsByDate.has(dateStr)) {
+        bookingsByDate.set(dateStr, {
+          totalPeople: 0,
+          bookingIds: [],
+          hasBookings: false,
+          firstBooking: booking,
         });
       }
-    }
+      
+      const dateData = bookingsByDate.get(dateStr)!;
+      dateData.totalPeople += amntOfPeople;
+      dateData.bookingIds.push(booking.id);
+      
+      // If this booking has customer info, mark as having bookings
+      if (booking.customer_name || booking.customer_email) {
+        dateData.hasBookings = true;
+      }
+      
+      // Keep the first booking with customer info as the primary one
+      if (!dateData.firstBooking.customer_name && booking.customer_name) {
+        dateData.firstBooking = booking;
+      }
+    });
+    
+    console.log('getLocalToursBookings: Aggregated bookings by date:', Array.from(bookingsByDate.entries()));
+    
+    // Create one LocalTourBooking entry per Saturday with aggregated data
+    const bookings: LocalTourBooking[] = nextSaturdays.map(saturday => {
+      const dateStr = saturday.toISOString().split('T')[0];
+      const dateData = bookingsByDate.get(dateStr);
+      
+      if (dateData && dateData.hasBookings) {
+        // Return aggregated booking with total people count
+        return {
+          id: dateData.firstBooking.id, // Use first booking's ID as the primary ID
+          tour_id: dateData.firstBooking.tour_id,
+          booking_date: dateStr,
+          booking_time: dateData.firstBooking.booking_time || '14:00:00',
+          is_booked: true, // Always show as booked if there are any bookings
+          user_id: dateData.firstBooking.user_id,
+          customer_name: dateData.firstBooking.customer_name,
+          customer_email: dateData.firstBooking.customer_email,
+          customer_phone: dateData.firstBooking.customer_phone,
+          stripe_session_id: dateData.firstBooking.stripe_session_id,
+          booking_id: dateData.firstBooking.booking_id,
+          status: 'booked',
+          number_of_people: dateData.totalPeople, // Aggregated total
+          amnt_of_people: dateData.firstBooking.amnt_of_people,
+          created_at: dateData.firstBooking.created_at,
+          updated_at: dateData.firstBooking.updated_at,
+        };
+      } else {
+        // No bookings for this Saturday yet - return empty slot
+        return {
+          id: `empty-${dateStr}`, // Temporary ID for empty slots
+          tour_id: tourId,
+          booking_date: dateStr,
+          booking_time: '14:00:00',
+          is_booked: false,
+          status: 'available',
+          number_of_people: 0,
+        };
+      }
+    });
     
     console.log('getLocalToursBookings: Final bookings to return:', {
       bookingsCount: bookings.length,

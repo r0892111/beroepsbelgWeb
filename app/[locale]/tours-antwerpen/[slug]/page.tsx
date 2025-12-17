@@ -193,6 +193,7 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
               tourDuration={tour.durationMinutes}
               isLocalStories={false}
               citySlug="antwerpen"
+              opMaat={tour.op_maat}
             />
           </div>
         )}

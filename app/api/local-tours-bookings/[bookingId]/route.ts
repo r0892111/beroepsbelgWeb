@@ -14,13 +14,7 @@ export async function GET(
   try {
     const bookingId = parseInt(params.bookingId);
 
-    console.log('Parent booking API called:', {
-      bookingId,
-      url: request.url,
-    });
-
     if (!bookingId || isNaN(bookingId)) {
-      console.error('Parent booking API: Invalid bookingId');
       return NextResponse.json(
         { error: 'Invalid bookingId' },
         { status: 400 }
@@ -35,11 +29,6 @@ export async function GET(
         { status: 404 }
       );
     }
-
-    console.log('Parent booking API: Returning booking:', {
-      bookingId,
-      booking,
-    });
     
     return NextResponse.json(booking);
   } catch (error) {
@@ -50,6 +39,4 @@ export async function GET(
     );
   }
 }
-
-
 

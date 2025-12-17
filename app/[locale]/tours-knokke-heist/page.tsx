@@ -13,8 +13,6 @@ export default async function ToursKnokkeHeistPage({ params }: ToursKnokkeHeistP
   const { locale } = params;
   const knokkeHeistTours = await getTours('knokke-heist');
 
-  console.log('[Tours Page] Knokke-Heist tours fetched:', knokkeHeistTours);
-
   return (
     <div className="container mx-auto px-4 py-20">
       <h1 className="mb-12 text-center text-4xl font-bold">

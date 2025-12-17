@@ -464,7 +464,9 @@
     "specialRequests": "Special Requests",
     "whatsNext": "What's Next?",
     "whatsNextDesc": "You will receive a confirmation email with all the details of your booking. We look forward to welcoming you on the tour!",
-    "browseTours": "Browse More Tours"
+    "browseTours": "Browse More Tours",
+    "opMaatRedirectTitle": "Fill in the form",
+    "opMaatFormMessage": "Please fill in the form below to provide further details for your custom tour."
   },
   "bookingCancelled": {
     "title": "Booking Cancelled",

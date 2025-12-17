@@ -163,6 +163,7 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
               tourDuration={tour.durationMinutes}
               isLocalStories={false}
               citySlug="knokke-heist"
+              opMaat={tour.op_maat}
             />
           </div>
         )}
