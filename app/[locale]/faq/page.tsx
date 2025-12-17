@@ -7,6 +7,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { ToursCTABanner } from '@/components/upsells/tours-cta-banner';
 
 interface FaqPageProps {
   params: { locale: Locale };
@@ -31,6 +32,15 @@ export default async function FaqPage({ params }: FaqPageProps) {
             </AccordionItem>
           ))}
         </Accordion>
+
+        <div className="mt-16">
+          <ToursCTABanner
+            locale={locale}
+            title="Still Have Questions?"
+            description="The best way to learn about Belgium is to experience it firsthand. Book a tour and let our expert guides show you around!"
+            ctaText="Explore Our Tours"
+          />
+        </div>
       </div>
     </AngledSection>
   );
