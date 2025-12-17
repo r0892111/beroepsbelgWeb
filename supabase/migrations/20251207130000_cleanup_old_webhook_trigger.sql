@@ -20,3 +20,6 @@ WHERE event_object_table = 'tours_table_prod';
 
 
 
+
+
+

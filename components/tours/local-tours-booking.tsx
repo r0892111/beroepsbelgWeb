@@ -21,26 +21,12 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
   const [selectedBooking, setSelectedBooking] = useState<LocalTourBooking | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  console.log('LocalToursBooking component rendered:', {
-    tourId,
-    tourTitle,
-    tourPrice,
-    tourDuration,
-  });
-
   useEffect(() => {
     async function fetchBookings() {
-      console.log('LocalToursBooking: Fetching bookings for tourId:', tourId);
       try {
         const response = await fetch(`/api/local-tours-bookings?tourId=${tourId}`);
-        console.log('LocalToursBooking: API response status:', response.status, response.statusText);
         if (response.ok) {
           const data = await response.json();
-          console.log('LocalToursBooking: Received bookings data:', {
-            bookingsCount: data?.length || 0,
-            bookings: data,
-            isArray: Array.isArray(data),
-          });
           setBookings(Array.isArray(data) ? data : []);
         } else {
           const errorText = await response.text();
@@ -58,7 +44,6 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
         setBookings([]);
       } finally {
         setLoading(false);
-        console.log('LocalToursBooking: Loading complete, bookings count:', bookings.length);
       }
     }
 
@@ -90,14 +75,7 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
     }
   };
 
-  console.log('LocalToursBooking: Render state:', {
-    loading,
-    bookingsCount: bookings.length,
-    bookings,
-  });
-
   if (loading) {
-    console.log('LocalToursBooking: Showing loading state');
     return (
       <div className="mb-12 rounded-lg bg-sand p-8 brass-corner">
         <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>Loading availability...</p>
@@ -106,7 +84,6 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
   }
 
   if (bookings.length === 0) {
-    console.log('LocalToursBooking: No bookings found, showing message with retry');
     return (
       <div className="mb-12 rounded-lg bg-sand p-8 brass-corner">
         <h3 className="text-2xl font-serif font-bold text-navy mb-6 flex items-center gap-2">
@@ -122,7 +99,6 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
             fetch(`/api/local-tours-bookings?tourId=${tourId}`)
               .then(res => res.json())
               .then(data => {
-                console.log('LocalToursBooking: Retry fetched data:', data);
                 setBookings(Array.isArray(data) ? data : []);
                 setLoading(false);
               })
@@ -145,14 +121,7 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
     return !isPast;
   });
 
-  console.log('LocalToursBooking: Filtered future bookings:', {
-    totalBookings: bookings.length,
-    futureBookingsCount: futureBookings.length,
-    futureBookings,
-  });
-
   if (futureBookings.length === 0) {
-    console.log('LocalToursBooking: No future bookings, showing message');
     return (
       <div className="mb-12 rounded-lg bg-sand p-8 brass-corner">
         <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>
@@ -176,9 +145,9 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
 
         <div className="space-y-3">
           {futureBookings.slice(0, 4).map((booking) => {
-            const isBooked = booking.is_booked && booking.customer_name;
             const numberOfPeople = booking.number_of_people || 0;
             const hasPeople = numberOfPeople > 0;
+            const isEmpty = !booking.is_booked || booking.status === 'available';
 
             return (
               <div
@@ -199,6 +168,11 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
                         {numberOfPeople} {numberOfPeople === 1 ? 'persoon' : 'personen'}
                       </Badge>
                     </div>
+                  )}
+                  {isEmpty && (
+                    <Badge variant="outline" className="border-brass text-navy">
+                      Beschikbaar
+                    </Badge>
                   )}
                 </div>
                 <Button

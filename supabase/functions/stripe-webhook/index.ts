@@ -44,8 +44,15 @@ Deno.serve(async (req) => {
       return new Response(`Webhook signature verification failed: ${error.message}`, { status: 400 });
     }
 
-    EdgeRuntime.waitUntil(handleEvent(event));
+    // Process event in background and respond immediately to Stripe
+    // Stripe requires a quick response (within 3 seconds ideally)
+    EdgeRuntime.waitUntil(
+      handleEvent(event).catch((error) => {
+        console.error('Error in background event processing:', error);
+      })
+    );
 
+    // Return immediate response to Stripe
     return Response.json({ received: true });
   } catch (error: any) {
     console.error('Error processing webhook:', error);
@@ -53,7 +60,7 @@ Deno.serve(async (req) => {
   }
 });
 
-async function handleEvent(event: Stripe.Event) {
+async function handleEvent(event: Stripe.Event): Promise<void> {
   const stripeData = event?.data?.object ?? {};
 
   if (!stripeData) {
@@ -74,11 +81,112 @@ async function handleEvent(event: Stripe.Event) {
         .from('tourbooking')
         .update({ status: 'completed' })
         .eq('stripe_session_id', sessionId)
-        .select()
+        .select('id, tour_id')
         .single();
 
-      if (tourBooking) {
-        console.info(`Successfully updated tour booking for session: ${sessionId}`);
+      if (tourBooking && tourBooking.tour_id) {
+        console.info(`Successfully updated tour booking for session: ${sessionId}, booking ID: ${tourBooking.id}`);
+        
+        const { data: tour, error: tourError } = await supabase
+          .from('tours_table_prod')
+          .select('id, local_stories')
+          .eq('id', tourBooking.tour_id!)
+          .maybeSingle();
+
+        let fullBooking: any = null;
+        let fetchError: any = null;
+
+        if (tour?.local_stories) {
+          const { data: localBooking, error: localError } = await supabase
+            .from('local_tours_bookings')
+            .select('*')
+            .eq('stripe_session_id', sessionId)
+            .single();
+          
+          fullBooking = localBooking;
+          fetchError = localError;
+        } else {
+          // Fetch full booking data to send to n8n
+          const { data: bookingData, error: bookingError } = await supabase
+            .from('tourbooking')
+            .select('*')
+            .eq('id', tourBooking.id)
+            .single();
+          
+          fullBooking = bookingData;
+          fetchError = bookingError;
+        }
+
+        if (fullBooking && !fetchError) {
+          // Fetch tour data to get city slug
+          let citySlug = fullBooking.city || '';
+          if (!citySlug && fullBooking.tour_id) {
+            const { data: tourData } = await supabase
+              .from('tours_table_prod')
+              .select('city')
+              .eq('id', fullBooking.tour_id)
+              .single();
+            citySlug = tourData?.city || '';
+          }
+          
+          // Format booking date from tour_datetime or metadata
+          const bookingDate = metadata?.bookingDate || 
+            (fullBooking.tour_datetime 
+              ? new Date(fullBooking.tour_datetime).toISOString().split('T')[0]
+              : '');
+          
+          // Call n8n webhook with data formatted like Stripe checkout session
+          const n8nWebhookUrl = 'https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc';
+          
+          try {
+            // Format the payload to match Stripe checkout session structure
+            const n8nPayload = {
+              body: {
+                ...session, // Include full Stripe session object
+                // Ensure metadata is present and properly formatted
+                metadata: {
+                  ...metadata,
+                  customerName: metadata?.customerName || session.customer_details?.name || '',
+                  customerPhone: metadata?.customerPhone || '',
+                  bookingDate: bookingDate,
+                  tourId: metadata?.tourId || fullBooking.tour_id || '',
+                  numberOfPeople: metadata?.numberOfPeople || '1',
+                  language: metadata?.language || 'nl',
+                  requestTanguy: metadata?.requestTanguy || 'false',
+                  specialRequests: metadata?.specialRequests || '',
+                  userId: metadata?.userId || '',
+                  bookingTime: metadata?.bookingTime || '',
+                },
+                // Add additional fields that n8n expects
+                additionalInfo: metadata?.specialRequests || '',
+                citySlug: citySlug,
+                // Ensure customer_email is at body level
+                customer_email: session.customer_email || metadata?.customerEmail || '',
+              },
+            };
+            
+            const n8nResponse = await fetch(n8nWebhookUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(n8nPayload),
+            });
+            
+            if (n8nResponse.ok) {
+              console.info(`Successfully called n8n webhook for booking ${tourBooking.id}`);
+            } else {
+              const errorText = await n8nResponse.text();
+              console.error(`n8n webhook returned error status ${n8nResponse.status}: ${errorText}`);
+            }
+          } catch (n8nError) {
+            console.error('Error calling n8n webhook:', n8nError);
+            // Don't throw - we don't want to fail the webhook if n8n call fails
+          }
+        } else {
+          console.warn(`Could not fetch full booking data for n8n webhook: ${fetchError?.message || 'Unknown error'}`);
+        }
+        
         return;
       }
 
