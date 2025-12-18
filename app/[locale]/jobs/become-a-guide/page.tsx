@@ -44,6 +44,7 @@ export default function BecomeAGuidePage() {
   const onSubmit = async (data: JobApplicationData) => {
     setIsSubmitting(true);
     await new Promise((resolve) => setTimeout(resolve, 1000));
+    console.log('Job application:', data);
     toast.success('Sollicitatie verzonden!');
     reset();
     setIsSubmitting(false);

@@ -464,9 +464,7 @@
     "specialRequests": "Besondere Wünsche",
     "whatsNext": "Was kommt als Nächstes?",
     "whatsNextDesc": "Sie erhalten eine Bestätigungs-E-Mail mit allen Details Ihrer Buchung. Wir freuen uns darauf, Sie auf der Tour willkommen zu heißen!",
-    "browseTours": "Weitere Touren durchsuchen",
-    "opMaatRedirectTitle": "Füllen Sie das Formular aus",
-    "opMaatFormMessage": "Bitte füllen Sie das untenstehende Formular aus, um weitere Details für Ihre maßgeschneiderte Tour anzugeben."
+    "browseTours": "Weitere Touren durchsuchen"
   },
   "bookingCancelled": {
     "title": "Buchung storniert",
