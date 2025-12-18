@@ -13,11 +13,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CalendarIcon, Clock, Loader2 } from 'lucide-react';
+import { CalendarIcon, Clock, Loader2, ShoppingBag, Gift, Plus, Minus } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/contexts/auth-context';
+import { getProducts } from '@/lib/api/content';
+import type { Product } from '@/lib/data/types';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
@@ -53,6 +55,10 @@ export function TourBookingDialog({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [selectedUpsell, setSelectedUpsell] = useState<Record<string, number>>({});
+  const [showUpsellDialog, setShowUpsellDialog] = useState(false);
 
   const [formData, setFormData] = useState({
     customerName: '',
@@ -82,6 +88,58 @@ export function TourBookingDialog({
       setSelectedTimeSlot('14:00');
     }
   }, [isLocalStories, open]);
+
+  // Log when upsell dialog state changes
+  useEffect(() => {
+    console.log('Upsell dialog state changed:', showUpsellDialog);
+  }, [showUpsellDialog]);
+
+  // Load products for upsell when upsell dialog opens
+  useEffect(() => {
+    if (showUpsellDialog && products.length === 0) {
+      console.log('Loading products for upsell dialog');
+      setProductsLoading(true);
+      getProducts()
+        .then((data) => {
+          // Only show webshop items (books, merchandise, games) - filter out any non-webshop items
+          const webshopItems = data.filter(p => 
+            p.category === 'Book' || 
+            p.category === 'Merchandise' || 
+            p.category === 'Game'
+          );
+          console.log('Loaded products for upsell:', webshopItems.length);
+          setProducts(webshopItems.slice(0, 6)); // Show up to 6 products for upsell
+        })
+        .catch((err) => {
+          console.error('Failed to load products for upsell:', err);
+        })
+        .finally(() => {
+          setProductsLoading(false);
+        });
+    }
+  }, [showUpsellDialog, products.length]);
+
+  // Upsell quantity management
+  const incrementUpsell = (productId: string) => {
+    setSelectedUpsell(prev => ({
+      ...prev,
+      [productId]: (prev[productId] || 0) + 1,
+    }));
+  };
+
+  const decrementUpsell = (productId: string) => {
+    setSelectedUpsell(prev => {
+      const current = prev[productId] || 0;
+      if (current <= 1) {
+        const { [productId]: _, ...rest } = prev;
+        return rest;
+      }
+      return {
+        ...prev,
+        [productId]: current - 1,
+      };
+    });
+  };
 
   // Generate time slots between 10:00 and 18:00 based on tour duration
   // For Local Stories tours, only show 14:00-16:00 timeslot
@@ -158,13 +216,44 @@ export function TourBookingDialog({
       }
     }
     
+    // Open upsell dialog instead of immediately proceeding to payment
+    console.log('Opening upsell dialog, current showUpsellDialog:', showUpsellDialog);
+    // Just open the upsell dialog - it will show on top of the main dialog
+    setShowUpsellDialog(true);
+  };
+
+  const proceedToCheckout = async () => {
     setLoading(true);
     setError(null);
 
     try {
-
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+      // Combine date and time into a single datetime string
+      let bookingDateTime = '';
+      if (!opMaat && formData.bookingDate) {
+        const dateStr = format(formData.bookingDate, 'yyyy-MM-dd');
+        const timeStr = isLocalStories ? '14:00' : selectedTimeSlot;
+        if (timeStr) {
+          bookingDateTime = `${dateStr}T${timeStr}`;
+        }
+      }
+
+      // Prepare upsell products - always send as array (even if empty)
+      const upsellProducts = products
+        .filter(p => selectedUpsell[p.uuid] && selectedUpsell[p.uuid] > 0)
+        .map(p => ({
+          id: p.uuid,
+          title: p.title.nl,
+          quantity: selectedUpsell[p.uuid] || 1,
+          price: p.price,
+        }));
+
+      console.log('Sending upsell products to checkout:', {
+        count: upsellProducts.length,
+        products: upsellProducts
+      });
 
       const response = await fetch(`${supabaseUrl}/functions/v1/create-checkout-session`, {
         method: 'POST',
@@ -179,6 +268,7 @@ export function TourBookingDialog({
           customerPhone: formData.customerPhone,
           bookingDate: opMaat ? '' : (formData.bookingDate ? format(formData.bookingDate, 'yyyy-MM-dd') : ''),
           bookingTime: opMaat ? '' : (isLocalStories ? '14:00' : selectedTimeSlot),
+          bookingDateTime: bookingDateTime, // Combined date and time in ISO format
           numberOfPeople: opMaat ? 1 : formData.numberOfPeople,
           language: opMaat ? 'nl' : formData.language,
           specialRequests: opMaat ? '' : formData.specialRequests,
@@ -186,6 +276,7 @@ export function TourBookingDialog({
           userId: user?.id || null,
           citySlug: citySlug || null,
           opMaat: opMaat,
+          upsellProducts: upsellProducts, // Include selected upsell products
         }),
       });
 
@@ -200,17 +291,36 @@ export function TourBookingDialog({
         throw new Error('No checkout URL received');
       }
 
+      // Close upsell dialog and redirect to Stripe
+      setShowUpsellDialog(false);
       window.location.href = url;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       setLoading(false);
+      // Keep dialog open so user can see the error
     }
   };
 
-  const totalPrice = opMaat ? tourPrice : (tourPrice * formData.numberOfPeople);
+  // Calculate total price including upsells
+  const upsellTotal = products
+    .filter(p => selectedUpsell[p.uuid] && selectedUpsell[p.uuid] > 0)
+    .reduce((sum, p) => sum + (p.price * (selectedUpsell[p.uuid] || 0)), 0);
+  
+  const tourTotal = opMaat ? tourPrice : (tourPrice * formData.numberOfPeople);
+  const totalPrice = tourTotal + upsellTotal;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+    <Dialog 
+      open={open} 
+      onOpenChange={(isOpen) => {
+        // Don't allow closing main dialog if upsell dialog is open
+        if (!isOpen && showUpsellDialog) {
+          return;
+        }
+        onOpenChange(isOpen);
+      }}
+    >
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
@@ -432,7 +542,7 @@ export function TourBookingDialog({
           <DialogFooter>
             <div className="flex w-full items-center justify-between">
               <div className="text-lg font-bold">
-                {t('total')}: €{totalPrice.toFixed(2)}
+                {t('total')}: €{tourTotal.toFixed(2)}
               </div>
               <Button type="submit" disabled={loading}>
                 {loading ? (
@@ -449,5 +559,196 @@ export function TourBookingDialog({
         </form>
       </DialogContent>
     </Dialog>
+
+      {/* Upsell Products Dialog */}
+      <Dialog 
+        open={showUpsellDialog} 
+        onOpenChange={(isOpen) => {
+          console.log('Upsell dialog onOpenChange:', isOpen, 'showUpsellDialog:', showUpsellDialog);
+          setShowUpsellDialog(isOpen);
+          if (!isOpen && !loading) {
+            // If upsell dialog closes without proceeding, keep main dialog open
+            // Main dialog is already open, no need to reopen
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh]" style={{ zIndex: 60 }}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="p-2 rounded-lg" style={{ backgroundColor: 'var(--primary-base)', color: 'white' }}>
+                <Gift className="h-5 w-5" />
+              </div>
+              Voeg een cadeau toe (optioneel)
+            </DialogTitle>
+            <DialogDescription>
+              Boeken, merchandise en spellen voor je tour
+            </DialogDescription>
+          </DialogHeader>
+
+          {productsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : products.length > 0 ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {products.map((product) => {
+                  const quantity = selectedUpsell[product.uuid] || 0;
+                  const isSelected = quantity > 0;
+                  const categoryLabels: Record<string, string> = {
+                    'Book': 'Boek',
+                    'Merchandise': 'Merchandise',
+                    'Game': 'Spel',
+                  };
+                  
+                  return (
+                    <div
+                      key={product.uuid}
+                      className={cn(
+                        "p-5 rounded-xl border-2 transition-all",
+                        isSelected
+                          ? 'border-[var(--primary-base)] bg-[var(--primary-base)]/5 shadow-md'
+                          : 'border-gray-200 hover:border-gray-300 hover:shadow-sm bg-white'
+                      )}
+                    >
+                      <div className="flex items-start gap-4 mb-4">
+                        <div className="relative w-20 h-20 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
+                          {product.image ? (
+                            <Image src={product.image} alt={product.title.nl} fill className="object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <ShoppingBag className="h-8 w-8 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-base leading-tight mb-2">
+                            {product.title.nl}
+                          </p>
+                          <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 mb-2">
+                            {categoryLabels[product.category] || product.category}
+                          </span>
+                          <p className="text-xl font-bold mt-2" style={{ color: 'var(--primary-base)' }}>
+                            €{product.price.toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {isSelected ? (
+                        <div className="flex items-center justify-between gap-3 pt-4 border-t border-gray-200">
+                          <span className="text-sm font-medium text-muted-foreground">Aantal:</span>
+                          <div className="flex items-center gap-3">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => decrementUpsell(product.uuid)}
+                              className="h-9 w-9 p-0 rounded-full"
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                            <span className="text-lg font-semibold min-w-[2.5rem] text-center">
+                              {quantity}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => incrementUpsell(product.uuid)}
+                              className="h-9 w-9 p-0 rounded-full"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => incrementUpsell(product.uuid)}
+                          className="w-full"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Toevoegen
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {upsellTotal > 0 && (
+                <div className="pt-4 border-t border-gray-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Extra producten ({Object.values(selectedUpsell).reduce((sum, qty) => sum + qty, 0)}):
+                    </span>
+                    <span className="text-lg font-bold" style={{ color: 'var(--primary-base)' }}>
+                      €{upsellTotal.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t">
+                    <span className="text-base font-semibold">Tour:</span>
+                    <span className="text-base font-semibold">€{tourTotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-lg font-bold">Totaal:</span>
+                    <span className="text-xl font-bold" style={{ color: 'var(--primary-base)' }}>
+                      €{totalPrice.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="py-8 text-center text-muted-foreground">
+              Geen producten beschikbaar
+            </div>
+          )}
+
+          {error && (
+            <div className="rounded-md bg-red-50 p-3 text-sm text-red-800 border border-red-200">
+              {error}
+            </div>
+          )}
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowUpsellDialog(false);
+                setSelectedUpsell({}); // Clear selections if user cancels
+                // Reopen main booking dialog if user skips
+                setTimeout(() => {
+                  onOpenChange(true);
+                }, 100);
+              }}
+              className="w-full sm:w-auto"
+            >
+              Overslaan
+            </Button>
+            <Button
+              type="button"
+              onClick={proceedToCheckout}
+              disabled={loading}
+              className="w-full sm:w-auto"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Verwerken...
+                </>
+              ) : (
+                <>
+                  Doorgaan naar betaling
+                  {upsellTotal > 0 && ` (€${totalPrice.toFixed(2)})`}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
