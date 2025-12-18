@@ -21,6 +21,7 @@ export default function BookingSuccessPage() {
   const [booking, setBooking] = useState<any>(null);
   const [relatedTours, setRelatedTours] = useState<Tour[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [purchasedUpsellProducts, setPurchasedUpsellProducts] = useState<Product[]>([]);
   const [isOpMaat, setIsOpMaat] = useState(false);
 
   // Load JotForm script and initialize embed handler
@@ -104,6 +105,9 @@ export default function BookingSuccessPage() {
               }
             }
 
+            // Get upsell products from invitee
+            const upsellProducts = invitee?.upsellProducts || [];
+            
             setBooking({
               ...booking,
               tour_title: tourTitle,
@@ -115,8 +119,14 @@ export default function BookingSuccessPage() {
               special_requests: invitee?.specialRequests,
               amount: invitee?.amount,
               booking_date: booking.tour_datetime,
+              upsell_products: upsellProducts,
             });
             setIsOpMaat(opMaat);
+            
+            // Fetch upsell product details if there are any
+            if (upsellProducts && Array.isArray(upsellProducts) && upsellProducts.length > 0) {
+              fetchUpsellProductDetails(upsellProducts);
+            }
           }
         } else {
           console.error('Failed to fetch booking:', await bookingResponse.text());
@@ -125,6 +135,65 @@ export default function BookingSuccessPage() {
         console.error('Error fetching booking:', error);
       } finally {
         setLoading(false);
+      }
+    };
+
+    const fetchUpsellProductDetails = async (upsellProducts: any[]) => {
+      try {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+        // Get product UUIDs from upsell products
+        const productIds = upsellProducts.map((p: any) => p.id).filter(Boolean);
+        
+        if (productIds.length === 0) {
+          return;
+        }
+
+        // Fetch product details from webshop_data table
+        const productsRes = await fetch(
+          `${supabaseUrl}/rest/v1/webshop_data?uuid=in.(${productIds.join(',')})&select=*`,
+          {
+            headers: {
+              'apikey': supabaseAnonKey || '',
+              'Authorization': `Bearer ${supabaseAnonKey}`,
+            },
+          }
+        );
+
+        if (productsRes.ok) {
+          const productsData = await productsRes.json();
+          
+          // Map products and include quantity from upsell
+          const mappedProducts = productsData.map((row: any) => {
+            const upsellProduct = upsellProducts.find((p: any) => p.id === row.uuid);
+            return {
+              slug: row.Name ? row.Name.toLowerCase().replace(/\s+/g, '-') : row.uuid,
+              uuid: row.uuid,
+              title: {
+                nl: row.Name || '',
+                en: row.Name || '',
+                fr: row.Name || '',
+                de: row.Name || '',
+              },
+              category: (row.Category === 'Book' || row.Category === 'Merchandise' || row.Category === 'Game') 
+                ? row.Category as 'Book' | 'Merchandise' | 'Game'
+                : 'Book' as const,
+              price: parseFloat(row['Price (EUR)'] || '0'),
+              description: {
+                nl: row.Description || '',
+                en: row.Description || '',
+                fr: row.Description || '',
+                de: row.Description || '',
+              },
+              quantity: upsellProduct?.quantity || 1,
+            };
+          });
+          
+          setPurchasedUpsellProducts(mappedProducts);
+        }
+      } catch (error) {
+        console.error('Error fetching upsell product details:', error);
       }
     };
 
@@ -283,7 +352,28 @@ export default function BookingSuccessPage() {
               <span className="font-medium">{t('email')}</span>
               <span className="text-muted-foreground">{booking.customer_email}</span>
             </div>
-            <div className="flex justify-between pt-4">
+            {purchasedUpsellProducts.length > 0 && (
+              <div className="pt-4 border-t">
+                <p className="font-medium mb-3 text-base">{t('purchasedProducts') || 'Gekochte producten'}:</p>
+                <div className="space-y-2">
+                  {purchasedUpsellProducts.map((product: any, index) => {
+                    const quantity = product.quantity || 1;
+                    const totalPrice = product.price * quantity;
+                    return (
+                      <div key={product.uuid || index} className="flex justify-between items-center py-1">
+                        <span className="text-sm text-muted-foreground">
+                          {product.title[locale]} {quantity > 1 && <span className="text-xs">(x{quantity})</span>}
+                        </span>
+                        <span className="font-medium text-sm">
+                          €{totalPrice.toFixed(2)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            <div className="flex justify-between pt-4 border-t">
               <span className="text-lg font-bold">{t('totalPaid')}</span>
               <span className="text-lg font-bold">€{booking.amount.toFixed(2)}</span>
             </div>
