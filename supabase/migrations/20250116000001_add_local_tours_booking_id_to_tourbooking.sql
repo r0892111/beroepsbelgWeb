@@ -31,6 +31,3 @@ ON tourbooking(local_tours_booking_id);
 
 
 
-
-
-

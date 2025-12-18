@@ -51,7 +51,7 @@ export default function B2BQuotePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
-  const [selectedUpsell, setSelectedUpsell] = useState<Record<string, number>>({});
+  const [selectedUpsell, setSelectedUpsell] = useState<string[]>([]);
   const [countdown, setCountdown] = useState(5);
   const [bookingType, setBookingType] = useState<'particulier' | 'zakelijk'>('particulier');
 
@@ -235,38 +235,12 @@ export default function B2BQuotePage() {
     setStep('payment');
   };
 
-  const updateUpsellQuantity = (productId: string, quantity: number) => {
-    setSelectedUpsell(prev => {
-      if (quantity <= 0) {
-        const { [productId]: _, ...rest } = prev;
-        return rest;
-      }
-      return {
-        ...prev,
-        [productId]: quantity,
-      };
-    });
-  };
-
-  const incrementUpsell = (productId: string) => {
-    setSelectedUpsell(prev => ({
-      ...prev,
-      [productId]: (prev[productId] || 0) + 1,
-    }));
-  };
-
-  const decrementUpsell = (productId: string) => {
-    setSelectedUpsell(prev => {
-      const current = prev[productId] || 0;
-      if (current <= 1) {
-        const { [productId]: _, ...rest } = prev;
-        return rest;
-      }
-      return {
-        ...prev,
-        [productId]: current - 1,
-      };
-    });
+  const toggleUpsell = (productId: string) => {
+    setSelectedUpsell(prev =>
+      prev.includes(productId)
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
   };
 
   const onSubmit = async (data: QuoteFormData) => {
@@ -275,12 +249,7 @@ export default function B2BQuotePage() {
     try {
       const selectedCityData = cities.find((city) => city.slug === data.city);
       const selectedTourData = tours.find((tour) => tour.id === data.tourId);
-      const upsellProducts = products
-        .filter(p => selectedUpsell[p.uuid] && selectedUpsell[p.uuid] > 0)
-        .map(p => ({
-          ...p,
-          quantity: selectedUpsell[p.uuid] || 1,
-        }));
+      const upsellProducts = products.filter(p => selectedUpsell.includes(p.uuid));
 
       const payload = {
         // Tour info
@@ -313,7 +282,6 @@ export default function B2BQuotePage() {
         upsellProducts: upsellProducts.map(p => ({
           id: p.uuid,
           title: p.title.nl,
-          quantity: p.quantity || 1,
         })),
         // Booking type
         bookingType,
@@ -740,81 +708,48 @@ export default function B2BQuotePage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  {products.map((product) => {
-                    const quantity = selectedUpsell[product.uuid] || 0;
-                    const isSelected = quantity > 0;
-                    
-                    return (
-                      <div
-                        key={product.uuid}
-                        className={`p-4 rounded-lg border-2 transition-all ${
-                          isSelected
-                            ? 'border-brass bg-brass/5'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="relative w-16 h-16 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
-                            {product.image ? (
-                              <Image src={product.image} alt={product.title.nl} fill className="object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <ShoppingBag className="h-6 w-6 text-gray-400" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm truncate">{product.title.nl}</p>
-                          </div>
+                  {products.map((product) => (
+                    <div
+                      key={product.uuid}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleUpsell(product.uuid);
+                      }}
+                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                        selectedUpsell.includes(product.uuid)
+                          ? 'border-brass bg-brass/5'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-16 h-16 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
+                          {product.image ? (
+                            <Image src={product.image} alt={product.title.nl} fill className="object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <ShoppingBag className="h-6 w-6 text-gray-400" />
+                            </div>
+                          )}
                         </div>
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                decrementUpsell(product.uuid);
-                              }}
-                              disabled={quantity === 0}
-                              className="h-8 w-8 p-0"
-                            >
-                              −
-                            </Button>
-                            <span className="text-sm font-medium min-w-[2rem] text-center">
-                              {quantity}
-                            </span>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                incrementUpsell(product.uuid);
-                              }}
-                              className="h-8 w-8 p-0"
-                            >
-                              +
-                            </Button>
-                          </div>
-                          {isSelected && (
-                            <CheckCircle2 className="h-5 w-5 text-brass flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{product.title.nl}</p>
+                        </div>
+                        <div className="flex-shrink-0">
+                          {selectedUpsell.includes(product.uuid) ? (
+                            <CheckCircle2 className="h-5 w-5 text-brass" />
+                          ) : (
+                            <div className="h-5 w-5 rounded border-2 border-gray-300" />
                           )}
                         </div>
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
 
-                {Object.keys(selectedUpsell).length > 0 && (
+                {selectedUpsell.length > 0 && (
                   <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--brass-light)' }}>
-                    <p className="font-semibold">
-                      ✓ {Object.values(selectedUpsell).reduce((sum, qty) => sum + qty, 0)} product{Object.values(selectedUpsell).reduce((sum, qty) => sum + qty, 0) > 1 ? 'en' : ''} geselecteerd
-                      {Object.keys(selectedUpsell).length > 1 && ` (${Object.keys(selectedUpsell).length} verschillende)`}
-                    </p>
+                    <p className="font-semibold">✓ {selectedUpsell.length} product{selectedUpsell.length > 1 ? 'en' : ''} geselecteerd</p>
                   </div>
                 )}
 
@@ -823,7 +758,7 @@ export default function B2BQuotePage() {
                     ← Terug
                   </Button>
                   <Button type="button" onClick={goToPayment} className="flex-1 btn-primary">
-                    {Object.keys(selectedUpsell).length > 0 ? 'Verder met producten →' : 'Overslaan →'}
+                    {selectedUpsell.length > 0 ? 'Verder met producten →' : 'Overslaan →'}
                   </Button>
                 </div>
               </div>
@@ -842,28 +777,9 @@ export default function B2BQuotePage() {
                     <div className="text-muted-foreground">
                       {numPeople} deelnemer{numPeople > 1 ? 's' : ''} • {selectedDate} om {selectedTimeSlot}
                     </div>
-                    {Object.keys(selectedUpsell).length > 0 && (
+                    {selectedUpsell.length > 0 && (
                       <div className="pt-2" style={{ borderTop: '1px solid #e5e7eb' }}>
-                        <div className="font-medium text-navy mb-2">Extra producten:</div>
-                        <div className="space-y-1">
-                          {products
-                            .filter(p => selectedUpsell[p.uuid] && selectedUpsell[p.uuid] > 0)
-                            .map((product) => {
-                              const quantity = selectedUpsell[product.uuid] || 0;
-                              return (
-                                <div key={product.uuid} className="flex justify-between items-center text-sm">
-                                  <span className="text-muted-foreground">
-                                    {product.title.nl} {quantity > 1 && `(×${quantity})`}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                        </div>
-                        <div className="mt-2 pt-2" style={{ borderTop: '1px solid #e5e7eb' }}>
-                          <span className="text-sm font-medium">
-                            Totaal: {Object.values(selectedUpsell).reduce((sum, qty) => sum + qty, 0)} product{Object.values(selectedUpsell).reduce((sum, qty) => sum + qty, 0) > 1 ? 'en' : ''}
-                          </span>
-                        </div>
+                        <span>Extra producten: {selectedUpsell.length}</span>
                       </div>
                     )}
                   </div>

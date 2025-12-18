@@ -464,9 +464,7 @@
     "specialRequests": "Demandes spéciales",
     "whatsNext": "Et ensuite ?",
     "whatsNextDesc": "Vous recevrez un e-mail de confirmation avec tous les détails de votre réservation. Nous avons hâte de vous accueillir pour la visite !",
-    "browseTours": "Découvrir plus de tours",
-    "opMaatRedirectTitle": "Remplissez le formulaire",
-    "opMaatFormMessage": "Veuillez remplir le formulaire ci-dessous pour fournir d'autres détails pour votre visite sur mesure."
+    "browseTours": "Découvrir plus de tours"
   },
   "bookingCancelled": {
     "title": "Réservation annulée",

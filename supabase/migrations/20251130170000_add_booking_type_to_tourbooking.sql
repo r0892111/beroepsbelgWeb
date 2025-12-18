@@ -46,6 +46,3 @@ CREATE INDEX IF NOT EXISTS idx_tourbooking_booking_type ON tourbooking(booking_t
 
 
 
-
-
-

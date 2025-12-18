@@ -464,9 +464,7 @@
     "specialRequests": "Speciale verzoeken",
     "whatsNext": "Wat nu?",
     "whatsNextDesc": "U ontvangt een bevestigingsmail met alle details van uw boeking. We kijken ernaar uit u te verwelkomen op de tour!",
-    "browseTours": "Meer tours bekijken",
-    "opMaatRedirectTitle": "Vul het formulier in",
-    "opMaatFormMessage": "Vul hieronder het formulier in om verdere details voor uw op maat gemaakte tour in te vullen."
+    "browseTours": "Meer tours bekijken"
   },
   "bookingCancelled": {
     "title": "Boeking geannuleerd",

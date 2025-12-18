@@ -6,6 +6,13 @@ import { resolve } from 'path';
 // Load environment variables from .env
 config({ path: resolve(process.cwd(), '.env') });
 
+// Debug: Check which env vars are loaded
+console.log('🔍 Debug - Environment variables:');
+console.log('   SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? '✓ loaded' : '❌ missing');
+console.log('   SUPABASE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? '✓ service_role' : (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '✓ anon' : '❌ missing'));
+console.log('   STRIPE_KEY:', process.env.STRIPE_SECRET_KEY ? '✓ loaded' : '❌ missing');
+console.log('');
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-11-17.clover',
 });

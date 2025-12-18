@@ -44,6 +44,7 @@ serve(async (req: Request) => {
 
     // Fetch products from webshop_data table using UUIDs
     const productIds = items.map((item: any) => item.productId)
+    console.log('Fetching products with UUIDs:', productIds)
     
     const { data: products, error: productsError } = await supabaseClient
       .from('webshop_data')
@@ -60,20 +61,33 @@ serve(async (req: Request) => {
       throw new Error(`No products found for the provided IDs: ${productIds.join(', ')}`)
     }
 
+    // Log the first product to see its structure
+    if (products.length > 0) {
+      console.log('Sample product structure:', JSON.stringify(products[0], null, 2))
+      console.log('Product UUIDs found:', products.map((p: any) => p.uuid))
+    }
+
     if (products.length !== productIds.length) {
       const foundIds = products.map((p: any) => p.uuid)
       const missingIds = productIds.filter((id: string) => !foundIds.includes(id))
       console.warn('Some products not found. Missing:', missingIds)
+      console.warn('Requested IDs:', productIds)
+      console.warn('Found IDs:', foundIds)
       throw new Error(`Some products not found: ${missingIds.join(', ')}`)
     }
+
+    console.log(`Found ${products.length} products`)
 
     // Build line items using Stripe price IDs if available, otherwise create price_data
     const lineItems = items.map((item: any) => {
       const product = products.find((p: any) => p.uuid === item.productId)
       if (!product) {
         console.error(`Product not found in results. Looking for: ${item.productId}`)
+        console.error('Available product UUIDs:', products.map((p: any) => p.uuid))
         throw new Error(`Product not found: ${item.productId}`)
       }
+
+      console.log(`Processing product: ${product.Name} (${product.uuid}), has Stripe price: ${!!product.stripe_price_id}`)
 
       // If Stripe price ID exists, use it directly (preferred)
       if (product.stripe_price_id) {
@@ -185,6 +199,8 @@ serve(async (req: Request) => {
       console.error('Error creating order:', orderError)
       // Don't throw - still return checkout URL even if order creation fails
       // The webhook might create it later
+    } else {
+      console.log('Order created successfully:', orderData?.id)
     }
 
     return new Response(
