@@ -46,6 +46,7 @@ export default function ContactPage() {
   const onSubmit = async (data: ContactFormData) => {
     setIsSubmitting(true);
     await new Promise((resolve) => setTimeout(resolve, 1000));
+    console.log('Contact form:', data);
     toast.success('Bericht verzonden!');
     reset();
     setIsSubmitting(false);

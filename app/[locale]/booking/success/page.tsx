@@ -77,6 +77,7 @@ export default function BookingSuccessPage() {
 
         if (bookingResponse.ok) {
           const bookingData = await bookingResponse.json();
+          console.log('Booking data:', bookingData);
           
           if (bookingData && bookingData.length > 0) {
             const booking = bookingData[0];
@@ -84,10 +85,9 @@ export default function BookingSuccessPage() {
 
             // Fetch the tour data separately
             let tourTitle = 'Tour';
-            let opMaat = false;
             if (booking.tour_id) {
               const tourResponse = await fetch(
-                `${supabaseUrl}/rest/v1/tours_table_prod?id=eq.${booking.tour_id}&select=title,op_maat`,
+                `${supabaseUrl}/rest/v1/tours_table_prod?id=eq.${booking.tour_id}&select=title`,
                 {
                   headers: {
                     'apikey': supabaseAnonKey || '',
@@ -100,7 +100,6 @@ export default function BookingSuccessPage() {
                 const tourData = await tourResponse.json();
                 if (tourData && tourData.length > 0) {
                   tourTitle = tourData[0].title;
-                  opMaat = tourData[0].op_maat === true || tourData[0].op_maat === 'true' || tourData[0].op_maat === 1;
                 }
               }
             }
@@ -122,11 +121,6 @@ export default function BookingSuccessPage() {
               upsell_products: upsellProducts,
             });
             setIsOpMaat(opMaat);
-            
-            // Fetch upsell product details if there are any
-            if (upsellProducts && Array.isArray(upsellProducts) && upsellProducts.length > 0) {
-              fetchUpsellProductDetails(upsellProducts);
-            }
           }
         } else {
           console.error('Failed to fetch booking:', await bookingResponse.text());
@@ -299,7 +293,7 @@ export default function BookingSuccessPage() {
 
   return (
     <div className="container mx-auto px-4 py-16">
-      <Card className={`mx-auto ${isOpMaat ? 'max-w-5xl' : 'max-w-2xl'}`}>
+      <Card className="max-w-2xl mx-auto">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
             <CheckCircle2 className="h-10 w-10 text-green-600" />
@@ -312,38 +306,28 @@ export default function BookingSuccessPage() {
         <CardContent className="space-y-6">
           <div className="space-y-4">
             <div className="flex justify-between border-b pb-2">
-              <span className="font-medium">{t('bookingReference')}</span>
-              <span className="text-muted-foreground font-mono font-semibold">#{booking.id}</span>
-            </div>
-            <div className="flex justify-between border-b pb-2">
               <span className="font-medium">{t('tour')}</span>
               <span className="text-muted-foreground">{booking.tour_title || t('tour')}</span>
             </div>
-            {!isOpMaat && booking.booking_date && (
-              <div className="flex justify-between border-b pb-2">
-                <span className="font-medium">{t('date')}</span>
-                <span className="text-muted-foreground">
-                  {new Date(booking.booking_date).toLocaleDateString('nl-BE', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </span>
-              </div>
-            )}
-            {!isOpMaat && (
-              <>
-                <div className="flex justify-between border-b pb-2">
-                  <span className="font-medium">{t('numberOfPeople')}</span>
-                  <span className="text-muted-foreground">{booking.number_of_people}</span>
-                </div>
-                <div className="flex justify-between border-b pb-2">
-                  <span className="font-medium">{t('language')}</span>
-                  <span className="text-muted-foreground uppercase">{booking.language}</span>
-                </div>
-              </>
-            )}
+            <div className="flex justify-between border-b pb-2">
+              <span className="font-medium">{t('date')}</span>
+              <span className="text-muted-foreground">
+                {new Date(booking.booking_date).toLocaleDateString('nl-BE', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </span>
+            </div>
+            <div className="flex justify-between border-b pb-2">
+              <span className="font-medium">{t('numberOfPeople')}</span>
+              <span className="text-muted-foreground">{booking.number_of_people}</span>
+            </div>
+            <div className="flex justify-between border-b pb-2">
+              <span className="font-medium">{t('language')}</span>
+              <span className="text-muted-foreground uppercase">{booking.language}</span>
+            </div>
             <div className="flex justify-between border-b pb-2">
               <span className="font-medium">{t('customerName')}</span>
               <span className="text-muted-foreground">{booking.customer_name}</span>
@@ -386,54 +370,13 @@ export default function BookingSuccessPage() {
             </div>
           )}
 
-          {isOpMaat ? (
-            <div className="space-y-4">
-              <div className="bg-amber-50 border-2 border-amber-200 p-4 rounded-lg">
-                <p className="text-sm text-amber-900 font-semibold mb-2">
-                  {t('opMaatRedirectTitle')}
-                </p>
-                <p className="text-sm text-amber-800">
-                  {t('opMaatFormMessage')}
-                </p>
-              </div>
-              {process.env.NEXT_PUBLIC_JOTFORM_ID && (
-                <div className="w-full">
-                  <iframe
-                    id={`JotFormIFrame-${process.env.NEXT_PUBLIC_JOTFORM_ID}`}
-                    title="Op Maat"
-                    onLoad={() => window.parent.scrollTo(0, 0)}
-                    allowTransparency={true}
-                    allow="geolocation; microphone; camera; fullscreen; payment"
-                    src={`https://form.jotform.com/${process.env.NEXT_PUBLIC_JOTFORM_ID}?typEen=${encodeURIComponent(booking.id || '')}&q20_boekingsOf[first]=${encodeURIComponent(booking.id || '')}&q20_boekingsOf=${encodeURIComponent(booking.id || '')}&customerName=${encodeURIComponent(booking.customer_name || '')}&customerEmail=${encodeURIComponent(booking.customer_email || '')}&customerPhone=${encodeURIComponent(booking.customer_phone || '')}&tourTitle=${encodeURIComponent(booking.tour_title || '')}&bookingId=${encodeURIComponent(booking.id || '')}&sessionId=${encodeURIComponent(sessionId || '')}`}
-                    frameBorder="0"
-                    style={{
-                      minWidth: '100%',
-                      maxWidth: '100%',
-                      height: '539px',
-                      border: 'none',
-                    }}
-                    scrolling="no"
-                    className="w-full"
-                  />
-                </div>
-              )}
-              {!process.env.NEXT_PUBLIC_JOTFORM_ID && (
-                <div className="bg-red-50 border-2 border-red-200 p-4 rounded-lg">
-                  <p className="text-sm text-red-900">
-                    JotForm ID is not configured. Please set NEXT_PUBLIC_JOTFORM_ID in your environment variables.
-                  </p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <p className="text-sm text-blue-900">
-                <strong>{t('whatsNext')}</strong>
-                <br />
-                {t('nextSteps')}
-              </p>
-            </div>
-          )}
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <p className="text-sm text-blue-900">
+              <strong>{t('whatsNext')}</strong>
+              <br />
+              {t('nextSteps')}
+            </p>
+          </div>
 
           <div className="flex gap-4">
             <Button asChild className="flex-1">
@@ -490,4 +433,3 @@ export default function BookingSuccessPage() {
     </div>
   );
 }
-

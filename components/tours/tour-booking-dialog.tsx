@@ -33,7 +33,6 @@ interface TourBookingDialogProps {
   onOpenChange: (open: boolean) => void;
   defaultBookingDate?: string; // Pre-fill booking date (for local stories)
   citySlug?: string; // City slug for the tour
-  opMaat?: boolean; // If true, show simplified form (only name, email, phone, request Tanguy)
 }
 
 export function TourBookingDialog({
@@ -46,7 +45,6 @@ export function TourBookingDialog({
   onOpenChange,
   defaultBookingDate,
   citySlug,
-  opMaat = false,
 }: TourBookingDialogProps) {
   const router = useRouter();
   const { user } = useAuth();
@@ -202,18 +200,9 @@ export function TourBookingDialog({
     e.preventDefault();
     setShowValidation(true);
     
-    // For op_maat tours, only validate name and email
-    if (opMaat) {
-      if (!formData.customerName || !formData.customerEmail) {
-        setError('Vul alle verplichte velden in');
-        return;
-      }
-    } else {
-      // For regular tours, validate date and time
-      if (!isDateValid || !isTimeValid) {
-        setError(!isDateValid ? t('selectBookingDate') : 'Selecteer een tijdslot');
-        return;
-      }
+    if (!isDateValid || !isTimeValid) {
+      setError(!isDateValid ? t('selectBookingDate') : 'Selecteer een tijdslot');
+      return;
     }
     
     // Open upsell dialog instead of immediately proceeding to payment
@@ -276,7 +265,6 @@ export function TourBookingDialog({
           userId: user?.id || null,
           citySlug: citySlug || null,
           opMaat: opMaat,
-          upsellProducts: upsellProducts, // Include selected upsell products
         }),
       });
 
@@ -362,46 +350,6 @@ export function TourBookingDialog({
             />
           </div>
 
-          {/* Request Tanguy Ottomer Section - shown for all tours */}
-          <div className="rounded-lg border-2 p-4 transition-all hover:border-brass" style={{ borderColor: formData.requestTanguy ? 'var(--brass)' : '#e5e7eb' }}>
-            <div className="flex items-center gap-4">
-              <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded">
-                <Image
-                  src="/headshot_tanguy.jpg"
-                  alt="Tanguy Ottomer"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    id="requestTanguy"
-                    checked={formData.requestTanguy}
-                    onCheckedChange={(checked) =>
-                      setFormData({ ...formData, requestTanguy: checked === true })
-                    }
-                    className="mt-1"
-                  />
-                  <div className="flex-1">
-                    <Label
-                      htmlFor="requestTanguy"
-                      className="cursor-pointer text-base font-semibold text-navy"
-                    >
-                      {t('requestTanguy')}
-                    </Label>
-                    <p className="mt-1 text-sm text-slate-blue">
-                      {t('requestTanguyDescription')}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Only show date/time, number of people, language, and special requests for non-op_maat tours */}
-          {!opMaat && (
-            <>
           <div className="grid grid-cols-2 gap-4 items-start">
             <div className="space-y-2">
               <Label className="flex items-center gap-1">
@@ -520,6 +468,43 @@ export function TourBookingDialog({
             </div>
           </div>
 
+          {/* Request Tanguy Ottomer Section */}
+          <div className="rounded-lg border-2 p-4 transition-all hover:border-brass" style={{ borderColor: formData.requestTanguy ? 'var(--brass)' : '#e5e7eb' }}>
+            <div className="flex items-center gap-4">
+              <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded">
+                <Image
+                  src="/headshot_tanguy.jpg"
+                  alt="Tanguy Ottomer"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="requestTanguy"
+                    checked={formData.requestTanguy}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, requestTanguy: checked === true })
+                    }
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <Label
+                      htmlFor="requestTanguy"
+                      className="cursor-pointer text-base font-semibold text-navy"
+                    >
+                      {t('requestTanguy')}
+                    </Label>
+                    <p className="mt-1 text-sm text-slate-blue">
+                      {t('requestTanguyDescription')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="requests">{t('specialRequests')}</Label>
             <Textarea
@@ -530,8 +515,6 @@ export function TourBookingDialog({
               rows={3}
             />
           </div>
-          </>
-          )}
 
           {error && (
             <div className="rounded-md bg-red-50 p-3 text-sm text-red-800">
