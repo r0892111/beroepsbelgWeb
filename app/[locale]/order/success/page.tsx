@@ -34,6 +34,8 @@ export default function OrderSuccessPage() {
 
       const attemptFetch = async (): Promise<void> => {
         try {
+          console.log('Fetching order for session:', sessionId, `(attempt ${4 - retries}/3)`);
+          
           // Use Supabase client which handles RLS properly
           const { data, error } = await supabase
             .from('stripe_orders')
@@ -47,6 +49,7 @@ export default function OrderSuccessPage() {
           }
 
           if (data) {
+            console.log('Order found:', data);
             setOrder(data);
             setLoading(false);
             return;
@@ -55,12 +58,14 @@ export default function OrderSuccessPage() {
           // If no data and we have retries left, retry
           if (retries > 0) {
             retries--;
+            console.log(`Order not found, retrying in ${delay}ms...`);
             await new Promise(resolve => setTimeout(resolve, delay));
             delay *= 2; // Exponential backoff
             return attemptFetch();
           }
 
           // No order found after all retries
+          console.warn('Order not found after retries');
           setLoading(false);
         } catch (error) {
           console.error('Error fetching order:', error);
