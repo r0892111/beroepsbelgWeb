@@ -35,11 +35,11 @@ Deno.serve(async (req: Request) => {
     // Check if user is admin
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('isAdmin, is_admin, google_access_token, google_refresh_token')
+      .select('isAdmin, google_access_token, google_refresh_token')
       .eq('id', user.id)
       .single();
 
-    if (profileError || (!profile?.isAdmin && !profile?.is_admin)) {
+    if (profileError || !profile?.isAdmin) {
       throw new Error('Unauthorized: Admin access required');
     }
 

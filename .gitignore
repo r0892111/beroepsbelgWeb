@@ -34,3 +34,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# supabase
+.supabase/
+supabase/.temp/
+supabase/.branches/
+supabase/.seeds/
+supabase/config.local.toml
+*.db
+*.db-journal
+supabase/.env
+supabase/.env.local

@@ -9,7 +9,9 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "import-stripe": "tsx scripts/import-tours-to-stripe.ts",
-    "import-webshop-stripe": "tsx scripts/import-webshop-to-stripe.ts"
+    "import-webshop-stripe": "tsx scripts/import-webshop-to-stripe.ts",
+    "deploy:functions": "npx supabase functions deploy",
+    "deploy:all-functions": "npx supabase functions deploy create-checkout-session && npx supabase functions deploy stripe-webhook && npx supabase functions deploy create-webshop-checkout && npx supabase functions deploy aftercare-start && npx supabase functions deploy google-oauth && npx supabase functions deploy create-guide-calendar && npx supabase functions deploy sync-tour-to-stripe && npx supabase functions deploy sync-webshop-to-stripe && npx supabase functions deploy teamleader-auth && npx supabase functions deploy store-google-tokens && npx supabase functions deploy refresh-tokens && npx supabase functions deploy stripe-checkout"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

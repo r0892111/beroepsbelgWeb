@@ -29,6 +29,7 @@ interface TourBookingDialogProps {
   tourPrice: number;
   tourDuration?: number; // Duration in minutes
   isLocalStories?: boolean; // If true, only show 14:00-16:00 timeslot
+  opMaat?: boolean; // If true, this is a custom/on-demand tour
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultBookingDate?: string; // Pre-fill booking date (for local stories)
@@ -41,6 +42,7 @@ export function TourBookingDialog({
   tourPrice,
   tourDuration = 120, // Default 2 hours
   isLocalStories = false,
+  opMaat = false,
   open,
   onOpenChange,
   defaultBookingDate,

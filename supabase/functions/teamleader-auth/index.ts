@@ -36,14 +36,70 @@ Deno.serve(async (req) => {
 
     const clientId = Deno.env.get('TEAMLEADER_CLIENT_ID');
     const clientSecret = Deno.env.get('TEAMLEADER_CLIENT_SECRET');
+    const redirectFallback = Deno.env.get('TEAMLEADER_REDIRECT_URI');
     const scopeEnv = Deno.env.get('TEAMLEADER_SCOPE');
     const scopeDefault = 'users contacts companies deals invoices products';
 
+    const resolvedRedirectUri = redirectUri ?? redirectFallback;
+
     console.log("🔧 OAuth config:", {
       clientIdPresent: !!clientId,
-      redirectUri: redirectUri,
+      redirectUri: resolvedRedirectUri,
       scope: scopeEnv ?? scopeDefault
     });
+
+    // ------------------------------------------------------
+    // AUTHORIZE
+    // ------------------------------------------------------
+    if (action === 'authorize') {
+      if (!clientId) {
+        return new Response(JSON.stringify({
+          success: false, error: 'TeamLeader client ID missing'
+        }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      const state = crypto.randomUUID();
+
+      const authorizationUrl = new URL('https://app.teamleader.eu/oauth2/authorize');
+      authorizationUrl.searchParams.set('response_type', 'code');
+      authorizationUrl.searchParams.set('client_id', clientId);
+      authorizationUrl.searchParams.set('redirect_uri', resolvedRedirectUri);
+      authorizationUrl.searchParams.set('scope', scopeEnv ?? scopeDefault);
+      authorizationUrl.searchParams.set('state', state);
+
+      return new Response(JSON.stringify({
+        success: true,
+        authorization_url: authorizationUrl.toString(),
+        state
+      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ------------------------------------------------------
+    // DISCONNECT
+    // ------------------------------------------------------
+    if (action === 'disconnect') {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          access_token_tl: null,
+          refresh_token_tl: null,
+          'TeamLeader UserInfo': null
+        })
+        .eq('id', userId);
+
+      if (updateError) {
+        console.error('❌ Failed to disconnect Teamleader:', updateError);
+        throw new Error('Failed to disconnect Teamleader');
+      }
+
+      return new Response(JSON.stringify({
+        success: true, message: 'Teamleader disconnected successfully'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
     // ------------------------------------------------------
     // STATUS
@@ -68,244 +124,126 @@ Deno.serve(async (req) => {
         });
       }
 
-      const hasIntegration = !!(data?.access_token_tl && data?.refresh_token_tl);
-
       return new Response(JSON.stringify({
         success: true,
-        integration: hasIntegration ? {
-          connected: true,
-          user_info: data['TeamLeader UserInfo'] || null,
-        } : null,
+        integration: data?.['TeamLeader UserInfo'] ?? null
       }), {
         status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // ------------------------------------------------------
-    // AUTHORIZE
-    // ------------------------------------------------------
-    if (action === 'authorize') {
-      if (!clientId) {
-        return new Response(JSON.stringify({
-          success: false, error: 'TeamLeader client ID missing'
-        }), {
-          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-
-      if (!redirectUri) {
-        return new Response(JSON.stringify({
-          success: false, error: 'redirect_uri is required'
-        }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-
-      const state = crypto.randomUUID();
-
-      const authorizationUrl = new URL('https://app.teamleader.eu/oauth2/authorize');
-      authorizationUrl.searchParams.set('response_type', 'code');
-      authorizationUrl.searchParams.set('client_id', clientId);
-      authorizationUrl.searchParams.set('redirect_uri', redirectUri);
-      authorizationUrl.searchParams.set('scope', scopeEnv ?? scopeDefault);
-      authorizationUrl.searchParams.set('state', state);
-
-      console.log("🔗 Authorization URL created:", authorizationUrl.toString());
-
-      return new Response(JSON.stringify({
-        success: true,
-        authorization_url: authorizationUrl.toString(),
-        state
-      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    // ------------------------------------------------------
-    // DISCONNECT
-    // ------------------------------------------------------
-    if (action === 'disconnect') {
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          access_token_tl: null,
-          refresh_token_tl: null,
-          'TeamLeader UserInfo': null
-        })
-        .eq('id', userId);
-
-      if (updateError) {
-        console.error('❌ Failed to disconnect Teamleader:', updateError);
-        return new Response(JSON.stringify({
-          success: false, error: 'Failed to disconnect Teamleader'
-        }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-
-      return new Response(JSON.stringify({
-        success: true, message: 'Teamleader disconnected successfully'
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
     // ------------------------------------------------------
     // TOKEN EXCHANGE
     // ------------------------------------------------------
-    if (action === 'exchange') {
-      console.log("🔁 Starting token exchange…");
+    console.log("🔁 Starting token exchange…");
 
-      if (!code) {
-        return new Response(JSON.stringify({ success: false, error: 'Authorization code required' }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-
-      if (!userId) {
-        return new Response(JSON.stringify({ success: false, error: 'User ID required' }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-
-      if (!redirectUri) {
-        return new Response(JSON.stringify({ success: false, error: 'redirect_uri required for token exchange' }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-
-      console.log("🔑 Token exchange params:", {
-        clientIdPresent: !!clientId,
-        clientSecretPresent: !!clientSecret,
-        redirectUri,
-        codePreview: code.substring(0, 10) + "..."
+    if (!code)
+      return new Response(JSON.stringify({ success: false, error: 'Authorization code required' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
 
-      const tokenResponse = await fetch('https://app.teamleader.eu/oauth2/access_token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          client_id: clientId,
-          client_secret: clientSecret,
-          code,
-          grant_type: 'authorization_code',
-          redirect_uri: redirectUri
-        })
+    if (!userId)
+      return new Response(JSON.stringify({ success: false, error: 'User ID required' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
 
-      const tokenData = await tokenResponse.json();
-      console.log("🔑 Token exchange result:", {
-        ok: tokenResponse.ok,
-        status: tokenResponse.status,
-        hasAccessToken: !!tokenData.access_token,
-        hasRefreshToken: !!tokenData.refresh_token
-      });
+    const tokenResponse = await fetch('https://app.teamleader.eu/oauth2/access_token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: clientId,
+        client_secret: clientSecret,
+        code,
+        grant_type: 'authorization_code',
+        redirect_uri: resolvedRedirectUri
+      })
+    });
 
-      if (!tokenResponse.ok) {
-        console.error("❌ Token exchange failed:", tokenData);
-        return new Response(JSON.stringify({
-          success: false,
-          error: 'Token exchange failed',
-          details: tokenData
-        }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
+    const tokenData = await tokenResponse.json();
 
-      const accessToken = tokenData.access_token;
-      const refreshToken = tokenData.refresh_token;
+    console.log("🔑 Token exchange result:", tokenData);
 
-      console.log("🟦 ACCESS TOKEN LENGTH:", accessToken?.length);
-      console.log("🟩 REFRESH TOKEN LENGTH:", refreshToken?.length);
-
-      // Fetch Teamleader profile
-      const userResponse = await fetch('https://api.teamleader.eu/users.me', {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
-
-      const userData = await userResponse.json();
-      console.log("👤 Teamleader user response status:", userResponse.ok);
-
-      if (!userResponse.ok) {
-        console.error("❌ Failed to fetch user info:", userData);
-        return new Response(JSON.stringify({
-          success: false,
-          error: 'Failed to fetch user info from Teamleader'
-        }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-
-      const userInfo = userData.data;
-
-      // ------------------------------------------------------
-      // SAVE TOKENS + PROFILE
-      // ------------------------------------------------------
-      console.log("💾 SAVING TO SUPABASE…");
-      console.log("📝 DATA TO SAVE:", {
-        userId,
-        accessTokenPreview: accessToken?.substring(0, 8) + "...",
-        refreshTokenPreview: refreshToken?.substring(0, 8) + "...",
-        userInfoPresent: !!userInfo
-      });
-
-      const { error: updateError, data: returnedData } = await supabase
-        .from('profiles')
-        .update({
-          'TeamLeader UserInfo': {
-            user_info: userInfo,
-            teamleader_user_id: userInfo.id,
-            scope: tokenData.scope ?? null,
-            expires_at: tokenData.expires_in
-              ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString()
-              : null
-          },
-          access_token_tl: accessToken,
-          refresh_token_tl: refreshToken,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userId)
-        .select();
-
-      console.log("📤 SUPABASE UPDATE RESULT:", { 
-        hasError: !!updateError, 
-        errorMessage: updateError?.message,
-        returnedDataCount: returnedData?.length 
-      });
-
-      if (updateError) {
-        console.error("❌ FAILED TO SAVE:", updateError);
-        return new Response(JSON.stringify({
-          success: false,
-          error: updateError.message
-        }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-
-      console.log("✅ SUCCESSFULLY STORED TOKENS & USER INFO");
-
+    if (!tokenResponse.ok) {
       return new Response(JSON.stringify({
-        success: true,
-        teamleader_user_id: userInfo.id,
-        user_info: userInfo
+        success: false,
+        error: 'Token exchange failed',
+        details: tokenData
       }), {
-        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
+    const accessToken = tokenData.access_token;
+    const refreshToken = tokenData.refresh_token;
+
+    console.log("🟦 ACCESS TOKEN LENGTH:", accessToken?.length);
+    console.log("🟩 REFRESH TOKEN LENGTH:", refreshToken?.length);
+
+    // Fetch Teamleader profile
+    const userResponse = await fetch('https://api.teamleader.eu/users.me', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    const userData = await userResponse.json();
+    console.log("👤 Teamleader user response:", userData);
+
+    const userInfo = userData.data;
+
     // ------------------------------------------------------
-    // INVALID ACTION
+    // SAVE TOKENS + PROFILE
     // ------------------------------------------------------
+
+    console.log("💾 SAVING TO SUPABASE…");
+    console.log("📝 DATA TO SAVE:", {
+      userId,
+      accessTokenPreview: accessToken?.substring(0, 8) + "...",
+      refreshTokenPreview: refreshToken?.substring(0, 8) + "...",
+      userInfo
+    });
+
+    const { error: updateError, data: returnedData } = await supabase
+      .from('profiles')
+      .update({
+        'TeamLeader UserInfo': {
+          user_info: userInfo,
+          teamleader_user_id: userInfo.id,
+          scope: tokenData.scope ?? null,
+          expires_at: tokenData.expires_in
+            ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString()
+            : null
+        },
+        access_token_tl: accessToken,
+        refresh_token_tl: refreshToken,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId)
+      .select();
+
+    console.log("📤 SUPABASE UPDATE RESULT:", { updateError, returnedData });
+
+    if (updateError) {
+      console.error("❌ FAILED TO SAVE:", updateError);
+      return new Response(JSON.stringify({
+        success: false,
+        error: updateError.message
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    console.log("✅ SUCCESSFULLY STORED TOKENS & USER INFO");
+
     return new Response(JSON.stringify({
-      success: false,
-      error: `Invalid action: ${action}. Valid actions are: status, authorize, disconnect, exchange`
+      success: true,
+      teamleader_user_id: userInfo.id
     }), {
-      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
     console.error("🔥 Unexpected error:", error);
+
     return new Response(JSON.stringify({
       success: false,
       error: error.message ?? 'Internal error'
