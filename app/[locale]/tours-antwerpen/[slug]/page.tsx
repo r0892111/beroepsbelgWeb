@@ -9,6 +9,7 @@ import { getTranslations } from 'next-intl/server';
 import { TourImageGallery } from '@/components/tours/tour-image-gallery';
 import { TourBookingButton } from '@/components/tours/tour-booking-button';
 import { LocalToursBooking } from '@/components/tours/local-tours-booking';
+import { getBookingTypeShortLabel } from '@/lib/utils';
 
 interface TourDetailPageProps {
   params: { locale: Locale; slug: string };
@@ -81,7 +82,7 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
                     className="text-sm font-semibold"
                     style={{ backgroundColor: 'var(--brass)', color: 'var(--belgian-navy)' }}
                   >
-                    Op Maat
+                    {getBookingTypeShortLabel(tour)}
                   </Badge>
                 )}
               </div>
