@@ -78,9 +78,52 @@ async function handleEvent(event: Stripe.Event) {
         .single();
 
       if (tourBooking) {
-        console.info(`Successfully updated tour booking for session: ${sessionId}`);
-        return;
-      }
+  console.info(`Successfully updated tour booking for session: ${sessionId}`);
+
+  const n8nWebhookUrl =
+    'https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc';
+
+
+  const payload = {
+    ...session, // full Stripe checkout session
+    metadata: {
+      ...metadata,
+      stripe_session_id: sessionId,
+    },
+  };
+
+  try {
+    console.info('[N8N] Calling tour booking webhook', {
+      url: n8nWebhookUrl,
+      sessionId,
+    });
+
+    const res = await fetch(n8nWebhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+
+
+    console.info('[N8N] Tour booking webhook response', {
+      status: res.status,
+      ok: res.ok,
+    });
+
+
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.error('[N8N] Tour booking webhook error body', text);
+    }
+  } catch (err) {
+    console.error('[N8N] Failed to call tour booking webhook', err);
+  }
+
+  return;
+}
+
 
       if (tourBookingError && tourBookingError.code !== 'PGRST116') {
         // PGRST116 = no rows found, which is fine - might be a webshop order
@@ -100,7 +143,59 @@ async function handleEvent(event: Stripe.Event) {
 
       if (order) {
         console.info(`Successfully updated webshop order for session: ${sessionId}`);
-        return;
+
+const n8nWebhookUrl =
+  'https://alexfinit.app.n8n.cloud/webhook/efd633d1-a83c-4e58-a537-8ca171eacf66';
+
+// Build items array for n8n (used by "Items to HTML")
+const items =
+  (session.line_items?.data ?? []).map((item) => ({
+    title: item.description ?? '',
+    quantity: item.quantity ?? 1,
+    price: (item.amount_total ?? 0) / 100,
+  }));
+
+const payload = {
+  session, // FULL Stripe session (Webhook2 uses this everywhere)
+
+  order: {
+    checkout_session_id: order.checkout_session_id,
+    created_at: order.created_at,
+    amount_subtotal: order.amount_subtotal,
+    total_amount: order.total_amount,
+    items,
+  },
+};
+
+try {
+  console.info('[N8N] Calling webshop confirmation webhook', {
+    url: n8nWebhookUrl,
+    sessionId,
+  });
+
+  const res = await fetch(n8nWebhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  console.info('[N8N] Webshop webhook response', {
+    status: res.status,
+    ok: res.ok,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error('[N8N] Webshop webhook error body', text);
+  }
+} catch (err) {
+  console.error('[N8N] Failed to call webshop webhook', err);
+}
+  return;
+
+
+
+      
       }
 
       if (orderError && orderError.code !== 'PGRST116') {

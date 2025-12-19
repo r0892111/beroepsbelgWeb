@@ -32,13 +32,26 @@ serve(async (req: Request) => {
       customerPhone,
       bookingDate,
       bookingTime,
+      bookingDateTime, // Combined date and time in ISO format (yyyy-MM-ddTHH:mm)
       numberOfPeople,
       language,
       specialRequests,
       requestTanguy = false,
       userId,
       citySlug,
+      opMaat = false,
+      upsellProducts = [], // Array of { id, title, quantity, price }
     } = await req.json()
+
+    // Log received booking data for debugging
+    console.log('Received booking data:', {
+      bookingDate,
+      bookingTime,
+      bookingDateTime,
+      opMaat,
+      upsellProductsCount: upsellProducts.length,
+      upsellProducts: upsellProducts,
+    })
 
     const { data: tour, error: tourError } = await supabase
       .from('tours_table_prod')
@@ -54,24 +67,123 @@ serve(async (req: Request) => {
       throw new Error('Tour price not available')
     }
 
-    const amount = Math.round(tour.price * numberOfPeople * 100)
+    const finalNumberOfPeople = opMaat ? 1 : numberOfPeople;
+    const amount = Math.round(tour.price * finalNumberOfPeople * 100)
     const tourTitle = tour.title_nl || tour.title_en || 'Tour'
+    // For op_maat tours, bookingDate is empty, so don't include it in description
+    const description = opMaat 
+      ? 'Op Maat Tour' 
+      : `${finalNumberOfPeople} person(s) - ${bookingDate && bookingDate.trim() ? bookingDate : 'Date to be determined'}`;
+
+    // Build line items: tour + upsell products
+    const lineItems: any[] = [
+      {
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: tourTitle,
+            description: description,
+          },
+          unit_amount: amount,
+        },
+        quantity: 1,
+      },
+    ];
+
+    // Add upsell products as line items
+    if (upsellProducts && Array.isArray(upsellProducts) && upsellProducts.length > 0) {
+      console.log('Processing upsell products:', {
+        count: upsellProducts.length,
+        products: upsellProducts.map((p: any) => ({ id: p.id, title: p.title, quantity: p.quantity, price: p.price }))
+      });
+
+      // Fetch product details from database to ensure prices are correct
+      const productIds = upsellProducts.map((p: any) => p.id);
+      const { data: productData, error: productError } = await supabase
+        .from('webshop_data')
+        .select('uuid, Name, Price (EUR)')
+        .in('uuid', productIds);
+
+      if (!productError && productData && productData.length > 0) {
+        console.log('Fetched product data from database:', productData.length, 'products');
+        // Create a map of product UUIDs to database prices
+        const productPriceMap = new Map(
+          productData.map((p: any) => [p.uuid, parseFloat(p['Price (EUR)'] || '0')])
+        );
+
+        // Add each upsell product as a line item
+        for (const upsell of upsellProducts) {
+          const dbPrice = productPriceMap.get(upsell.id);
+          const finalPrice = dbPrice !== undefined ? dbPrice : (upsell.price || 0);
+          const quantity = upsell.quantity || 1;
+
+          if (finalPrice > 0 && quantity > 0) {
+            const lineItem = {
+              price_data: {
+                currency: 'eur',
+                product_data: {
+                  name: upsell.title || 'Product',
+                },
+                unit_amount: Math.round(finalPrice * 100), // Convert to cents
+              },
+              quantity: quantity,
+            };
+            lineItems.push(lineItem);
+            console.log('Added upsell product to line items:', {
+              title: upsell.title,
+              price: finalPrice,
+              quantity: quantity,
+              unit_amount: lineItem.price_data.unit_amount
+            });
+          } else {
+            console.warn('Skipping upsell product due to invalid price or quantity:', {
+              id: upsell.id,
+              title: upsell.title,
+              finalPrice,
+              quantity
+            });
+          }
+        }
+      } else {
+        console.warn('Could not fetch product details for upsells, using provided prices:', productError);
+        // Fallback: use provided prices
+        for (const upsell of upsellProducts) {
+          const price = upsell.price || 0;
+          const quantity = upsell.quantity || 1;
+          if (price > 0 && quantity > 0) {
+            const lineItem = {
+              price_data: {
+                currency: 'eur',
+                product_data: {
+                  name: upsell.title || 'Product',
+                },
+                unit_amount: Math.round(price * 100),
+              },
+              quantity: quantity,
+            };
+            lineItems.push(lineItem);
+            console.log('Added upsell product to line items (fallback):', {
+              title: upsell.title,
+              price: price,
+              quantity: quantity
+            });
+          }
+        }
+      }
+    } else {
+      console.log('No upsell products to add');
+    }
+
+    console.log('Total line items for checkout:', lineItems.length);
+    console.log('Line items details:', lineItems.map((item: any) => ({
+      name: item.price_data.product_data.name,
+      quantity: item.quantity,
+      unit_amount: item.price_data.unit_amount
+    })));
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card', 'bancontact', 'ideal'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'eur',
-            product_data: {
-              name: tourTitle,
-              description: `${numberOfPeople} person(s) - ${bookingDate}`,
-            },
-            unit_amount: amount,
-          },
-          quantity: 1,
-        },
-      ],
+      line_items: lineItems,
       mode: 'payment',
       success_url: `${req.headers.get('origin')}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get('origin')}/booking/cancelled`,
@@ -80,34 +192,80 @@ serve(async (req: Request) => {
         tourId,
         customerName,
         customerPhone: customerPhone || '',
-        bookingDate,
-        bookingTime: bookingTime || '',
+        bookingDate: opMaat ? '' : (bookingDate || ''),
+        bookingTime: opMaat ? '' : (bookingTime || ''),
+        bookingDateTime: opMaat ? '' : (bookingDateTime || ''),
         numberOfPeople: numberOfPeople.toString(),
         language,
         specialRequests: specialRequests || '',
         requestTanguy: requestTanguy.toString(),
         userId: userId || '',
+        opMaat: opMaat.toString(),
+        upsellProducts: JSON.stringify(upsellProducts), // Store upsell products in metadata
       },
     })
 
     // Prepare booking data based on actual table schema
+    // Use combined bookingDateTime if available, otherwise fall back to combining date and time
+    let tourDatetime: string | null = null;
+    if (!opMaat) {
+      if (bookingDateTime && bookingDateTime.trim()) {
+        // Use the combined datetime string (format: yyyy-MM-ddTHH:mm)
+        // Ensure it's properly formatted as ISO datetime with seconds
+        const dateTimeStr = bookingDateTime.trim();
+        // If time doesn't have seconds, add :00
+        let formattedDateTime = dateTimeStr;
+        if (dateTimeStr.includes('T')) {
+          const [datePart, timePart] = dateTimeStr.split('T');
+          if (timePart && timePart.split(':').length === 2) {
+            // Time is HH:mm, add seconds
+            formattedDateTime = `${datePart}T${timePart}:00`;
+          }
+        }
+        const dateObj = new Date(formattedDateTime);
+        if (!isNaN(dateObj.getTime())) {
+          tourDatetime = dateObj.toISOString();
+          console.log('Using bookingDateTime:', { bookingDateTime, formattedDateTime, tourDatetime });
+        } else {
+          console.error('Invalid bookingDateTime format:', bookingDateTime);
+        }
+      } else if (bookingDate && bookingDate.trim() && bookingTime && bookingTime.trim()) {
+        // Fallback: combine date and time if bookingDateTime is not provided
+        // Ensure time has seconds
+        const timeWithSeconds = bookingTime.trim().split(':').length === 2 
+          ? `${bookingTime.trim()}:00` 
+          : bookingTime.trim();
+        const combinedDateTime = `${bookingDate.trim()}T${timeWithSeconds}`;
+        const dateObj = new Date(combinedDateTime);
+        if (!isNaN(dateObj.getTime())) {
+          tourDatetime = dateObj.toISOString();
+          console.log('Combined date and time:', { bookingDate, bookingTime, combinedDateTime, tourDatetime });
+        } else {
+          console.error('Invalid combined datetime:', combinedDateTime);
+        }
+      } else {
+        console.warn('Missing booking date/time data:', { bookingDate, bookingTime, bookingDateTime });
+      }
+    }
+
     const bookingData: any = {
       tour_id: tourId,
       stripe_session_id: session.id,
       status: 'pending',
-      tour_datetime: new Date(bookingDate).toISOString(),
+      tour_datetime: tourDatetime,
       city: citySlug || tour.city || null,
       request_tanguy: requestTanguy,
       invitees: [{
         name: customerName,
         email: customerEmail,
         phone: customerPhone || null,
-        numberOfPeople,
-        language,
-        specialRequests: specialRequests || null,
+        numberOfPeople: opMaat ? 1 : numberOfPeople,
+        language: opMaat ? 'nl' : language,
+        specialRequests: opMaat ? null : (specialRequests || null),
         requestTanguy: requestTanguy,
-        amount: tour.price * numberOfPeople,
+        amount: opMaat ? tour.price : (tour.price * numberOfPeople),
         currency: 'eur',
+        upsellProducts: upsellProducts.length > 0 ? upsellProducts : undefined, // Store upsell products in invitee
       }],
     };
 
@@ -122,21 +280,37 @@ serve(async (req: Request) => {
     let saturdayDateStr: string = '';
     
     if (isLocalStoriesTour && bookingDate) {
-      // For local stories tours, check if local_tours_booking exists for this Saturday
-      const bookingDateObj = new Date(bookingDate);
-      saturdayDateStr = bookingDateObj.toISOString().split('T')[0];
+      // Use combined datetime if available, otherwise use bookingDate
+      let dateToUse: string | null = null;
+      if (bookingDateTime && bookingDateTime.trim()) {
+        dateToUse = bookingDateTime.split('T')[0]; // Extract date part from combined datetime
+      } else if (bookingDate && bookingDate.trim()) {
+        dateToUse = bookingDate;
+      }
       
-      const { data: localBooking, error: localBookingError } = await supabase
-        .from('local_tours_bookings')
-        .select('*')
-        .eq('tour_id', tourId)
-        .eq('booking_date', saturdayDateStr)
-        .single();
+      if (dateToUse) {
+        // For local stories tours, format the Saturday date
+        const bookingDateObj = new Date(dateToUse);
+        // Validate the date is valid before using it
+        if (!isNaN(bookingDateObj.getTime())) {
+          saturdayDateStr = bookingDateObj.toISOString().split('T')[0];
+        }
+      }
       
-      if (localBookingError && localBookingError.code !== 'PGRST116') { // PGRST116 = no rows returned
-        console.error('Error checking local tours booking:', localBookingError);
-      } else {
-        existingLocalBooking = localBooking;
+      if (saturdayDateStr) {
+        // For local stories tours, check if local_tours_booking exists for this Saturday
+        const { data: localBooking, error: localBookingError } = await supabase
+          .from('local_tours_bookings')
+          .select('*')
+          .eq('tour_id', tourId)
+          .eq('booking_date', saturdayDateStr)
+          .single();
+        
+        if (localBookingError && localBookingError.code !== 'PGRST116') { // PGRST116 = no rows returned
+          console.error('Error checking local tours booking:', localBookingError);
+        } else {
+          existingLocalBooking = localBooking;
+        }
       }
     }
 
@@ -160,19 +334,31 @@ serve(async (req: Request) => {
       console.log('Booking created successfully, ID:', createdBooking.id);
       
       // Check if this is a local stories tour
-      if (isLocalStoriesTour && bookingDate) {
+      if (isLocalStoriesTour && saturdayDateStr) {
         console.log('Processing local stories booking:', {
           isLocalStoriesTour,
           bookingDate,
+          bookingDateTime,
           saturdayDateStr,
           hasExistingLocalBooking: !!existingLocalBooking,
         });
+        
+        // Extract time from combined datetime if available, otherwise use bookingTime or default to 14:00
+        let bookingTimeStr = '14:00:00';
+        if (bookingDateTime && bookingDateTime.trim()) {
+          const timePart = bookingDateTime.split('T')[1]; // Extract time part (HH:mm)
+          if (timePart) {
+            bookingTimeStr = `${timePart}:00`; // Add seconds
+          }
+        } else if (bookingTime && bookingTime.trim()) {
+          bookingTimeStr = `${bookingTime}:00`; // Add seconds
+        }
         
         // Now update or create local_tours_bookings entry with the booking_id
         const localToursBookingData: any = {
           tour_id: tourId,
           booking_date: saturdayDateStr,
-          booking_time: '14:00:00',
+          booking_time: bookingTimeStr,
           is_booked: true,
           status: 'booked',
           customer_name: customerName,
