@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { getBookingTypeShortLabel } from '@/lib/utils';
 
 interface TourBooking {
   id: number;
@@ -34,6 +35,8 @@ interface Tour {
   id: string;
   title: string;
   city: string;
+  op_maat?: boolean;
+  local_stories?: boolean;
 }
 
 interface Guide {
@@ -90,7 +93,7 @@ export default function AdminBookingsPage() {
       // Fetch tours
       const { data: toursData } = await supabase
         .from('tours_table_prod')
-        .select('id, title, city');
+        .select('id, title, city, op_maat, local_stories');
 
       if (toursData) {
         const toursMap = new Map<string, Tour>();
@@ -392,7 +395,10 @@ export default function AdminBookingsPage() {
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="text-xs">
-                            {booking.booking_type || 'N/A'}
+                            {(() => {
+                              const tour = booking.tour_id ? tours.get(booking.tour_id) : null;
+                              return getBookingTypeShortLabel(tour, booking.booking_type);
+                            })()}
                           </Badge>
                         </TableCell>
                         <TableCell>

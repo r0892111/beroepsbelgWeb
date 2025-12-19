@@ -207,52 +207,90 @@ serve(async (req: Request) => {
 
     // Prepare booking data based on actual table schema
     // Use combined bookingDateTime if available, otherwise fall back to combining date and time
+    // IMPORTANT: For regular tours, date/time is REQUIRED. For op maat tours, save if provided.
     let tourDatetime: string | null = null;
-    if (!opMaat) {
-      if (bookingDateTime && bookingDateTime.trim()) {
-        // Use the combined datetime string (format: yyyy-MM-ddTHH:mm)
-        // Ensure it's properly formatted as ISO datetime with seconds
-        const dateTimeStr = bookingDateTime.trim();
-        // If time doesn't have seconds, add :00
-        let formattedDateTime = dateTimeStr;
-        if (dateTimeStr.includes('T')) {
-          const [datePart, timePart] = dateTimeStr.split('T');
-          if (timePart && timePart.split(':').length === 2) {
-            // Time is HH:mm, add seconds
-            formattedDateTime = `${datePart}T${timePart}:00`;
-          }
+    
+    console.log('Processing tour datetime:', {
+      opMaat,
+      bookingDateTime,
+      bookingDate,
+      bookingTime,
+      hasBookingDateTime: !!bookingDateTime,
+      bookingDateTimeTrimmed: bookingDateTime?.trim(),
+    });
+    
+    // Process date/time - try bookingDateTime first, then fall back to combining date and time
+    if (bookingDateTime && bookingDateTime.trim()) {
+      // Use the combined datetime string (format: yyyy-MM-ddTHH:mm)
+      // Ensure it's properly formatted as ISO datetime with seconds
+      const dateTimeStr = bookingDateTime.trim();
+      // If time doesn't have seconds, add :00
+      let formattedDateTime = dateTimeStr;
+      if (dateTimeStr.includes('T')) {
+        const [datePart, timePart] = dateTimeStr.split('T');
+        if (timePart && timePart.split(':').length === 2) {
+          // Time is HH:mm, add seconds
+          formattedDateTime = `${datePart}T${timePart}:00`;
         }
-        const dateObj = new Date(formattedDateTime);
-        if (!isNaN(dateObj.getTime())) {
-          tourDatetime = dateObj.toISOString();
-          console.log('Using bookingDateTime:', { bookingDateTime, formattedDateTime, tourDatetime });
-        } else {
-          console.error('Invalid bookingDateTime format:', bookingDateTime);
-        }
-      } else if (bookingDate && bookingDate.trim() && bookingTime && bookingTime.trim()) {
-        // Fallback: combine date and time if bookingDateTime is not provided
-        // Ensure time has seconds
-        const timeWithSeconds = bookingTime.trim().split(':').length === 2 
-          ? `${bookingTime.trim()}:00` 
-          : bookingTime.trim();
-        const combinedDateTime = `${bookingDate.trim()}T${timeWithSeconds}`;
-        const dateObj = new Date(combinedDateTime);
-        if (!isNaN(dateObj.getTime())) {
-          tourDatetime = dateObj.toISOString();
-          console.log('Combined date and time:', { bookingDate, bookingTime, combinedDateTime, tourDatetime });
-        } else {
-          console.error('Invalid combined datetime:', combinedDateTime);
-        }
-      } else {
-        console.warn('Missing booking date/time data:', { bookingDate, bookingTime, bookingDateTime });
       }
+      const dateObj = new Date(formattedDateTime);
+      if (!isNaN(dateObj.getTime())) {
+        tourDatetime = dateObj.toISOString();
+        console.log('✓ Using bookingDateTime:', { 
+          opMaat, 
+          bookingDateTime, 
+          formattedDateTime, 
+          tourDatetime 
+        });
+      } else {
+        console.error('✗ Invalid bookingDateTime format:', bookingDateTime);
+      }
+    } else if (bookingDate && bookingDate.trim() && bookingTime && bookingTime.trim()) {
+      // Fallback: combine date and time if bookingDateTime is not provided
+      // Ensure time has seconds
+      const timeWithSeconds = bookingTime.trim().split(':').length === 2 
+        ? `${bookingTime.trim()}:00` 
+        : bookingTime.trim();
+      const combinedDateTime = `${bookingDate.trim()}T${timeWithSeconds}`;
+      const dateObj = new Date(combinedDateTime);
+      if (!isNaN(dateObj.getTime())) {
+        tourDatetime = dateObj.toISOString();
+        console.log('✓ Combined date and time:', { 
+          opMaat, 
+          bookingDate, 
+          bookingTime, 
+          combinedDateTime, 
+          tourDatetime 
+        });
+      } else {
+        console.error('✗ Invalid combined datetime:', combinedDateTime);
+      }
+    } else {
+      // No date/time provided
+      if (opMaat) {
+        // Op maat tours can proceed without a date (will be determined later)
+        console.log('⚠ Op maat tour - no date/time provided (will be determined later)');
+      } else {
+        // Regular tours MUST have a date/time - this should not happen if form validation works
+        console.error('✗ ERROR: Regular tour missing required date/time data:', { 
+          bookingDate, 
+          bookingTime, 
+          bookingDateTime 
+        });
+        // Don't throw error here as booking can still proceed, but log it for debugging
+      }
+    }
+    
+    // Final validation: For regular tours, ensure we have a date/time
+    if (!opMaat && !tourDatetime) {
+      console.error('✗ CRITICAL: Regular tour proceeding without tour_datetime - this should not happen!');
     }
 
     const bookingData: any = {
       tour_id: tourId,
       stripe_session_id: session.id,
       status: 'pending',
-      tour_datetime: tourDatetime,
+      tour_datetime: tourDatetime, // This will be null if no date provided, or ISO string if date is provided
       city: citySlug || tour.city || null,
       request_tanguy: requestTanguy,
       invitees: [{
@@ -268,6 +306,17 @@ serve(async (req: Request) => {
         upsellProducts: upsellProducts.length > 0 ? upsellProducts : undefined, // Store upsell products in invitee
       }],
     };
+    
+    console.log('Booking data to be saved:', {
+      opMaat,
+      tour_datetime: tourDatetime,
+      hasTourDatetime: !!tourDatetime,
+      tour_datetime_formatted: tourDatetime ? new Date(tourDatetime).toISOString() : null,
+      bookingDateTime,
+      bookingDate,
+      bookingTime,
+      warning: !opMaat && !tourDatetime ? '⚠️ Regular tour without date/time!' : null,
+    });
 
     // Add user_id if provided (for logged-in users)
     if (userId) {

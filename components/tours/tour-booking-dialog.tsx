@@ -222,10 +222,11 @@ export function TourBookingDialog({
       const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
       // Combine date and time into a single datetime string
+      // For op maat tours, also include the selected date/time if provided
       let bookingDateTime = '';
-      if (!opMaat && formData.bookingDate) {
+      if (formData.bookingDate) {
         const dateStr = format(formData.bookingDate, 'yyyy-MM-dd');
-        const timeStr = isLocalStories ? '14:00' : selectedTimeSlot;
+        const timeStr = opMaat ? (selectedTimeSlot || '14:00') : (isLocalStories ? '14:00' : selectedTimeSlot);
         if (timeStr) {
           bookingDateTime = `${dateStr}T${timeStr}`;
         }
@@ -257,8 +258,8 @@ export function TourBookingDialog({
           customerName: formData.customerName,
           customerEmail: formData.customerEmail,
           customerPhone: formData.customerPhone,
-          bookingDate: opMaat ? '' : (formData.bookingDate ? format(formData.bookingDate, 'yyyy-MM-dd') : ''),
-          bookingTime: opMaat ? '' : (isLocalStories ? '14:00' : selectedTimeSlot),
+          bookingDate: formData.bookingDate ? format(formData.bookingDate, 'yyyy-MM-dd') : '',
+          bookingTime: opMaat ? (selectedTimeSlot || '14:00') : (isLocalStories ? '14:00' : selectedTimeSlot),
           bookingDateTime: bookingDateTime, // Combined date and time in ISO format
           numberOfPeople: opMaat ? 1 : formData.numberOfPeople,
           language: opMaat ? 'nl' : formData.language,
@@ -267,6 +268,7 @@ export function TourBookingDialog({
           userId: user?.id || null,
           citySlug: citySlug || null,
           opMaat: opMaat,
+          upsellProducts: upsellProducts, // Include upsell products in checkout session
         }),
       });
 
@@ -296,8 +298,21 @@ export function TourBookingDialog({
     .filter(p => selectedUpsell[p.uuid] && selectedUpsell[p.uuid] > 0)
     .reduce((sum, p) => sum + (p.price * (selectedUpsell[p.uuid] || 0)), 0);
   
+  // Calculate tour total based on number of people (unless it's op maat)
   const tourTotal = opMaat ? tourPrice : (tourPrice * formData.numberOfPeople);
   const totalPrice = tourTotal + upsellTotal;
+  
+  // Debug logging
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Price calculation:', {
+      opMaat,
+      tourPrice,
+      numberOfPeople: formData.numberOfPeople,
+      tourTotal,
+      upsellTotal,
+      totalPrice,
+    });
+  }
 
   return (
     <>
@@ -447,7 +462,12 @@ export function TourBookingDialog({
                 max="50"
                 required
                 value={formData.numberOfPeople}
-                onChange={(e) => setFormData({ ...formData, numberOfPeople: parseInt(e.target.value) || 1 })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  const numValue = value === '' ? 1 : Math.max(1, parseInt(value, 10) || 1);
+                  console.log('Number of people changed:', { value, numValue, current: formData.numberOfPeople });
+                  setFormData(prev => ({ ...prev, numberOfPeople: numValue }));
+                }}
               />
             </div>
 
@@ -527,7 +547,12 @@ export function TourBookingDialog({
           <DialogFooter>
             <div className="flex w-full items-center justify-between">
               <div className="text-lg font-bold">
-                {t('total')}: €{tourTotal.toFixed(2)}
+                {t('total')}: €{totalPrice.toFixed(2)}
+                {formData.numberOfPeople > 1 && !opMaat && (
+                  <span className="text-sm font-normal text-muted-foreground ml-2">
+                    ({formData.numberOfPeople} × €{tourPrice.toFixed(2)})
+                  </span>
+                )}
               </div>
               <Button type="submit" disabled={loading}>
                 {loading ? (
