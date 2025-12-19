@@ -261,7 +261,7 @@ export function TourBookingDialog({
           bookingDate: formData.bookingDate ? format(formData.bookingDate, 'yyyy-MM-dd') : '',
           bookingTime: opMaat ? (selectedTimeSlot || '14:00') : (isLocalStories ? '14:00' : selectedTimeSlot),
           bookingDateTime: bookingDateTime, // Combined date and time in ISO format
-          numberOfPeople: opMaat ? 1 : formData.numberOfPeople,
+          numberOfPeople: formData.numberOfPeople,
           language: opMaat ? 'nl' : formData.language,
           specialRequests: opMaat ? '' : formData.specialRequests,
           requestTanguy: formData.requestTanguy,
@@ -298,8 +298,8 @@ export function TourBookingDialog({
     .filter(p => selectedUpsell[p.uuid] && selectedUpsell[p.uuid] > 0)
     .reduce((sum, p) => sum + (p.price * (selectedUpsell[p.uuid] || 0)), 0);
   
-  // Calculate tour total based on number of people (unless it's op maat)
-  const tourTotal = opMaat ? tourPrice : (tourPrice * formData.numberOfPeople);
+  // Calculate tour total based on number of people (for all tour types)
+  const tourTotal = tourPrice * formData.numberOfPeople;
   const totalPrice = tourTotal + upsellTotal;
   
   // Debug logging
@@ -547,10 +547,15 @@ export function TourBookingDialog({
           <DialogFooter>
             <div className="flex w-full items-center justify-between">
               <div className="text-lg font-bold">
-                {t('total')}: €{totalPrice.toFixed(2)}
-                {formData.numberOfPeople > 1 && !opMaat && (
+                {t('total')}: €{tourTotal.toFixed(2)}
+                {formData.numberOfPeople > 1 && (
                   <span className="text-sm font-normal text-muted-foreground ml-2">
                     ({formData.numberOfPeople} × €{tourPrice.toFixed(2)})
+                  </span>
+                )}
+                {upsellTotal > 0 && (
+                  <span className="text-sm font-normal text-muted-foreground ml-2">
+                    + €{upsellTotal.toFixed(2)} extras = €{totalPrice.toFixed(2)}
                   </span>
                 )}
               </div>

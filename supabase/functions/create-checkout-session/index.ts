@@ -67,7 +67,7 @@ serve(async (req: Request) => {
       throw new Error('Tour price not available')
     }
 
-    const finalNumberOfPeople = opMaat ? 1 : numberOfPeople;
+    const finalNumberOfPeople = numberOfPeople; // Use actual number of people for all tour types
     const amount = Math.round(tour.price * finalNumberOfPeople * 100)
     const tourTitle = tour.title_nl || tour.title_en || 'Tour'
     // For op_maat tours, bookingDate is empty, so don't include it in description
@@ -76,6 +76,7 @@ serve(async (req: Request) => {
       : `${finalNumberOfPeople} person(s) - ${bookingDate && bookingDate.trim() ? bookingDate : 'Date to be determined'}`;
 
     // Build line items: tour + upsell products
+    // Tour line item: unit_amount is the total price (price * numberOfPeople), quantity is 1
     const lineItems: any[] = [
       {
         price_data: {
@@ -84,11 +85,22 @@ serve(async (req: Request) => {
             name: tourTitle,
             description: description,
           },
-          unit_amount: amount,
+          unit_amount: amount, // Total amount for all people (already calculated as tour.price * numberOfPeople * 100)
         },
-        quantity: 1,
+        quantity: 1, // Quantity is 1 because unit_amount already includes the total for all people
       },
     ];
+    
+    console.log('Tour line item added:', {
+      name: tourTitle,
+      description: description,
+      unit_amount: amount,
+      unit_amount_euros: (amount / 100).toFixed(2),
+      quantity: 1,
+      numberOfPeople: finalNumberOfPeople,
+      tourPrice: tour.price,
+      calculated_total: tour.price * finalNumberOfPeople,
+    });
 
     // Add upsell products as line items
     if (upsellProducts && Array.isArray(upsellProducts) && upsellProducts.length > 0) {
@@ -174,12 +186,29 @@ serve(async (req: Request) => {
       console.log('No upsell products to add');
     }
 
-    console.log('Total line items for checkout:', lineItems.length);
-    console.log('Line items details:', lineItems.map((item: any) => ({
+    console.log('=== CHECKOUT SESSION LINE ITEMS SUMMARY ===');
+    console.log('Total line items:', lineItems.length);
+    console.log('Line items breakdown:', lineItems.map((item: any, index: number) => ({
+      index: index + 1,
       name: item.price_data.product_data.name,
+      description: item.price_data.product_data.description || 'N/A',
       quantity: item.quantity,
-      unit_amount: item.price_data.unit_amount
+      unit_amount_cents: item.price_data.unit_amount,
+      unit_amount_euros: (item.price_data.unit_amount / 100).toFixed(2),
+      line_total_euros: ((item.price_data.unit_amount * item.quantity) / 100).toFixed(2),
     })));
+    
+    const totalAmount = lineItems.reduce((sum, item) => sum + (item.price_data.unit_amount * item.quantity), 0);
+    console.log('Total checkout amount:', {
+      cents: totalAmount,
+      euros: (totalAmount / 100).toFixed(2),
+      expected_amount: amount + (upsellProducts.reduce((sum: number, p: any) => {
+        const qty = p.quantity || 1;
+        const price = p.price || 0;
+        return sum + (price * qty * 100);
+      }, 0)),
+    });
+    console.log('===========================================');
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card', 'bancontact', 'ideal'],
@@ -297,11 +326,11 @@ serve(async (req: Request) => {
         name: customerName,
         email: customerEmail,
         phone: customerPhone || null,
-        numberOfPeople: opMaat ? 1 : numberOfPeople,
+        numberOfPeople: numberOfPeople,
         language: opMaat ? 'nl' : language,
         specialRequests: opMaat ? null : (specialRequests || null),
         requestTanguy: requestTanguy,
-        amount: opMaat ? tour.price : (tour.price * numberOfPeople),
+        amount: tour.price * numberOfPeople, // Calculate amount based on number of people for all tour types
         currency: 'eur',
         upsellProducts: upsellProducts.length > 0 ? upsellProducts : undefined, // Store upsell products in invitee
       }],
