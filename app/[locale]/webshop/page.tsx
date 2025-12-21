@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { getProducts } from '@/lib/api/content';
+// Removed direct import - will fetch from API instead
 import type { Product, Tour, Locale } from '@/lib/data/types';
 import { ProductCard } from '@/components/webshop/product-card';
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,11 @@ export default function WebshopPage() {
 
     async function loadProducts() {
       try {
-        const data = await getProducts();
+        const response = await fetch('/api/products');
+        if (!response.ok) {
+          throw new Error('Failed to fetch products');
+        }
+        const data = await response.json();
         if (!isMounted) return;
         setProducts(data);
         setError(null);

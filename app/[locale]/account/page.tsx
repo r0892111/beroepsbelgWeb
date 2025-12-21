@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Heart, ShoppingCart, User, LogOut, Package, Trash2, Plus, Minus, Calendar, Receipt, MapPin } from 'lucide-react';
-import { getProducts } from '@/lib/api/content';
+// Removed direct import - will fetch from API instead
 import type { Product } from '@/lib/data/types';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -50,7 +50,11 @@ export default function AccountPage() {
 
     async function loadProducts() {
       try {
-        const data = await getProducts();
+        const response = await fetch('/api/products');
+        if (!response.ok) {
+          throw new Error('Failed to fetch products');
+        }
+        const data = await response.json();
         if (!isMounted) return;
         setProducts(data);
         setProductsError(null);
