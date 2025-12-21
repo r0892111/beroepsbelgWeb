@@ -9,10 +9,11 @@ import { getParentBooking } from '@/lib/api/content';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { bookingId: string } }
+  { params }: { params: Promise<{ bookingId: string }> }
 ) {
   try {
-    const bookingId = parseInt(params.bookingId);
+    const { bookingId: bookingIdParam } = await params;
+    const bookingId = parseInt(bookingIdParam);
 
     console.log('Parent booking API called:', {
       bookingId,

@@ -7,11 +7,11 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 
 interface BlogPageProps {
-  params: { locale: Locale };
+  params: Promise<{ locale: Locale }>;
 }
 
 export default async function BlogPage({ params }: BlogPageProps) {
-  const { locale } = params;
+  const { locale } = await params;
   const blogPosts = await getBlogPosts();
   return (
     <AngledSection plane="right">

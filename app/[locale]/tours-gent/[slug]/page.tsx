@@ -12,7 +12,7 @@ import { LocalToursBooking } from '@/components/tours/local-tours-booking';
 import { getBookingTypeShortLabel } from '@/lib/utils';
 
 interface TourDetailPageProps {
-  params: { locale: Locale; slug: string };
+  params: Promise<{ locale: Locale; slug: string }>;
 }
 
 export async function generateStaticParams() {
@@ -39,7 +39,7 @@ const formatDuration = (minutes: number, t: any) => {
 };
 
 export default async function TourDetailPage({ params }: TourDetailPageProps) {
-  const { locale, slug } = params;
+  const { locale, slug } = await params;
   const tour = await getTourBySlug('gent', slug);
 
   if (!tour) {

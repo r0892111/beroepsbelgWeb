@@ -10,11 +10,11 @@ import {
 import { ToursCTABanner } from '@/components/upsells/tours-cta-banner';
 
 interface FaqPageProps {
-  params: { locale: Locale };
+  params: Promise<{ locale: Locale }>;
 }
 
 export default async function FaqPage({ params }: FaqPageProps) {
-  const { locale } = params;
+  const { locale } = await params;
   const faqItems = await getFaqItems();
   return (
     <AngledSection plane="left">

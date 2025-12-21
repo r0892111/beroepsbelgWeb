@@ -3,11 +3,11 @@ import { getTours } from '@/lib/api/content';
 import { TourCard } from '@/components/tours/tour-card';
 
 interface ToursGhentPageProps {
-  params: { locale: Locale };
+  params: Promise<{ locale: Locale }>;
 }
 
 export default async function ToursGhentPage({ params }: ToursGhentPageProps) {
-  const { locale } = params;
+  const { locale } = await params;
   const gentTours = await getTours('gent');
 
   return (

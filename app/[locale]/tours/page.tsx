@@ -9,11 +9,11 @@ import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 
 interface ToursPageProps {
-  params: { locale: Locale };
+  params: Promise<{ locale: Locale }>;
 }
 
 export default async function ToursPage({ params }: ToursPageProps) {
-  const { locale } = params;
+  const { locale } = await params;
   const t = await getTranslations('common');
   const cities = await getCities();
 
