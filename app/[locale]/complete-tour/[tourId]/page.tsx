@@ -5,28 +5,82 @@ interface CompleteTourPageProps {
   params: Promise<{ locale: string; tourId: string }>;
 }
 
-async function getTourById(tourId: string) {
+async function getTourBookingById(bookingId: string) {
+  console.log('[Complete Tour] Looking up booking:', { bookingId });
+  
+  // tourbooking.id is serial (integer), so parse it
+  const bookingIdNum = parseInt(bookingId, 10);
+  
+  if (isNaN(bookingIdNum)) {
+    console.error('[Complete Tour] Invalid booking ID format - must be a number:', bookingId);
+    return null;
+  }
+  
+  console.log('[Complete Tour] Parsed booking ID:', bookingIdNum);
+
   const { data, error } = await supabaseServer
-    .from('tours_table_prod')
-    .select('id, title, city')
-    .eq('id', tourId)
+    .from('tourbooking')
+    .select('id, tour_id, city, tour_datetime, status')
+    .eq('id', bookingIdNum)
     .single();
 
-  if (error || !data) {
+  console.log('[Complete Tour] Query result:', { 
+    hasData: !!data, 
+    error: error ? {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    } : null,
+    bookingId: data?.id,
+    tourId: data?.tour_id,
+    city: data?.city
+  });
+
+  if (error) {
+    console.error('[Complete Tour] Database error:', error);
+    // Check if it's a "not found" error (PGRST116)
+    if (error.code === 'PGRST116') {
+      console.error('[Complete Tour] Booking not found in database');
+    }
     return null;
   }
 
-  return data;
+  if (!data) {
+    console.error('[Complete Tour] No booking data returned for ID:', bookingIdNum);
+    return null;
+  }
+
+  // Also fetch the tour details if tour_id exists
+  let tour = null;
+  if (data.tour_id) {
+    const { data: tourData, error: tourError } = await supabaseServer
+      .from('tours_table_prod')
+      .select('id, title')
+      .eq('id', data.tour_id)
+      .single();
+    
+    if (tourError) {
+      console.error('[Complete Tour] Error fetching tour:', tourError);
+    } else {
+      tour = tourData;
+    }
+  }
+
+  return {
+    ...data,
+    tour,
+  };
 }
 
-async function triggerWebhook(tourId: string) {
+async function triggerWebhook(bookingId: string) {
   try {
     const response = await fetch('https://alexfinit.app.n8n.cloud/webhook/efd633d1-a83c-4e58-a537-8ca171eacf11', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ tour_id: tourId }),
+      body: JSON.stringify({ booking_id: bookingId }),
     });
 
     if (!response.ok) {
@@ -43,14 +97,14 @@ async function triggerWebhook(tourId: string) {
 export default async function CompleteTourPage({ params }: CompleteTourPageProps) {
   const { locale, tourId } = await params;
   
-  // Fetch tour data
-  const tour = await getTourById(tourId);
+  // Fetch tourbooking data
+  const booking = await getTourBookingById(tourId);
 
-  if (!tour) {
+  if (!booking) {
     notFound();
   }
 
-  // Trigger webhook
+  // Trigger webhook with booking ID
   const webhookSuccess = await triggerWebhook(tourId);
 
   return (
@@ -79,10 +133,21 @@ export default async function CompleteTourPage({ params }: CompleteTourPageProps
               Tour Completed Successfully
             </h1>
             <div className="mb-6 rounded-lg bg-gray-50 p-4">
-              <p className="text-sm font-medium text-gray-600">Tour:</p>
-              <p className="text-lg font-semibold text-gray-900">{tour.title}</p>
-              {tour.city && (
-                <p className="mt-1 text-sm text-gray-500">City: {tour.city}</p>
+              <p className="text-sm font-medium text-gray-600">Booking ID:</p>
+              <p className="text-lg font-semibold text-gray-900">#{booking.id}</p>
+              {booking.tour?.title && (
+                <p className="mt-2 text-sm font-medium text-gray-600">Tour:</p>
+              )}
+              {booking.tour?.title && (
+                <p className="text-base font-semibold text-gray-900">{booking.tour.title}</p>
+              )}
+              {booking.city && (
+                <p className="mt-2 text-sm text-gray-500">City: {booking.city}</p>
+              )}
+              {booking.tour_datetime && (
+                <p className="mt-1 text-sm text-gray-500">
+                  Date: {new Date(booking.tour_datetime).toLocaleDateString()}
+                </p>
               )}
             </div>
             <p className="text-center text-gray-600">
@@ -112,10 +177,21 @@ export default async function CompleteTourPage({ params }: CompleteTourPageProps
               Tour Found
             </h1>
             <div className="mb-6 rounded-lg bg-gray-50 p-4">
-              <p className="text-sm font-medium text-gray-600">Tour:</p>
-              <p className="text-lg font-semibold text-gray-900">{tour.title}</p>
-              {tour.city && (
-                <p className="mt-1 text-sm text-gray-500">City: {tour.city}</p>
+              <p className="text-sm font-medium text-gray-600">Booking ID:</p>
+              <p className="text-lg font-semibold text-gray-900">#{booking.id}</p>
+              {booking.tour?.title && (
+                <p className="mt-2 text-sm font-medium text-gray-600">Tour:</p>
+              )}
+              {booking.tour?.title && (
+                <p className="text-base font-semibold text-gray-900">{booking.tour.title}</p>
+              )}
+              {booking.city && (
+                <p className="mt-2 text-sm text-gray-500">City: {booking.city}</p>
+              )}
+              {booking.tour_datetime && (
+                <p className="mt-1 text-sm text-gray-500">
+                  Date: {new Date(booking.tour_datetime).toLocaleDateString()}
+                </p>
               )}
             </div>
             <p className="text-center text-yellow-600">
