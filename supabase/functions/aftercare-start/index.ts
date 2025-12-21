@@ -43,28 +43,29 @@ Deno.serve(async (req: Request) => {
     
 
     for (const booking of bookings) {
-      if(booking.isCustomerDetailsRequested){
-console.log(`[aftercare] Sending booking ${booking.id} to webhook...`);
-      try {
-        const res = await fetch(webhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(booking),
-        });
+      // Only process bookings that haven't been sent yet
+      if (!booking.isCustomerDetailsRequested) {
+        console.log(`[aftercare] Sending booking ${booking.id} to webhook...`);
+        try {
+          const res = await fetch(webhookUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(booking),
+          });
 
-        if (!res.ok) {
-          console.error(`[aftercare] Failed webhook for booking ${booking.id}`);
-          continue;
+          if (!res.ok) {
+            console.error(`[aftercare] Failed webhook for booking ${booking.id}`);
+            continue;
+          }
+
+          console.log(`[aftercare] Webhook sent for booking ${booking.id}`);
+          
+          // Mark as sent after successful webhook
+          await supabase.from("tourbooking").update({isCustomerDetailsRequested: true}).eq("id", booking.id);
+        } catch (err) {
+          console.error(`[aftercare] Webhook error for booking ${booking.id}:`, err);
         }
-
-        console.log(`[aftercare] Webhook sent for booking ${booking.id}`);
-      } catch (err) {
-        console.error(`[aftercare] Webhook error for booking ${booking.id}:`, err);
       }
-            await supabase.from("tourbooking").update({isCustomerDetailsRequested : true}).eq("id",booking.id)
-
-      }
-      
     }
 
     return new Response(
