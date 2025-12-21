@@ -28,7 +28,7 @@ SELECT cron.schedule(
       url := 'https://rwrfobawfbfsggczofao.supabase.co/functions/v1/aftercare-check',
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
-        'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3cmZvYmF3ZmJmc2dnY3pvZmFvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Mjk1MDI2NiwiZXhwIjoyMDc4NTI2MjY2fQ.VChEoCJsA0hfswfoAavNiX_NZqoBYKxP-kpD9xR4_d4'
+        'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key', true)
       ),
       body := '{}'::jsonb
     ) AS request_id;

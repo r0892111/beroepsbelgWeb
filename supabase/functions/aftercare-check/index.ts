@@ -15,7 +15,7 @@ Deno.serve(async (req: Request) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseKey = Deno.env.get("service_api_key")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const now = new Date().toISOString();
@@ -80,7 +80,7 @@ Deno.serve(async (req: Request) => {
 
     for (const booking of finishedBookings) {
       // Only process bookings that haven't been sent yet
-      if (!booking.isCustomerDetailsRequested) {
+      if (!booking.is_aftercare_started) {
         console.log(`[aftercare-check] Sending booking ${booking.id} to webhook...`);
         try {
           const res = await fetch(webhookUrl, {
@@ -99,7 +99,7 @@ Deno.serve(async (req: Request) => {
           // Mark as sent after successful webhook
           const { error: updateError } = await supabase
             .from("tourbooking")
-            .update({ isCustomerDetailsRequested: true })
+            .update({ is_aftercare_started: true })
             .eq("id", booking.id);
 
           if (updateError) {
@@ -112,7 +112,7 @@ Deno.serve(async (req: Request) => {
           console.error(`[aftercare-check] Webhook error for booking ${booking.id}:`, err);
         }
       } else {
-        console.log(`[aftercare-check] Booking ${booking.id} already processed (isCustomerDetailsRequested = true), skipping`);
+        console.log(`[aftercare-check] Booking ${booking.id} already processed (is_aftercare_started = true), skipping`);
       }
     }
 
