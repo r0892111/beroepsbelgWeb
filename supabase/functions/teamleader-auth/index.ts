@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
     console.log("📥 Request body:", body);
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const supabaseServiceRoleKey = Deno.env.get('service_api_key') ?? '';
 
     if (!supabaseUrl || !supabaseServiceRoleKey) {
       console.error("❌ Missing Supabase env vars");
