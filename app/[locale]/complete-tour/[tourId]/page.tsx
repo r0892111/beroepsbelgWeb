@@ -1,5 +1,25 @@
 import { notFound } from 'next/navigation';
-import { supabaseServer } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
+
+// Create server-side Supabase client directly in this file
+function getSupabaseServer() {
+  if (typeof window !== 'undefined') {
+    throw new Error('This function can only be used server-side');
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing Supabase environment variables');
+  }
+
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      persistSession: false,
+    },
+  });
+}
 
 interface CompleteTourPageProps {
   params: Promise<{ locale: string; tourId: string }>;
@@ -18,7 +38,8 @@ async function getTourBookingById(bookingId: string) {
   
   console.log('[Complete Tour] Parsed booking ID:', bookingIdNum);
 
-  const { data, error } = await supabaseServer
+  const supabase = getSupabaseServer();
+  const { data, error } = await supabase
     .from('tourbooking')
     .select('id, tour_id, city, tour_datetime, status')
     .eq('id', bookingIdNum)
@@ -54,7 +75,8 @@ async function getTourBookingById(bookingId: string) {
   // Also fetch the tour details if tour_id exists
   let tour = null;
   if (data.tour_id) {
-    const { data: tourData, error: tourError } = await supabaseServer
+    const supabase = getSupabaseServer();
+    const { data: tourData, error: tourError } = await supabase
       .from('tours_table_prod')
       .select('id, title')
       .eq('id', data.tour_id)

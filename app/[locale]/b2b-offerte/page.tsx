@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Calendar, Users, MapPin, Languages, Building2, Sparkles, CheckCircle2, Home, ShoppingBag, ExternalLink, Clock, Gift, FileText } from 'lucide-react';
-import { getCities, getTours, getProducts } from '@/lib/api/content';
+// Removed direct imports - will fetch from API instead
 import type { City, Tour, Product } from '@/lib/data/types';
 import Image from 'next/image';
 
@@ -131,16 +131,18 @@ export default function B2BQuotePage() {
 
     async function loadContent() {
       try {
-        const [citiesData, toursData, productsData] = await Promise.all([
-          getCities(),
-          getTours(),
-          getProducts()
+        // Fetch from API routes instead of direct imports
+        const [citiesRes, toursRes, productsRes] = await Promise.all([
+          fetch('/api/cities').then(r => r.ok ? r.json() : []).catch(() => []),
+          fetch('/api/tours').then(r => r.ok ? r.json() : []).catch(() => []),
+          fetch('/api/products').then(r => r.ok ? r.json() : []).catch(() => [])
         ]);
+        
         if (!isMounted) return;
 
-        setCities(citiesData);
-        setTours(toursData);
-        setProducts(productsData.slice(0, 6)); // Get 6 products for upsell
+        setCities(citiesRes);
+        setTours(toursRes);
+        setProducts(productsRes.slice(0, 6)); // Get 6 products for upsell
         setDataError(null);
       } catch (error) {
         console.error('[B2BQuotePage] Failed to load data', error);
