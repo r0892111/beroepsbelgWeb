@@ -18,7 +18,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/contexts/auth-context';
-import { getProducts } from '@/lib/api/content';
+// Removed direct import - will fetch from API instead
 import type { Product } from '@/lib/data/types';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
@@ -99,8 +99,9 @@ export function TourBookingDialog({
     if (showUpsellDialog && products.length === 0) {
       console.log('Loading products for upsell dialog');
       setProductsLoading(true);
-      getProducts()
-        .then((data) => {
+      fetch('/api/products')
+        .then(res => res.json())
+        .then((data: Product[]) => {
           // Only show webshop items (books, merchandise, games) - filter out any non-webshop items
           const webshopItems = data.filter(p => 
             p.category === 'Book' || 
