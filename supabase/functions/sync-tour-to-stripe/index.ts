@@ -17,14 +17,14 @@ Deno.serve(async (req: Request) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')!;
 
     if (!stripeSecretKey) {
       throw new Error('Stripe secret key not configured');
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
     const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2023-10-16',
       httpClient: Stripe.createFetchHttpClient(),

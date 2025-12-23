@@ -16,7 +16,9 @@ Deno.serve(async (req)=>{
   try {
     // Initialize Supabase client
     console.log('🔧 Initializing Supabase');
-    const supabase = createClient(Deno.env.get('SUPABASE_URL'), Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'), {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: {
         persistSession: false
       }
