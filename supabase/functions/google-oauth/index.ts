@@ -12,7 +12,7 @@ const GOOGLE_OAUTH_SCOPES = [
   'https://www.googleapis.com/auth/calendar',
   'https://www.googleapis.com/auth/userinfo.email',
   'https://www.googleapis.com/auth/userinfo.profile',
-  'https://www.googleapis.com/auth/drive.file'
+  'https://www.googleapis.com/auth/drive'
 ].join(' ');
 
 Deno.serve(async (req: Request) => {
@@ -25,8 +25,8 @@ Deno.serve(async (req: Request) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {

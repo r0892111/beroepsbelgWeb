@@ -22,8 +22,10 @@ serve(async (req: Request) => {
     })
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || ''
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey)
 
     const {
       tourId,
@@ -111,7 +113,7 @@ serve(async (req: Request) => {
 
       // Fetch product details from database to ensure prices are correct
       const productIds = upsellProducts.map((p: any) => p.id);
-      const { data: productData, error: productError } = await supabase
+      const { data: productData, error: productError } = await supabaseClient
         .from('webshop_data')
         .select('uuid, Name, Price (EUR)')
         .in('uuid', productIds);
