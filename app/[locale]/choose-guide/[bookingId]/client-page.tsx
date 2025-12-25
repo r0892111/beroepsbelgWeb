@@ -43,42 +43,7 @@ export default function ChooseGuideClientPage() {
   const [confirmSuccess, setConfirmSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Check if user is admin - wait for auth to fully load
-  useEffect(() => {
-    // Don't redirect while auth is still loading
-    if (authLoading) {
-      return;
-    }
-
-    // If no user, redirect
-    if (!user) {
-      console.log('[Choose Guide] No user found, redirecting');
-      router.push(`/${locale}`);
-      return;
-    }
-
-    // Wait for profile to load
-    if (user && !profile) {
-      console.log('[Choose Guide] User found but profile not loaded yet');
-      return;
-    }
-
-    // Check admin status
-    if (user && profile) {
-      console.log('[Choose Guide] Auth check:', {
-        userId: user.id,
-        hasProfile: !!profile,
-        isAdmin: profile.isAdmin,
-        willRedirect: !profile.isAdmin
-      });
-      
-      // Check both isAdmin and is_admin for compatibility (like other admin pages)
-      if (!profile.isAdmin && !profile.is_admin) {
-        console.log('[Choose Guide] User is not admin, redirecting');
-        router.push(`/${locale}`);
-      }
-    }
-  }, [user, profile, router, locale, authLoading]);
+  // Note: We don't redirect anymore - we show sign-in prompt instead
 
   useEffect(() => {
     // Wait for auth to load
@@ -186,7 +151,7 @@ export default function ChooseGuideClientPage() {
     }
   };
 
-  // Show loading while checking auth or loading data
+  // Show loading while checking auth
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
@@ -198,29 +163,36 @@ export default function ChooseGuideClientPage() {
     );
   }
 
-  // Show error if not admin (but don't redirect immediately - let user see the error)
+  // Show sign-in prompt if not authenticated
   if (!user) {
+    const redirectUrl = `/${locale}/choose-guide/${bookingId}`;
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg text-center">
-          <XCircle className="mx-auto h-16 w-16 text-red-500" />
-          <h1 className="mt-4 text-2xl font-bold text-gray-900">Authentication Required</h1>
-          <p className="mt-2 text-gray-600">Please log in to access this page.</p>
+          <XCircle className="mx-auto h-16 w-16 text-yellow-500" />
+          <h1 className="mt-4 text-2xl font-bold text-gray-900">Sign In Required</h1>
+          <p className="mt-2 text-gray-600">Please sign in to choose a guide for this booking.</p>
+          <div className="mt-6">
+            <Button
+              onClick={() => router.push(`/${locale}/auth/sign-in?redirect=${encodeURIComponent(redirectUrl)}`)}
+              className="w-full"
+            >
+              Sign In
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
 
+  // Show access denied if not admin
   if (user && profile && !profile.isAdmin && !profile.is_admin) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg text-center">
           <XCircle className="mx-auto h-16 w-16 text-red-500" />
           <h1 className="mt-4 text-2xl font-bold text-gray-900">Access Denied</h1>
-          <p className="mt-2 text-gray-600">Admin access required.</p>
-          <p className="mt-2 text-sm text-gray-500">
-            Debug: isAdmin={String(profile.isAdmin)}, is_admin={String(profile.is_admin)}
-          </p>
+          <p className="mt-2 text-gray-600">Admin access required to choose guides.</p>
         </div>
       </div>
     );
