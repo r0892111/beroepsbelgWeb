@@ -184,11 +184,11 @@ export async function POST(
       );
     }
 
-    // Verify booking exists
+    // Verify booking exists and get selectedGuides
     const supabase = getSupabaseServer();
     const { data: booking, error: bookingError } = await supabase
       .from('tourbooking')
-      .select('id')
+      .select('id, selectedGuides')
       .eq('id', bookingIdNum)
       .single();
 
@@ -197,6 +197,27 @@ export async function POST(
         { error: 'Booking not found' },
         { status: 404 }
       );
+    }
+
+    // Remove the selected guide from selectedGuides array
+    let updatedSelectedGuides = booking.selectedGuides || [];
+    if (Array.isArray(updatedSelectedGuides)) {
+      // Filter out the selected guide ID (handle both object and number formats)
+      updatedSelectedGuides = updatedSelectedGuides.filter((item: any) => {
+        // If it's an object with an id field
+        if (typeof item === 'object' && item !== null && 'id' in item) {
+          return parseInt(item.id, 10) !== guideIdNum;
+        }
+        // If it's already a number
+        if (typeof item === 'number') {
+          return item !== guideIdNum;
+        }
+        // If it's a string number
+        if (typeof item === 'string') {
+          return parseInt(item, 10) !== guideIdNum;
+        }
+        return true; // Keep other formats
+      });
     }
 
     // Trigger webhook
@@ -209,10 +230,13 @@ export async function POST(
       );
     }
 
-    // Update booking with selected guide
+    // Update booking with selected guide and remove from selectedGuides
     const { error: updateError } = await supabase
       .from('tourbooking')
-      .update({ guide_id: guideIdNum })
+      .update({ 
+        guide_id: guideIdNum,
+        selectedGuides: updatedSelectedGuides
+      })
       .eq('id', bookingIdNum);
 
     if (updateError) {

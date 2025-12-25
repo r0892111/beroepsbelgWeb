@@ -49,7 +49,11 @@ export default function SignInPage() {
         toast.error(t('invalidCredentials'));
       } else {
         toast.success(t('signInSuccess'));
-        router.push(`/${locale}/account`);
+        // Check for redirect parameter in URL
+        const searchParams = new URLSearchParams(window.location.search);
+        const redirect = searchParams.get('redirect');
+        // Redirect to the specified URL or default to account page
+        router.push(redirect || `/${locale}/account`);
       }
     } catch (error) {
       toast.error(t('invalidCredentials'));

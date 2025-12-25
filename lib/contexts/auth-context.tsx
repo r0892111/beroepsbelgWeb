@@ -99,10 +99,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
+      // Get redirect parameter from URL if present
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirect = urlParams.get('redirect');
+      
+      // Build redirect URL with redirect parameter if present
+      let redirectTo = `${window.location.origin}/auth/callback`;
+      if (redirect) {
+        redirectTo += `?redirect=${encodeURIComponent(redirect)}`;
+      }
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo,
         },
       });
       return { error };
