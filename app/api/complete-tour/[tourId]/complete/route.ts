@@ -50,10 +50,10 @@ export async function POST(
 
     const supabase = getSupabaseServer();
 
-    // Check if booking exists and get current status
+    // Check if booking exists and get current status and picturesUploaded flag
     const { data: booking, error: bookingError } = await supabase
       .from('tourbooking')
-      .select('id, status')
+      .select('id, status, picturesUploaded')
       .eq('id', bookingIdNum)
       .single();
 
@@ -68,6 +68,14 @@ export async function POST(
     if (booking.status === 'completed') {
       return NextResponse.json(
         { error: 'Tour is already completed' },
+        { status: 400 }
+      );
+    }
+
+    // Check if pictures have been uploaded before allowing completion
+    if (!booking.picturesUploaded) {
+      return NextResponse.json(
+        { error: 'Please upload tour photos before completing the tour' },
         { status: 400 }
       );
     }

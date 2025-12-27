@@ -112,17 +112,21 @@ export async function POST(
       );
     }
 
-    // Update booking status based on action (using UUID part)
-    const newStatus = action === 'accept' ? 'confirmed' : 'declined';
-    const { error: updateError } = await supabase
-      .from('tourbooking')
-      .update({ status: newStatus })
-      .eq('deal_id', uuid);
+    // Update booking status only when guide accepts
+    // When guide declines, status remains unchanged (payment_completed for B2C, pending_guide_confirmation for B2B)
+    // This allows another guide to accept the booking offer
+    if (action === 'accept') {
+      const { error: updateError } = await supabase
+        .from('tourbooking')
+        .update({ status: 'confirmed' })
+        .eq('deal_id', uuid);
 
-    if (updateError) {
-      console.error('Error updating booking status:', updateError);
-      // Still return success if webhook worked
+      if (updateError) {
+        console.error('Error updating booking status:', updateError);
+        // Still return success if webhook worked
+      }
     }
+    // If declined, don't update status - keep current status so another guide can accept
 
     return NextResponse.json({
       success: true,
