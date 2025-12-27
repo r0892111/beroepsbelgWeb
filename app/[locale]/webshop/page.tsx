@@ -9,7 +9,8 @@ import { ProductCard } from '@/components/webshop/product-card';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
 import { TourUpsellCard } from '@/components/upsells/tour-upsell-card';
-import { Compass } from 'lucide-react';
+import { Compass, Search, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 type CategoryFilter = 'All' | 'Book' | 'Merchandise' | 'Game';
 
@@ -19,6 +20,7 @@ export default function WebshopPage() {
   const params = useParams();
   const locale = params.locale as Locale;
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('All');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [products, setProducts] = useState<Product[]>([]);
   const [featuredTours, setFeaturedTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,11 +95,30 @@ export default function WebshopPage() {
   }, [t]);
 
   const filteredProducts = useMemo(() => {
-    if (selectedCategory === 'All') {
-      return products;
+    let filtered = products;
+
+    // Apply category filter
+    if (selectedCategory !== 'All') {
+      filtered = filtered.filter((p) => p.category === selectedCategory);
     }
-    return products.filter((p) => p.category === selectedCategory);
-  }, [products, selectedCategory]);
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter((p) => {
+        const title = p.title[locale]?.toLowerCase() || '';
+        const description = p.description[locale]?.toLowerCase() || '';
+        const category = p.category?.toLowerCase() || '';
+        return (
+          title.includes(query) ||
+          description.includes(query) ||
+          category.includes(query)
+        );
+      });
+    }
+
+    return filtered;
+  }, [products, selectedCategory, searchQuery, locale]);
 
   const categories: CategoryFilter[] = ['All', 'Book', 'Merchandise', 'Game'];
 
@@ -146,6 +167,30 @@ export default function WebshopPage() {
           </p>
         </div>
 
+        {/* Search Bar */}
+        <div className="mb-8 max-w-2xl mx-auto">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
+            <Input
+              type="text"
+              placeholder={t('searchPlaceholder') || 'Search products...'}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 pr-12 py-6 text-lg bg-white border-2 border-neutral-200 rounded-full focus:border-[#1BDD95] focus:ring-2 focus:ring-[#1BDD95]/20 transition-all"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
+                aria-label="Clear search"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Category Filters */}
         <div className="mb-12 flex flex-wrap justify-center gap-3">
           {categories.map((category) => (
             <button

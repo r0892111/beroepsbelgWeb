@@ -101,6 +101,7 @@
   "common": {
     "discover": "Ontdek",
     "moreInfo": "Meer info",
+    "schedule": "Schema",
     "order": "Bestel",
     "price": "Prijs",
     "comingSoon": "VERWACHT 2025",
@@ -472,7 +473,8 @@
     "games": "Spellen",
     "experienceBelgiumLive": "Beleef België Live",
     "exploreHiddenStories": "Houd je van wat je ziet? Ontdek de verborgen verhalen van België met onze deskundige gidsen. Van architectonische schatten tot culinaire geheimen – onze tours brengen de verhalen achter de verhalen tot leven.",
-    "browseAllTours": "Bekijk Alle Tours"
+    "browseAllTours": "Bekijk Alle Tours",
+    "searchPlaceholder": "Zoek producten..."
   },
   "tourDetail": {
     "backToCity": "Terug naar {city} tours",
