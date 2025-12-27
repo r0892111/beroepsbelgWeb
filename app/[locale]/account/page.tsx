@@ -408,8 +408,8 @@ export default function AccountPage() {
                             {(product?.image || product) && (
                               <div className="relative w-20 h-20 flex-shrink-0">
                                 <Image
-                                  src={product?.image || getProductPlaceholder(product?.Category || product?.category || 'Book')}
-                                  alt={product?.Name || product?.title_nl || product?.title_en || 'Product'}
+                                  src={product?.image || getProductPlaceholder((product as any)?.Category || (product as any)?.category || 'Book')}
+                                  alt={(product as any)?.Name || (product as any)?.title_nl || (product as any)?.title_en || 'Product'}
                                   fill
                                   className="object-cover rounded"
                                   unoptimized
