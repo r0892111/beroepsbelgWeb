@@ -14,7 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Calendar, Users, MapPin, Languages, Building2, Sparkles, CheckCircle2, Home, ShoppingBag, ExternalLink, Clock, Gift, FileText, Loader2 } from 'lucide-react';
+import { Calendar, Users, MapPin, Languages, Building2, Sparkles, CheckCircle2, Home, ShoppingBag, ExternalLink, Clock, Gift, FileText, Loader2, Plus, Minus } from 'lucide-react';
 // Removed direct imports - will fetch from API instead
 import type { City, Tour, Product } from '@/lib/data/types';
 import Image from 'next/image';
@@ -45,17 +45,23 @@ export default function B2BQuotePage() {
   const router = useRouter();
   const locale = params.locale as string;
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [step, setStep] = useState<'select' | 'contact' | 'upsell' | 'payment' | 'success'>('select');
+  const [step, setStep] = useState<'select' | 'contact' | 'upsell' | 'opmaat' | 'payment' | 'success'>('select');
   const [cities, setCities] = useState<City[]>([]);
   const [tours, setTours] = useState<Tour[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
-  const [selectedUpsell, setSelectedUpsell] = useState<string[]>([]);
+  const [selectedUpsell, setSelectedUpsell] = useState<Record<string, number>>({});
   const [countdown, setCountdown] = useState(5);
   const [bookingType, setBookingType] = useState<'particulier' | 'zakelijk'>('particulier');
-  const [jotFormUrl, setJotFormUrl] = useState<string>('');
   const [isOpMaat, setIsOpMaat] = useState(false);
+  const [bookingId, setBookingId] = useState<number | null>(null);
+  const [opMaatAnswers, setOpMaatAnswers] = useState({
+    startEnd: '',
+    cityPart: '',
+    subjects: '',
+    specialWishes: '',
+  });
 
   const {
     register,
@@ -203,7 +209,14 @@ export default function B2BQuotePage() {
     }
   }, [selectedDate, selectedTimeSlot, setValue]);
 
-  // Success countdown
+  // Reset countdown when entering success step
+  useEffect(() => {
+    if (step === 'success') {
+      setCountdown(5);
+    }
+  }, [step]);
+
+  // Success countdown redirect
   useEffect(() => {
     if (step === 'success' && countdown > 0) {
       const timer = setTimeout(() => {
@@ -228,6 +241,11 @@ export default function B2BQuotePage() {
       toast.error(t('fillNumberOfPeople'));
       return;
     }
+    // Set op maat state when moving to contact step
+    const tourIsOpMaat = selectedTour?.op_maat === true || 
+                        (typeof selectedTour?.op_maat === 'string' && selectedTour.op_maat === 'true') || 
+                        (typeof selectedTour?.op_maat === 'number' && selectedTour.op_maat === 1);
+    setIsOpMaat(tourIsOpMaat);
     setStep('contact');
   };
 
@@ -235,16 +253,34 @@ export default function B2BQuotePage() {
     setStep('upsell');
   };
 
+  const goToOpMaat = () => {
+    setStep('opmaat');
+  };
+
   const goToPayment = () => {
     setStep('payment');
   };
 
-  const toggleUpsell = (productId: string) => {
-    setSelectedUpsell(prev =>
-      prev.includes(productId)
-        ? prev.filter(id => id !== productId)
-        : [...prev, productId]
-    );
+  // Upsell quantity management
+  const incrementUpsell = (productId: string) => {
+    setSelectedUpsell(prev => ({
+      ...prev,
+      [productId]: (prev[productId] || 0) + 1,
+    }));
+  };
+
+  const decrementUpsell = (productId: string) => {
+    setSelectedUpsell(prev => {
+      const current = prev[productId] || 0;
+      if (current <= 1) {
+        const { [productId]: _, ...rest } = prev;
+        return rest;
+      }
+      return {
+        ...prev,
+        [productId]: current - 1,
+      };
+    });
   };
 
   const onSubmit = async (data: QuoteFormData) => {
@@ -253,106 +289,140 @@ export default function B2BQuotePage() {
     try {
       const selectedCityData = cities.find((city) => city.slug === data.city);
       const selectedTourData = tours.find((tour) => tour.id === data.tourId);
-      const upsellProducts = products.filter(p => selectedUpsell.includes(p.uuid));
+      // Convert selectedUpsell object to array with quantities
+      const upsellProducts = Object.entries(selectedUpsell)
+        .filter(([_, quantity]) => quantity > 0)
+        .map(([productId, quantity]) => {
+          const product = products.find(p => p.uuid === productId);
+          return product ? { ...product, quantity } : null;
+        })
+        .filter((p): p is NonNullable<typeof p> => p !== null);
 
-      // Check if selected tour is op maat BEFORE making webhook call
+      // Check if selected tour is op maat
       const tourIsOpMaat = selectedTourData?.op_maat === true || 
                           (typeof selectedTourData?.op_maat === 'string' && selectedTourData.op_maat === 'true') || 
                           (typeof selectedTourData?.op_maat === 'number' && selectedTourData.op_maat === 1);
       
-      // For op maat tours, skip webhook call - JotForm will trigger it when submitted
-      // Note: JotForm must be configured in its settings to call the webhook:
-      // https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc
-      if (!tourIsOpMaat) {
-        const payload = {
-          // Tour info
-          dateTime: data.dateTime,
-          citySlug: data.city,
-          cityName: selectedCityData?.name ?? null,
-          tourId: data.tourId,
-          tourSlug: selectedTourData?.slug ?? null,
-          tourTitle: selectedTourData?.title ?? null,
-          tourDetails: {
-            startLocation: selectedTourData?.startLocation ?? null,
-            endLocation: selectedTourData?.endLocation ?? null,
-            durationMinutes: selectedTourData?.durationMinutes ?? null,
-            languages: selectedTourData?.languages ?? null,
-            type: selectedTourData?.type ?? null,
-          },
-          language: data.language,
-          numberOfPeople: data.numberOfPeople,
-          // Company info
-          companyName: data.companyName || null,
-          vatNumber: data.vatNumber || null,
-          billingAddress: data.billingAddress || null,
-          // Contact info
-          contactFirstName: data.contactFirstName,
-          contactLastName: data.contactLastName,
-          contactEmail: data.contactEmail,
-          contactPhone: data.contactPhone,
-          additionalInfo: data.additionalInfo || null,
-          // Upsell
-          upsellProducts: upsellProducts.map(p => ({
-            id: p.uuid,
-            title: p.title.nl,
-          })),
-          // Booking type
-          bookingType,
-          // Meta
-          submittedAt: new Date().toISOString(),
-          status: 'pending_guide_confirmation',
-        };
+      // For op maat tours, create tourbooking record first
+      let createdBookingId: number | null = null;
+      if (tourIsOpMaat) {
+        try {
+          const bookingResponse = await fetch('/api/b2b-booking/create', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              tourId: data.tourId,
+              citySlug: data.city,
+              dateTime: data.dateTime,
+              language: data.language,
+              numberOfPeople: data.numberOfPeople,
+              contactFirstName: data.contactFirstName,
+              contactLastName: data.contactLastName,
+              contactEmail: data.contactEmail,
+              contactPhone: data.contactPhone,
+              companyName: data.companyName || null,
+              vatNumber: data.vatNumber || null,
+              billingAddress: data.billingAddress || null,
+              additionalInfo: data.additionalInfo || null,
+              upsellProducts: upsellProducts.map(p => ({
+                id: p.uuid,
+                title: p.title.nl,
+                quantity: p.quantity || 1,
+                price: p.price || 0,
+              })),
+              // Op maat specific answers
+              opMaatAnswers: {
+                startEnd: opMaatAnswers.startEnd,
+                cityPart: opMaatAnswers.cityPart,
+                subjects: opMaatAnswers.subjects,
+                specialWishes: opMaatAnswers.specialWishes,
+              },
+            }),
+          });
 
-        const response = await fetch('https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
+          if (!bookingResponse.ok) {
+            const errorData = await bookingResponse.json();
+            console.error('Error creating B2B booking:', errorData);
+            toast.error(t('error') || 'Failed to create booking');
+            return;
+          }
 
-        if (!response.ok) {
-          toast.error(t('error'));
+          const bookingData = await bookingResponse.json();
+          console.log('B2B booking created:', bookingData);
+          
+          if (bookingData.bookingId) {
+            createdBookingId = bookingData.bookingId;
+            setBookingId(bookingData.bookingId);
+          }
+        } catch (error) {
+          console.error('Error creating B2B booking:', error);
+          toast.error(t('error') || 'Failed to create booking');
           return;
         }
       }
-
-      // Set op maat state and build JotForm URL if needed
-      setIsOpMaat(tourIsOpMaat);
       
-      if (tourIsOpMaat && process.env.NEXT_PUBLIC_JOTFORM_ID) {
-        const baseUrl = `https://form.jotform.com/${process.env.NEXT_PUBLIC_JOTFORM_ID}`;
-        const params = new URLSearchParams();
-        
-        // Field unique names - these must match the "Unique Name" from JotForm Advanced tab
-        const FIELD_BOOKING_NUMBER = process.env.NEXT_PUBLIC_JOTFORM_FIELD_BOOKING_NUMBER || 'typEen';
-        const FIELD_EMAIL = process.env.NEXT_PUBLIC_JOTFORM_FIELD_EMAIL || 'email11';
-        const FIELD_TOUR_DATE = process.env.NEXT_PUBLIC_JOTFORM_FIELD_TOUR_DATE || 'datum';
-        
-        // Pre-fill email
-        if (data.contactEmail) {
-          params.append(FIELD_EMAIL, data.contactEmail);
-        }
-        
-        // Pre-fill tour date if available
-        if (data.dateTime) {
-          try {
-            const dateObj = new Date(data.dateTime);
-            if (!isNaN(dateObj.getTime())) {
-              const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-              const day = String(dateObj.getDate()).padStart(2, '0');
-              const year = dateObj.getFullYear();
-              const formattedDate = `${month}-${day}-${year}`;
-              params.append(FIELD_TOUR_DATE, formattedDate);
-            }
-          } catch (e) {
-            console.error('Error formatting date for JotForm:', e);
-          }
-        }
-        
-        const jotFormUrlWithParams = `${baseUrl}?${params.toString()}`;
-        setJotFormUrl(jotFormUrlWithParams);
+      // Build payload for webhook (include booking ID for op maat tours)
+      const payload = {
+        // Tour info
+        dateTime: data.dateTime,
+        citySlug: data.city,
+        cityName: selectedCityData?.name ?? null,
+        tourId: data.tourId,
+        tourSlug: selectedTourData?.slug ?? null,
+        tourTitle: selectedTourData?.title ?? null,
+        tourDetails: {
+          startLocation: selectedTourData?.startLocation ?? null,
+          endLocation: selectedTourData?.endLocation ?? null,
+          durationMinutes: selectedTourData?.durationMinutes ?? null,
+          languages: selectedTourData?.languages ?? null,
+          type: selectedTourData?.type ?? null,
+        },
+        language: data.language,
+        numberOfPeople: data.numberOfPeople,
+        // Company info
+        companyName: data.companyName || null,
+        vatNumber: data.vatNumber || null,
+        billingAddress: data.billingAddress || null,
+        // Contact info
+        contactFirstName: data.contactFirstName,
+        contactLastName: data.contactLastName,
+        contactEmail: data.contactEmail,
+        contactPhone: data.contactPhone,
+        additionalInfo: data.additionalInfo || null,
+        // Upsell
+        upsellProducts: upsellProducts.map(p => ({
+          id: p.uuid,
+          title: p.title.nl,
+          quantity: p.quantity || 1,
+          price: p.price || 0,
+        })),
+        // Booking type
+        bookingType,
+        // Meta
+        submittedAt: new Date().toISOString(),
+        status: 'pending_guide_confirmation',
+        // Include booking ID if op maat tour was created
+        ...(createdBookingId && { bookingId: createdBookingId }),
+      };
+
+      // Call webhook for all tours (both op maat and regular)
+      const response = await fetch('https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        toast.error(t('error'));
+        return;
       }
+
+      // Set op maat state
+      setIsOpMaat(tourIsOpMaat);
       
       setStep('success');
       reset();
@@ -436,6 +506,7 @@ export default function B2BQuotePage() {
               {t('redirectingIn', { countdown })}
             </p>
             
+<<<<<<< HEAD
             {isOpMaat && process.env.NEXT_PUBLIC_JOTFORM_ID && (
               <div className="mb-8 rounded-lg border-2 p-6 text-left" style={{ borderColor: 'var(--brass)' }}>
                 <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
@@ -498,7 +569,7 @@ export default function B2BQuotePage() {
     );
   }
 
-  const stepNumber = step === 'select' ? 1 : step === 'contact' ? 2 : step === 'upsell' ? 3 : 4;
+  const stepNumber = step === 'select' ? 1 : step === 'contact' ? 2 : step === 'upsell' ? 3 : step === 'opmaat' ? 4 : 5;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#fdfcfa' }}>
@@ -798,48 +869,95 @@ export default function B2BQuotePage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  {products.map((product) => (
-                    <div
-                      key={product.uuid}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        toggleUpsell(product.uuid);
-                      }}
-                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                        selectedUpsell.includes(product.uuid)
-                          ? 'border-brass bg-brass/5'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="relative w-16 h-16 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
-                          {product.image ? (
-                            <Image src={product.image} alt={product.title.nl} fill className="object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <ShoppingBag className="h-6 w-6 text-gray-400" />
+                  {products.map((product) => {
+                    const quantity = selectedUpsell[product.uuid] || 0;
+                    const isSelected = quantity > 0;
+                    
+                    return (
+                      <div
+                        key={product.uuid}
+                        className={`p-4 rounded-lg border-2 transition-all ${
+                          isSelected
+                            ? 'border-brass bg-brass/5'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="relative w-16 h-16 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
+                            {product.image ? (
+                              <Image src={product.image} alt={product.title.nl} fill className="object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <ShoppingBag className="h-6 w-6 text-gray-400" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{product.title.nl}</p>
+                            <p className="text-xs text-muted-foreground mt-1">€{product.price?.toFixed(2) || '0.00'}</p>
+                          </div>
+                        </div>
+                        
+                        {isSelected ? (
+                          <div className="flex items-center justify-between gap-3 pt-3 border-t border-gray-200">
+                            <span className="text-sm font-medium text-muted-foreground">Aantal:</span>
+                            <div className="flex items-center gap-3">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  decrementUpsell(product.uuid);
+                                }}
+                                className="h-8 w-8 p-0 rounded-full"
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <span className="text-lg font-semibold min-w-[2rem] text-center">
+                                {quantity}
+                              </span>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  incrementUpsell(product.uuid);
+                                }}
+                                className="h-8 w-8 p-0 rounded-full"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
                             </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{product.title.nl}</p>
-                        </div>
-                        <div className="flex-shrink-0">
-                          {selectedUpsell.includes(product.uuid) ? (
-                            <CheckCircle2 className="h-5 w-5 text-brass" />
-                          ) : (
-                            <div className="h-5 w-5 rounded border-2 border-gray-300" />
-                          )}
-                        </div>
+                          </div>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              incrementUpsell(product.uuid);
+                            }}
+                            className="w-full"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Toevoegen
+                          </Button>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
-                {selectedUpsell.length > 0 && (
+                {Object.keys(selectedUpsell).length > 0 && (
                   <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--brass-light)' }}>
-                    <p className="font-semibold">{t('productsSelected', { count: selectedUpsell.length, plural: selectedUpsell.length > 1 ? 'en' : '' })}</p>
+                    <p className="font-semibold">
+                      ✓ {Object.values(selectedUpsell).reduce((sum, qty) => sum + qty, 0)} product{Object.values(selectedUpsell).reduce((sum, qty) => sum + qty, 0) > 1 ? 'en' : ''} geselecteerd
+                    </p>
                   </div>
                 )}
 
@@ -847,14 +965,114 @@ export default function B2BQuotePage() {
                   <Button type="button" onClick={() => setStep('contact')} variant="outline" className="flex-1">
                     {t('backButton')}
                   </Button>
-                  <Button type="button" onClick={goToPayment} className="flex-1 btn-primary">
-                    {selectedUpsell.length > 0 ? t('continueWithProducts') : t('skip')}
+                  <Button 
+                    type="button" 
+                    onClick={() => {
+                      // Check if tour is op maat to determine next step
+                      const tourIsOpMaat = selectedTour?.op_maat === true || 
+                                          (typeof selectedTour?.op_maat === 'string' && selectedTour.op_maat === 'true') || 
+                                          (typeof selectedTour?.op_maat === 'number' && selectedTour.op_maat === 1);
+                      if (tourIsOpMaat) {
+                        setStep('opmaat');
+                      } else {
+                        setStep('payment');
+                      }
+                    }} 
+                    className="flex-1 btn-primary"
+                  >
+                    {Object.keys(selectedUpsell).length > 0 ? 'Verder met producten →' : 'Overslaan →'}
+                  </Button>
                   </Button>
                 </div>
               </div>
             )}
 
-            {/* Step 4: Confirm Quote Request */}
+            {/* Step 4: Op Maat Questions (only for op maat tours) */}
+            {step === 'opmaat' && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="text-center">
+                  <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full" style={{ backgroundColor: 'var(--brass-light)' }}>
+                    <FileText className="h-8 w-8" style={{ color: 'var(--brass)' }} />
+                  </div>
+                  <h2 className="text-2xl font-serif font-bold text-navy mb-2">Help ons je perfecte tour samen te stellen</h2>
+                  <p className="text-muted-foreground">Beantwoord de volgende vragen om je op maat tour te personaliseren</p>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <Label htmlFor="startEnd" className="text-base font-semibold mb-2 block">
+                      Waar wil je starten en eindigen?
+                    </Label>
+                    <Textarea
+                      id="startEnd"
+                      placeholder="Bijvoorbeeld: Start bij Centraal Station, eindig bij het stadhuis..."
+                      value={opMaatAnswers.startEnd}
+                      onChange={(e) => setOpMaatAnswers(prev => ({ ...prev, startEnd: e.target.value }))}
+                      className="min-h-[100px]"
+                      rows={4}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="cityPart" className="text-base font-semibold mb-2 block">
+                      Welk deel van de stad wil je beter leren kennen?
+                    </Label>
+                    <Textarea
+                      id="cityPart"
+                      placeholder="Bijvoorbeeld: De historische binnenstad, de moderne wijk, de markten..."
+                      value={opMaatAnswers.cityPart}
+                      onChange={(e) => setOpMaatAnswers(prev => ({ ...prev, cityPart: e.target.value }))}
+                      className="min-h-[100px]"
+                      rows={4}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="subjects" className="text-base font-semibold mb-2 block">
+                      Welke onderwerpen wil je in de tour zien?
+                    </Label>
+                    <Textarea
+                      id="subjects"
+                      placeholder="Bijvoorbeeld: Architectuur, geschiedenis, lokale cultuur, eten en drinken..."
+                      value={opMaatAnswers.subjects}
+                      onChange={(e) => setOpMaatAnswers(prev => ({ ...prev, subjects: e.target.value }))}
+                      className="min-h-[100px]"
+                      rows={4}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="specialWishes" className="text-base font-semibold mb-2 block">
+                      Zijn er nog speciale wensen?
+                    </Label>
+                    <Textarea
+                      id="specialWishes"
+                      placeholder="Bijvoorbeeld: Toegankelijkheid, specifieke interesses, voorkeuren..."
+                      value={opMaatAnswers.specialWishes}
+                      onChange={(e) => setOpMaatAnswers(prev => ({ ...prev, specialWishes: e.target.value }))}
+                      className="min-h-[100px]"
+                      rows={4}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button type="button" onClick={() => setStep('upsell')} variant="outline" className="flex-1">
+                    ← Terug
+                  </Button>
+                  <Button 
+                    type="button" 
+                    onClick={() => setStep('payment')} 
+                    className="flex-1 btn-primary"
+                    disabled={!opMaatAnswers.startEnd.trim() || !opMaatAnswers.cityPart.trim() || !opMaatAnswers.subjects.trim()}
+                  >
+                    Verder →
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 5: Confirm Quote Request */}
             {step === 'payment' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <h2 className="text-2xl font-serif font-bold text-navy mb-6">{t('step4')}</h2>
@@ -867,9 +1085,20 @@ export default function B2BQuotePage() {
                     <div className="text-muted-foreground">
                       {t('participants', { count: numPeople, plural: numPeople > 1 ? 's' : '' })} • {selectedDate} om {selectedTimeSlot}
                     </div>
-                    {selectedUpsell.length > 0 && (
-                      <div className="pt-2" style={{ borderTop: '1px solid #e5e7eb' }}>
-                        <span>{t('extraProducts', { count: selectedUpsell.length })}</span>
+                    {Object.keys(selectedUpsell).length > 0 && (
+                      <div className="pt-2 space-y-1" style={{ borderTop: '1px solid #e5e7eb' }}>
+                        <div className="font-medium text-navy">Extra producten:</div>
+                        {Object.entries(selectedUpsell).map(([productId, quantity]) => {
+                          const product = products.find(p => p.uuid === productId);
+                          if (!product || quantity === 0) return null;
+                          return (
+                            <div key={productId} className="text-muted-foreground text-sm">
+                              {product.title.nl} × {quantity}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                       </div>
                     )}
                   </div>
@@ -880,8 +1109,20 @@ export default function B2BQuotePage() {
                 </p>
 
                 <div className="flex gap-3">
-                  <Button type="button" onClick={() => setStep('upsell')} variant="outline" className="flex-1">
-                    {t('backButton')}
+                  <Button 
+                    type="button" 
+                    onClick={() => {
+                      // Check if tour is op maat to determine back step
+                      const tourIsOpMaat = selectedTour?.op_maat === true || 
+                                          (typeof selectedTour?.op_maat === 'string' && selectedTour.op_maat === 'true') || 
+                                          (typeof selectedTour?.op_maat === 'number' && selectedTour.op_maat === 1);
+                      setStep(tourIsOpMaat ? 'opmaat' : 'upsell');
+                    }} 
+                    variant="outline" 
+                    className="flex-1"
+                  >
+                    ← Terug
+                  </Button>
                   </Button>
                   <Button type="submit" disabled={isSubmitting} className="flex-1 btn-primary">
                     {isSubmitting ? t('submitting') : t('confirmRequest')}

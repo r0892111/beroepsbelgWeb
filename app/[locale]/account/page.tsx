@@ -602,6 +602,8 @@ export default function AccountPage() {
                                     ? 'bg-green-100 text-green-800'
                                     : booking.status === 'payment_completed'
                                     ? 'bg-blue-100 text-blue-800'
+                                    : booking.status === 'pending_jotform_confirmation'
+                                    ? 'bg-yellow-100 text-yellow-800'
                                     : booking.status === 'pending_guide_confirmation'
                                     ? 'bg-orange-100 text-orange-800'
                                     : booking.status === 'pending'
