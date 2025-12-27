@@ -82,7 +82,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      // Check if Supabase client is properly initialized
+      if (!supabase) {
+        return { error: new Error('Supabase client not initialized. Please check your environment variables.') };
+      }
+
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -91,8 +96,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           },
         },
       });
+
+      // Log for debugging (remove in production)
+      if (error) {
+        console.error('Sign up error:', error);
+        // Check if it's an API key error
+        if (error.message?.includes('Invalid API key') || error.message?.includes('JWT')) {
+          return { 
+            error: new Error('Invalid API key. Please check your NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable.') 
+          };
+        }
+      }
+
       return { error };
     } catch (error) {
+      console.error('Sign up exception:', error);
       return { error: error as Error };
     }
   };

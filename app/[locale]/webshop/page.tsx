@@ -112,47 +112,57 @@ export default function WebshopPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#92F0B1]/10 via-white to-[#92F0B1]/5 flex items-center justify-center">
-        <p className="text-muted-foreground">{t('loading')}</p>
+      <div className="min-h-screen bg-[#F9F9F7] flex items-center justify-center">
+        <p className="text-neutral-600 font-inter">{t('loading')}</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#92F0B1]/10 via-white to-[#92F0B1]/5 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F9F9F7] flex items-center justify-center">
         <div className="text-center space-y-4">
-          <p className="text-red-600">{error}</p>
-          <Button onClick={() => window.location.reload()}>{tAuth('tryAgain')}</Button>
+          <p className="text-red-600 font-inter">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="inline-flex items-center justify-center px-8 py-4 bg-[#1BDD95] hover:bg-[#14BE82] rounded-full text-white font-oswald font-bold text-sm uppercase tracking-widest transition-all hover:scale-105"
+          >
+            {tAuth('tryAgain')}
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#92F0B1]/10 via-white to-[#92F0B1]/5">
-      <div className="container mx-auto px-4 py-20">
-        <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold text-[#0d1117]">{t('title')}</h1>
-          <p className="mt-4 text-lg text-[#6b7280]">{t('subtitle')}</p>
+    <div className="min-h-screen bg-[#F9F9F7]">
+      <div className="container mx-auto px-4 md:px-8 py-16 md:py-24">
+        <div className="mb-16 text-center">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold font-oswald uppercase tracking-tight text-neutral-900 mb-4">
+            {t('title')}
+          </h1>
+          <p className="text-lg md:text-xl text-neutral-600 font-inter max-w-2xl mx-auto">
+            {t('subtitle')}
+          </p>
         </div>
 
-        <div className="mb-8 flex flex-wrap justify-center gap-3">
+        <div className="mb-12 flex flex-wrap justify-center gap-3">
           {categories.map((category) => (
-            <Button
+            <button
               key={category}
               onClick={() => setSelectedCategory(category)}
-              variant={selectedCategory === category ? 'default' : 'outline'}
-              className={selectedCategory === category
-                ? 'bg-[#0d1117] hover:bg-[#0d1117]/90'
-                : 'border-[#0d1117] text-[#0d1117] hover:bg-[#0d1117]/10'}
+              className={`px-6 py-3 rounded-full font-oswald font-bold text-sm uppercase tracking-widest transition-all ${
+                selectedCategory === category
+                  ? 'bg-[#1BDD95] text-white shadow-lg hover:bg-[#14BE82] hover:scale-105'
+                  : 'bg-white border-2 border-neutral-200 text-neutral-700 hover:border-neutral-900 hover:text-neutral-900'
+              }`}
             >
               {getCategoryLabel(category)}
-            </Button>
+            </button>
           ))}
         </div>
 
-        <div className="mb-4 text-center text-sm text-muted-foreground">
+        <div className="mb-8 text-center text-sm text-neutral-500 font-inter">
           {t('productCount', { count: filteredProducts.length })}
         </div>
 
@@ -163,15 +173,17 @@ export default function WebshopPage() {
         </div>
 
         {featuredTours.length > 0 && (
-          <div className="mt-24 py-16 px-6 rounded-3xl" style={{ backgroundColor: 'var(--bg-base)', border: '1px solid var(--border-subtle)' }}>
+          <div className="mt-24 py-16 px-6 md:px-12 rounded-3xl bg-white shadow-lg">
             <div className="text-center mb-12">
-              <div className="inline-flex items-center gap-2 mb-4">
-                <Compass className="w-6 h-6" style={{ color: 'var(--primary-base)' }} />
-                <h2 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'Montserrat, sans-serif' }}>
+              <div className="inline-flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-full bg-[#1BDD95] flex items-center justify-center">
+                  <Compass className="w-6 h-6 text-white" />
+                </div>
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold font-oswald uppercase tracking-tight text-neutral-900">
                   Experience Belgium Live
                 </h2>
               </div>
-              <p className="text-lg md:text-xl max-w-2xl mx-auto" style={{ color: 'var(--text-tertiary)' }}>
+              <p className="text-base md:text-lg max-w-2xl mx-auto text-neutral-600 font-inter">
                 Love what you see? Explore Belgium's hidden stories with our expert-guided tours
               </p>
             </div>
@@ -183,11 +195,12 @@ export default function WebshopPage() {
             </div>
 
             <div className="text-center">
-              <Button asChild size="lg" style={{ backgroundColor: 'var(--primary-base)', color: 'white' }}>
-                <Link href={`/${locale}/tours`}>
-                  Browse All Tours
-                </Link>
-              </Button>
+              <Link
+                href={`/${locale}/tours`}
+                className="inline-flex items-center justify-center gap-2 px-8 py-5 bg-[#1BDD95] hover:bg-[#14BE82] rounded-full text-white font-oswald font-bold text-sm uppercase tracking-widest transition-all hover:scale-105 shadow-lg hover:shadow-xl"
+              >
+                Browse All Tours
+              </Link>
             </div>
           </div>
         )}
