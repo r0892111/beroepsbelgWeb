@@ -1,5 +1,5 @@
 import { supabaseServer } from '@/lib/supabase/server';
-import type { Locale, City, Tour, Product, FaqItem, BlogPost, PressLink } from '@/lib/data/types';
+import type { Locale, City, Tour, Product, FaqItem, BlogPost, PressLink, ProductImage, TourImage } from '@/lib/data/types';
 
 export type LocalTourBooking = {
   id: string;
@@ -116,8 +116,19 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
     throw error;
   }
 
+  // Fetch tour images to get primary images
+  const tourImagesMap = await getTourImages();
+
   const tours = (data || []).map((row: any): Tour => {
     const slugifiedCity = citySlugify(row.city);
+
+    // Get tour images for this tour
+    const tourImages = tourImagesMap[row.id] || [];
+    // Find primary image first, then fall back to first image, then undefined
+    const primaryImage = tourImages.length > 0 
+      ? (tourImages.find((img) => img.is_primary) || tourImages[0])
+      : null;
+    const imageUrl = primaryImage?.image_url || undefined;
 
     return {
       id: row.id,
@@ -136,6 +147,8 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
       local_stories: row.local_stories === true || row.local_stories === 'true' || row.local_stories === 1,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
+      image: imageUrl, // Use primary image from database if available
+      tourImages: tourImages.length > 0 ? tourImages : undefined,
       options: row.options,
     };
   });
@@ -169,6 +182,15 @@ export async function getTourBySlug(citySlug: string, slug: string): Promise<Tou
     return null;
   }
 
+  // Fetch tour images for this specific tour
+  const tourImagesMap = await getTourImages();
+  const tourImages = tourImagesMap[matchingTour.id] || [];
+  // Find primary image first, then fall back to first image, then undefined
+  const primaryImage = tourImages.length > 0 
+    ? (tourImages.find((img) => img.is_primary) || tourImages[0])
+    : null;
+  const imageUrl = primaryImage?.image_url || undefined;
+
   const localStoriesValue = matchingTour.local_stories === true || matchingTour.local_stories === 'true' || matchingTour.local_stories === 1;
   
   console.log('getTourBySlug: Raw matching tour data:', {
@@ -198,6 +220,8 @@ export async function getTourBySlug(citySlug: string, slug: string): Promise<Tou
     local_stories: localStoriesValue,
     createdAt: matchingTour.created_at,
     updatedAt: matchingTour.updated_at,
+    image: imageUrl, // Use primary image from database if available
+    tourImages: tourImages.length > 0 ? tourImages : undefined,
     options: matchingTour.options,
   };
 }
@@ -209,6 +233,9 @@ export async function getProducts(): Promise<Product[]> {
   if (error) {
     throw error;
   }
+
+  // Fetch product images to get primary images
+  const productImagesMap = await getProductImages();
 
   const categoryOptions: Product['category'][] = ['Book', 'Merchandise', 'Game'];
 
@@ -253,6 +280,14 @@ export async function getProducts(): Promise<Product[]> {
         }
       : undefined;
 
+    // Get primary image from product_images if available
+    const productImages = productImagesMap[row.uuid] || [];
+    // Find primary image first, then fall back to first image, then undefined
+    const primaryImage = productImages.length > 0 
+      ? (productImages.find((img) => img.is_primary) || productImages[0])
+      : null;
+    const imageUrl = primaryImage?.image_url || undefined;
+
     return {
       slug,
       uuid: row.uuid,
@@ -262,7 +297,7 @@ export async function getProducts(): Promise<Product[]> {
       description: descriptionRecord,
       additionalInfo: additionalInfoRecord,
       label: undefined,
-      image: undefined,
+      image: imageUrl, // Use primary image from database if available
     } satisfies Product;
   });
 
@@ -319,6 +354,100 @@ export async function getPressLinks(): Promise<PressLink[]> {
     return links;
   } catch (err) {
     return [];
+  }
+}
+
+export async function getProductImages(): Promise<Record<string, ProductImage[]>> {
+  try {
+    // Fetch from webshop_data table, extracting product_images JSONB column
+    const { data, error } = await supabaseServer
+      .from('webshop_data')
+      .select('uuid, product_images');
+
+    if (error) {
+      // If column doesn't exist, return empty map (graceful degradation)
+      if (error.message?.includes('does not exist') || 
+          error.message?.includes('column') ||
+          error.code === '42703') {
+        console.warn('product_images column does not exist in webshop_data. Please add it via migration.');
+        return {};
+      }
+      console.error('Error fetching product images:', error);
+      return {};
+    }
+
+    const imagesMap: Record<string, ProductImage[]> = {};
+    (data || []).forEach((row: any) => {
+      const productUuid = row.uuid;
+      const imagesJson = row.product_images;
+      
+      if (imagesJson && Array.isArray(imagesJson)) {
+        imagesMap[productUuid] = imagesJson.map((img: any, index: number) => ({
+          id: img.id || `${productUuid}-${index}`, // Generate ID if not present
+          product_uuid: productUuid,
+          image_url: img.url || img.image_url,
+          is_primary: img.is_primary || false,
+          sort_order: img.sort_order !== undefined ? img.sort_order : index,
+          storage_folder_name: img.storage_folder_name || undefined,
+          created_at: img.created_at,
+          updated_at: img.updated_at,
+        })).sort((a, b) => a.sort_order - b.sort_order);
+      } else {
+        imagesMap[productUuid] = [];
+      }
+    });
+
+    return imagesMap;
+  } catch (err) {
+    console.error('Exception fetching product images:', err);
+    return {};
+  }
+}
+
+export async function getTourImages(): Promise<Record<string, TourImage[]>> {
+  try {
+    // Fetch from tours_table_prod table, extracting tour_images JSONB column
+    const { data, error } = await supabaseServer
+      .from('tours_table_prod')
+      .select('id, tour_images');
+
+    if (error) {
+      // If column doesn't exist, return empty map (graceful degradation)
+      if (error.message?.includes('does not exist') || 
+          error.message?.includes('column') ||
+          error.code === '42703') {
+        console.warn('tour_images column does not exist in tours_table_prod. Please add it via migration.');
+        return {};
+      }
+      console.error('Error fetching tour images:', error);
+      return {};
+    }
+
+    const imagesMap: Record<string, TourImage[]> = {};
+    (data || []).forEach((row: any) => {
+      const tourId = row.id;
+      const imagesJson = row.tour_images;
+      
+      if (imagesJson && Array.isArray(imagesJson)) {
+        imagesMap[tourId] = imagesJson.map((img: any, index: number) => ({
+          id: img.id || `${tourId}-${index}`, // Generate ID if not present
+          tour_id: tourId,
+          image_url: img.url || img.image_url,
+          is_primary: img.is_primary || false,
+          sort_order: img.sort_order !== undefined ? img.sort_order : index,
+          storage_folder_name: img.storage_folder_name || undefined,
+          created_at: img.created_at,
+          updated_at: img.updated_at,
+        })).sort((a, b) => a.sort_order - b.sort_order);
+      } else {
+        imagesMap[tourId] = [];
+      }
+    });
+
+    return imagesMap;
+  } catch (err) {
+    console.error('Exception fetching tour images:', err);
+    return {};
   }
 }
 

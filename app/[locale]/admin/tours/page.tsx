@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, MapPin, X, Search } from 'lucide-react';
+import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, MapPin, X, Search, Image } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
@@ -317,6 +317,12 @@ export default function AdminToursPage() {
                   <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                   Refresh
                 </Button>
+                <Link href={`/${locale}/admin/tour-images`}>
+                  <Button variant="outline" size="sm">
+                    <Image className="h-4 w-4 mr-2" />
+                    Tour Images
+                  </Button>
+                </Link>
                 <Button onClick={openAddDialog} className="btn-primary">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Tour

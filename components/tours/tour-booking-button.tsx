@@ -13,17 +13,27 @@ interface TourBookingButtonProps {
   isLocalStories?: boolean;
   opMaat?: boolean;
   citySlug?: string;
+  size?: 'default' | 'sm' | 'lg' | 'icon';
+  className?: string;
 }
 
-export function TourBookingButton({ tourId, tourTitle, tourPrice, tourDuration, isLocalStories, opMaat, citySlug }: TourBookingButtonProps) {
+export function TourBookingButton({ tourId, tourTitle, tourPrice, tourDuration, isLocalStories, opMaat, citySlug, size = 'lg', className }: TourBookingButtonProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const t = useTranslations('booking');
+
+  const buttonClassName = className || (size === 'lg' ? 'btn-primary px-8 py-6 text-lg font-semibold' : '');
+  const buttonStyle = size === 'sm' ? {
+    backgroundColor: 'var(--primary-base)',
+    color: 'white',
+    boxShadow: 'var(--shadow-small)'
+  } : undefined;
 
   return (
     <>
       <Button
-        size="lg"
-        className="btn-primary px-8 py-6 text-lg font-semibold"
+        size={size}
+        className={buttonClassName}
+        style={buttonStyle}
         onClick={() => setDialogOpen(true)}
       >
         {t('bookNow')}

@@ -61,6 +61,7 @@
   "common": {
     "discover": "Découvrir",
     "moreInfo": "Plus d'infos",
+    "schedule": "Programme",
     "order": "Commander",
     "price": "Prix",
     "comingSoon": "PRÉVU 2025",
@@ -376,7 +377,8 @@
     "games": "Jeux",
     "experienceBelgiumLive": "Vivez la Belgique en Direct",
     "exploreHiddenStories": "Vous aimez ce que vous voyez ? Explorez les histoires cachées de la Belgique avec nos guides experts. Des trésors architecturaux aux secrets culinaires – nos tours donnent vie aux histoires derrière les histoires.",
-    "browseAllTours": "Parcourir Tous les Tours"
+    "browseAllTours": "Parcourir Tous les Tours",
+    "searchPlaceholder": "Rechercher des produits..."
   },
   "tourDetail": {
     "backToCity": "Retour aux tours de {city}",

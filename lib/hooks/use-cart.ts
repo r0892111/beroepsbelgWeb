@@ -28,7 +28,8 @@ export function useCart() {
           "Description",
           "Additional Info",
           stripe_product_id,
-          stripe_price_id
+          stripe_price_id,
+          product_images
         )
       `)
       .eq('user_id', user.id)
@@ -46,6 +47,15 @@ export function useCart() {
           // Transform webshop_data format to match expected product format
           const priceStr = product['Price (EUR)']?.toString() || '0';
           const price = parseFloat(priceStr.replace(',', '.')) || 0;
+          
+          // Extract primary image from product_images JSONB column
+          let imageUrl: string | null = null;
+          if (product.product_images && Array.isArray(product.product_images)) {
+            const primaryImage = product.product_images.find((img: any) => img.is_primary) || product.product_images[0];
+            if (primaryImage) {
+              imageUrl = primaryImage.url || primaryImage.image_url || null;
+            }
+          }
           
           // Remove the raw webshop_data property
           const { webshop_data, ...itemWithoutWebshopData } = item;
@@ -69,7 +79,7 @@ export function useCart() {
               description_fr: product.Description || '',
               description_de: product.Description || '',
               Description: product.Description || '',
-              image: null,
+              image: imageUrl,
               stripe_product_id: product.stripe_product_id || null,
               stripe_price_id: product.stripe_price_id || null,
             }

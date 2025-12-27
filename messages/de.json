@@ -61,6 +61,7 @@
   "common": {
     "discover": "Entdecken",
     "moreInfo": "Mehr Infos",
+    "schedule": "Zeitplan",
     "order": "Bestellen",
     "price": "Preis",
     "comingSoon": "ERWARTET 2025",
@@ -376,7 +377,8 @@
     "games": "Spiele",
     "experienceBelgiumLive": "Erleben Sie Belgien Live",
     "exploreHiddenStories": "Mögen Sie, was Sie sehen? Erkunden Sie Belgiens verborgene Geschichten mit unseren Expertenführern. Von architektonischen Schätzen bis zu kulinarischen Geheimnissen – unsere Touren erwecken die Geschichten hinter den Geschichten zum Leben.",
-    "browseAllTours": "Alle Touren Durchsuchen"
+    "browseAllTours": "Alle Touren Durchsuchen",
+    "searchPlaceholder": "Produkte suchen..."
   },
   "tourDetail": {
     "backToCity": "Zurück zu {city} Touren",
