@@ -506,44 +506,6 @@ export default function B2BQuotePage() {
               {t('redirectingIn', { countdown })}
             </p>
             
-<<<<<<< HEAD
-            {isOpMaat && process.env.NEXT_PUBLIC_JOTFORM_ID && (
-              <div className="mb-8 rounded-lg border-2 p-6 text-left" style={{ borderColor: 'var(--brass)' }}>
-                <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
-                  {t('opMaatFormTitle') || 'Vul het formulier in'}
-                </h3>
-                <p className="text-sm mb-4" style={{ color: 'var(--text-tertiary)' }}>
-                  {t('opMaatFormDescription') || 'Help ons je perfecte tour samen te stellen door het onderstaande formulier in te vullen.'}
-                </p>
-                <div className="w-full" id={`jotform-container-${process.env.NEXT_PUBLIC_JOTFORM_ID}`}>
-                  {jotFormUrl ? (
-                    <iframe
-                      id={`JotFormIFrame-${process.env.NEXT_PUBLIC_JOTFORM_ID}`}
-                      title="JotForm"
-                      src={jotFormUrl}
-                      frameBorder="0"
-                      style={{
-                        width: '100%',
-                        minHeight: '500px',
-                        border: 'none',
-                      }}
-                      allow="geolocation; microphone; camera"
-                      key={jotFormUrl}
-                      onLoad={() => {
-                        console.log('JotForm iframe loaded');
-                        console.log('Full URL:', jotFormUrl);
-                      }}
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center py-12">
-                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                      <span className="ml-2 text-sm text-muted-foreground">{t('formLoading')}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
               <Button
                 onClick={() => router.push(`/${locale}`)}
@@ -982,7 +944,6 @@ export default function B2BQuotePage() {
                   >
                     {Object.keys(selectedUpsell).length > 0 ? 'Verder met producten →' : 'Overslaan →'}
                   </Button>
-                  </Button>
                 </div>
               </div>
             )}
@@ -1099,8 +1060,6 @@ export default function B2BQuotePage() {
                         })}
                       </div>
                     )}
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -1122,7 +1081,6 @@ export default function B2BQuotePage() {
                     className="flex-1"
                   >
                     ← Terug
-                  </Button>
                   </Button>
                   <Button type="submit" disabled={isSubmitting} className="flex-1 btn-primary">
                     {isSubmitting ? t('submitting') : t('confirmRequest')}
