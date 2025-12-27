@@ -407,24 +407,29 @@ export default function AdminBookingsPage() {
                         </TableCell>
                         <TableCell>
                           {booking.deal_id ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              asChild
-                              className="h-auto py-1 px-2"
-                            >
-                              <a
-                                href={`https://focus.teamleader.eu/web/deals/${booking.deal_id}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                title="Open deal in TeamLeader"
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground font-mono">
+                                {booking.deal_id}
+                              </span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                asChild
+                                className="h-auto py-1 px-2"
                               >
-                                <ExternalLink className="h-3 w-3 mr-1" />
-                                <span className="text-xs font-medium">
-                                  Open Deal
-                                </span>
-                              </a>
-                            </Button>
+                                <a
+                                  href={`https://focus.teamleader.eu/web/deals/${booking.deal_id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title="Open deal in TeamLeader"
+                                >
+                                  <ExternalLink className="h-3 w-3 mr-1" />
+                                  <span className="text-xs font-medium">
+                                    Open Deal
+                                  </span>
+                                </a>
+                              </Button>
+                            </div>
                           ) : (
                             <span className="text-sm text-muted-foreground">-</span>
                           )}

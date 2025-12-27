@@ -14,7 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Calendar, Users, MapPin, Languages, Building2, Sparkles, CheckCircle2, Home, ShoppingBag, ExternalLink, Clock, Gift, FileText } from 'lucide-react';
+import { Calendar, Users, MapPin, Languages, Building2, Sparkles, CheckCircle2, Home, ShoppingBag, ExternalLink, Clock, Gift, FileText, Loader2 } from 'lucide-react';
 // Removed direct imports - will fetch from API instead
 import type { City, Tour, Product } from '@/lib/data/types';
 import Image from 'next/image';
@@ -54,6 +54,8 @@ export default function B2BQuotePage() {
   const [selectedUpsell, setSelectedUpsell] = useState<string[]>([]);
   const [countdown, setCountdown] = useState(5);
   const [bookingType, setBookingType] = useState<'particulier' | 'zakelijk'>('particulier');
+  const [jotFormUrl, setJotFormUrl] = useState<string>('');
+  const [isOpMaat, setIsOpMaat] = useState(false);
 
   const {
     register,
@@ -253,59 +255,107 @@ export default function B2BQuotePage() {
       const selectedTourData = tours.find((tour) => tour.id === data.tourId);
       const upsellProducts = products.filter(p => selectedUpsell.includes(p.uuid));
 
-      const payload = {
-        // Tour info
-        dateTime: data.dateTime,
-        citySlug: data.city,
-        cityName: selectedCityData?.name ?? null,
-        tourId: data.tourId,
-        tourSlug: selectedTourData?.slug ?? null,
-        tourTitle: selectedTourData?.title ?? null,
-        tourDetails: {
-          startLocation: selectedTourData?.startLocation ?? null,
-          endLocation: selectedTourData?.endLocation ?? null,
-          durationMinutes: selectedTourData?.durationMinutes ?? null,
-          languages: selectedTourData?.languages ?? null,
-          type: selectedTourData?.type ?? null,
-        },
-        language: data.language,
-        numberOfPeople: data.numberOfPeople,
-        // Company info
-        companyName: data.companyName || null,
-        vatNumber: data.vatNumber || null,
-        billingAddress: data.billingAddress || null,
-        // Contact info
-        contactFirstName: data.contactFirstName,
-        contactLastName: data.contactLastName,
-        contactEmail: data.contactEmail,
-        contactPhone: data.contactPhone,
-        additionalInfo: data.additionalInfo || null,
-        // Upsell
-        upsellProducts: upsellProducts.map(p => ({
-          id: p.uuid,
-          title: p.title.nl,
-        })),
-        // Booking type
-        bookingType,
-        // Meta
-        submittedAt: new Date().toISOString(),
-        status: 'pending_guide_confirmation',
-      };
+      // Check if selected tour is op maat BEFORE making webhook call
+      const tourIsOpMaat = selectedTourData?.op_maat === true || 
+                          (typeof selectedTourData?.op_maat === 'string' && selectedTourData.op_maat === 'true') || 
+                          (typeof selectedTourData?.op_maat === 'number' && selectedTourData.op_maat === 1);
+      
+      // For op maat tours, skip webhook call - JotForm will trigger it when submitted
+      // Note: JotForm must be configured in its settings to call the webhook:
+      // https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc
+      if (!tourIsOpMaat) {
+        const payload = {
+          // Tour info
+          dateTime: data.dateTime,
+          citySlug: data.city,
+          cityName: selectedCityData?.name ?? null,
+          tourId: data.tourId,
+          tourSlug: selectedTourData?.slug ?? null,
+          tourTitle: selectedTourData?.title ?? null,
+          tourDetails: {
+            startLocation: selectedTourData?.startLocation ?? null,
+            endLocation: selectedTourData?.endLocation ?? null,
+            durationMinutes: selectedTourData?.durationMinutes ?? null,
+            languages: selectedTourData?.languages ?? null,
+            type: selectedTourData?.type ?? null,
+          },
+          language: data.language,
+          numberOfPeople: data.numberOfPeople,
+          // Company info
+          companyName: data.companyName || null,
+          vatNumber: data.vatNumber || null,
+          billingAddress: data.billingAddress || null,
+          // Contact info
+          contactFirstName: data.contactFirstName,
+          contactLastName: data.contactLastName,
+          contactEmail: data.contactEmail,
+          contactPhone: data.contactPhone,
+          additionalInfo: data.additionalInfo || null,
+          // Upsell
+          upsellProducts: upsellProducts.map(p => ({
+            id: p.uuid,
+            title: p.title.nl,
+          })),
+          // Booking type
+          bookingType,
+          // Meta
+          submittedAt: new Date().toISOString(),
+          status: 'pending_guide_confirmation',
+        };
 
-      const response = await fetch('https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
+        const response = await fetch('https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
 
-      if (response.ok) {
-        setStep('success');
-        reset();
-      } else {
-        toast.error(t('error'));
+        if (!response.ok) {
+          toast.error(t('error'));
+          return;
+        }
       }
+
+      // Set op maat state and build JotForm URL if needed
+      setIsOpMaat(tourIsOpMaat);
+      
+      if (tourIsOpMaat && process.env.NEXT_PUBLIC_JOTFORM_ID) {
+        const baseUrl = `https://form.jotform.com/${process.env.NEXT_PUBLIC_JOTFORM_ID}`;
+        const params = new URLSearchParams();
+        
+        // Field unique names - these must match the "Unique Name" from JotForm Advanced tab
+        const FIELD_BOOKING_NUMBER = process.env.NEXT_PUBLIC_JOTFORM_FIELD_BOOKING_NUMBER || 'typEen';
+        const FIELD_EMAIL = process.env.NEXT_PUBLIC_JOTFORM_FIELD_EMAIL || 'email11';
+        const FIELD_TOUR_DATE = process.env.NEXT_PUBLIC_JOTFORM_FIELD_TOUR_DATE || 'datum';
+        
+        // Pre-fill email
+        if (data.contactEmail) {
+          params.append(FIELD_EMAIL, data.contactEmail);
+        }
+        
+        // Pre-fill tour date if available
+        if (data.dateTime) {
+          try {
+            const dateObj = new Date(data.dateTime);
+            if (!isNaN(dateObj.getTime())) {
+              const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+              const day = String(dateObj.getDate()).padStart(2, '0');
+              const year = dateObj.getFullYear();
+              const formattedDate = `${month}-${day}-${year}`;
+              params.append(FIELD_TOUR_DATE, formattedDate);
+            }
+          } catch (e) {
+            console.error('Error formatting date for JotForm:', e);
+          }
+        }
+        
+        const jotFormUrlWithParams = `${baseUrl}?${params.toString()}`;
+        setJotFormUrl(jotFormUrlWithParams);
+      }
+      
+      setStep('success');
+      reset();
     } catch (error) {
       toast.error(t('error'));
     } finally {
@@ -385,6 +435,44 @@ export default function B2BQuotePage() {
             <p className="mb-8 text-sm" style={{ color: 'var(--slate-blue)' }}>
               U wordt over {countdown} seconden doorgestuurd...
             </p>
+            
+            {isOpMaat && process.env.NEXT_PUBLIC_JOTFORM_ID && (
+              <div className="mb-8 rounded-lg border-2 p-6 text-left" style={{ borderColor: 'var(--brass)' }}>
+                <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+                  {t('opMaatFormTitle') || 'Vul het formulier in'}
+                </h3>
+                <p className="text-sm mb-4" style={{ color: 'var(--text-tertiary)' }}>
+                  {t('opMaatFormDescription') || 'Help ons je perfecte tour samen te stellen door het onderstaande formulier in te vullen.'}
+                </p>
+                <div className="w-full" id={`jotform-container-${process.env.NEXT_PUBLIC_JOTFORM_ID}`}>
+                  {jotFormUrl ? (
+                    <iframe
+                      id={`JotFormIFrame-${process.env.NEXT_PUBLIC_JOTFORM_ID}`}
+                      title="JotForm"
+                      src={jotFormUrl}
+                      frameBorder="0"
+                      style={{
+                        width: '100%',
+                        minHeight: '500px',
+                        border: 'none',
+                      }}
+                      allow="geolocation; microphone; camera"
+                      key={jotFormUrl}
+                      onLoad={() => {
+                        console.log('JotForm iframe loaded');
+                        console.log('Full URL:', jotFormUrl);
+                      }}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                      <span className="ml-2 text-sm text-muted-foreground">Formulier laden...</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
               <Button
                 onClick={() => router.push(`/${locale}`)}
