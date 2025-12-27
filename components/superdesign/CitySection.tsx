@@ -1,0 +1,575 @@
+'use client';
+
+/**
+ * The CitySection component - "The Modern Belgian"
+ *
+ * Design Philosophy:
+ * A modern, cinematic reinvention of the classic wheel.
+ * Separates "Atmosphere" (Background Sketch) from "Reality" (Foreground Photo).
+ *
+ * - Typography: Oswald (Headlines) + Inter (Body) for a clean, editorial look.
+ * - Background: Solid Mint Green (#1BDD95) for a bold "Poster" aesthetic.
+ * - Interaction: Preserves the original smooth rotation logic.
+ */
+import React, { useRef, useState, useEffect } from 'react';
+import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import { clsx } from 'clsx';
+import { ArrowRight, ArrowLeft, MoveRight } from 'lucide-react';
+import { ScrollDownIndicator } from './ScrollDownIndicator';
+import { type Locale } from '@/i18n';
+
+// Brand Data with Dual-Layer Assets
+const cities = [
+  {
+    id: 'antwerp',
+    name: 'Antwerp',
+    tagline: 'The Fashion Capital',
+    description:
+      "A pocket-sized metropolis known for diamonds, avant-garde fashion, and the cathedral's soaring spire.",
+    photoUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766764964872-c4952226/Eilandje_4_.jpg',
+    sketchUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766501496070-9e267924/AntwerpenSketchPNG.png',
+  },
+  {
+    id: 'gent',
+    name: 'Gent',
+    tagline: 'The Quirky Rebel',
+    description:
+      "History with a rock 'n roll edge. A vibrant student city centered around the imposing Gravensteen castle.",
+    photoUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766765025832-0b6e9826/best_of_gent.jpg',
+    sketchUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766501574875-bb2ed09c/GentSketchPNG.png',
+  },
+  {
+    id: 'bruges',
+    name: 'Bruges',
+    tagline: 'Venice of the North',
+    description:
+      'A medieval fairytale preserved in time. Cobblestone streets, swans on the canals, and romantic mystery.',
+    photoUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766432003277-bd292c2f/Local_Stories_Brugge.jpg',
+    sketchUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766501496312-eba11501/BruggeSketchPNG.png',
+  },
+  {
+    id: 'brussels',
+    name: 'Brussels',
+    tagline: 'The Heart of Europe',
+    description:
+      'Surrealism meets bureaucracy. Grand Place splendor, Art Nouveau gems, and the best chocolate in the world.',
+    photoUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766765100182-3c4b4aa0/Brussels.jpg',
+    sketchUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766501496521-2a49bbf5/BrusselsketchPNG.png',
+  },
+  {
+    id: 'leuven',
+    name: 'Leuven',
+    tagline: 'The Brains & The Beer',
+    description:
+      "Home to the oldest university in the Low Countries and the headquarters of the world's largest brewery.",
+    photoUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766764796761-25baade4/Leuven.jpg',
+    sketchUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766501497131-2b973fa4/LeuvenSketchPNG.png',
+  },
+  {
+    id: 'knokke-heist',
+    name: 'Knokke-Heist',
+    tagline: 'The Golden Triangle',
+    description:
+      'Luxury by the sea. High-end boutiques, art galleries, and the Zwin nature reserve make it the sophisticated coast choice.',
+    photoUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766432002840-9957e6dc/Knokkeheist.png',
+    sketchUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766501496929-04d36a34/KnokkeHeistSketchPNG.png',
+  },
+  {
+    id: 'mechelen',
+    name: 'Mechelen',
+    tagline: 'The Hidden Gem',
+    description:
+      "A city of carillons and silence. Walk the floating path on the Dyle and climb St. Rumbold's tower.",
+    photoUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766764796542-f8c04aac/mechelen.jpg',
+    sketchUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766501497337-2deb66d1/MechelenSketchPNG.png',
+  },
+  {
+    id: 'hasselt',
+    name: 'Hasselt',
+    tagline: 'The Capital of Taste',
+    description:
+      'Known for jenever gin, fashion, and being the most welcoming city. A place where good taste is a lifestyle.',
+    photoUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766764796317-9a143dff/hasselt.webp',
+    sketchUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766501496722-05333103/HasseltSketchPNG.png',
+  },
+  {
+    id: 'spa',
+    name: 'Spa',
+    tagline: 'The Pearl of the Ardennes',
+    description:
+      'The original spa town. Famous for its healing thermal waters, the casino, and lush green surroundings.',
+    photoUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766765138806-58bf47a8/SPA_.jpg',
+    // Reusing Hasselt sketch as a placeholder since no Spa sketch exists, to maintain visual consistency
+    sketchUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766323986715-d003a31d/Buildings.png',
+  },
+];
+
+/**
+ * The "Highlighter" Ring Component
+ * Based on the reference image: a thick translucent green stroke + thin pencil arrows.
+ * Updated: Now PURE WHITE for contrast on green.
+ */
+function HighlighterRing({ className }: { className?: string }) {
+  // Use orange for desktop (lg), white for mobile (default)
+  // We can't strictly detect media query here easily without hooks/classes, so we use CSS classes on the SVG or use currentColor
+  // But SVG stroke prop takes a color string.
+  // Let's use a class-based approach for stroke color
+
+  return (
+    <svg
+      viewBox="0 0 400 400"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={clsx('w-full h-full overflow-visible', className)}
+    >
+      <motion.circle
+        cx="200"
+        cy="200"
+        r="170"
+        className="stroke-white fill-transparent"
+        strokeWidth="15"
+        strokeOpacity="1"
+        initial={{ opacity: 0 }}
+        animate={{
+          opacity: 1,
+          transition: { duration: 0.4, ease: 'easeOut' },
+        }}
+      />
+    </svg>
+  );
+}
+
+interface CitySectionProps {
+  locale?: Locale;
+}
+
+// Map city IDs to their tour page slugs
+const citySlugMap: Record<string, string> = {
+  'antwerp': 'antwerpen',
+  'gent': 'gent',
+  'bruges': 'brugge',
+  'brussels': 'brussel',
+  'leuven': 'leuven',
+  'knokke-heist': 'knokke-heist',
+  'mechelen': 'mechelen',
+  'hasselt': 'hasselt',
+  'spa': 'spa', // May not have tours page yet
+};
+
+export function CitySection({ locale = 'nl' }: CitySectionProps) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
+  // Initialize as false to match server-side render, will update after mount
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const activeIndexRef = useRef(activeIndex);
+  useEffect(() => {
+    activeIndexRef.current = activeIndex;
+  }, [activeIndex]);
+
+  const wheelRadius = 450;
+  const itemAngle = 30;
+
+  useEffect(() => {
+    const handleScroll = (e: WheelEvent) => {
+      if (window.innerWidth < 1024) return;
+
+      const currentIndex = activeIndexRef.current;
+      const isScrollingUp = e.deltaY < 0;
+      const isScrollingDown = e.deltaY > 0;
+      const isAtStart = currentIndex === 0;
+      const isAtEnd = currentIndex === cities.length - 1;
+
+      if (isAtStart && isScrollingUp) return;
+      if (isAtEnd && isScrollingDown) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (scrollTimeout.current) return;
+      if (Math.abs(e.deltaY) < 40) return;
+
+      scrollTimeout.current = setTimeout(() => {
+        scrollTimeout.current = null;
+      }, 600);
+
+      const nextIndex = isScrollingDown
+        ? (currentIndex + 1) % cities.length
+        : (currentIndex - 1 + cities.length) % cities.length;
+
+      activeIndexRef.current = nextIndex;
+      setActiveIndex(nextIndex);
+    };
+
+    const element = containerRef.current;
+    if (element) element.addEventListener('wheel', handleScroll, { passive: false });
+
+    return () => {
+      if (element) element.removeEventListener('wheel', handleScroll);
+      if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
+    };
+  }, []);
+
+  // Touch handling
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+
+    const diff = touchStartX.current - touchEndX.current;
+    const threshold = 50;
+
+    if (Math.abs(diff) > threshold) {
+      if (diff > 0) setActiveIndex((prev) => (prev + 1) % cities.length);
+      else setActiveIndex((prev) => (prev - 1 + cities.length) % cities.length);
+    }
+
+    touchStartX.current = 0;
+    touchEndX.current = 0;
+  };
+
+  const activeCity = cities[activeIndex];
+  // Get the city slug for the tours page link
+  const citySlug = citySlugMap[activeCity.id] || activeCity.id;
+  const toursPageUrl = `/${locale}/tours-${citySlug}`;
+
+  return (
+    <div
+      className="relative w-full min-h-[900px] lg:h-[900px] h-auto overflow-hidden flex flex-col lg:flex-row items-center justify-center font-oswald rounded-t-[2.5rem] bg-[#1BDD95]"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* LAYER 1: Solid Mint Background, subtle noise */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden rounded-[2.5rem]">
+        <div
+          className="absolute inset-0 opacity-[0.03] mix-blend-overlay"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+          }}
+        />
+      </div>
+
+      {/* Main Grid Layout */}
+      <div className="relative w-full h-full max-w-[1600px] mx-auto flex flex-col lg:flex-row z-10">
+
+        {/* LEFT COLUMN: Wheel */}
+        <div
+          ref={containerRef}
+          className="relative w-full lg:w-[60%] h-[350px] sm:h-[420px] md:h-[500px] lg:h-full flex items-center justify-center lg:block mt-8 md:mt-12 lg:mt-0 flex-shrink-0"
+        >
+          {/* ROTATING WHEEL CONTAINER */}
+          <div
+            className={clsx(
+              'absolute left-1/2 -translate-x-1/2 lg:left-[-480px] lg:translate-x-0 -translate-y-1/2 w-[900px] h-[900px] rounded-full transition-transform duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-center',
+              // Mobile spec from your mobile code
+              'top-[650px] sm:top-[750px] scale-[0.35] md:scale-[0.5]',
+              // Desktop spec from your desktop code
+              'lg:top-1/2 lg:scale-100'
+            )}
+            style={{
+              transform: `translate(${isMobile ? '-50%, -50%' : '0, -50%'}) rotate(${
+                -activeIndex * itemAngle + (isMobile ? -90 : 0)
+              }deg)`,
+              willChange: 'transform',
+              backfaceVisibility: 'hidden',
+            }}
+            suppressHydrationWarning
+          >
+            {cities.map((city, index) => {
+              const angleInRad = index * itemAngle * (Math.PI / 180);
+              // Round to 2 decimal places to avoid floating point precision issues
+              const x = Math.round(Math.cos(angleInRad) * wheelRadius * 100) / 100;
+              const y = Math.round(Math.sin(angleInRad) * wheelRadius * 100) / 100;
+
+              const isActive = index === activeIndex;
+
+              return (
+                <div
+                  key={city.id}
+                  className={clsx(
+                    'absolute top-1/2 left-1/2 flex items-center justify-center cursor-pointer group',
+                    // Mobile item sizing from your mobile code
+                    'w-[240px] h-[240px] -ml-[120px] -mt-[120px]',
+                    // Desktop item sizing from your desktop code
+                    'lg:w-[320px] lg:h-[320px] lg:-ml-[160px] lg:-mt-[160px]',
+                    isActive ? 'z-50' : 'z-10'
+                  )}
+                  style={{
+                    transform: `translate(${x}px, ${y}px) rotate(${activeIndex * itemAngle + (isMobile ? 90 : 0)}deg)`,
+                  }}
+                  suppressHydrationWarning
+                  onClick={() => setActiveIndex(index)}
+                >
+                  <div
+                    className={clsx(
+                      'relative transition-all duration-500 rounded-full',
+                      isActive ? 'scale-[1.35]' : 'scale-75 opacity-60 grayscale hover:opacity-90 hover:grayscale-0'
+                    )}
+                  >
+                    <AnimatePresence>
+                      {isActive && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.5 }}
+                          className="absolute inset-[-10%] pointer-events-none z-0"
+                        >
+                          <HighlighterRing />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    <div
+                      className={clsx(
+                        'rounded-full overflow-hidden border-4 bg-white relative z-10',
+                        // Mobile photo sizing from your mobile code
+                        'w-[180px] h-[180px]',
+                        // Desktop photo sizing from your desktop code
+                        'lg:w-[260px] lg:h-[260px]',
+                        isActive ? 'border-transparent shadow-none' : 'border-white shadow-2xl'
+                      )}
+                    >
+                      <img
+                        src={city.photoUrl}
+                        alt={city.name}
+                        className="w-full h-full object-cover scale-110 hover:scale-100 transition-transform duration-700"
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Content Panel */}
+        <div className="relative w-full lg:w-[40%] h-auto lg:h-full flex flex-col justify-start lg:justify-center items-center lg:items-start text-center lg:text-left px-6 pb-20 lg:pb-0 lg:pl-4 lg:pr-16 lg:-ml-32 z-30 pointer-events-none mt-0 md:mt-0 lg:mt-[-20px]">
+          <div className="pointer-events-auto w-full max-w-lg lg:max-w-none mt-6 lg:mt-0">
+            {/* Title + Mobile arrows */}
+            <div className="flex items-center justify-center lg:justify-start gap-4 md:gap-6 mb-4">
+              {/* Previous Arrow (Mobile: lg:hidden, Desktop: visible) */}
+              <button
+                onClick={() => setActiveIndex((prev) => (prev - 1 + cities.length) % cities.length)}
+                className="w-10 h-10 lg:w-8 lg:h-8 rounded-full border border-neutral-900 flex items-center justify-center hover:bg-black hover:text-white transition-all text-neutral-900 shrink-0"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+
+              <div className="w-auto lg:w-[48ch] flex justify-center items-center relative">
+                <motion.h2
+                  key={`title-${activeIndex}`}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="text-4xl md:text-6xl lg:text-[80px] xl:text-[100px] leading-[0.85] text-neutral-900 font-oswald font-bold tracking-tight uppercase text-center w-full"
+                  suppressHydrationWarning
+                >
+                  {activeCity.name}
+                </motion.h2>
+              </div>
+
+              {/* Next Arrow (Mobile: lg:hidden, Desktop: visible) */}
+              <button
+                onClick={() => setActiveIndex((prev) => (prev + 1) % cities.length)}
+                className="w-10 h-10 lg:w-8 lg:h-8 rounded-full border border-neutral-900 flex items-center justify-center hover:bg-black hover:text-white transition-all text-neutral-900 shrink-0"
+              >
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            <motion.p
+              key={`tag-${activeIndex}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="text-lg md:text-2xl font-inter font-light text-neutral-800 mb-6 md:mb-8 lg:border-l-4 lg:border-white lg:pl-6 tracking-wide"
+              suppressHydrationWarning
+            >
+              {activeCity.tagline}
+            </motion.p>
+
+            <motion.p
+              key={`desc-${activeIndex}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="text-base md:text-lg text-neutral-800 leading-relaxed max-w-md mx-auto lg:mx-0 mb-4 md:mb-8 lg:mb-8 font-inter"
+              suppressHydrationWarning
+            >
+              {activeCity.description}
+            </motion.p>
+          </div>
+
+          {/* Action Buttons: mobile spec + desktop spec */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className={clsx(
+              'pointer-events-auto w-full flex flex-col md:flex-row items-center justify-center lg:justify-start gap-4 md:gap-6',
+              // Mobile version from your mobile code
+              'mt-2',
+              // Desktop version from your desktop code
+              'lg:mt-0 lg:static'
+            )}
+          >
+            <div className="w-full md:w-[320px]">
+              <Link href={toursPageUrl} className="group relative px-10 py-5 rounded-full text-neutral-900 font-oswald font-bold tracking-widest uppercase overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/20 w-full bg-white flex items-center justify-center">
+                <div className="absolute inset-0 bg-neutral-100 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                <span className="relative flex items-center justify-center gap-2 text-sm md:text-base">
+                  Explore {activeCity.name} <MoveRight className="w-5 h-5" />
+                </span>
+              </Link>
+            </div>
+
+            <div className="hidden lg:hidden gap-2 shrink-0">
+              <button
+                onClick={() => setActiveIndex((prev) => (prev - 1 + cities.length) % cities.length)}
+                className="w-14 h-14 rounded-full border border-neutral-900 flex items-center justify-center hover:bg-black hover:text-white transition-all text-neutral-900"
+              >
+                <ArrowLeft className="w-6 h-6" />
+              </button>
+              <button
+                onClick={() => setActiveIndex((prev) => (prev + 1) % cities.length)}
+                className="w-14 h-14 rounded-full border border-neutral-900 flex items-center justify-center hover:bg-black hover:text-white transition-all text-neutral-900"
+              >
+                <ArrowRight className="w-6 h-6" />
+              </button>
+            </div>
+          </motion.div>
+
+          {/* MOBILE CITY INDEX (only mobile) */}
+          {isMobile && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="pointer-events-auto w-full max-w-md mt-6 flex flex-wrap justify-center gap-2 px-4 pb-12"
+            >
+              {cities.map((city, index) => (
+                <button
+                  key={city.id}
+                  onClick={() => setActiveIndex(index)}
+                  className={clsx(
+                    'px-4 py-1.5 rounded-full border text-xs font-bold uppercase tracking-wider transition-all duration-300',
+                    activeIndex === index
+                      ? 'bg-white border-white text-neutral-900 shadow-lg scale-105'
+                      : 'border-neutral-900/20 text-neutral-800 hover:bg-neutral-900/5 hover:border-neutral-900/40'
+                  )}
+                >
+                  {city.name}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </div>
+
+        {/* Scroll Indicator: desktop version from your desktop code */}
+        <div className="absolute bottom-4 md:bottom-12 left-1/2 -translate-x-1/2 z-50 pointer-events-auto">
+          <ScrollDownIndicator
+            label=""
+            color="#000000"
+            onClick={() => {
+              const shopSection = document.getElementById('shop-section');
+              if (shopSection) shopSection.scrollIntoView({ behavior: 'smooth' });
+            }}
+          />
+        </div>
+      </div>
+
+      {/* RIGHT SIDEBAR NAVIGATION (Desktop only) */}
+      <div className="absolute right-0 top-0 h-full z-50 hidden lg:flex flex-col items-end justify-center pointer-events-auto bg-white py-6 pl-3 pr-2 shadow-lg">
+        <div className="text-[10px] font-bold tracking-[0.2em] text-neutral-900/40 mb-4 border-b border-neutral-900/20 pb-2 font-inter w-full text-right">
+          CITY
+        </div>
+        {cities.map((city, idx) => {
+          const isBtnActive = idx === activeIndex;
+          return (
+            <button
+              key={city.id}
+              onClick={() => setActiveIndex(idx)}
+              className="group flex items-center justify-end gap-2 py-1 pl-4 pr-1 transition-all duration-300 w-full"
+            >
+              <div
+                className={clsx(
+                  'flex flex-col items-end transition-all duration-300',
+                  isBtnActive ? 'translate-x-0' : 'translate-x-2 group-hover:translate-x-0'
+                )}
+              >
+                <span
+                  className={clsx(
+                    'text-[12px] font-oswald font-medium uppercase tracking-[0.1em] transition-colors duration-300',
+                    isBtnActive
+                      ? 'text-neutral-900'
+                      : 'text-neutral-900/40 group-hover:text-neutral-900'
+                  )}
+                >
+                  {city.name}
+                </span>
+              </div>
+
+              <div
+                className={clsx(
+                  'w-[3px] h-[3px] rounded-full transition-all duration-500',
+                  isBtnActive ? 'bg-neutral-900 scale-150' : 'bg-neutral-900/30 group-hover:bg-neutral-900/60'
+                )}
+              />
+            </button>
+          );
+        })}
+      </div>
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Oswald:wght@400;500;700&display=swap');
+        .font-oswald { font-family: 'Oswald', sans-serif; }
+        .font-inter { font-family: 'Inter', sans-serif; }
+
+        @keyframes blob {
+          0% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+          100% { transform: translate(0px, 0px) scale(1); }
+        }
+        .animate-blob { animation: blob 7s infinite; }
+      `}</style>
+    </div>
+  );
+}
