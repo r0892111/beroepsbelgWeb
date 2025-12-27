@@ -38,6 +38,13 @@ function getSupabaseServer(): SupabaseClient {
     );
   }
 
+  // Validate that the service key looks correct (should start with 'eyJ' for JWT tokens)
+  if (!supabaseServiceKey.startsWith('eyJ')) {
+    throw new Error(
+      'Invalid SUPABASE_SERVICE_ROLE_KEY format. Make sure you are using the service_role key, not the anon key.'
+    );
+  }
+
   supabaseServerInstance = createClient(supabaseUrl, supabaseServiceKey, {
     auth: {
       persistSession: false,
