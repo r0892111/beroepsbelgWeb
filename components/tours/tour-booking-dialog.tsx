@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CalendarIcon, Clock, Loader2, ShoppingBag, Gift, Plus, Minus } from 'lucide-react';
+import { CalendarIcon, Clock, Loader2, ShoppingBag, Gift, Plus, Minus, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
@@ -59,6 +59,13 @@ export function TourBookingDialog({
   const [productsLoading, setProductsLoading] = useState(false);
   const [selectedUpsell, setSelectedUpsell] = useState<Record<string, number>>({});
   const [showUpsellDialog, setShowUpsellDialog] = useState(false);
+  const [showOpMaatDialog, setShowOpMaatDialog] = useState(false);
+  const [opMaatAnswers, setOpMaatAnswers] = useState({
+    startEnd: '',
+    cityPart: '',
+    subjects: '',
+    specialWishes: '',
+  });
 
   const [formData, setFormData] = useState({
     customerName: '',
@@ -270,6 +277,13 @@ export function TourBookingDialog({
           citySlug: citySlug || null,
           opMaat: opMaat,
           upsellProducts: upsellProducts, // Include upsell products in checkout session
+          // Op maat specific answers
+          opMaatAnswers: opMaat ? {
+            startEnd: opMaatAnswers.startEnd,
+            cityPart: opMaatAnswers.cityPart,
+            subjects: opMaatAnswers.subjects,
+            specialWishes: opMaatAnswers.specialWishes,
+          } : null,
         }),
       });
 
@@ -284,8 +298,9 @@ export function TourBookingDialog({
         throw new Error('No checkout URL received');
       }
 
-      // Close upsell dialog and redirect to Stripe
+      // Close dialogs and redirect to Stripe
       setShowUpsellDialog(false);
+      setShowOpMaatDialog(false);
       window.location.href = url;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -748,8 +763,133 @@ export function TourBookingDialog({
             </Button>
             <Button
               type="button"
-              onClick={proceedToCheckout}
+              onClick={() => {
+                // If op maat tour, show op maat questions dialog first
+                if (opMaat) {
+                  setShowUpsellDialog(false);
+                  setShowOpMaatDialog(true);
+                } else {
+                  proceedToCheckout();
+                }
+              }}
               disabled={loading}
+              className="w-full sm:w-auto"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Verwerken...
+                </>
+              ) : (
+                <>
+                  {opMaat ? 'Verder →' : `Doorgaan naar betaling${upsellTotal > 0 ? ` (€${totalPrice.toFixed(2)})` : ''}`}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Op Maat Questions Dialog */}
+      <Dialog 
+        open={showOpMaatDialog} 
+        onOpenChange={(isOpen) => {
+          setShowOpMaatDialog(isOpen);
+        }}
+      >
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh]" style={{ zIndex: 70 }}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="p-2 rounded-lg" style={{ backgroundColor: 'var(--primary-base)', color: 'white' }}>
+                <FileText className="h-5 w-5" />
+              </div>
+              Help ons je perfecte tour samen te stellen
+            </DialogTitle>
+            <DialogDescription>
+              Beantwoord de volgende vragen om je op maat tour te personaliseren
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            <div>
+              <Label htmlFor="startEnd" className="text-base font-semibold mb-2 block">
+                Waar wil je starten en eindigen?
+              </Label>
+              <Textarea
+                id="startEnd"
+                placeholder="Bijvoorbeeld: Start bij Centraal Station, eindig bij het stadhuis..."
+                value={opMaatAnswers.startEnd}
+                onChange={(e) => setOpMaatAnswers(prev => ({ ...prev, startEnd: e.target.value }))}
+                className="min-h-[100px]"
+                rows={4}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="cityPart" className="text-base font-semibold mb-2 block">
+                Welk deel van de stad wil je beter leren kennen?
+              </Label>
+              <Textarea
+                id="cityPart"
+                placeholder="Bijvoorbeeld: De historische binnenstad, de moderne wijk, de markten..."
+                value={opMaatAnswers.cityPart}
+                onChange={(e) => setOpMaatAnswers(prev => ({ ...prev, cityPart: e.target.value }))}
+                className="min-h-[100px]"
+                rows={4}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="subjects" className="text-base font-semibold mb-2 block">
+                Welke onderwerpen wil je in de tour zien?
+              </Label>
+              <Textarea
+                id="subjects"
+                placeholder="Bijvoorbeeld: Architectuur, geschiedenis, lokale cultuur, eten en drinken..."
+                value={opMaatAnswers.subjects}
+                onChange={(e) => setOpMaatAnswers(prev => ({ ...prev, subjects: e.target.value }))}
+                className="min-h-[100px]"
+                rows={4}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="specialWishes" className="text-base font-semibold mb-2 block">
+                Zijn er nog speciale wensen?
+              </Label>
+              <Textarea
+                id="specialWishes"
+                placeholder="Bijvoorbeeld: Toegankelijkheid, specifieke interesses, voorkeuren..."
+                value={opMaatAnswers.specialWishes}
+                onChange={(e) => setOpMaatAnswers(prev => ({ ...prev, specialWishes: e.target.value }))}
+                className="min-h-[100px]"
+                rows={4}
+              />
+            </div>
+          </div>
+
+          {error && (
+            <div className="rounded-md bg-red-50 p-3 text-sm text-red-800 border border-red-200">
+              {error}
+            </div>
+          )}
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowOpMaatDialog(false);
+                setShowUpsellDialog(true);
+              }}
+              className="w-full sm:w-auto"
+            >
+              ← Terug
+            </Button>
+            <Button
+              type="button"
+              onClick={proceedToCheckout}
+              disabled={loading || !opMaatAnswers.startEnd.trim() || !opMaatAnswers.cityPart.trim() || !opMaatAnswers.subjects.trim()}
               className="w-full sm:w-auto"
             >
               {loading ? (

@@ -512,46 +512,6 @@ export default function BookingSuccessPage() {
             </div>
           )}
 
-          {isOpMaat && process.env.NEXT_PUBLIC_JOTFORM_ID && (
-            <div className="rounded-lg border-2 p-6" style={{ borderColor: 'var(--brass)' }}>
-              <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
-                {t('opMaatFormTitle') || 'Vul het formulier in'}
-              </h3>
-              <p className="text-sm mb-4" style={{ color: 'var(--text-tertiary)' }}>
-                {t('opMaatFormDescription') || 'Help ons je perfecte tour samen te stellen door het onderstaande formulier in te vullen.'}
-              </p>
-              <div className="w-full" id={`jotform-container-${process.env.NEXT_PUBLIC_JOTFORM_ID}`}>
-                {jotFormUrl ? (
-                  <iframe
-                    id={`JotFormIFrame-${process.env.NEXT_PUBLIC_JOTFORM_ID}`}
-                    title="JotForm"
-                    src={jotFormUrl}
-                    frameBorder="0"
-                    style={{
-                      width: '100%',
-                      minHeight: '500px',
-                      border: 'none',
-                    }}
-                    allow="geolocation; microphone; camera"
-                    key={jotFormUrl} // Force re-render when URL changes
-                    onLoad={() => {
-                      console.log('JotForm iframe loaded');
-                      console.log('Full URL:', jotFormUrl);
-                      console.log('URL parameters:', jotFormUrl.split('?')[1] || 'none');
-                      // Log each parameter separately for debugging
-                      const params = new URL(jotFormUrl).searchParams;
-                      console.log('Parsed parameters:', Object.fromEntries(params));
-                    }}
-                  />
-                ) : (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                    <span className="ml-2 text-sm text-muted-foreground">Formulier laden...</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
           <div className="bg-blue-50 p-4 rounded-lg">
             <p className="text-sm text-blue-900">
