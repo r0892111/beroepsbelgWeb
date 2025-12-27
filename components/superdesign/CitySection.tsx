@@ -18,6 +18,8 @@ import { clsx } from 'clsx';
 import { ArrowRight, ArrowLeft, MoveRight } from 'lucide-react';
 import { ScrollDownIndicator } from './ScrollDownIndicator';
 import { type Locale } from '@/i18n';
+import { useTranslations } from 'next-intl';
+import { supabase } from '@/lib/supabase/client';
 
 // Brand Data with Dual-Layer Assets
 const cities = [
@@ -176,17 +178,50 @@ const citySlugMap: Record<string, string> = {
 };
 
 export function CitySection({ locale = 'nl' }: CitySectionProps) {
+  const t = useTranslations('citySection');
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
   // Initialize as false to match server-side render, will update after mount
   const [isMobile, setIsMobile] = useState(false);
+  const [cityImagesMap, setCityImagesMap] = useState<Record<string, { photoUrl?: string }>>({});
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Fetch city images from database
+  useEffect(() => {
+    const fetchCityImages = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('city_images')
+          .select('city_id, photo_url');
+
+        if (error) {
+          console.error('Error fetching city images:', error);
+          return;
+        }
+
+        const imagesMap: Record<string, { photoUrl?: string }> = {};
+        (data || []).forEach((row: any) => {
+          if (row.photo_url) {
+            imagesMap[row.city_id] = {
+              photoUrl: row.photo_url,
+            };
+          }
+        });
+
+        setCityImagesMap(imagesMap);
+      } catch (err) {
+        console.error('Exception fetching city images:', err);
+      }
+    };
+
+    void fetchCityImages();
   }, []);
 
   const activeIndexRef = useRef(activeIndex);
@@ -264,7 +299,13 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
     touchEndX.current = 0;
   };
 
-  const activeCity = cities[activeIndex];
+  // Merge cities with database images (database images take priority)
+  const citiesWithImages = cities.map(city => ({
+    ...city,
+    photoUrl: cityImagesMap[city.id]?.photoUrl || city.photoUrl,
+  }));
+
+  const activeCity = citiesWithImages[activeIndex];
   // Get the city slug for the tours page link
   const citySlug = citySlugMap[activeCity.id] || activeCity.id;
   const toursPageUrl = `/${locale}/tours-${citySlug}`;
@@ -312,7 +353,7 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
             }}
             suppressHydrationWarning
           >
-            {cities.map((city, index) => {
+            {citiesWithImages.map((city, index) => {
               const angleInRad = index * itemAngle * (Math.PI / 180);
               // Round to 2 decimal places to avoid floating point precision issues
               const x = Math.round(Math.cos(angleInRad) * wheelRadius * 100) / 100;
@@ -381,37 +422,38 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
         </div>
 
         {/* RIGHT COLUMN: Content Panel */}
-        <div className="relative w-full lg:w-[40%] h-auto lg:h-full flex flex-col justify-start lg:justify-center items-center lg:items-start text-center lg:text-left px-6 pb-20 lg:pb-0 lg:pl-4 lg:pr-16 lg:-ml-32 z-30 pointer-events-none mt-0 md:mt-0 lg:mt-[-20px]">
+        <div className="relative w-full lg:w-[40%] h-auto lg:h-full flex flex-col justify-start items-center lg:items-start text-center lg:text-left px-6 pb-20 lg:pb-0 lg:pl-4 lg:pr-16 lg:-ml-32 z-30 pointer-events-none mt-0 md:mt-0 lg:mt-0 lg:pt-[200px]">
           <div className="pointer-events-auto w-full max-w-lg lg:max-w-none mt-6 lg:mt-0">
-            {/* Title + Mobile arrows */}
-            <div className="flex items-center justify-center lg:justify-start gap-4 md:gap-6 mb-4">
-              {/* Previous Arrow (Mobile: lg:hidden, Desktop: visible) */}
+            {/* Title + Arrows */}
+            <div className="relative flex items-center justify-center lg:justify-start gap-4 md:gap-6 lg:gap-0 mb-4 lg:h-[180px]">
+              {/* Previous Arrow - Absolute positioned on desktop for fixed placement */}
               <button
                 onClick={() => setActiveIndex((prev) => (prev - 1 + cities.length) % cities.length)}
-                className="w-10 h-10 lg:w-8 lg:h-8 rounded-full border border-neutral-900 flex items-center justify-center hover:bg-black hover:text-white transition-all text-neutral-900 shrink-0"
+                className="w-10 h-10 lg:w-10 lg:h-10 rounded-full border border-neutral-900 flex items-center justify-center hover:bg-black hover:text-white transition-colors text-neutral-900 shrink-0 lg:absolute lg:left-0 lg:top-1/2 lg:-translate-y-1/2 z-10"
               >
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft className="w-4 h-4 lg:w-5 lg:h-5" />
               </button>
 
-              <div className="w-auto lg:w-[48ch] flex justify-center items-center relative">
+              {/* Title container with fixed width on desktop to prevent shifting */}
+              <div className="w-[280px] sm:w-[400px] md:w-[500px] lg:w-[700px] xl:w-[800px] flex justify-center items-center relative lg:mx-12">
                 <motion.h2
                   key={`title-${activeIndex}`}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                   transition={{ delay: 0.1 }}
-                  className="text-4xl md:text-6xl lg:text-[80px] xl:text-[100px] leading-[0.85] text-neutral-900 font-oswald font-bold tracking-tight uppercase text-center w-full"
+                  className="text-4xl md:text-6xl lg:text-[80px] xl:text-[100px] leading-[0.95] text-neutral-900 font-oswald font-bold tracking-tight uppercase text-center w-full"
                   suppressHydrationWarning
                 >
                   {activeCity.name}
                 </motion.h2>
               </div>
 
-              {/* Next Arrow (Mobile: lg:hidden, Desktop: visible) */}
+              {/* Next Arrow - Absolute positioned on desktop for fixed placement */}
               <button
                 onClick={() => setActiveIndex((prev) => (prev + 1) % cities.length)}
-                className="w-10 h-10 lg:w-8 lg:h-8 rounded-full border border-neutral-900 flex items-center justify-center hover:bg-black hover:text-white transition-all text-neutral-900 shrink-0"
+                className="w-10 h-10 lg:w-10 lg:h-10 rounded-full border border-neutral-900 flex items-center justify-center hover:bg-black hover:text-white transition-colors text-neutral-900 shrink-0 lg:absolute lg:right-0 lg:top-1/2 lg:-translate-y-1/2 z-10"
               >
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 lg:w-5 lg:h-5" />
               </button>
             </div>
 
@@ -420,10 +462,10 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="text-lg md:text-2xl font-inter font-light text-neutral-800 mb-6 md:mb-8 lg:border-l-4 lg:border-white lg:pl-6 tracking-wide"
+              className="text-lg md:text-2xl font-inter font-light text-neutral-800 mt-4 lg:mt-6 mb-6 md:mb-8 lg:border-l-4 lg:border-white lg:pl-6 tracking-wide"
               suppressHydrationWarning
             >
-              {activeCity.tagline}
+              {t(`${activeCity.id}.tagline`)}
             </motion.p>
 
             <motion.p
@@ -434,15 +476,12 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
               className="text-base md:text-lg text-neutral-800 leading-relaxed max-w-md mx-auto lg:mx-0 mb-4 md:mb-8 lg:mb-8 font-inter"
               suppressHydrationWarning
             >
-              {activeCity.description}
+              {t(`${activeCity.id}.description`)}
             </motion.p>
           </div>
 
           {/* Action Buttons: mobile spec + desktop spec */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+          <div
             className={clsx(
               'pointer-events-auto w-full flex flex-col md:flex-row items-center justify-center lg:justify-start gap-4 md:gap-6',
               // Mobile version from your mobile code
@@ -451,11 +490,15 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
               'lg:mt-0 lg:static'
             )}
           >
-            <div className="w-full md:w-[320px]">
-              <Link href={toursPageUrl} className="group relative px-10 py-5 rounded-full text-neutral-900 font-oswald font-bold tracking-widest uppercase overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/20 w-full bg-white flex items-center justify-center">
+            <div className="w-full md:w-[320px] flex-shrink-0">
+              <Link 
+                href={toursPageUrl} 
+                className="group relative px-10 py-5 rounded-full text-neutral-900 font-oswald font-bold tracking-widest uppercase overflow-hidden transition-colors hover:bg-neutral-100 shadow-xl shadow-black/20 w-full bg-white flex items-center justify-center"
+                style={{ minHeight: '3.5rem' }}
+              >
                 <div className="absolute inset-0 bg-neutral-100 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                <span className="relative flex items-center justify-center gap-2 text-sm md:text-base">
-                  Explore {activeCity.name} <MoveRight className="w-5 h-5" />
+                <span className="relative flex items-center justify-center gap-2 text-sm md:text-base whitespace-nowrap">
+                  {t('explore')} {activeCity.name} <MoveRight className="w-5 h-5 flex-shrink-0" />
                 </span>
               </Link>
             </div>
@@ -474,7 +517,7 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
                 <ArrowRight className="w-6 h-6" />
               </button>
             </div>
-          </motion.div>
+          </div>
 
           {/* MOBILE CITY INDEX (only mobile) */}
           {isMobile && (
@@ -518,7 +561,7 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
       {/* RIGHT SIDEBAR NAVIGATION (Desktop only) */}
       <div className="absolute right-0 top-0 h-full z-50 hidden lg:flex flex-col items-end justify-center pointer-events-auto bg-white py-6 pl-3 pr-2 shadow-lg">
         <div className="text-[10px] font-bold tracking-[0.2em] text-neutral-900/40 mb-4 border-b border-neutral-900/20 pb-2 font-inter w-full text-right">
-          CITY
+          {t('cityLabel')}
         </div>
         {cities.map((city, idx) => {
           const isBtnActive = idx === activeIndex;
@@ -557,18 +600,14 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
         })}
       </div>
 
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Oswald:wght@400;500;700&display=swap');
-        .font-oswald { font-family: 'Oswald', sans-serif; }
-        .font-inter { font-family: 'Inter', sans-serif; }
-
+      <style jsx>{`
         @keyframes blob {
           0% { transform: translate(0px, 0px) scale(1); }
           33% { transform: translate(30px, -50px) scale(1.1); }
           66% { transform: translate(-20px, 20px) scale(0.9); }
           100% { transform: translate(0px, 0px) scale(1); }
         }
-        .animate-blob { animation: blob 7s infinite; }
+        :global(.animate-blob) { animation: blob 7s infinite; }
       `}</style>
     </div>
   );

@@ -20,7 +20,9 @@
   "hero": {
     "kicker": "— Entdecken Sie Belgien wie nie zuvor",
     "heading": "Ihr Führer in Belgien",
-    "cta": "Entdecken Sie unsere Touren"
+    "cta": "Entdecken Sie unsere Touren",
+    "cnnQuote": "Einer der 7 klügsten Führer der Welt – CNN",
+    "discoverTours": "Touren entdecken"
   },
   "sections": {
     "inSpotlight": "Im Rampenlicht",
@@ -30,6 +32,21 @@
     "shop": "Webshop",
     "press": "In der Presse",
     "newsletter": "Newsletter"
+  },
+  "shop": {
+    "marqueeText": "WEBSHOP — NEUE KOLLEKTION — JETZT ENTDECKEN",
+    "addToCart": "In den Warenkorb",
+    "curated": "Kuratiert",
+    "collection": "Kollektion",
+    "exclusiveItems": "Exklusive Bücher, Drucke & Objekte"
+  },
+  "header": {
+    "account": "Konto",
+    "favorites": "Favoriten",
+    "cart": "Warenkorb",
+    "adminPanel": "Admin-Panel",
+    "language": "Sprache",
+    "copyright": "© 2024 Buro BeroepsBelg"
   },
   "cities": {
     "antwerpen": "Antwerpen",
@@ -70,7 +87,17 @@
     "sitemap": "Sitemap",
     "privacy": "Datenschutz",
     "disclaimer": "Haftungsausschluss",
-    "poweredBy": "Webshop"
+    "poweredBy": "Webshop",
+    "stayConnected": "BLEIBEN SIE VERBUNDEN",
+    "newsletterSignUp": "Newsletter Anmeldung",
+    "emailPlaceholder": "Ihre E-Mail-Adresse",
+    "subscribe": "Abonnieren",
+    "explore": "ENTDECKEN",
+    "search": "SUCHEN",
+    "searchPlaceholder": "Touren, Produkte suchen...",
+    "copyright": "© 2024 Beroepsbelg. Alle Rechte vorbehalten.",
+    "allRightsReserved": "Alle Rechte vorbehalten",
+    "terms": "Bedingungen"
   },
   "cookie": {
     "message": "Wir verwenden Cookies, um Ihre Erfahrung zu verbessern.",
@@ -346,7 +373,10 @@
     "all": "Alle",
     "books": "Bücher",
     "merchandise": "Merchandise",
-    "games": "Spiele"
+    "games": "Spiele",
+    "experienceBelgiumLive": "Erleben Sie Belgien Live",
+    "exploreHiddenStories": "Mögen Sie, was Sie sehen? Erkunden Sie Belgiens verborgene Geschichten mit unseren Expertenführern. Von architektonischen Schätzen bis zu kulinarischen Geheimnissen – unsere Touren erwecken die Geschichten hinter den Geschichten zum Leben.",
+    "browseAllTours": "Alle Touren Durchsuchen"
   },
   "tourDetail": {
     "backToCity": "Zurück zu {city} Touren",
@@ -362,11 +392,18 @@
     "localStoriesMinimum": "Mindestens 4 Personen erforderlich"
   },
   "faq": {
-    "title": "FAQ"
+    "title": "FAQ",
+    "subtitle": "Alles, was Sie über unsere authentischen belgischen Touren wissen müssen",
+    "stillHaveQuestions": "Haben Sie noch Fragen?",
+    "ctaDescription": "Der beste Weg, Belgien kennenzulernen, ist es aus erster Hand zu erleben. Buchen Sie eine Tour und lassen Sie sich von unseren Expertenführern herumführen!",
+    "exploreOurTours": "Entdecken Sie Unsere Touren"
   },
   "press": {
     "title": "In der Presse",
-    "subtitle": "BeroepsBelg in den Medien"
+    "subtitle": "BeroepsBelg in den Medien",
+    "loading": "Laden...",
+    "noArticles": "Keine Presseartikel verfügbar.",
+    "featuredIn": "In der Presse"
   },
   "blog": {
     "title": "Blog",
@@ -374,19 +411,61 @@
   },
   "contact": {
     "title": "Kontakt",
+    "getInTouch": "Kontaktieren Sie uns",
+    "subtitle": "Wir würden uns freuen, von Ihnen zu hören",
     "address": "Adresse",
+    "addressLabel": "Adresse",
     "email": "E-Mail",
+    "emailLabel": "E-Mail",
     "phone": "Telefon",
+    "phoneLabel": "Telefon",
     "sendMessage": "Senden Sie uns eine Nachricht",
+    "formHeading": "Senden Sie uns eine Nachricht",
     "messageSent": "Nachricht gesendet!",
+    "sending": "Senden...",
+    "successMessage": "Nachricht gesendet!",
     "addressLine1": "Groenplaats 1",
     "addressLine2": "2000 Antwerpen",
     "addressLine3": "Belgien",
-    "consent": "Ich stimme der Datenschutzrichtlinie zu"
+    "consent": "Ich stimme der Datenschutzrichtlinie zu",
+    "consentText": "Ich stimme der Datenschutzrichtlinie zu"
   },
   "jobs": {
     "title": "Werden Sie ein BeroepsBelg-Führer",
+    "becomeGuide": "Werden Sie ein BeroepsBelg-Führer",
+    "joinTeam": "Treten Sie unserem Team bei und teilen Sie Ihre Leidenschaft für belgische Kultur",
+    "whyJoinUs": "Warum bei uns arbeiten?",
+    "introduction1": "Sind Sie leidenschaftlich für Geschichte, Architektur und das Erzählen von Geschichten? Möchten Sie Teil eines dynamischen Teams sein, das Belgien auf einzigartige Weise präsentiert?",
+    "introduction2": "Wir suchen immer enthusiastische Führer, die unsere Mission teilen, Besuchern und Einheimischen ein bereicherndes Erlebnis zu bieten.",
+    "sharePassion": {
+      "title": "Teilen Sie Ihre Leidenschaft",
+      "description": "Erhalten Sie die Gelegenheit, Ihr Wissen und Ihre Liebe zu Belgien mit begeisterten Besuchern zu teilen"
+    },
+    "dynamicTeam": {
+      "title": "Dynamisches Team",
+      "description": "Werden Sie Teil eines eng verbundenen Teams von Führern und treffen Sie interessante Menschen"
+    },
+    "flexibleLocations": {
+      "title": "Flexible Standorte",
+      "description": "Geben Sie Touren in den belgischen Städten, die Sie am besten kennen"
+    },
+    "unforgettableMoments": {
+      "title": "Unvergessliche Momente",
+      "description": "Tragen Sie zu einzigartigen Erinnerungen für Touristen und Einheimische bei"
+    },
     "applyNow": "Jetzt bewerben",
+    "nameLabel": "Name",
+    "emailLabel": "E-Mail",
+    "phoneLabel": "Telefon",
+    "cityLabel": "In welcher Stadt/welchen Städten möchten Sie Touren geben?",
+    "cityPlaceholder": "z.B. Antwerpen, Brüssel",
+    "motivationLabel": "Warum möchten Sie ein BeroepsBelg-Führer werden?",
+    "consentText": "Ich stimme der Datenschutzrichtlinie und der Verarbeitung meiner persönlichen Daten zu",
+    "submitApplication": "Bewerbung absenden",
+    "submitting": "Senden...",
+    "successMessage": "Bewerbung gesendet!",
+    "invalidEmail": "Ungültige E-Mail-Adresse",
+    "minimumCharacters": "Mindestens 50 Zeichen erforderlich",
     "description": "Sind Sie leidenschaftlich für belgische Kultur, Geschichte und Architektur? Haben Sie ein Talent fürs Geschichtenerzählen und teilen Sie gerne Ihr Wissen mit anderen? Dann suchen wir Sie! BeroepsBelg ist immer auf der Suche nach enthusiastischen Führern, die unsere Gäste auf eine unvergessliche Reise durch die faszinierende Geschichte unserer schönen Städte mitnehmen können.",
     "name": "Name*",
     "email": "E-Mail*",
@@ -410,7 +489,9 @@
     "people": "10-50 Personen",
     "description": "In diesem fesselnden Vortrag nimmt Sie Tanguy Ottomer mit auf eine Reise durch die faszinierende Geschichte des Boerentoren, Antwerpens ikonischstem Wolkenkratzer. Von seinem Bau in den 1930er Jahren bis zu seiner Rolle im heutigen Stadtbild entdecken Sie, wie dieses Gebäude die Stadt geprägt hat und ein Symbol für Ehrgeiz und Innovation bleibt.",
     "bookLecture": "Diesen Vortrag buchen",
-    "moreInfo": "Mehr Informationen"
+    "moreInfo": "Mehr Informationen",
+    "description1": "Der Boerentoren, auch bekannt als der KBC-Turm, ist ein ikonisches Gebäude in Antwerpens Stadtbild. Dieser Vortrag nimmt Sie mit durch die faszinierende Geschichte dessen, was einst Europas höchstes Gebäude war.",
+    "description2": "Von den ehrgeizigen Bauplänen der 1920er Jahre bis zur modernen Transformation entdecken Sie die architektonischen Höhepunkte, die Geschichten der Menschen, die dort arbeiteten, und die Rolle, die das Gebäude in der Entwicklung Antwerpens als moderne Metropole spielte."
   },
   "disclaimer": {
     "title": "Allgemeine Geschäftsbedingungen",
@@ -513,5 +594,45 @@
     "supportMessage": "Wenn Sie während des Bestellvorgangs Probleme hatten oder Fragen haben, kontaktieren Sie bitte unser Support-Team.",
     "returnShop": "Zurück zum Shop",
     "contactSupport": "Support kontaktieren"
+  },
+  "citySection": {
+    "explore": "Erkunden",
+    "cityLabel": "STADT",
+    "antwerp": {
+      "tagline": "Die Modehauptstadt",
+      "description": "Eine Metropole im Taschenformat, bekannt für Diamanten, avantgardistische Mode und den hoch aufragenden Kirchturm der Kathedrale."
+    },
+    "gent": {
+      "tagline": "Der Eigensinnige Rebell",
+      "description": "Geschichte mit Rock 'n Roll. Eine lebendige Studentenstadt rund um die imposante Burg Gravensteen."
+    },
+    "bruges": {
+      "tagline": "Venedig des Nordens",
+      "description": "Ein mittelalterliches Märchen, das in der Zeit bewahrt wurde. Kopfsteinpflasterstraßen, Schwäne auf den Kanälen und romantisches Mysterium."
+    },
+    "brussels": {
+      "tagline": "Das Herz Europas",
+      "description": "Surrealismus trifft Bürokratie. Pracht des Grand Place, Jugendstil-Juwelen und die beste Schokolade der Welt."
+    },
+    "leuven": {
+      "tagline": "Die Gehirne & Das Bier",
+      "description": "Heimat der ältesten Universität der Niederlande und des Hauptsitzes der weltgrößten Brauerei."
+    },
+    "knokke-heist": {
+      "tagline": "Das Goldene Dreieck",
+      "description": "Luxus am Meer. Edle Boutiquen, Kunstgalerien und das Zwin-Naturreservat machen es zur raffinierten Küstenwahl."
+    },
+    "mechelen": {
+      "tagline": "Die Verborgene Perle",
+      "description": "Eine Stadt der Glockenspiele und Stille. Gehen Sie auf dem schwimmenden Pfad an der Dijle entlang und besteigen Sie den St.-Rombouts-Turm."
+    },
+    "hasselt": {
+      "tagline": "Die Hauptstadt des Geschmacks",
+      "description": "Bekannt für Wacholder-Gin, Mode und als die gastfreundlichste Stadt. Ein Ort, an dem guter Geschmack ein Lebensstil ist."
+    },
+    "spa": {
+      "tagline": "Die Perle der Ardennen",
+      "description": "Die ursprüngliche Kurstadt. Berühmt für ihre heilenden Thermalwasser, das Casino und die üppige grüne Umgebung."
+    }
   }
 }

@@ -180,11 +180,11 @@ export default function WebshopPage() {
                   <Compass className="w-6 h-6 text-white" />
                 </div>
                 <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold font-oswald uppercase tracking-tight text-neutral-900">
-                  Experience Belgium Live
+                  {t('experienceBelgiumLive')}
                 </h2>
               </div>
               <p className="text-base md:text-lg max-w-2xl mx-auto text-neutral-600 font-inter">
-                Love what you see? Explore Belgium's hidden stories with our expert-guided tours
+                {t('exploreHiddenStories')}
               </p>
             </div>
 
@@ -199,7 +199,7 @@ export default function WebshopPage() {
                 href={`/${locale}/tours`}
                 className="inline-flex items-center justify-center gap-2 px-8 py-5 bg-[#1BDD95] hover:bg-[#14BE82] rounded-full text-white font-oswald font-bold text-sm uppercase tracking-widest transition-all hover:scale-105 shadow-lg hover:shadow-xl"
               >
-                Browse All Tours
+                {t('browseAllTours')}
               </Link>
             </div>
           </div>

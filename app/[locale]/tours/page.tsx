@@ -1,25 +1,25 @@
 import { type Locale } from '@/i18n';
-import { getCities } from '@/lib/api/content';
+import { getCities, getCityImages } from '@/lib/api/content';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 import { ArrowRight } from 'lucide-react';
 
-// Map city slugs to CitySection photoUrls to ensure consistent images
-const cityImageMap: Record<string, string> = {
-  'antwerpen': 'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766764964872-c4952226/Eilandje_4_.jpg',
-  'antwerp': 'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766764964872-c4952226/Eilandje_4_.jpg',
-  'gent': 'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766765025832-0b6e9826/best_of_gent.jpg',
-  'ghent': 'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766765025832-0b6e9826/best_of_gent.jpg',
-  'brugge': 'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766432003277-bd292c2f/Local_Stories_Brugge.jpg',
-  'bruges': 'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766432003277-bd292c2f/Local_Stories_Brugge.jpg',
-  'brussel': 'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766765100182-3c4b4aa0/Brussels.jpg',
-  'brussels': 'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766765100182-3c4b4aa0/Brussels.jpg',
-  'leuven': 'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766764796761-25baade4/Leuven.jpg',
-  'knokke-heist': 'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766432002840-9957e6dc/Knokkeheist.png',
-  'mechelen': 'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766764796542-f8c04aac/mechelen.jpg',
-  'hasselt': 'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766764796317-9a143dff/hasselt.webp',
-  'spa': 'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766765138806-58bf47a8/SPA_.jpg',
+// Map city slugs (from database) to city IDs (used in CitySection and city_images table)
+const citySlugToIdMap: Record<string, string> = {
+  'antwerpen': 'antwerp',
+  'antwerp': 'antwerp',
+  'gent': 'gent',
+  'ghent': 'gent',
+  'brugge': 'bruges',
+  'bruges': 'bruges',
+  'brussel': 'brussels',
+  'brussels': 'brussels',
+  'leuven': 'leuven',
+  'knokke-heist': 'knokke-heist',
+  'mechelen': 'mechelen',
+  'hasselt': 'hasselt',
+  'spa': 'spa',
 };
 
 interface ToursPageProps {
@@ -30,12 +30,18 @@ export default async function ToursPage({ params }: ToursPageProps) {
   const { locale } = await params;
   const t = await getTranslations('common');
   const cities = await getCities();
+  const cityImages = await getCityImages();
   
-  // Override city images with CitySection images if available
-  const citiesWithMatchingImages = cities.map(city => ({
-    ...city,
-    image: cityImageMap[city.slug] || city.image,
-  }));
+  // Override city images with database images from city_images table
+  const citiesWithMatchingImages = cities.map(city => {
+    const cityId = citySlugToIdMap[city.slug] || city.slug;
+    const dbImage = cityImages[cityId]?.photoUrl;
+    
+    return {
+      ...city,
+      image: dbImage || city.image, // Use database image if available, otherwise fallback to city.image
+    };
+  });
 
   return (
     <div className="min-h-screen bg-[#F9F9F7] py-16 md:py-24 px-4 md:px-8">

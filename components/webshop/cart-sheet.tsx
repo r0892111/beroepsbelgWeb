@@ -8,6 +8,7 @@ import { useCartContext } from '@/lib/contexts/cart-context';
 import { CheckoutDialog } from './checkout-dialog';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import { getProductPlaceholder } from '@/lib/utils/placeholder-images';
 
 export function CartSheet() {
   const t = useTranslations('cart');
@@ -78,16 +79,15 @@ export function CartSheet() {
                     const product = item.products;
                     return (
                       <div key={item.id} className="flex gap-4 py-4 border-b">
-                        {product?.image && (
-                          <div className="relative w-20 h-20 flex-shrink-0">
-                            <Image
-                              src={product.image}
-                              alt={product.Name || product.title_nl || product.title_en || 'Product'}
-                              fill
-                              className="object-cover rounded"
-                            />
-                          </div>
-                        )}
+                        <div className="relative w-20 h-20 flex-shrink-0">
+                          <Image
+                            src={product?.image || getProductPlaceholder(product?.Category || 'Book')}
+                            alt={product?.Name || product?.title_nl || product?.title_en || 'Product'}
+                            fill
+                            className="object-cover rounded"
+                            unoptimized
+                          />
+                        </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-sm mb-1">
                             {product?.Name || product?.title_nl || product?.title_en || product?.title_fr || product?.title_de || 'Product'}

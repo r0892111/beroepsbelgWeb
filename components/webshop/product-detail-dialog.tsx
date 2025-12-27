@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
@@ -18,6 +19,7 @@ import { useAuth } from '@/lib/contexts/auth-context';
 import { useFavoritesContext } from '@/lib/contexts/favorites-context';
 import { useCartContext } from '@/lib/contexts/cart-context';
 import { toast } from 'sonner';
+import { getProductPlaceholder } from '@/lib/utils/placeholder-images';
 
 interface ProductDetailDialogProps {
   product: Product;
@@ -108,6 +110,16 @@ export function ProductDetailDialog({ product, open, onOpenChange }: ProductDeta
             </div>
           </div>
         </DialogHeader>
+
+        <div className="relative w-full aspect-[4/3] overflow-hidden rounded-lg border border-[#1a3628]/10 mb-6">
+          <Image
+            src={product.image || getProductPlaceholder(product.category)}
+            alt={product.title[locale]}
+            fill
+            className="object-cover"
+            unoptimized
+          />
+        </div>
 
         <div className="space-y-6 py-4">
           <div>

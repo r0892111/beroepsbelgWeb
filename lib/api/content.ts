@@ -322,34 +322,79 @@ export async function getPressLinks(): Promise<PressLink[]> {
   }
 }
 
-export async function getFaqItems(): Promise<FaqItem[]> {
+export async function getCityImages(): Promise<Record<string, { photoUrl?: string }>> {
   try {
     const { data, error } = await supabaseServer
-      .from('faq_items')
-      .select('*')
-      .order('sort_order');
+      .from('city_images')
+      .select('city_id, photo_url');
 
     if (error) {
+      console.error('Error fetching city images:', error);
+      return {};
+    }
+
+    const imagesMap: Record<string, { photoUrl?: string }> = {};
+    (data || []).forEach((row: any) => {
+      if (row.photo_url) {
+        imagesMap[row.city_id] = {
+          photoUrl: row.photo_url,
+        };
+      }
+    });
+
+    return imagesMap;
+  } catch (err) {
+    console.error('Exception fetching city images:', err);
+    return {};
+  }
+}
+
+export async function getFaqItems(): Promise<FaqItem[]> {
+  try {
+    // Try both table name variations (case-insensitive in PostgreSQL, but be explicit)
+    let { data, error } = await supabaseServer
+      .from('faq_items')
+      .select('*')
+      .order('sort_order', { ascending: true, nullsFirst: false });
+
+    // If faq_items doesn't work, try FAQ_ITEMS
+    if (error && error.message?.includes('does not exist')) {
+      const result = await supabaseServer
+        .from('FAQ_ITEMS')
+        .select('*')
+        .order('sort_order', { ascending: true, nullsFirst: false });
+      data = result.data;
+      error = result.error;
+    }
+
+    if (error) {
+      console.error('Error fetching FAQ items:', error);
+      return [];
+    }
+
+    if (!data || data.length === 0) {
+      console.warn('No FAQ items found in database');
       return [];
     }
 
     const items = (data || []).map((row: any) => ({
       question: {
-        nl: row.question_nl,
-        en: row.question_en,
-        fr: row.question_fr,
-        de: row.question_de,
+        nl: row.question_nl || row.question_NL || '',
+        en: row.question_en || row.question_EN || row.question_nl || row.question_NL || '',
+        fr: row.question_fr || row.question_FR || row.question_nl || row.question_NL || '',
+        de: row.question_de || row.question_DE || row.question_nl || row.question_NL || '',
       },
       answer: {
-        nl: row.answer_nl,
-        en: row.answer_en,
-        fr: row.answer_fr,
-        de: row.answer_de,
+        nl: row.answer_nl || row.answer_NL || '',
+        en: row.answer_en || row.answer_EN || row.answer_nl || row.answer_NL || '',
+        fr: row.answer_fr || row.answer_FR || row.answer_nl || row.answer_NL || '',
+        de: row.answer_de || row.answer_DE || row.answer_nl || row.answer_NL || '',
       },
-    }));
+    })).filter(item => item.question.nl || item.question.en); // Filter out empty items
 
     return items;
   } catch (err) {
+    console.error('Exception fetching FAQ items:', err);
     return [];
   }
 }
