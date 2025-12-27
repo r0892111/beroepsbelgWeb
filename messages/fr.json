@@ -20,7 +20,9 @@
   "hero": {
     "kicker": "— Découvrez la Belgique comme vous ne l'avez jamais vue",
     "heading": "Votre guide en Belgique",
-    "cta": "Découvrez nos tours"
+    "cta": "Découvrez nos tours",
+    "cnnQuote": "L'un des 7 guides les plus intelligents au monde – CNN",
+    "discoverTours": "Découvrir les tours"
   },
   "sections": {
     "inSpotlight": "En vedette",
@@ -30,6 +32,21 @@
     "shop": "Boutique",
     "press": "Dans la presse",
     "newsletter": "Newsletter"
+  },
+  "shop": {
+    "marqueeText": "BOUTIQUE — NOUVELLE COLLECTION — DÉCOUVREZ MAINTENANT",
+    "addToCart": "Ajouter au panier",
+    "curated": "Sélectionnée",
+    "collection": "Collection",
+    "exclusiveItems": "Livres, affiches et objets exclusifs"
+  },
+  "header": {
+    "account": "Compte",
+    "favorites": "Favoris",
+    "cart": "Panier",
+    "adminPanel": "Panneau d'administration",
+    "language": "Langue",
+    "copyright": "© 2024 Buro BeroepsBelg"
   },
   "cities": {
     "antwerpen": "Anvers",
@@ -70,7 +87,17 @@
     "sitemap": "Plan du site",
     "privacy": "Confidentialité",
     "disclaimer": "Avertissement",
-    "poweredBy": "Boutique"
+    "poweredBy": "Boutique",
+    "stayConnected": "RESTEZ CONNECTÉ",
+    "newsletterSignUp": "Inscription à la Newsletter",
+    "emailPlaceholder": "Votre adresse e-mail",
+    "subscribe": "S'inscrire",
+    "explore": "EXPLORER",
+    "search": "RECHERCHER",
+    "searchPlaceholder": "Rechercher des tours, produits...",
+    "copyright": "© 2024 Beroepsbelg. Tous droits réservés.",
+    "allRightsReserved": "Tous droits réservés",
+    "terms": "Conditions"
   },
   "cookie": {
     "message": "Nous utilisons des cookies pour améliorer votre expérience.",
@@ -346,7 +373,10 @@
     "all": "Tout",
     "books": "Livres",
     "merchandise": "Merchandising",
-    "games": "Jeux"
+    "games": "Jeux",
+    "experienceBelgiumLive": "Vivez la Belgique en Direct",
+    "exploreHiddenStories": "Vous aimez ce que vous voyez ? Explorez les histoires cachées de la Belgique avec nos guides experts. Des trésors architecturaux aux secrets culinaires – nos tours donnent vie aux histoires derrière les histoires.",
+    "browseAllTours": "Parcourir Tous les Tours"
   },
   "tourDetail": {
     "backToCity": "Retour aux tours de {city}",
@@ -362,11 +392,18 @@
     "localStoriesMinimum": "Minimum de 4 personnes requis"
   },
   "faq": {
-    "title": "FAQ"
+    "title": "FAQ",
+    "subtitle": "Tout ce que vous devez savoir sur nos tours belges authentiques",
+    "stillHaveQuestions": "Vous avez encore des questions ?",
+    "ctaDescription": "La meilleure façon de découvrir la Belgique est de la vivre de première main. Réservez un tour et laissez nos guides experts vous faire découvrir !",
+    "exploreOurTours": "Découvrir Nos Tours"
   },
   "press": {
     "title": "Dans la Presse",
-    "subtitle": "BeroepsBelg dans les médias"
+    "subtitle": "BeroepsBelg dans les médias",
+    "loading": "Chargement...",
+    "noArticles": "Aucun article de presse disponible.",
+    "featuredIn": "Dans la Presse"
   },
   "blog": {
     "title": "Blog",
@@ -374,19 +411,61 @@
   },
   "contact": {
     "title": "Contact",
+    "getInTouch": "Contactez-nous",
+    "subtitle": "Nous serions ravis de vous entendre",
     "address": "Adresse",
+    "addressLabel": "Adresse",
     "email": "E-mail",
+    "emailLabel": "E-mail",
     "phone": "Téléphone",
+    "phoneLabel": "Téléphone",
     "sendMessage": "Envoyez-nous un message",
+    "formHeading": "Envoyez-nous un message",
     "messageSent": "Message envoyé !",
+    "sending": "Envoi...",
+    "successMessage": "Message envoyé !",
     "addressLine1": "Groenplaats 1",
     "addressLine2": "2000 Anvers",
     "addressLine3": "Belgique",
-    "consent": "J'accepte la politique de confidentialité"
+    "consent": "J'accepte la politique de confidentialité",
+    "consentText": "J'accepte la politique de confidentialité"
   },
   "jobs": {
     "title": "Devenez un guide BeroepsBelg",
+    "becomeGuide": "Devenez un Guide BeroepsBelg",
+    "joinTeam": "Rejoignez notre équipe et partagez votre passion pour la culture belge",
+    "whyJoinUs": "Pourquoi nous rejoindre ?",
+    "introduction1": "Êtes-vous passionné par l'histoire, l'architecture et la narration ? Voulez-vous faire partie d'une équipe dynamique qui met la Belgique en valeur de manière unique ?",
+    "introduction2": "Nous recherchons toujours des guides enthousiastes qui partagent notre mission d'offrir aux visiteurs et aux habitants une expérience enrichissante.",
+    "sharePassion": {
+      "title": "Partagez votre passion",
+      "description": "Obtenez l'opportunité de partager vos connaissances et votre amour pour la Belgique avec des visiteurs enthousiastes"
+    },
+    "dynamicTeam": {
+      "title": "Équipe dynamique",
+      "description": "Devenez membre d'une équipe soudée de guides et rencontrez des personnes intéressantes"
+    },
+    "flexibleLocations": {
+      "title": "Emplacements flexibles",
+      "description": "Donnez des tours dans les villes belges que vous connaissez le mieux"
+    },
+    "unforgettableMoments": {
+      "title": "Moments inoubliables",
+      "description": "Contribuez à des souvenirs uniques pour les touristes et les habitants"
+    },
     "applyNow": "Postuler maintenant",
+    "nameLabel": "Nom",
+    "emailLabel": "E-mail",
+    "phoneLabel": "Téléphone",
+    "cityLabel": "Dans quelle(s) ville(s) souhaitez-vous donner des tours ?",
+    "cityPlaceholder": "par ex. Anvers, Bruxelles",
+    "motivationLabel": "Pourquoi souhaitez-vous devenir un guide BeroepsBelg ?",
+    "consentText": "J'accepte la politique de confidentialité et le traitement de mes données personnelles",
+    "submitApplication": "Envoyer la candidature",
+    "submitting": "Envoi...",
+    "successMessage": "Candidature envoyée !",
+    "invalidEmail": "Adresse e-mail invalide",
+    "minimumCharacters": "Minimum 50 caractères requis",
     "description": "Êtes-vous passionné par la culture, l'histoire et l'architecture belges ? Avez-vous un talent pour raconter des histoires et aimez-vous partager vos connaissances avec les autres ? Alors nous vous cherchons ! BeroepsBelg est toujours à la recherche de guides enthousiastes qui peuvent emmener nos invités dans un voyage inoubliable à travers l'histoire fascinante de nos belles villes.",
     "name": "Nom*",
     "email": "E-mail*",
@@ -410,7 +489,9 @@
     "people": "10-50 personnes",
     "description": "Dans cette conférence captivante, Tanguy Ottomer vous emmène dans un voyage à travers l'histoire fascinante de la Boerentoren, le gratte-ciel le plus emblématique d'Anvers. De sa construction dans les années 1930 à son rôle dans le paysage urbain d'aujourd'hui, vous découvrirez comment ce bâtiment a façonné la ville et reste un symbole d'ambition et d'innovation.",
     "bookLecture": "Réserver cette conférence",
-    "moreInfo": "Plus d'informations"
+    "moreInfo": "Plus d'informations",
+    "description1": "La Boerentoren, également connue sous le nom de tour KBC, est un bâtiment emblématique du paysage urbain anversois. Cette conférence vous emmène à travers l'histoire fascinante de ce qui fut autrefois le plus haut bâtiment d'Europe.",
+    "description2": "Des projets de construction ambitieux des années 1920 à la transformation moderne, vous découvrirez les points forts architecturaux, les histoires des personnes qui y ont travaillé et le rôle que le bâtiment a joué dans le développement d'Anvers en tant que métropole moderne."
   },
   "disclaimer": {
     "title": "Conditions Générales",
@@ -513,5 +594,45 @@
     "supportMessage": "Si vous avez rencontré des problèmes lors du paiement ou avez des questions, veuillez contacter notre équipe de support.",
     "returnShop": "Retour à la boutique",
     "contactSupport": "Contacter le support"
+  },
+  "citySection": {
+    "explore": "Explorer",
+    "cityLabel": "VILLE",
+    "antwerp": {
+      "tagline": "La Capitale de la Mode",
+      "description": "Une métropole de poche connue pour ses diamants, sa mode avant-gardiste et la flèche imposante de sa cathédrale."
+    },
+    "gent": {
+      "tagline": "Le Rebelle Excentrique",
+      "description": "L'histoire avec un côté rock 'n roll. Une ville étudiante animée centrée autour de l'imposant château de Gravensteen."
+    },
+    "bruges": {
+      "tagline": "La Venise du Nord",
+      "description": "Un conte de fées médiéval préservé dans le temps. Rues pavées, cygnes sur les canaux et mystère romantique."
+    },
+    "brussels": {
+      "tagline": "Le Cœur de l'Europe",
+      "description": "Le surréalisme rencontre la bureaucratie. Splendeur de la Grand-Place, joyaux Art Nouveau et le meilleur chocolat du monde."
+    },
+    "leuven": {
+      "tagline": "Les Cerveaux & La Bière",
+      "description": "Siège de la plus ancienne université des Pays-Bas et du siège de la plus grande brasserie du monde."
+    },
+    "knokke-heist": {
+      "tagline": "Le Triangle d'Or",
+      "description": "Luxe en bord de mer. Boutiques haut de gamme, galeries d'art et la réserve naturelle du Zwin en font le choix côtier sophistiqué."
+    },
+    "mechelen": {
+      "tagline": "La Perle Cachée",
+      "description": "Une ville de carillons et de silence. Marchez sur le chemin flottant de la Dyle et grimpez la tour Saint-Rombaut."
+    },
+    "hasselt": {
+      "tagline": "La Capitale du Goût",
+      "description": "Connue pour le genièvre, la mode et comme la ville la plus accueillante. Un endroit où le bon goût est un mode de vie."
+    },
+    "spa": {
+      "tagline": "La Perle des Ardennes",
+      "description": "La ville thermale originale. Célèbre pour ses eaux thermales curatives, le casino et son environnement verdoyant."
+    }
   }
 }

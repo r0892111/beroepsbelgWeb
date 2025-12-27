@@ -11,6 +11,8 @@
  */
 import React, { useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, useSpring, animate } from 'framer-motion';
+import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { ShopSection } from './ShopSection';
 import { CitySection } from './CitySection';
 import { PressSection } from './PressSection';
@@ -50,6 +52,7 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ locale }: HeroSectionProps) {
+  const t = useTranslations('hero');
   const { scrollY } = useScroll();
   const { width } = useWindowSize();
   const isMobile = width < 768;
@@ -184,15 +187,12 @@ export function HeroSection({ locale }: HeroSectionProps) {
             className="text-center max-w-[90vw] md:max-w-4xl mx-auto mb-4 md:mb-8 relative z-50 pointer-events-auto"
           >
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 leading-[1.1] tracking-tight">
-              One of the 7 <span className="relative inline-block">
-                savviest
-              </span> guides <br className="hidden md:block" />
-              in the world – CNN
+              "One of the 7 savviest guides in the world" — CNN
             </h1>
 
             <div className="mt-8 flex justify-center">
               <a href={`/${locale}/tours`} className="group bg-[#1BDD95] hover:bg-[#14BE82] text-white text-base md:text-lg font-bold py-3 px-8 md:px-10 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex items-center gap-2">
-                <span className="uppercase tracking-wider">Discover tours</span>
+                <span className="uppercase tracking-wider">{t('discoverTours')}</span>
                 <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
               </a>
             </div>

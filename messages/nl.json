@@ -20,7 +20,9 @@
   "hero": {
     "kicker": "— Ontdek België zoals je het nog nooit hebt gezien",
     "heading": "Uw gids in België",
-    "cta": "Ontdek onze tours"
+    "cta": "Ontdek onze tours",
+    "cnnQuote": "Een van de 7 slimste gidsen ter wereld – CNN",
+    "discoverTours": "Ontdek tours"
   },
   "sections": {
     "inSpotlight": "In de kijker",
@@ -31,6 +33,21 @@
     "press": "In de pers",
     "newsletter": "Nieuwsbrief"
   },
+  "shop": {
+    "marqueeText": "WEBSHOP — NIEUWE COLLECTIE — ONTDEK NU",
+    "addToCart": "Toevoegen aan winkelwagen",
+    "curated": "Gecureerde",
+    "collection": "Collectie",
+    "exclusiveItems": "Exclusieve boeken, prints & objecten"
+  },
+  "header": {
+    "account": "Account",
+    "favorites": "Favorieten",
+    "cart": "Winkelwagen",
+    "adminPanel": "Admin Paneel",
+    "language": "Taal",
+    "copyright": "© 2024 Buro BeroepsBelg"
+  },
   "cities": {
     "antwerpen": "Antwerpen",
     "brussel": "Brussel",
@@ -40,6 +57,46 @@
     "leuven": "Leuven",
     "mechelen": "Mechelen",
     "hasselt": "Hasselt"
+  },
+  "citySection": {
+    "explore": "Verken",
+    "cityLabel": "STAD",
+    "antwerp": {
+      "tagline": "De Modehoofstad",
+      "description": "Een metropool in zakformaat bekend om diamanten, avant-garde mode en de torenhoge spits van de kathedraal."
+    },
+    "gent": {
+      "tagline": "De Eigenzinnige Rebel",
+      "description": "Geschiedenis met een rock 'n roll randje. Een bruisende studentenstad gecentreerd rond het imposante Gravensteen."
+    },
+    "bruges": {
+      "tagline": "Venetië van het Noorden",
+      "description": "Een middeleeuws sprookje bewaard in de tijd. Kinderkopjes, zwanen op de grachten en romantisch mysterie."
+    },
+    "brussels": {
+      "tagline": "Het Hart van Europa",
+      "description": "Surrealisme ontmoet bureaucratie. Pracht van de Grote Markt, Art Nouveau-juwelen en de beste chocolade ter wereld."
+    },
+    "leuven": {
+      "tagline": "De Hersenen & Het Bier",
+      "description": "Thuisbasis van de oudste universiteit van de Lage Landen en het hoofdkwartier van 's werelds grootste brouwerij."
+    },
+    "knokke-heist": {
+      "tagline": "De Gouden Driehoek",
+      "description": "Luxe aan zee. High-end boetiekjes, kunstgalerijen en het Zwin natuurreservaat maken het de verfijnde kustkeuze."
+    },
+    "mechelen": {
+      "tagline": "De Verborgen Parel",
+      "description": "Een stad van beiaarden en stilte. Wandel over het drijvende pad op de Dijle en beklim de toren van Sint-Rombout."
+    },
+    "hasselt": {
+      "tagline": "De Hoofdstad van de Smaak",
+      "description": "Bekend om jenevergin, mode en als de meest gastvrije stad. Een plek waar goede smaak een levensstijl is."
+    },
+    "spa": {
+      "tagline": "De Parel van de Ardennen",
+      "description": "Het originele kuuroord. Beroemd om zijn genezende thermale waters, het casino en weelderige groene omgeving."
+    }
   },
   "common": {
     "discover": "Ontdek",
@@ -70,7 +127,17 @@
     "sitemap": "Sitemap",
     "privacy": "Privacy",
     "disclaimer": "Disclaimer",
-    "poweredBy": "Webshop"
+    "poweredBy": "Webshop",
+    "stayConnected": "BLIJF VERBONDEN",
+    "newsletterSignUp": "Nieuwsbrief Inschrijven",
+    "emailPlaceholder": "Uw e-mailadres",
+    "subscribe": "Inschrijven",
+    "explore": "ONTDEK",
+    "search": "ZOEKEN",
+    "searchPlaceholder": "Zoek tours, producten...",
+    "copyright": "© 2024 Beroepsbelg. Alle rechten voorbehouden.",
+    "allRightsReserved": "Alle rechten voorbehouden",
+    "terms": "Voorwaarden"
   },
   "cookie": {
     "message": "We gebruiken cookies om uw ervaring te verbeteren.",
@@ -247,6 +314,62 @@
     "endDate": "Einddatum",
     "city": "Stad of locatie",
     "cityPlaceholder": "Selecteer een stad",
+    "selectTour": "Selecteer een tour",
+    "selectDateAndTime": "Selecteer zowel een datum als een tijdslot",
+    "fillNumberOfPeople": "Vul het aantal personen in",
+    "loading": "Gegevens laden...",
+    "tryAgain": "Probeer opnieuw",
+    "requestSent": "Uw aanvraag is verzonden.",
+    "checkAvailability": "We controleren de beschikbaarheid van de gids en nemen binnen 24 uur contact met u op met een bevestiging en betalingslink.",
+    "redirectingIn": "U wordt over {countdown} seconden doorgestuurd...",
+    "step1": "Stap 1: Selecteer tour en datum",
+    "cityLabel": "Stad*",
+    "selectCity": "Selecteer een stad",
+    "tourLabel": "Tour*",
+    "viewAllTours": "Bekijk alle tours",
+    "languageLabel": "Taal van de tour*",
+    "selectLanguage": "Selecteer een taal",
+    "availableLanguages": "Beschikbare talen voor deze tour",
+    "dateLabel": "Datum*",
+    "timeSlotLabel": "Tijdslot*",
+    "selectTime": "Selecteer tijd",
+    "selectTourFirst": "Selecteer eerst een tour",
+    "localStoriesTime": "Tours zijn enkel beschikbaar van 14:00u tot 16:00u",
+    "tourDuration": "Tourduur: {duration}",
+    "numberOfPeopleLabel": "Aantal*",
+    "peoplePlaceholder": "Personen",
+    "continueButton": "Verder →",
+    "step2": "Stap 2: Uw gegevens",
+    "firstName": "Voornaam*",
+    "lastName": "Achternaam*",
+    "emailLabel": "E-mail*",
+    "phoneLabel": "Telefoon*",
+    "individual": "Particulier",
+    "business": "Zakelijk",
+    "invoiceDetails": "Factuurgegevens",
+    "companyNameLabel": "Bedrijfsnaam*",
+    "vatNumber": "BTW-nummer*",
+    "vatPlaceholder": "BE0123456789",
+    "billingAddressLabel": "Factuuradres*",
+    "commentsLabel": "Opmerkingen",
+    "commentsPlaceholder": "Eventuele bijzonderheden of wensen...",
+    "backButton": "← Terug",
+    "continueNext": "Verder →",
+    "step3Title": "Wil je een extra cadeau toevoegen?",
+    "step3Subtitle": "Verras je deelnemers met onze boeken en geschenken",
+    "productsSelected": "✓ {count} product{plural} geselecteerd",
+    "continueWithProducts": "Verder met producten →",
+    "skip": "Overslaan →",
+    "step4": "Stap 4: Bevestig uw aanvraag",
+    "summaryTitle": "Overzicht",
+    "participants": "{count} deelnemer{plural}",
+    "extraProducts": "Extra producten: {count}",
+    "confirmationNote": "Na bevestiging controleren wij de beschikbaarheid van de gids en ontvangt u een bevestigingsmail met offerte.",
+    "submitting": "Bezig...",
+    "confirmRequest": "Bevestig aanvraag",
+    "opMaatFormTitle": "Vul het formulier in",
+    "opMaatFormDescription": "Help ons je perfecte tour samen te stellen door het onderstaande formulier in te vullen.",
+    "formLoading": "Formulier laden...",
     "tour": "Welke tour",
     "tourPlaceholder": "Selecteer een tour",
     "viewTour": "Bekijk deze tour",
@@ -346,7 +469,10 @@
     "all": "Alles",
     "books": "Boeken",
     "merchandise": "Merchandise",
-    "games": "Spellen"
+    "games": "Spellen",
+    "experienceBelgiumLive": "Beleef België Live",
+    "exploreHiddenStories": "Houd je van wat je ziet? Ontdek de verborgen verhalen van België met onze deskundige gidsen. Van architectonische schatten tot culinaire geheimen – onze tours brengen de verhalen achter de verhalen tot leven.",
+    "browseAllTours": "Bekijk Alle Tours"
   },
   "tourDetail": {
     "backToCity": "Terug naar {city} tours",
@@ -362,11 +488,18 @@
     "localStoriesMinimum": "Minimum van 4 personen vereist"
   },
   "faq": {
-    "title": "FAQ"
+    "title": "FAQ",
+    "subtitle": "Alles wat u moet weten over onze authentieke Belgische tours",
+    "stillHaveQuestions": "Heeft u nog vragen?",
+    "ctaDescription": "De beste manier om België te leren kennen is door het uit eerste hand te ervaren. Boek een tour en laat onze deskundige gidsen u rondleiden!",
+    "exploreOurTours": "Ontdek Onze Tours"
   },
   "press": {
     "title": "In de Pers",
-    "subtitle": "BeroepsBelg in de media"
+    "subtitle": "BeroepsBelg in de media",
+    "featuredIn": "Featured In",
+    "loading": "Laden...",
+    "noArticles": "Geen persberichten beschikbaar."
   },
   "blog": {
     "title": "Blog",
@@ -374,19 +507,61 @@
   },
   "contact": {
     "title": "Contact",
+    "getInTouch": "Neem Contact Op",
+    "subtitle": "We horen graag van u",
     "address": "Adres",
+    "addressLabel": "Adres",
     "email": "E-mail",
+    "emailLabel": "E-mail",
     "phone": "Telefoon",
+    "phoneLabel": "Telefoon",
     "sendMessage": "Stuur ons een bericht",
+    "formHeading": "Stuur ons een bericht",
     "messageSent": "Bericht verzonden!",
+    "sending": "Verzenden...",
+    "successMessage": "Bericht verzonden!",
     "addressLine1": "Groenplaats 1",
     "addressLine2": "2000 Antwerpen",
     "addressLine3": "België",
-    "consent": "Ik ga akkoord met de privacy policy"
+    "consent": "Ik ga akkoord met de privacy policy",
+    "consentText": "Ik ga akkoord met de privacy policy"
   },
   "jobs": {
     "title": "Word een BeroepsBelg gids",
+    "becomeGuide": "Word een BeroepsBelg Gids",
+    "joinTeam": "Word lid van ons team en deel je passie voor de Belgische cultuur",
+    "whyJoinUs": "Waarom bij ons werken?",
+    "introduction1": "Ben je gepassioneerd door geschiedenis, architectuur en het vertellen van verhalen? Wil je deel uitmaken van een dynamisch team dat België op een unieke manier in de schijnwerpers zet?",
+    "introduction2": "We zijn altijd op zoek naar enthousiaste gidsen die onze missie delen om bezoekers en locals een verrijkende ervaring te bieden.",
+    "sharePassion": {
+      "title": "Deel je passie",
+      "description": "Krijg de kans om je kennis en liefde voor België te delen met enthousiaste bezoekers"
+    },
+    "dynamicTeam": {
+      "title": "Dynamisch team",
+      "description": "Word deel van een hecht team van gidsen en ontmoet interessante mensen"
+    },
+    "flexibleLocations": {
+      "title": "Flexibele locaties",
+      "description": "Geef rondleidingen in de Belgische steden die jij het beste kent"
+    },
+    "unforgettableMoments": {
+      "title": "Onvergetelijke momenten",
+      "description": "Draag bij aan unieke herinneringen voor toeristen en locals"
+    },
     "applyNow": "Solliciteer nu",
+    "nameLabel": "Naam",
+    "emailLabel": "E-mail",
+    "phoneLabel": "Telefoon",
+    "cityLabel": "In welke stad(en) wil je rondleidingen geven?",
+    "cityPlaceholder": "bijv. Antwerpen, Brussel",
+    "motivationLabel": "Waarom wil je BeroepsBelg gids worden?",
+    "consentText": "Ik ga akkoord met de privacy policy en de verwerking van mijn gegevens",
+    "submitApplication": "Verstuur sollicitatie",
+    "submitting": "Verzenden...",
+    "successMessage": "Sollicitatie verzonden!",
+    "invalidEmail": "Ongeldig e-mailadres",
+    "minimumCharacters": "Minimaal 50 karakters vereist",
     "description": "Ben je gepassioneerd over Belgische cultuur, geschiedenis en architectuur? Heb je een talent voor storytelling en deel je graag je kennis met anderen? Dan zijn we op zoek naar jou! BeroepsBelg is altijd op zoek naar enthousiaste gidsen die onze gasten kunnen meenemen op een onvergetelijke reis door de fascinerende geschiedenis van onze mooie steden.",
     "name": "Naam*",
     "email": "E-mail*",
@@ -408,6 +583,8 @@
     "antwerp": "Antwerpen",
     "groupSize": "Groepsgrootte",
     "people": "10-50 personen",
+    "description1": "De Boerentoren, ook bekend als de KBC-toren, is een iconisch gebouw in het Antwerpse stadsbeeld. Deze lezing neemt u mee door de fascinerende geschiedenis van wat ooit het hoogste gebouw van Europa was.",
+    "description2": "Van de ambitieuze bouwplannen in de jaren '20 tot de moderne transformatie, u ontdekt de architecturale hoogtepunten, de verhalen van de mensen die er werkten, en de rol die het gebouw speelde in de ontwikkeling van Antwerpen als moderne metropool.",
     "description": "In deze boeiende lezing neemt Tanguy Ottomer je mee op een reis door de fascinerende geschiedenis van de Boerentoren, Antwerpen's meest iconische wolkenkrabber. Van de bouw in de jaren '30 tot zijn rol in het hedendaagse stadsbeeld, ontdek je hoe dit gebouw de stad heeft gevormd en een symbool blijft van ambitie en innovatie.",
     "bookLecture": "Boek deze lezing",
     "moreInfo": "Meer informatie"

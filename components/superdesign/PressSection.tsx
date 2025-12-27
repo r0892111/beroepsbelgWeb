@@ -10,6 +10,7 @@
  */
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 
 // Organized data for the brick layout pattern
 const ROW_1 = ["CNN", "The New York Times", "Vanity Fair", "Financial Times", "The Wall Street Journal"];
@@ -34,6 +35,7 @@ const PressCard = ({ name, delay }: { name: string; delay: number }) => (
 );
 
 export function PressSection() {
+  const t = useTranslations('press');
   return (
     <section className="py-16 bg-[#F9F9F7] relative overflow-hidden z-30">
        {/* Decorative Background Elements */}
@@ -56,7 +58,7 @@ export function PressSection() {
                 <div className="absolute -top-4 -right-8 w-16 h-16 bg-[#1BDD95] rounded-full opacity-80" />
 
                 <h2 className="relative z-10 font-serif text-5xl md:text-7xl lg:text-8xl text-[rgb(23,23,23)] tracking-tight leading-[0.9]">
-                   Featured In
+                   {t('featuredIn')}
                 </h2>
              </div>
           </motion.div>

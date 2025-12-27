@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { ProductDetailDialog } from './product-detail-dialog';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -12,6 +13,7 @@ import { useAuth } from '@/lib/contexts/auth-context';
 import { useFavoritesContext } from '@/lib/contexts/favorites-context';
 import { useCartContext } from '@/lib/contexts/cart-context';
 import { toast } from 'sonner';
+import { getProductPlaceholder } from '@/lib/utils/placeholder-images';
 
 interface ProductCardProps {
   product: Product;
@@ -137,9 +139,18 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         </CardHeader>
         <CardContent
-          className="flex-1 flex flex-col justify-center"
+          className="flex-1 flex flex-col"
           style={{ backgroundColor: 'var(--card-content-bg)', paddingTop: '1.75rem', paddingBottom: '1.75rem' }}
         >
+          <div className="relative w-full aspect-[4/3] overflow-hidden rounded-lg border border-[#1a3628]/10 mb-4">
+            <Image
+              src={product.image || getProductPlaceholder(product.category)}
+              alt={product.title[locale]}
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
+              unoptimized
+            />
+          </div>
           <p
             className="text-sm line-clamp-3 leading-relaxed"
             style={{ color: 'var(--text-tertiary)' }}

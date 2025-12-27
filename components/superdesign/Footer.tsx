@@ -10,6 +10,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Facebook, Instagram, Twitter, Search } from 'lucide-react';
 import { type Locale } from '@/i18n';
+import { useTranslations } from 'next-intl';
 
 // Custom Pinterest Icon since it might not be in the specific lucide version or for custom styling
 const PinterestIcon = ({ className }: { className?: string }) => (
@@ -35,6 +36,7 @@ interface FooterProps {
 }
 
 export function Footer({ locale }: FooterProps) {
+  const t = useTranslations('footer');
   return (
     <footer className="relative bg-[#1BDD95] text-black pt-20 pb-8 overflow-hidden font-sans">
 
@@ -53,7 +55,7 @@ export function Footer({ locale }: FooterProps) {
 
           {/* Column 1: STAY CONNECTED */}
           <div className="flex flex-col items-start gap-6">
-            <h3 className="font-serif text-2xl tracking-wide font-medium">STAY CONNECTED</h3>
+            <h3 className="font-serif text-2xl tracking-wide font-medium">{t('stayConnected')}</h3>
 
             {/* Social Icons */}
             <div className="flex items-center gap-6 mb-4">
@@ -65,18 +67,18 @@ export function Footer({ locale }: FooterProps) {
 
             {/* Newsletter */}
             <div className="w-full max-w-sm">
-              <h4 className="text-sm font-medium tracking-wider mb-3 uppercase opacity-90">Newsletter Sign Up</h4>
+              <h4 className="text-sm font-medium tracking-wider mb-3 uppercase opacity-90">{t('newsletterSignUp')}</h4>
               <form className="flex w-full" onSubmit={(e) => e.preventDefault()}>
                 <input
                   type="email"
-                  placeholder="Your email address"
+                  placeholder={t('emailPlaceholder')}
                   className="flex-1 bg-white text-gray-800 px-4 py-3 outline-none placeholder:text-gray-400 text-sm"
                 />
                 <button
                   type="submit"
                   className="bg-white text-[#1BDD95] px-6 py-3 text-sm font-bold tracking-wider hover:bg-gray-100 transition-colors uppercase border-l border-gray-100"
                 >
-                  Subscribe
+                  {t('subscribe')}
                 </button>
               </form>
             </div>
@@ -84,7 +86,7 @@ export function Footer({ locale }: FooterProps) {
 
           {/* Column 2: EXPLORE (Centered) */}
           <div className="flex flex-col items-start md:items-center text-left md:text-center gap-6">
-            <h3 className="font-serif text-2xl tracking-wide font-medium">EXPLORE</h3>
+            <h3 className="font-serif text-2xl tracking-wide font-medium">{t('explore')}</h3>
             <nav className="flex flex-col gap-3 text-lg opacity-90">
               <FooterLink href={`/${locale}/tours`}>Tours</FooterLink>
               <FooterLink href={`/${locale}/webshop`}>Webshop</FooterLink>
@@ -96,11 +98,11 @@ export function Footer({ locale }: FooterProps) {
 
           {/* Column 3: SEARCH (Right) */}
           <div className="flex flex-col items-start md:items-start gap-6">
-             <h3 className="font-serif text-2xl tracking-wide font-medium">SEARCH</h3>
+             <h3 className="font-serif text-2xl tracking-wide font-medium">{t('search')}</h3>
              <div className="w-full relative">
                <input
                  type="text"
-                 placeholder="Search"
+                 placeholder={t('searchPlaceholder')}
                  className="w-full bg-transparent border border-black/60 px-4 py-3 pr-10 text-black placeholder:text-black/70 outline-none focus:border-black transition-colors"
                />
                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black/80" />
@@ -112,12 +114,12 @@ export function Footer({ locale }: FooterProps) {
         {/* Bottom Section */}
         <div className="border-t border-black/40 pt-8 flex flex-col justify-center items-center text-sm opacity-80 gap-4 text-center">
           <div>
-            &copy; 2024 Beroepsbelg. All rights reserved.
+            {t('copyright')}
           </div>
           <div className="flex gap-4">
-             <Link href={`/${locale}/disclaimer`} className="hover:underline underline-offset-4">Terms</Link>
+             <Link href={`/${locale}/disclaimer`} className="hover:underline underline-offset-4">{t('terms')}</Link>
              <span>|</span>
-             <Link href={`/${locale}/privacy`} className="hover:underline underline-offset-4">Privacy</Link>
+             <Link href={`/${locale}/privacy`} className="hover:underline underline-offset-4">{t('privacy')}</Link>
           </div>
         </div>
       </div>
