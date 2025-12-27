@@ -3,9 +3,9 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { locales, type Locale } from '@/i18n';
-import { MainNav } from '@/components/layout/main-nav';
-import SiteFooter from '@/components/design-system/SiteFooter';
 import { CookieBanner } from '@/components/layout/cookie-banner';
+import { MainNav } from '@/components/layout/main-nav';
+import { Footer } from '@/components/superdesign/Footer';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/lib/contexts/auth-context';
 import { AdminProvider } from '@/lib/contexts/admin-context';
@@ -43,11 +43,9 @@ export default async function LocaleLayout({
           <CartProvider>
             <FavoritesProvider>
               <div className="flex min-h-screen flex-col">
-                <header className="sticky top-0 z-40 border-b border-border bg-ivory">
-                  <MainNav locale={locale as Locale} />
-                </header>
+                <MainNav locale={locale as Locale} />
                 <main className="flex-1">{children}</main>
-                <SiteFooter locale={locale as Locale} />
+                <Footer locale={locale as Locale} />
               </div>
               <CookieBanner />
               <Toaster />

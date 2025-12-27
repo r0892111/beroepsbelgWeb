@@ -24,28 +24,10 @@ async function getSupabaseClientForAuth(request: NextRequest) {
     throw new Error('Missing Supabase environment variables');
   }
 
-  // Get cookies from request headers
-  const cookieHeader = request.headers.get('cookie') || '';
-  const cookies: Record<string, string> = {};
-  
-  cookieHeader.split(';').forEach((cookie) => {
-    const [name, ...rest] = cookie.trim().split('=');
-    if (name) {
-      cookies[name] = rest.join('=');
-    }
-  });
-
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      get(name: string) {
-        return cookies[name];
-      },
-      set(name: string, value: string, options: any) {
-        // Not needed for read-only operations
-      },
-      remove(name: string, options: any) {
-        // Not needed for read-only operations
-      },
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
     },
   });
 
@@ -91,31 +73,48 @@ async function checkAdminAccess(request: NextRequest): Promise<{ isAdmin: boolea
       return { isAdmin, userId: user.id };
     }
 
-    // Fallback: try getUser() with cookies
-    const supabase = await getSupabaseClientForAuth(request);
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Fallback: try to get token from cookies
+    const cookieHeader = request.headers.get('cookie') || '';
+    const cookies: Record<string, string> = {};
+    
+    cookieHeader.split(';').forEach((cookie) => {
+      const [name, ...rest] = cookie.trim().split('=');
+      if (name) {
+        cookies[name] = rest.join('=');
+      }
+    });
 
-    if (authError || !user) {
-      console.error('Auth error (cookies):', authError);
-      return { isAdmin: false, userId: null };
+    // Try to get access token from cookies
+    const cookieToken = cookies['sb-access-token'] || cookies['supabase-auth-token'];
+    
+    if (cookieToken) {
+      const supabaseAnon = await getSupabaseClientForAuth(request);
+      const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(cookieToken);
+      
+      if (authError || !user) {
+        console.error('Auth error (cookie token):', authError);
+        return { isAdmin: false, userId: null };
+      }
+
+      // Fetch user profile using service role for admin check
+      const supabaseServer = getSupabaseServer();
+      const { data: profile, error: profileError } = await supabaseServer
+        .from('profiles')
+        .select('isAdmin')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || !profile) {
+        console.error('Profile error:', profileError);
+        return { isAdmin: false, userId: user.id };
+      }
+
+      const isAdmin = profile.isAdmin === true;
+      console.log('Admin check (cookie token):', { userId: user.id, isAdmin, isAdminField: profile.isAdmin });
+      return { isAdmin, userId: user.id };
     }
 
-    // Fetch user profile using service role for admin check
-    const supabaseServer = getSupabaseServer();
-    const { data: profile, error: profileError } = await supabaseServer
-      .from('profiles')
-      .select('isAdmin')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      console.error('Profile error:', profileError);
-      return { isAdmin: false, userId: user.id };
-    }
-
-    const isAdmin = profile.isAdmin === true;
-    console.log('Admin check (cookies):', { userId: user.id, isAdmin, isAdminField: profile.isAdmin });
-    return { isAdmin, userId: user.id };
+    return { isAdmin: false, userId: null };
   } catch (error) {
     console.error('Error checking admin access:', error);
     return { isAdmin: false, userId: null };
