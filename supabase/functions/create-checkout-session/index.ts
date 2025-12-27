@@ -43,6 +43,7 @@ serve(async (req: Request) => {
       citySlug,
       opMaat = false,
       upsellProducts = [], // Array of { id, title, quantity, price }
+      opMaatAnswers = null, // Op maat specific answers
     } = await req.json()
 
     // Log received booking data for debugging
@@ -335,6 +336,8 @@ serve(async (req: Request) => {
         amount: tour.price * numberOfPeople, // Calculate amount based on number of people for all tour types
         currency: 'eur',
         upsellProducts: upsellProducts.length > 0 ? upsellProducts : undefined, // Store upsell products in invitee
+        // Op maat specific answers
+        opMaatAnswers: opMaatAnswers || null,
       }],
     };
     
@@ -347,6 +350,13 @@ serve(async (req: Request) => {
       bookingDate,
       bookingTime,
       warning: !opMaat && !tourDatetime ? '⚠️ Regular tour without date/time!' : null,
+      opMaatAnswers: opMaatAnswers ? {
+        hasAnswers: true,
+        startEnd: opMaatAnswers.startEnd ? '✓' : '✗',
+        cityPart: opMaatAnswers.cityPart ? '✓' : '✗',
+        subjects: opMaatAnswers.subjects ? '✓' : '✗',
+        specialWishes: opMaatAnswers.specialWishes ? '✓' : '✗',
+      } : null,
     });
 
     // Add user_id if provided (for logged-in users)
@@ -398,14 +408,25 @@ serve(async (req: Request) => {
     const { data: createdBooking, error: bookingError } = await supabase
       .from('tourbooking')
       .insert(bookingData)
-      .select('id')
+      .select('id, invitees')
       .single();
+
+    // Verify opMaatAnswers were saved correctly
+    const savedInvitees = createdBooking?.invitees || [];
+    const savedOpMaatAnswers = savedInvitees[0]?.opMaatAnswers || null;
 
     console.log('Tourbooking creation result:', {
       createdBooking,
       bookingError,
       hasBookingId: !!createdBooking?.id,
       bookingId: createdBooking?.id,
+      opMaatAnswersSaved: !!savedOpMaatAnswers,
+      savedOpMaatAnswers: savedOpMaatAnswers ? {
+        startEnd: savedOpMaatAnswers.startEnd ? '✓' : '✗',
+        cityPart: savedOpMaatAnswers.cityPart ? '✓' : '✗',
+        subjects: savedOpMaatAnswers.subjects ? '✓' : '✗',
+        specialWishes: savedOpMaatAnswers.specialWishes ? '✓' : '✗',
+      } : null,
     });
 
     if (bookingError) {

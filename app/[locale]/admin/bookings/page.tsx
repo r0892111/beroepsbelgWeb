@@ -63,7 +63,7 @@ export default function AdminBookingsPage() {
   const [filterBookingType, setFilterBookingType] = useState<string>('all');
 
   const CITY_OPTIONS = ['Antwerpen', 'Brussel', 'Brugge', 'Gent', 'Knokke-Heist', 'Leuven', 'Mechelen', 'Hasselt'];
-  const STATUS_OPTIONS = ['pending', 'payment_completed', 'pending_guide_confirmation', 'confirmed', 'completed', 'cancelled'];
+  const STATUS_OPTIONS = ['pending', 'payment_completed', 'pending_jotform_confirmation', 'pending_guide_confirmation', 'confirmed', 'completed', 'cancelled'];
 
   useEffect(() => {
     if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
@@ -171,6 +171,8 @@ export default function AdminBookingsPage() {
         return 'bg-green-100 text-green-800';
       case 'payment_completed':
         return 'bg-blue-100 text-blue-800';
+      case 'pending_jotform_confirmation':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
       case 'pending_guide_confirmation':
         return 'bg-orange-100 text-orange-800';
       case 'completed':
