@@ -8,7 +8,8 @@ The following status values are used in the booking lifecycle:
 
 - `pending` - Initial status when booking is created (B2C bookings)
 - `payment_completed` - Payment has been successfully processed (B2C bookings after payment)
-- `pending_guide_confirmation` - Initial status for B2B bookings (set via n8n webhook)
+- `pending_jotform_confirmation` - Initial status for B2B op maat tours (waiting for JotForm submission)
+- `pending_guide_confirmation` - Status for B2B bookings after JotForm submitted (set via n8n webhook)
 - `confirmed` - Guide has accepted the booking (uniform across all flows)
 - `completed` - Tour has been completed (photos uploaded, tour finished)
 - `cancelled` - Booking has been cancelled (listed in admin filters but no update code found)
@@ -319,12 +320,14 @@ UNIFORM BEHAVIOR:
 
 ## Summary
 
-**Total locations where status is changed: 4**
+**Total locations where status is changed: 5**
 
-1. ✅ **Booking Creation** → `pending` (create-checkout-session)
-2. ✅ **Payment Success** → `payment_completed` (stripe-webhook)
-3. ✅ **Guide Accepts** → `confirmed` (confirm-guide API)
-4. ✅ **Tour Completion** → `completed` (complete-tour API - requires photos uploaded)
+1. ✅ **B2C Booking Creation** → `pending` (create-checkout-session)
+2. ✅ **B2B Op Maat Booking Creation** → `pending_jotform_confirmation` (b2b-booking/create API)
+3. ✅ **Payment Success** → `payment_completed` (stripe-webhook)
+4. ✅ **JotForm Submission** → `pending_guide_confirmation` (n8n webhook triggered by JotForm)
+5. ✅ **Guide Accepts** → `confirmed` (confirm-guide API)
+6. ✅ **Tour Completion** → `completed` (complete-tour API - requires photos uploaded)
 
 **Separate Actions (do NOT change status):**
 - **Aftercare Check** (cron job) - Only sends aftercare webhooks when tours end, does NOT update status
@@ -335,4 +338,9 @@ UNIFORM BEHAVIOR:
 - This allows multiple guides to be offered the same booking sequentially
 
 **B2B Bookings:**
-- Status `pending_guide_confirmation` is sent to n8n webhook but actual database update may happen externally via n8n workflow
+- Regular B2B bookings: Status `pending_guide_confirmation` is sent to n8n webhook but actual database update may happen externally via n8n workflow
+- **B2B Op Maat Tours:**
+  - Initial status: `pending_jotform_confirmation` (set when booking is created via `/api/b2b-booking/create`)
+  - After JotForm submission: Status updated to `pending_guide_confirmation` (via n8n webhook triggered by JotForm)
+  - Guide accepts: Status updated to `confirmed`
+  - Tour completed: Status updated to `completed`
