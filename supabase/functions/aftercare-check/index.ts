@@ -79,7 +79,8 @@ Deno.serve(async (req: Request) => {
     let processedCount = 0;
 
     for (const booking of finishedBookings) {
-      // Only process bookings that haven't been sent yet
+      // Only process bookings that haven't been sent yet for aftercare
+      // This cron job ONLY handles aftercare webhooks, not status updates
       if (!booking.is_aftercare_started) {
         console.log(`[aftercare-check] Sending booking ${booking.id} to webhook...`);
         try {
@@ -120,7 +121,7 @@ Deno.serve(async (req: Request) => {
       JSON.stringify({
         success: true,
         totalFinished: finishedBookings.length,
-        processed: processedCount,
+        aftercareProcessed: processedCount,
         skipped: finishedBookings.length - processedCount
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

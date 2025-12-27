@@ -72,7 +72,7 @@ async function handleEvent(event: Stripe.Event) {
       // First, try to update a tour booking
       const { data: tourBooking, error: tourBookingError } = await supabase
         .from('tourbooking')
-        .update({ status: 'completed' })
+        .update({ status: 'payment_completed' })
         .eq('stripe_session_id', sessionId)
         .select()
         .single();
