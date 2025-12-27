@@ -110,7 +110,7 @@ export default function SiteFooter({ locale }: SiteFooterProps) {
         </nav>
 
         <div className="space-y-3">
-          <p className="text-sm opacity-80">© {new Date().getFullYear()} BeroepsBelg</p>
+          <p className="text-sm opacity-80" suppressHydrationWarning>© {new Date().getFullYear()} BeroepsBelg</p>
           <p className="text-sm opacity-80">Alle rechten voorbehouden</p>
         </div>
       </div>

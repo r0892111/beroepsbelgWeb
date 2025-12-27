@@ -116,6 +116,7 @@ export function MainNav({ locale }: MainNavProps) {
                   color: 'var(--green-accent)',
                   border: '1.5px solid var(--green-accent)'
                 }}
+                suppressHydrationWarning
               >
                 <span className="relative z-10 group-hover:text-white transition-colors duration-300">
                   {t('adminPanel')}
@@ -154,6 +155,7 @@ export function MainNav({ locale }: MainNavProps) {
                     backgroundColor: 'var(--green-accent)',
                     boxShadow: '0 0 10px rgba(61, 213, 152, 0.5)'
                   }}
+                  suppressHydrationWarning
                 >
                   {favoritesCount}
                 </span>
@@ -209,6 +211,7 @@ export function MainNav({ locale }: MainNavProps) {
                             backgroundColor: 'var(--green-accent)',
                             boxShadow: '0 0 8px rgba(61, 213, 152, 0.4)'
                           }}
+                          suppressHydrationWarning
                         >
                           {favoritesCount}
                         </span>
@@ -228,6 +231,7 @@ export function MainNav({ locale }: MainNavProps) {
                             backgroundColor: 'var(--green-accent)',
                             boxShadow: '0 0 8px rgba(61, 213, 152, 0.4)'
                           }}
+                          suppressHydrationWarning
                         >
                           {cartCount}
                         </span>
@@ -238,6 +242,7 @@ export function MainNav({ locale }: MainNavProps) {
                         href={`/${locale}/admin/dashboard`}
                         className="flex items-center gap-3 text-sm font-semibold transition-all duration-300 hover:text-[var(--green-accent)] hover:translate-x-1 py-2"
                         style={{ fontFamily: 'Montserrat, sans-serif' }}
+                        suppressHydrationWarning
                       >
                         <Settings className="h-4 w-4" />
                         {t('adminPanel')}
