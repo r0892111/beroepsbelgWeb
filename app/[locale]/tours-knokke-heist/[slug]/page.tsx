@@ -90,6 +90,17 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
             )}
           </div>
 
+          {/* Tour Images Gallery */}
+          {((tour.tourImages && tour.tourImages.length > 0) || tour.image) && (
+            <div className="mb-12">
+              <TourImageGallery 
+                images={tour.tourImages || []} 
+                title={tour.title}
+                fallbackImage={tour.image}
+              />
+            </div>
+          )}
+
         <div className="mb-12 space-y-6">
           {tour.description && (
             <div className="prose max-w-none">

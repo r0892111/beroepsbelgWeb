@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { ProductDetailDialog } from './product-detail-dialog';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -12,6 +13,7 @@ import { useAuth } from '@/lib/contexts/auth-context';
 import { useFavoritesContext } from '@/lib/contexts/favorites-context';
 import { useCartContext } from '@/lib/contexts/cart-context';
 import { toast } from 'sonner';
+import { getProductPlaceholder } from '@/lib/utils/placeholder-images';
 
 interface ProductCardProps {
   product: Product;
@@ -77,11 +79,12 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <>
       <Card
-        className="flex flex-col group overflow-hidden"
+        className="flex flex-col group overflow-hidden cursor-pointer"
         style={{
           transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
           border: '1px solid var(--border-subtle)',
         }}
+        onClick={() => setShowDialog(true)}
         onMouseEnter={(e) => {
           e.currentTarget.style.transform = 'translateY(-6px)';
           e.currentTarget.style.boxShadow = 'var(--shadow-hover-glow)';
@@ -129,7 +132,10 @@ export function ProductCard({ product }: ProductCardProps) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={handleToggleFavorite}
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent card click from triggering
+                handleToggleFavorite();
+              }}
               className={`transition-all duration-300 ${isFavorite(product.slug) ? 'text-red-500' : 'hover:bg-transparent'}`}
             >
               <Heart className={`h-5 w-5 ${isFavorite(product.slug) ? 'fill-current' : ''}`} />
@@ -137,9 +143,20 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         </CardHeader>
         <CardContent
-          className="flex-1 flex flex-col justify-center"
+          className="flex-1 flex flex-col"
           style={{ backgroundColor: 'var(--card-content-bg)', paddingTop: '1.75rem', paddingBottom: '1.75rem' }}
         >
+          <div className="relative w-full min-h-[200px] rounded-lg border border-[#1a3628]/10 mb-4 overflow-hidden flex items-center justify-center bg-gray-50">
+            <Image
+              src={product.image || getProductPlaceholder(product.category)}
+              alt={product.title[locale]}
+              width={800}
+              height={600}
+              className="w-full h-auto max-h-[400px] object-contain group-hover:scale-105 transition-transform duration-300"
+              unoptimized
+              style={{ maxWidth: '100%' }}
+            />
+          </div>
           <p
             className="text-sm line-clamp-3 leading-relaxed"
             style={{ color: 'var(--text-tertiary)' }}
@@ -167,7 +184,10 @@ export function ProductCard({ product }: ProductCardProps) {
           }}
         >
           <Button
-            onClick={() => setShowDialog(true)}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent card click from triggering
+              setShowDialog(true);
+            }}
             variant="outline"
             className="w-full transition-all duration-300"
             style={{
@@ -179,7 +199,10 @@ export function ProductCard({ product }: ProductCardProps) {
             Details
           </Button>
           <Button
-            onClick={handleAddToCart}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent card click from triggering
+              handleAddToCart();
+            }}
             disabled={isAddingToCart}
             className="w-full gap-2 transition-all duration-300"
             style={{

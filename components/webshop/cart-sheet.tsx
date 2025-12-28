@@ -8,10 +8,15 @@ import { useCartContext } from '@/lib/contexts/cart-context';
 import { CheckoutDialog } from './checkout-dialog';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import { useParams } from 'next/navigation';
+import { getProductPlaceholder } from '@/lib/utils/placeholder-images';
+import type { Locale } from '@/i18n';
 
 export function CartSheet() {
   const t = useTranslations('cart');
   const tAuth = useTranslations('auth');
+  const params = useParams();
+  const locale = (params?.locale as Locale) || 'nl';
   const { cartItems, cartCount, updateQuantity, removeFromCart, loading, refetch } = useCartContext();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -78,19 +83,18 @@ export function CartSheet() {
                     const product = item.products;
                     return (
                       <div key={item.id} className="flex gap-4 py-4 border-b">
-                        {product?.image && (
-                          <div className="relative w-20 h-20 flex-shrink-0">
-                            <Image
-                              src={product.image}
-                              alt={product.Name || product.title_nl || product.title_en || 'Product'}
-                              fill
-                              className="object-cover rounded"
-                            />
-                          </div>
-                        )}
+                        <div className="relative w-20 h-20 flex-shrink-0">
+                          <Image
+                            src={product?.image || getProductPlaceholder((product as any)?.Category || (product as any)?.category || 'Book')}
+                            alt={(product as any)?.Name || (product as any)?.title_nl || (product as any)?.title_en || 'Product'}
+                            fill
+                            className="object-cover rounded"
+                            unoptimized
+                          />
+                        </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-sm mb-1">
-                            {product?.Name || product?.title_nl || product?.title_en || product?.title_fr || product?.title_de || 'Product'}
+                            {(product as any)?.Name || (product as any)?.title_nl || (product as any)?.title_en || (product as any)?.title_fr || (product as any)?.title_de || 'Product'}
                           </h4>
                           <p className="text-sm text-muted-foreground">
                             €{(product?.price || 0).toFixed(2)}

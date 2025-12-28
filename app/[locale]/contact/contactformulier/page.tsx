@@ -5,10 +5,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Mail, Phone, MapPin } from 'lucide-react';
@@ -24,7 +22,8 @@ const contactSchema = z.object({
 type ContactFormData = z.infer<typeof contactSchema>;
 
 export default function ContactPage() {
-  const t = useTranslations('forms');
+  const t = useTranslations('contact');
+  const tForms = useTranslations('forms');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -47,85 +46,169 @@ export default function ContactPage() {
     setIsSubmitting(true);
     await new Promise((resolve) => setTimeout(resolve, 1000));
     console.log('Contact form:', data);
-    toast.success('Bericht verzonden!');
+    toast.success(t('successMessage'));
     reset();
     setIsSubmitting(false);
   };
 
   return (
-    <div className="container mx-auto px-4 py-20">
-      <div className="mx-auto grid max-w-5xl gap-12 lg:grid-cols-2">
-        <div>
-          <h1 className="mb-8 text-4xl font-bold">Contact</h1>
-          <div className="space-y-6">
-            <div className="flex items-start gap-4">
-              <MapPin className="mt-1 h-5 w-5 text-primary" />
-              <div>
-                <p className="font-semibold">Adres</p>
-                <p className="text-muted-foreground">Groenplaats 1</p>
-                <p className="text-muted-foreground">2000 Antwerpen</p>
-                <p className="text-muted-foreground">België</p>
+    <div className="min-h-screen bg-[#F9F9F7]">
+      {/* Hero Section */}
+      <section className="bg-[#1BDD95] py-16 md:py-24">
+        <div className="container mx-auto px-4 text-center">
+          <h1 className="font-oswald text-5xl md:text-7xl text-white uppercase tracking-tight mb-4">
+            {t('getInTouch')}
+          </h1>
+          <p className="font-inter text-lg text-white/90 max-w-2xl mx-auto">
+            {t('subtitle')}
+          </p>
+        </div>
+      </section>
+
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-16 md:py-24">
+        <div className="grid lg:grid-cols-5 gap-12 max-w-6xl mx-auto">
+          {/* Left Column - Contact Info Cards (2/5 width) */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Address Card */}
+            <div className="bg-white border border-neutral-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-300">
+              <div className="w-12 h-12 bg-[#1BDD95] rounded-full flex items-center justify-center mb-4">
+                <MapPin className="w-6 h-6 text-white" />
               </div>
+              <h3 className="font-oswald font-bold text-lg mb-2 text-neutral-900">{t('addressLabel')}</h3>
+              <p className="font-inter text-neutral-600">Groenplaats 1</p>
+              <p className="font-inter text-neutral-600">2000 Antwerpen</p>
+              <p className="font-inter text-neutral-600">België</p>
             </div>
-            <div className="flex items-start gap-4">
-              <Mail className="mt-1 h-5 w-5 text-primary" />
-              <div>
-                <p className="font-semibold">Email</p>
-                <a href="mailto:info@beroepsbelg.be" className="text-muted-foreground hover:text-foreground">
-                  info@beroepsbelg.be
-                </a>
+
+            {/* Email Card */}
+            <div className="bg-white border border-neutral-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-300">
+              <div className="w-12 h-12 bg-[#1BDD95] rounded-full flex items-center justify-center mb-4">
+                <Mail className="w-6 h-6 text-white" />
               </div>
+              <h3 className="font-oswald font-bold text-lg mb-2 text-neutral-900">{t('emailLabel')}</h3>
+              <a
+                href="mailto:info@beroepsbelg.be"
+                className="font-inter text-neutral-600 hover:text-[#1BDD95] transition-colors"
+              >
+                info@beroepsbelg.be
+              </a>
             </div>
-            <div className="flex items-start gap-4">
-              <Phone className="mt-1 h-5 w-5 text-primary" />
-              <div>
-                <p className="font-semibold">Telefoon</p>
-                <a href="tel:+32123456789" className="text-muted-foreground hover:text-foreground">
-                  +32 123 456 789
-                </a>
+
+            {/* Phone Card */}
+            <div className="bg-white border border-neutral-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-300">
+              <div className="w-12 h-12 bg-[#1BDD95] rounded-full flex items-center justify-center mb-4">
+                <Phone className="w-6 h-6 text-white" />
               </div>
+              <h3 className="font-oswald font-bold text-lg mb-2 text-neutral-900">{t('phoneLabel')}</h3>
+              <a
+                href="tel:+32123456789"
+                className="font-inter text-neutral-600 hover:text-[#1BDD95] transition-colors"
+              >
+                +32 123 456 789
+              </a>
             </div>
           </div>
-        </div>
 
-        <div>
-          <h2 className="mb-6 text-2xl font-bold">Stuur ons een bericht</h2>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div>
-              <Label htmlFor="name">{t('name')}*</Label>
-              <Input id="name" {...register('name')} />
-              {errors.name && <p className="mt-1 text-sm text-destructive">{t('required')}</p>}
+          {/* Right Column - Contact Form (3/5 width) */}
+          <div className="lg:col-span-3">
+            <div className="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-xl">
+              <h2 className="font-oswald text-2xl font-bold text-neutral-900 mb-6 uppercase tracking-tight">
+                {t('formHeading')}
+              </h2>
+
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                {/* Name Field */}
+                <div>
+                  <label
+                    htmlFor="name"
+                    className="block font-oswald text-sm uppercase tracking-wider font-semibold text-neutral-700 mb-2"
+                  >
+                    {tForms('name')}*
+                  </label>
+                  <Input
+                    id="name"
+                    {...register('name')}
+                    className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg font-inter focus:border-[#1BDD95] focus:ring-0 transition-colors"
+                  />
+                  {errors.name && <p className="mt-2 text-sm text-red-600">{tForms('required')}</p>}
+                </div>
+
+                {/* Email Field */}
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="block font-oswald text-sm uppercase tracking-wider font-semibold text-neutral-700 mb-2"
+                  >
+                    {tForms('email')}*
+                  </label>
+                  <Input
+                    id="email"
+                    type="email"
+                    {...register('email')}
+                    className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg font-inter focus:border-[#1BDD95] focus:ring-0 transition-colors"
+                  />
+                  {errors.email && <p className="mt-2 text-sm text-red-600">{tForms('invalidEmail')}</p>}
+                </div>
+
+                {/* Phone Field */}
+                <div>
+                  <label
+                    htmlFor="phone"
+                    className="block font-oswald text-sm uppercase tracking-wider font-semibold text-neutral-700 mb-2"
+                  >
+                    {tForms('phone')}
+                  </label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    {...register('phone')}
+                    className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg font-inter focus:border-[#1BDD95] focus:ring-0 transition-colors"
+                  />
+                </div>
+
+                {/* Message Field */}
+                <div>
+                  <label
+                    htmlFor="message"
+                    className="block font-oswald text-sm uppercase tracking-wider font-semibold text-neutral-700 mb-2"
+                  >
+                    {tForms('message')}*
+                  </label>
+                  <Textarea
+                    id="message"
+                    rows={5}
+                    {...register('message')}
+                    className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg font-inter focus:border-[#1BDD95] focus:ring-0 transition-colors min-h-[150px] resize-none"
+                  />
+                  {errors.message && <p className="mt-2 text-sm text-red-600">{tForms('required')}</p>}
+                </div>
+
+                {/* Consent Checkbox */}
+                <div className="flex items-start gap-3 pt-2">
+                  <Checkbox
+                    id="consent"
+                    checked={consent}
+                    onCheckedChange={(checked) => setValue('consent', checked as boolean)}
+                    className="mt-1 data-[state=checked]:bg-[#1BDD95] data-[state=checked]:border-[#1BDD95]"
+                  />
+                  <label htmlFor="consent" className="font-inter text-sm text-neutral-700 cursor-pointer">
+                    {t('consentText')}
+                  </label>
+                </div>
+                {errors.consent && <p className="text-sm text-red-600">{tForms('required')}</p>}
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-[#1BDD95] hover:bg-[#14BE82] text-white font-oswald font-bold py-4 px-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none"
+                >
+                  {isSubmitting ? t('sending') : tForms('submit')}
+                </button>
+              </form>
             </div>
-            <div>
-              <Label htmlFor="email">{t('email')}*</Label>
-              <Input id="email" type="email" {...register('email')} />
-              {errors.email && <p className="mt-1 text-sm text-destructive">{t('invalidEmail')}</p>}
-            </div>
-            <div>
-              <Label htmlFor="phone">{t('phone')}</Label>
-              <Input id="phone" type="tel" {...register('phone')} />
-            </div>
-            <div>
-              <Label htmlFor="message">{t('message')}*</Label>
-              <Textarea id="message" rows={5} {...register('message')} />
-              {errors.message && <p className="mt-1 text-sm text-destructive">{t('required')}</p>}
-            </div>
-            <div className="flex items-start gap-2">
-              <Checkbox
-                id="consent"
-                checked={consent}
-                onCheckedChange={(checked) => setValue('consent', checked as boolean)}
-                className="mt-0.5"
-              />
-              <Label htmlFor="consent" className="text-sm">
-                Ik ga akkoord met de privacy policy
-              </Label>
-            </div>
-            {errors.consent && <p className="text-sm text-destructive">{t('required')}</p>}
-            <Button type="submit" disabled={isSubmitting} className="w-full">
-              {t('submit')}
-            </Button>
-          </form>
+          </div>
         </div>
       </div>
     </div>

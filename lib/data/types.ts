@@ -28,6 +28,8 @@ export type Tour = {
   local_stories?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  image?: string; // Primary image URL for display
+  tourImages?: TourImage[]; // All tour images
   options?: {
     thumbnail?: string;
     badge?: string;
@@ -47,6 +49,28 @@ export type Product = {
   additionalInfo?: Record<Locale, string>;
   label?: string;
   image?: string;
+};
+
+export type ProductImage = {
+  id: string;
+  product_uuid: string;
+  image_url: string;
+  is_primary: boolean;
+  sort_order: number;
+  storage_folder_name?: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type TourImage = {
+  id: string;
+  tour_id: string;
+  image_url: string;
+  is_primary: boolean;
+  sort_order: number;
+  storage_folder_name?: string;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export type FaqItem = {
