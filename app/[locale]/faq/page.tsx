@@ -33,26 +33,26 @@ export default async function FaqPage({ params }: FaqPageProps) {
 
         {/* FAQ Accordion - Custom Styled */}
         {faqItems.length > 0 ? (
-          <Accordion type="single" collapsible className="space-y-4 mb-16">
-            {faqItems.map((item, index) => (
-              <AccordionItem
-                key={index}
-                value={`item-${index}`}
-                className="bg-white rounded-xl border-l-4 border-[#1BDD95] shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group"
-              >
+        <Accordion type="single" collapsible className="space-y-4 mb-16">
+          {faqItems.map((item, index) => (
+            <AccordionItem
+              key={index}
+              value={`item-${index}`}
+              className="bg-white rounded-xl border-l-4 border-[#1BDD95] shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group"
+            >
                 <AccordionTrigger className="text-left font-oswald font-semibold text-lg md:text-xl text-neutral-900 hover:no-underline px-6 md:px-8 py-6 hover:text-[#1BDD95] transition-colors [&[data-state=open]]:text-[#1BDD95] [&[data-state=open]>svg]:text-[#1BDD95] [&>svg]:text-[#1BDD95] [&>svg]:h-5 [&>svg]:w-5">
                   <span className="pr-4">{item.question[locale] || item.question.nl || 'Question'}</span>
-                </AccordionTrigger>
-                <AccordionContent className="text-neutral-700 font-inter text-base leading-relaxed px-6 md:px-8 pb-6 pt-2">
-                  <div className="border-t border-neutral-100 pt-4">
+              </AccordionTrigger>
+              <AccordionContent className="text-neutral-700 font-inter text-base leading-relaxed px-6 md:px-8 pb-6 pt-2">
+                <div className="border-t border-neutral-100 pt-4">
                     <div className="whitespace-pre-line">
                       {item.answer[locale] || item.answer.nl || 'Answer'}
                     </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
         ) : (
           <div className="bg-white rounded-xl border-l-4 border-[#1BDD95] shadow-sm p-8 md:p-12 text-center mb-16">
             <p className="text-lg text-neutral-600 font-inter">

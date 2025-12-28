@@ -615,7 +615,7 @@ export default function B2BQuotePage() {
                 {selectedTour && (
                   <div className="p-4 rounded-lg border-2" style={{ borderColor: 'var(--brass)', backgroundColor: 'rgba(212, 175, 55, 0.05)' }}>
                     <h3 className="font-semibold text-navy mb-2">{selectedTour.title}</h3>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
                       <span className="flex items-center gap-1">
                         <Clock className="h-4 w-4" />
                         {formatDuration(selectedTour.durationMinutes)}
@@ -627,6 +627,22 @@ export default function B2BQuotePage() {
                         </span>
                       )}
                     </div>
+                    {selectedTour.themes && selectedTour.themes.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {selectedTour.themes.map((theme) => (
+                          <span
+                            key={theme}
+                            className="text-xs px-2 py-1 rounded-full font-medium"
+                            style={{
+                              backgroundColor: '#1BDD95',
+                              color: 'white',
+                            }}
+                          >
+                            {theme}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 

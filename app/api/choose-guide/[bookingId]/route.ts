@@ -90,28 +90,28 @@ async function checkAdminAccess(request: NextRequest): Promise<{ isAdmin: boolea
     if (cookieToken) {
       const supabaseAnon = await getSupabaseClientForAuth(request);
       const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(cookieToken);
-      
-      if (authError || !user) {
+
+    if (authError || !user) {
         console.error('Auth error (cookie token):', authError);
-        return { isAdmin: false, userId: null };
-      }
+      return { isAdmin: false, userId: null };
+    }
 
-      // Fetch user profile using service role for admin check
-      const supabaseServer = getSupabaseServer();
-      const { data: profile, error: profileError } = await supabaseServer
-        .from('profiles')
-        .select('isAdmin')
-        .eq('id', user.id)
-        .single();
+    // Fetch user profile using service role for admin check
+    const supabaseServer = getSupabaseServer();
+    const { data: profile, error: profileError } = await supabaseServer
+      .from('profiles')
+      .select('isAdmin')
+      .eq('id', user.id)
+      .single();
 
-      if (profileError || !profile) {
-        console.error('Profile error:', profileError);
-        return { isAdmin: false, userId: user.id };
-      }
+    if (profileError || !profile) {
+      console.error('Profile error:', profileError);
+      return { isAdmin: false, userId: user.id };
+    }
 
-      const isAdmin = profile.isAdmin === true;
+    const isAdmin = profile.isAdmin === true;
       console.log('Admin check (cookie token):', { userId: user.id, isAdmin, isAdminField: profile.isAdmin });
-      return { isAdmin, userId: user.id };
+    return { isAdmin, userId: user.id };
     }
 
     return { isAdmin: false, userId: null };
