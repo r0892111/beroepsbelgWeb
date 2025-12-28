@@ -80,6 +80,10 @@ export function TourBookingDialog({
     requestTanguy: false,
   });
 
+  // Tanguy availability state
+  const [tanguyAvailable, setTanguyAvailable] = useState<boolean | null>(null);
+  const [checkingTanguyAvailability, setCheckingTanguyAvailability] = useState(false);
+
   // Update booking date when defaultBookingDate changes
   useEffect(() => {
     if (defaultBookingDate && open) {
@@ -97,6 +101,70 @@ export function TourBookingDialog({
       setSelectedTimeSlot('14:00');
     }
   }, [isLocalStories, open]);
+
+  // Check Tanguy's availability when date/time changes
+  useEffect(() => {
+    const checkTanguyAvailability = async () => {
+      // Only check for eligible cities and when date/time is selected
+      if (
+        isLocalStories ||
+        !citySlug ||
+        !['antwerpen', 'knokke-heist', 'spa'].includes(citySlug.toLowerCase()) ||
+        !formData.bookingDate ||
+        !selectedTimeSlot
+      ) {
+        setTanguyAvailable(null);
+        // Reset requestTanguy if date/time is not selected
+        if (formData.requestTanguy) {
+          setFormData(prev => ({ ...prev, requestTanguy: false }));
+        }
+        return;
+      }
+
+      setCheckingTanguyAvailability(true);
+      try {
+        const dateStr = format(formData.bookingDate, 'yyyy-MM-dd');
+        const response = await fetch('/api/check-tanguy-availability', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            date: dateStr,
+            time: selectedTimeSlot,
+            durationMinutes: tourDuration,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setTanguyAvailable(data.available);
+          // Reset requestTanguy if he's not available
+          if (!data.available && formData.requestTanguy) {
+            setFormData(prev => ({ ...prev, requestTanguy: false }));
+          }
+        } else {
+          console.error('Failed to check Tanguy availability');
+          setTanguyAvailable(false);
+          // Reset requestTanguy on error
+          if (formData.requestTanguy) {
+            setFormData(prev => ({ ...prev, requestTanguy: false }));
+          }
+        }
+      } catch (error) {
+        console.error('Error checking Tanguy availability:', error);
+        setTanguyAvailable(false);
+        // Reset requestTanguy on error
+        if (formData.requestTanguy) {
+          setFormData(prev => ({ ...prev, requestTanguy: false }));
+        }
+      } finally {
+        setCheckingTanguyAvailability(false);
+      }
+    };
+
+    void checkTanguyAvailability();
+  }, [formData.bookingDate, selectedTimeSlot, citySlug, isLocalStories, tourDuration]);
 
   // Log when upsell dialog state changes
   useEffect(() => {
@@ -510,43 +578,86 @@ export function TourBookingDialog({
             </div>
           </div>
 
-          {/* Request Tanguy Ottomer Section - Only shown for Antwerp, Knokke-Heist, and Spa, hidden for local stories tours */}
-          {!isLocalStories && citySlug && ['antwerpen', 'knokke-heist', 'spa'].includes(citySlug.toLowerCase()) && (
-            <div className="rounded-lg border-2 p-4 transition-all hover:border-brass" style={{ borderColor: formData.requestTanguy ? 'var(--brass)' : '#e5e7eb' }}>
-              <div className="flex items-center gap-4">
-                <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded">
-                  <Image
-                    src="/headshot_tanguy.jpg"
-                    alt="Tanguy Ottomer"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-start gap-3">
-                    <Checkbox
-                      id="requestTanguy"
-                      checked={formData.requestTanguy}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, requestTanguy: checked === true })
-                      }
-                      className="mt-1"
-                    />
-                    <div className="flex-1">
-                      <Label
-                        htmlFor="requestTanguy"
-                        className="cursor-pointer text-base font-semibold text-navy"
-                      >
-                        {t('requestTanguy')}
-                      </Label>
-                      <p className="mt-1 text-sm text-slate-blue">
-                        {t('requestTanguyDescription')}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* Request Tanguy Ottomer Section - Only shown when available and date/time is selected */}
+          {!isLocalStories && 
+           citySlug && 
+           ['antwerpen', 'knokke-heist', 'spa'].includes(citySlug.toLowerCase()) &&
+           formData.bookingDate &&
+           selectedTimeSlot &&
+           (checkingTanguyAvailability ? (
+             <div className="rounded-lg border-2 p-4 border-gray-200">
+               <div className="flex items-center gap-4">
+                 <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded">
+                   <Image
+                     src="/headshot_tanguy.jpg"
+                     alt="Tanguy Ottomer"
+                     fill
+                     className="object-cover opacity-50"
+                   />
+                 </div>
+                 <div className="flex-1">
+                   <div className="flex items-center gap-2">
+                     <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                     <span className="text-sm text-gray-500">Checking availability...</span>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           ) : tanguyAvailable === true ? (
+             <div className="rounded-lg border-2 p-4 transition-all hover:border-brass" style={{ borderColor: formData.requestTanguy ? 'var(--brass)' : '#e5e7eb' }}>
+               <div className="flex items-center gap-4">
+                 <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded">
+                   <Image
+                     src="/headshot_tanguy.jpg"
+                     alt="Tanguy Ottomer"
+                     fill
+                     className="object-cover"
+                   />
+                 </div>
+                 <div className="flex-1">
+                   <div className="flex items-start gap-3">
+                     <Checkbox
+                       id="requestTanguy"
+                       checked={formData.requestTanguy}
+                       onCheckedChange={(checked) =>
+                         setFormData({ ...formData, requestTanguy: checked === true })
+                       }
+                       className="mt-1"
+                     />
+                     <div className="flex-1">
+                       <Label
+                         htmlFor="requestTanguy"
+                         className="cursor-pointer text-base font-semibold text-navy"
+                       >
+                         {t('requestTanguy')}
+                       </Label>
+                       <p className="mt-1 text-sm text-slate-blue">
+                         {t('requestTanguyDescription')}
+                       </p>
+                     </div>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           ) : tanguyAvailable === false ? (
+             <div className="rounded-lg border-2 p-4 border-gray-200 opacity-60">
+               <div className="flex items-center gap-4">
+                 <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded">
+                   <Image
+                     src="/headshot_tanguy.jpg"
+                     alt="Tanguy Ottomer"
+                     fill
+                     className="object-cover opacity-50"
+                   />
+                 </div>
+                 <div className="flex-1">
+                   <p className="text-sm text-gray-500">
+                     Tanguy is not available at the selected time.
+                   </p>
+                 </div>
+               </div>
+             </div>
+           ) : null
           )}
 
           <div className="space-y-2">
