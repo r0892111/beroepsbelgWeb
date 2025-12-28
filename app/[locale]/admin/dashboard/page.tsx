@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from 'next-intl';
-import { ExternalLink, LogOut, Link as LinkIcon, Home, RefreshCw, CheckCircle2, Unlink, Calendar, Users as UsersIcon, HelpCircle, MapPin, Image } from 'lucide-react';
+import { ExternalLink, LogOut, Link as LinkIcon, Home, RefreshCw, CheckCircle2, Unlink, Calendar, Users as UsersIcon, HelpCircle, MapPin, Image, Package } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 
@@ -363,6 +363,12 @@ export default function AdminDashboardPage() {
                 <Button className="w-full justify-start btn-primary" size="lg">
                   <Calendar className="h-5 w-5 mr-2" />
                   Manage Products
+                </Button>
+              </Link>
+              <Link href={`/${locale}/admin/orders`}>
+                <Button className="w-full justify-start btn-primary" size="lg">
+                  <Package className="h-5 w-5 mr-2" />
+                  Orders
                 </Button>
               </Link>
               <Link href={`/${locale}/admin/guides`}>
