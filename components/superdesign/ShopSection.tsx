@@ -9,7 +9,8 @@
  */
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Heart } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 // --- Assets & Data ---
 const ASSETS = {
@@ -36,6 +37,7 @@ const PRODUCTS = [
 // --- Components ---
 
 const Marquee = () => {
+  const t = useTranslations('shop');
   return (
     <div className="w-full bg-[#1BDD95] overflow-hidden py-4 border-t border-[#1BDD95]">
       <motion.div
@@ -45,7 +47,7 @@ const Marquee = () => {
       >
         {[...Array(8)].map((_, i) => (
           <span key={i} className="text-[#F9F9F5] font-sans font-medium text-sm tracking-[0.2em] px-12">
-            WEBSHOP — NEW COLLECTION — DISCOVER NOW 
+            {t('marqueeText')}
           </span>
         ))}
       </motion.div>
@@ -68,6 +70,7 @@ const ProductCard = ({
   imageClassName?: string,
   buttonClassName?: string
 }) => {
+  const t = useTranslations('shop');
   return (
     <div className={`h-full bg-transparent ${className}`}>
       {/* Bordered Container - Wraps Image AND Text */}
@@ -95,10 +98,20 @@ const ProductCard = ({
           
           <div className="flex justify-between items-end mt-2">
             <span className="font-sans font-bold text-[#1a3628] text-lg">{product.price}</span>
-            <button className={`${buttonClassName} font-bold uppercase bg-[#1BDD95] text-white px-2 py-1.5 md:px-4 md:py-2 hover:bg-[#14BE82] leading-none transition-colors rounded-full flex items-center justify-center`}>
-              <span className="md:hidden"><ShoppingCart size={14} strokeWidth={2.5} /></span>
-              <span className="hidden md:inline">Add to Cart</span>
-            </button>
+            <div className="flex gap-2">
+              <button
+                className={`${buttonClassName} bg-[#1BDD95] text-white p-2 hover:bg-[#14BE82] transition-colors rounded-full flex items-center justify-center`}
+                aria-label="Add to favorites"
+              >
+                <Heart size={18} strokeWidth={2.5} />
+              </button>
+              <button
+                className={`${buttonClassName} bg-[#1BDD95] text-white p-2 hover:bg-[#14BE82] transition-colors rounded-full flex items-center justify-center`}
+                aria-label="Add to cart"
+              >
+                <ShoppingCart size={18} strokeWidth={2.5} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -150,6 +163,7 @@ function SeparatorWave() {
 }
 
 export function ShopSection() {
+  const t = useTranslations('shop');
   return (
     <section className="relative w-full bg-[#F9F9F5]">
       <SeparatorWave />
@@ -163,11 +177,11 @@ export function ShopSection() {
         className="text-center mb-16 px-4 pt-32"
       >
         <h2 className="font-serif text-5xl md:text-7xl lg:text-8xl text-[rgb(23,23,23)] mb-4 tracking-tight leading-[0.9]">
-          Curated <br/>
-          <span className="italic font-light">Collection</span>
+          {t('curated')} <br/>
+          <span className="italic font-light">{t('collection')}</span>
         </h2>
         <p className="font-sans text-[rgb(23,23,23)] uppercase tracking-widest text-sm md:text-base max-w-md mx-auto">
-          Exclusive books, prints & objects
+          {t('exclusiveItems')}
         </p>
       </motion.div>
 

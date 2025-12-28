@@ -155,7 +155,7 @@ export default function B2BQuotePage() {
       } catch (error) {
         console.error('[B2BQuotePage] Failed to load data', error);
         if (isMounted) {
-          setDataError('Kon de gegevens niet laden. Probeer het later opnieuw.');
+          setDataError(t('error'));
         }
       } finally {
         if (isMounted) {
@@ -230,15 +230,15 @@ export default function B2BQuotePage() {
 
   const goToContact = () => {
     if (!selectedTour) {
-      toast.error('Selecteer een tour');
+      toast.error(t('selectTour'));
       return;
     }
     if (!selectedDate || !selectedTimeSlot) {
-      toast.error('Selecteer zowel een datum als een tijdslot');
+      toast.error(t('selectDateAndTime'));
       return;
     }
     if (!numberOfPeople || parseInt(numberOfPeople) < 1) {
-      toast.error('Vul het aantal personen in');
+      toast.error(t('fillNumberOfPeople'));
       return;
     }
     // Set op maat state when moving to contact step
@@ -470,7 +470,7 @@ export default function B2BQuotePage() {
   if (dataLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#fdfcfa' }}>
-        <p className="text-muted-foreground">Gegevens laden...</p>
+        <p className="text-muted-foreground">{t('loading')}</p>
       </div>
     );
   }
@@ -480,7 +480,7 @@ export default function B2BQuotePage() {
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#fdfcfa' }}>
         <div className="text-center space-y-4">
           <p className="text-red-600">{dataError}</p>
-          <Button onClick={() => window.location.reload()}>Probeer opnieuw</Button>
+          <Button onClick={() => window.location.reload()}>{t('tryAgain')}</Button>
         </div>
       </div>
     );
@@ -497,13 +497,13 @@ export default function B2BQuotePage() {
             </div>
             <h1 className="mb-4 text-4xl font-bold font-serif text-navy">{t('successTitle')}</h1>
             <p className="mb-4 text-lg" style={{ color: 'var(--slate-blue)' }}>
-              Uw aanvraag is verzonden.
+              {t('requestSent')}
             </p>
             <p className="mb-8 text-base" style={{ color: 'var(--slate-blue)' }}>
-              We controleren de beschikbaarheid van de gids en nemen binnen 24 uur contact met u op met een bevestiging en betalingslink.
+              {t('checkAvailability')}
             </p>
             <p className="mb-8 text-sm" style={{ color: 'var(--slate-blue)' }}>
-              U wordt over {countdown} seconden doorgestuurd...
+              {t('redirectingIn', { countdown })}
             </p>
             
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
@@ -562,16 +562,16 @@ export default function B2BQuotePage() {
             {/* Step 1: Select Tour & Date */}
             {step === 'select' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <h2 className="text-2xl font-serif font-bold text-navy mb-6">Stap 1: Selecteer tour en datum</h2>
+                <h2 className="text-2xl font-serif font-bold text-navy mb-6">{t('step1')}</h2>
                 
                 <div>
                   <Label htmlFor="city" className="flex items-center gap-2 text-base font-semibold text-navy">
                     <MapPin className="h-5 w-5" style={{ color: 'var(--brass)' }} />
-                    Stad*
+                    {t('cityLabel')}
                   </Label>
                   <Select value={selectedCity} onValueChange={(value) => setValue('city', value)}>
                     <SelectTrigger className="mt-2">
-                      <SelectValue placeholder="Selecteer een stad" />
+                      <SelectValue placeholder={t('selectCity')} />
                     </SelectTrigger>
                     <SelectContent>
                       {availableCities.map((city) => (
@@ -587,11 +587,11 @@ export default function B2BQuotePage() {
                   <div>
                     <Label htmlFor="tour" className="flex items-center gap-2 text-base font-semibold text-navy">
                       <Building2 className="h-5 w-5" style={{ color: 'var(--brass)' }} />
-                      Tour*
+                      {t('tourLabel')}
                     </Label>
                     <Select value={selectedTourId} onValueChange={(value) => setValue('tourId', value)}>
                       <SelectTrigger className="mt-2">
-                        <SelectValue placeholder="Selecteer een tour" />
+                        <SelectValue placeholder={t('selectTour')} />
                       </SelectTrigger>
                       <SelectContent>
                         {availableTours.map((tour) => (
@@ -607,7 +607,7 @@ export default function B2BQuotePage() {
                       className="mt-2 inline-flex items-center gap-1 text-sm font-medium transition-opacity hover:opacity-70"
                       style={{ color: 'var(--brass)' }}
                     >
-                      Bekijk alle tours <ExternalLink className="h-3.5 w-3.5" />
+                      {t('viewAllTours')} <ExternalLink className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 )}
@@ -634,11 +634,11 @@ export default function B2BQuotePage() {
                   <div>
                     <Label htmlFor="language" className="flex items-center gap-2 text-base font-semibold text-navy">
                       <Languages className="h-5 w-5" style={{ color: 'var(--brass)' }} />
-                      Taal van de tour*
+                      {t('languageLabel')}
                     </Label>
                     <Select value={watch('language')} onValueChange={(value) => setValue('language', value)}>
                       <SelectTrigger className="mt-2">
-                        <SelectValue placeholder="Selecteer een taal" />
+                        <SelectValue placeholder={t('selectLanguage')} />
                       </SelectTrigger>
                       <SelectContent>
                         {availableLanguages.map((lang) => (
@@ -649,7 +649,7 @@ export default function B2BQuotePage() {
                       </SelectContent>
                     </Select>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Beschikbare talen voor deze tour
+                      {t('availableLanguages')}
                     </p>
                   </div>
                 )}
@@ -658,7 +658,7 @@ export default function B2BQuotePage() {
                   <div>
                     <Label htmlFor="date" className="flex items-center gap-2 text-base font-semibold text-navy">
                       <Calendar className="h-5 w-5" style={{ color: 'var(--brass)' }} />
-                      Datum*
+                      {t('dateLabel')}
                     </Label>
                     <Input
                       id="date"
@@ -671,11 +671,11 @@ export default function B2BQuotePage() {
                   </div>
                   <div>
                     <Label htmlFor="timeSlot" className="text-base font-semibold text-navy">
-                      Tijdslot*
+                      {t('timeSlotLabel')}
                     </Label>
                     <Select value={selectedTimeSlot} onValueChange={setSelectedTimeSlot} disabled={!selectedTour}>
                       <SelectTrigger className="mt-2">
-                        <SelectValue placeholder={selectedTour ? "Selecteer tijd" : "Selecteer eerst een tour"} />
+                        <SelectValue placeholder={selectedTour ? t('selectTime') : t('selectTourFirst')} />
                       </SelectTrigger>
                       <SelectContent>
                         {timeSlots.map((slot) => (
@@ -688,8 +688,8 @@ export default function B2BQuotePage() {
                     {selectedTour && (
                       <p className="mt-1 text-xs text-muted-foreground">
                         {selectedTour.local_stories
-                          ? 'Tours zijn enkel beschikbaar van 14:00u tot 16:00u'
-                          : `Tourduur: ${formatDuration(selectedTour.durationMinutes)}`
+                          ? t('localStoriesTime')
+                          : t('tourDuration', { duration: formatDuration(selectedTour.durationMinutes) })
                         }
                       </p>
                     )}
@@ -697,13 +697,13 @@ export default function B2BQuotePage() {
                   <div>
                     <Label htmlFor="numberOfPeople" className="flex items-center gap-2 text-base font-semibold text-navy">
                       <Users className="h-5 w-5" style={{ color: 'var(--brass)' }} />
-                      Aantal*
+                      {t('numberOfPeopleLabel')}
                     </Label>
                     <Input
                       id="numberOfPeople"
                       type="number"
                       min="1"
-                      placeholder="Personen"
+                      placeholder={t('peoplePlaceholder')}
                       {...register('numberOfPeople')}
                       className="mt-2"
                     />
@@ -711,7 +711,7 @@ export default function B2BQuotePage() {
                 </div>
 
                 <Button type="button" onClick={goToContact} className="w-full btn-primary" disabled={!selectedTour || !selectedDate || !selectedTimeSlot || numPeople < 1}>
-                  Verder →
+                  {t('continueButton')}
                 </Button>
               </div>
             )}
@@ -719,16 +719,16 @@ export default function B2BQuotePage() {
             {/* Step 2: Contact & Company Info */}
             {step === 'contact' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <h2 className="text-2xl font-serif font-bold text-navy mb-6">Stap 2: Uw gegevens</h2>
+                <h2 className="text-2xl font-serif font-bold text-navy mb-6">{t('step2')}</h2>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="contactFirstName" className="text-base font-semibold text-navy">Voornaam*</Label>
+                    <Label htmlFor="contactFirstName" className="text-base font-semibold text-navy">{t('firstName')}</Label>
                     <Input id="contactFirstName" {...register('contactFirstName')} className="mt-2" />
                     {errors.contactFirstName && <p className="mt-1 text-sm text-destructive">{tForms('required')}</p>}
                   </div>
                   <div>
-                    <Label htmlFor="contactLastName" className="text-base font-semibold text-navy">Achternaam*</Label>
+                    <Label htmlFor="contactLastName" className="text-base font-semibold text-navy">{t('lastName')}</Label>
                     <Input id="contactLastName" {...register('contactLastName')} className="mt-2" />
                     {errors.contactLastName && <p className="mt-1 text-sm text-destructive">{tForms('required')}</p>}
                   </div>
@@ -736,12 +736,12 @@ export default function B2BQuotePage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="contactEmail" className="text-base font-semibold text-navy">E-mail*</Label>
+                    <Label htmlFor="contactEmail" className="text-base font-semibold text-navy">{t('emailLabel')}</Label>
                     <Input id="contactEmail" type="email" {...register('contactEmail')} className="mt-2" />
                     {errors.contactEmail && <p className="mt-1 text-sm text-destructive">{tForms('invalidEmail')}</p>}
                   </div>
                   <div>
-                    <Label htmlFor="contactPhone" className="text-base font-semibold text-navy">Telefoon*</Label>
+                    <Label htmlFor="contactPhone" className="text-base font-semibold text-navy">{t('phoneLabel')}</Label>
                     <Input id="contactPhone" type="tel" {...register('contactPhone')} className="mt-2" />
                     {errors.contactPhone && <p className="mt-1 text-sm text-destructive">{tForms('required')}</p>}
                   </div>
@@ -757,7 +757,7 @@ export default function B2BQuotePage() {
                       className={`gap-2 ${bookingType === 'particulier' ? 'btn-primary' : ''}`}
                     >
                       {bookingType === 'particulier' && <CheckCircle2 className="h-4 w-4" />}
-                      Particulier
+                      {t('individual')}
                     </Button>
                     <Button
                       type="button"
@@ -767,7 +767,7 @@ export default function B2BQuotePage() {
                     >
                       {bookingType === 'zakelijk' && <CheckCircle2 className="h-4 w-4" />}
                       <Building2 className="h-4 w-4" />
-                      Zakelijk
+                      {t('business')}
                     </Button>
                   </div>
                 </div>
@@ -776,21 +776,21 @@ export default function B2BQuotePage() {
                   <div className="space-y-4 p-6 rounded-lg border-2 animate-in fade-in slide-in-from-top-2 duration-300" style={{ borderColor: 'var(--brass)', backgroundColor: 'rgba(212, 175, 55, 0.05)' }}>
                     <div className="flex items-center gap-2 mb-4">
                       <FileText className="h-5 w-5" style={{ color: 'var(--brass)' }} />
-                      <h3 className="font-semibold text-navy">Factuurgegevens</h3>
+                      <h3 className="font-semibold text-navy">{t('invoiceDetails')}</h3>
                     </div>
-                    
+
                     <div>
-                      <Label htmlFor="companyName" className="text-base font-semibold text-navy">Bedrijfsnaam*</Label>
+                      <Label htmlFor="companyName" className="text-base font-semibold text-navy">{t('companyNameLabel')}</Label>
                       <Input id="companyName" {...register('companyName')} className="mt-2" />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="vatNumber" className="text-base font-semibold text-navy">BTW-nummer*</Label>
-                        <Input id="vatNumber" placeholder="BE0123456789" {...register('vatNumber')} className="mt-2" />
+                        <Label htmlFor="vatNumber" className="text-base font-semibold text-navy">{t('vatNumber')}</Label>
+                        <Input id="vatNumber" placeholder={t('vatPlaceholder')} {...register('vatNumber')} className="mt-2" />
                       </div>
                       <div>
-                        <Label htmlFor="billingAddress" className="text-base font-semibold text-navy">Factuuradres*</Label>
+                        <Label htmlFor="billingAddress" className="text-base font-semibold text-navy">{t('billingAddressLabel')}</Label>
                         <Input id="billingAddress" {...register('billingAddress')} className="mt-2" />
                       </div>
                     </div>
@@ -798,11 +798,11 @@ export default function B2BQuotePage() {
                 )}
 
                 <div>
-                  <Label htmlFor="additionalInfo" className="text-base font-semibold text-navy">Opmerkingen</Label>
+                  <Label htmlFor="additionalInfo" className="text-base font-semibold text-navy">{t('commentsLabel')}</Label>
                   <Textarea
                     id="additionalInfo"
                     rows={3}
-                    placeholder="Eventuele bijzonderheden of wensen..."
+                    placeholder={t('commentsPlaceholder')}
                     {...register('additionalInfo')}
                     className="mt-2"
                   />
@@ -810,10 +810,10 @@ export default function B2BQuotePage() {
 
                 <div className="flex gap-3">
                   <Button type="button" onClick={() => setStep('select')} variant="outline" className="flex-1">
-                    ← Terug
+                    {t('backButton')}
                   </Button>
                   <Button type="button" onClick={goToUpsell} className="flex-1 btn-primary">
-                    Verder →
+                    {t('continueNext')}
                   </Button>
                 </div>
               </div>
@@ -826,8 +826,8 @@ export default function B2BQuotePage() {
                   <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full" style={{ backgroundColor: 'var(--brass-light)' }}>
                     <Gift className="h-8 w-8" style={{ color: 'var(--brass)' }} />
                   </div>
-                  <h2 className="text-2xl font-serif font-bold text-navy mb-2">Wil je een extra cadeau toevoegen?</h2>
-                  <p className="text-muted-foreground">Verras je deelnemers met onze boeken en geschenken</p>
+                  <h2 className="text-2xl font-serif font-bold text-navy mb-2">{t('step3Title')}</h2>
+                  <p className="text-muted-foreground">{t('step3Subtitle')}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -925,7 +925,7 @@ export default function B2BQuotePage() {
 
                 <div className="flex gap-3">
                   <Button type="button" onClick={() => setStep('contact')} variant="outline" className="flex-1">
-                    ← Terug
+                    {t('backButton')}
                   </Button>
                   <Button 
                     type="button" 
@@ -1036,15 +1036,15 @@ export default function B2BQuotePage() {
             {/* Step 5: Confirm Quote Request */}
             {step === 'payment' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <h2 className="text-2xl font-serif font-bold text-navy mb-6">Stap 4: Bevestig uw aanvraag</h2>
+                <h2 className="text-2xl font-serif font-bold text-navy mb-6">{t('step4')}</h2>
 
                 {/* Order summary */}
                 <div className="p-6 rounded-lg" style={{ backgroundColor: 'white', border: '2px solid var(--brass)' }}>
-                  <h3 className="font-semibold text-navy mb-4">Overzicht</h3>
+                  <h3 className="font-semibold text-navy mb-4">{t('summaryTitle')}</h3>
                   <div className="space-y-2 text-sm">
                     <div className="font-medium text-navy">{selectedTour?.title}</div>
                     <div className="text-muted-foreground">
-                      {numPeople} deelnemer{numPeople > 1 ? 's' : ''} • {selectedDate} om {selectedTimeSlot}
+                      {t('participants', { count: numPeople, plural: numPeople > 1 ? 's' : '' })} • {selectedDate} om {selectedTimeSlot}
                     </div>
                     {Object.keys(selectedUpsell).length > 0 && (
                       <div className="pt-2 space-y-1" style={{ borderTop: '1px solid #e5e7eb' }}>
@@ -1064,7 +1064,7 @@ export default function B2BQuotePage() {
                 </div>
 
                 <p className="text-sm text-muted-foreground text-center">
-                  Na bevestiging controleren wij de beschikbaarheid van de gids en ontvangt u een bevestigingsmail met offerte.
+                  {t('confirmationNote')}
                 </p>
 
                 <div className="flex gap-3">
@@ -1083,7 +1083,7 @@ export default function B2BQuotePage() {
                     ← Terug
                   </Button>
                   <Button type="submit" disabled={isSubmitting} className="flex-1 btn-primary">
-                    {isSubmitting ? 'Bezig...' : 'Bevestig aanvraag'}
+                    {isSubmitting ? t('submitting') : t('confirmRequest')}
                   </Button>
                 </div>
               </div>

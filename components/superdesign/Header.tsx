@@ -14,12 +14,14 @@ import { useAuth } from '@/lib/contexts/auth-context';
 import { useCartContext } from '@/lib/contexts/cart-context';
 import { useFavoritesContext } from '@/lib/contexts/favorites-context';
 import { CartSheet } from '@/components/webshop/cart-sheet';
+import { useTranslations } from 'next-intl';
 
 interface HeaderProps {
   locale: Locale;
 }
 
 export function Header({ locale }: HeaderProps) {
+  const t = useTranslations('header');
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -188,7 +190,7 @@ export function Header({ locale }: HeaderProps) {
                 onClick={() => setIsMenuOpen(false)}
               >
                 <User className="w-5 h-5" />
-                Account
+                {t('account')}
               </Link>
               <Link
                 href={`/${locale}/account?tab=favorites`}
@@ -196,7 +198,7 @@ export function Header({ locale }: HeaderProps) {
                 onClick={() => setIsMenuOpen(false)}
               >
                 <Heart className="w-5 h-5" />
-                Favorites
+                {t('favorites')}
                 {favoritesCount > 0 && (
                   <span className="ml-auto bg-[#1BDD95] text-white text-xs font-bold px-2 py-1 rounded-full">
                     {favoritesCount}
@@ -209,7 +211,7 @@ export function Header({ locale }: HeaderProps) {
                 onClick={() => setIsMenuOpen(false)}
               >
                 <ShoppingCart className="w-5 h-5" />
-                Cart
+                {t('cart')}
                 {cartCount > 0 && (
                   <span className="ml-auto bg-[#1BDD95] text-white text-xs font-bold px-2 py-1 rounded-full">
                     {cartCount}
@@ -223,7 +225,7 @@ export function Header({ locale }: HeaderProps) {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <Settings className="w-5 h-5" />
-                  Admin Panel
+                  {t('adminPanel')}
                 </Link>
               )}
             </div>
@@ -245,7 +247,7 @@ export function Header({ locale }: HeaderProps) {
 
             {/* Language Selector - Mobile */}
             <div className="border-t border-gray-200 pt-4 mb-8">
-              <h4 className="text-gray-500 font-medium mb-3">Language</h4>
+              <h4 className="text-gray-500 font-medium mb-3">{t('language')}</h4>
               <div className="flex gap-3">
                 {locales.map((loc) => (
                   <Link
@@ -265,7 +267,7 @@ export function Header({ locale }: HeaderProps) {
             </div>
 
             <div className="mt-auto mb-8 text-center text-gray-400 text-sm">
-              © 2024 Buro BeroepsBelg
+              {t('copyright')}
             </div>
           </motion.div>
         )}

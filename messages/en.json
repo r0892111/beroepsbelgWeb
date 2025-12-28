@@ -20,7 +20,9 @@
   "hero": {
     "kicker": "— Discover Belgium like you've never seen it before",
     "heading": "Your guide in Belgium",
-    "cta": "Discover our tours"
+    "cta": "Discover our tours",
+    "cnnQuote": "One of the 7 savviest guides in the world – CNN",
+    "discoverTours": "Discover tours"
   },
   "sections": {
     "inSpotlight": "In the spotlight",
@@ -30,6 +32,21 @@
     "shop": "Webshop",
     "press": "In the press",
     "newsletter": "Newsletter"
+  },
+  "shop": {
+    "marqueeText": "WEBSHOP — NEW COLLECTION — DISCOVER NOW",
+    "addToCart": "Add to Cart",
+    "curated": "Curated",
+    "collection": "Collection",
+    "exclusiveItems": "Exclusive books, prints & objects"
+  },
+  "header": {
+    "account": "Account",
+    "favorites": "Favorites",
+    "cart": "Cart",
+    "adminPanel": "Admin Panel",
+    "language": "Language",
+    "copyright": "© 2024 Buro BeroepsBelg"
   },
   "cities": {
     "antwerpen": "Antwerp",
@@ -44,6 +61,7 @@
   "common": {
     "discover": "Discover",
     "moreInfo": "More info",
+    "schedule": "Schedule",
     "order": "Order",
     "price": "Price",
     "comingSoon": "COMING 2025",
@@ -70,7 +88,17 @@
     "sitemap": "Sitemap",
     "privacy": "Privacy",
     "disclaimer": "Disclaimer",
-    "poweredBy": "Webshop"
+    "poweredBy": "Webshop",
+    "stayConnected": "STAY CONNECTED",
+    "newsletterSignUp": "Newsletter Sign Up",
+    "emailPlaceholder": "Your email address",
+    "subscribe": "Subscribe",
+    "explore": "EXPLORE",
+    "search": "SEARCH",
+    "searchPlaceholder": "Search tours, products...",
+    "copyright": "© 2024 Beroepsbelg. All rights reserved.",
+    "allRightsReserved": "All rights reserved",
+    "terms": "Terms"
   },
   "cookie": {
     "message": "We use cookies to improve your experience.",
@@ -346,7 +374,11 @@
     "all": "All",
     "books": "Books",
     "merchandise": "Merchandise",
-    "games": "Games"
+    "games": "Games",
+    "experienceBelgiumLive": "Experience Belgium Live",
+    "exploreHiddenStories": "Love what you see? Explore Belgium's hidden stories with our expert guides. From architectural treasures to culinary secrets – our tours bring the stories behind the stories to life.",
+    "browseAllTours": "Browse All Tours",
+    "searchPlaceholder": "Search products..."
   },
   "tourDetail": {
     "backToCity": "Back to {city} tours",
@@ -362,11 +394,18 @@
     "localStoriesMinimum": "Minimum of 4 persons required"
   },
   "faq": {
-    "title": "FAQ"
+    "title": "FAQ",
+    "subtitle": "Everything you need to know about our authentic Belgian tours",
+    "stillHaveQuestions": "Still Have Questions?",
+    "ctaDescription": "The best way to learn about Belgium is to experience it firsthand. Book a tour and let our expert guides show you around!",
+    "exploreOurTours": "Explore Our Tours"
   },
   "press": {
     "title": "In the Press",
-    "subtitle": "BeroepsBelg in the media"
+    "subtitle": "BeroepsBelg in the media",
+    "loading": "Loading...",
+    "noArticles": "No press articles available.",
+    "featuredIn": "Featured In"
   },
   "blog": {
     "title": "Blog",
@@ -374,19 +413,61 @@
   },
   "contact": {
     "title": "Contact",
+    "getInTouch": "Get In Touch",
+    "subtitle": "We'd love to hear from you",
     "address": "Address",
+    "addressLabel": "Address",
     "email": "Email",
+    "emailLabel": "Email",
     "phone": "Phone",
+    "phoneLabel": "Phone",
     "sendMessage": "Send us a message",
+    "formHeading": "Send us a message",
     "messageSent": "Message sent!",
+    "sending": "Sending...",
+    "successMessage": "Message sent!",
     "addressLine1": "Groenplaats 1",
     "addressLine2": "2000 Antwerp",
     "addressLine3": "Belgium",
-    "consent": "I agree to the privacy policy"
+    "consent": "I agree to the privacy policy",
+    "consentText": "I agree to the privacy policy"
   },
   "jobs": {
     "title": "Become a BeroepsBelg guide",
+    "becomeGuide": "Become a BeroepsBelg Guide",
+    "joinTeam": "Join our team and share your passion for Belgian culture",
+    "whyJoinUs": "Why join us?",
+    "introduction1": "Are you passionate about history, architecture and storytelling? Do you want to be part of a dynamic team that showcases Belgium in a unique way?",
+    "introduction2": "We are always looking for enthusiastic guides who share our mission to provide visitors and locals with an enriching experience.",
+    "sharePassion": {
+      "title": "Share your passion",
+      "description": "Get the opportunity to share your knowledge and love for Belgium with enthusiastic visitors"
+    },
+    "dynamicTeam": {
+      "title": "Dynamic team",
+      "description": "Become part of a close-knit team of guides and meet interesting people"
+    },
+    "flexibleLocations": {
+      "title": "Flexible locations",
+      "description": "Give tours in the Belgian cities you know best"
+    },
+    "unforgettableMoments": {
+      "title": "Unforgettable moments",
+      "description": "Contribute to unique memories for tourists and locals"
+    },
     "applyNow": "Apply now",
+    "nameLabel": "Name",
+    "emailLabel": "Email",
+    "phoneLabel": "Phone",
+    "cityLabel": "In which city(ies) would you like to give tours?",
+    "cityPlaceholder": "e.g. Antwerp, Brussels",
+    "motivationLabel": "Why do you want to become a BeroepsBelg guide?",
+    "consentText": "I agree to the privacy policy and the processing of my personal data",
+    "submitApplication": "Submit application",
+    "submitting": "Submitting...",
+    "successMessage": "Application submitted!",
+    "invalidEmail": "Invalid email address",
+    "minimumCharacters": "Minimum 50 characters required",
     "description": "Are you passionate about Belgian culture, history and architecture? Do you have a talent for storytelling and enjoy sharing your knowledge with others? Then we are looking for you! BeroepsBelg is always looking for enthusiastic guides who can take our guests on an unforgettable journey through the fascinating history of our beautiful cities.",
     "name": "Name*",
     "email": "Email*",
@@ -410,7 +491,9 @@
     "people": "10-50 people",
     "description": "In this captivating lecture, Tanguy Ottomer takes you on a journey through the fascinating history of the Boerentoren, Antwerp's most iconic skyscraper. From its construction in the 1930s to its role in the cityscape today, you'll discover how this building has shaped the city and remains a symbol of ambition and innovation.",
     "bookLecture": "Book this lecture",
-    "moreInfo": "More information"
+    "moreInfo": "More information",
+    "description1": "The Boerentoren, also known as the KBC Tower, is an iconic building in Antwerp's cityscape. This lecture takes you through the fascinating history of what was once Europe's tallest building.",
+    "description2": "From the ambitious building plans in the 1920s to the modern transformation, you'll discover the architectural highlights, the stories of the people who worked there, and the role the building played in developing Antwerp as a modern metropolis."
   },
   "disclaimer": {
     "title": "Terms & Conditions",
@@ -513,5 +596,45 @@
     "supportMessage": "If you experienced any issues during checkout or have questions, please contact our support team.",
     "returnShop": "Return to Shop",
     "contactSupport": "Contact Support"
+  },
+  "citySection": {
+    "explore": "Explore",
+    "cityLabel": "CITY",
+    "antwerp": {
+      "tagline": "The Fashion Capital",
+      "description": "A pocket-sized metropolis known for diamonds, avant-garde fashion, and the cathedral's soaring spire."
+    },
+    "gent": {
+      "tagline": "The Quirky Rebel",
+      "description": "History with a rock 'n roll edge. A vibrant student city centered around the imposing Gravensteen castle."
+    },
+    "bruges": {
+      "tagline": "Venice of the North",
+      "description": "A medieval fairytale preserved in time. Cobblestone streets, swans on the canals, and romantic mystery."
+    },
+    "brussels": {
+      "tagline": "The Heart of Europe",
+      "description": "Surrealism meets bureaucracy. Grand Place splendor, Art Nouveau gems, and the best chocolate in the world."
+    },
+    "leuven": {
+      "tagline": "The Brains & The Beer",
+      "description": "Home to the oldest university in the Low Countries and the headquarters of the world's largest brewery."
+    },
+    "knokke-heist": {
+      "tagline": "The Golden Triangle",
+      "description": "Luxury by the sea. High-end boutiques, art galleries, and the Zwin nature reserve make it the sophisticated coast choice."
+    },
+    "mechelen": {
+      "tagline": "The Hidden Gem",
+      "description": "A city of carillons and silence. Walk the floating path on the Dyle and climb St. Rumbold's tower."
+    },
+    "hasselt": {
+      "tagline": "The Capital of Taste",
+      "description": "Known for jenever gin, fashion, and being the most welcoming city. A place where good taste is a lifestyle."
+    },
+    "spa": {
+      "tagline": "The Pearl of the Ardennes",
+      "description": "The original spa town. Famous for its healing thermal waters, the casino, and lush green surroundings."
+    }
   }
 }

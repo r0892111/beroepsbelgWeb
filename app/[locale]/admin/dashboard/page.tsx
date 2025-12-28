@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from 'next-intl';
-import { ExternalLink, LogOut, Link as LinkIcon, Home, RefreshCw, CheckCircle2, Unlink, Calendar, Users as UsersIcon } from 'lucide-react';
+import { ExternalLink, LogOut, Link as LinkIcon, Home, RefreshCw, CheckCircle2, Unlink, Calendar, Users as UsersIcon, HelpCircle, MapPin, Image } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 
@@ -346,7 +346,7 @@ export default function AdminDashboardPage() {
             <CardDescription>Manage tours and bookings</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
               <Link href={`/${locale}/admin/tours`}>
                 <Button className="w-full justify-start btn-primary" size="lg">
                   <Calendar className="h-5 w-5 mr-2" />
@@ -369,6 +369,18 @@ export default function AdminDashboardPage() {
                 <Button className="w-full justify-start btn-primary" size="lg">
                   <UsersIcon className="h-5 w-5 mr-2" />
                   Manage Guides
+                </Button>
+              </Link>
+              <Link href={`/${locale}/admin/faq`}>
+                <Button className="w-full justify-start btn-primary" size="lg">
+                  <HelpCircle className="h-5 w-5 mr-2" />
+                  Manage FAQ
+                </Button>
+              </Link>
+              <Link href={`/${locale}/admin/city-images`}>
+                <Button className="w-full justify-start btn-primary" size="lg">
+                  <MapPin className="h-5 w-5 mr-2" />
+                  City Images
                 </Button>
               </Link>
             </div>

@@ -17,6 +17,8 @@ import Link from 'next/link';
 import { ProductDetailDialog } from '@/components/webshop/product-detail-dialog';
 import { supabase } from '@/lib/supabase/client';
 import { Badge } from '@/components/ui/badge';
+import Image from 'next/image';
+import { getProductPlaceholder } from '@/lib/utils/placeholder-images';
 
 export default function AccountPage() {
   const t = useTranslations('auth');
@@ -313,7 +315,29 @@ export default function AccountPage() {
               ) : (
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {favoriteProducts.map((product) => (
-                    <Card key={product.slug} className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleProductClick(product)}>
+                    <Card key={product.slug} className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden" onClick={() => handleProductClick(product)}>
+                      {product.image && (
+                        <div className="relative w-full h-48 overflow-hidden">
+                          <Image
+                            src={product.image}
+                            alt={product.title[locale as 'nl' | 'en' | 'fr' | 'de']}
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                        </div>
+                      )}
+                      {!product.image && (
+                        <div className="relative w-full h-48 overflow-hidden">
+                          <Image
+                            src={getProductPlaceholder(product.category || 'Book')}
+                            alt={product.title[locale as 'nl' | 'en' | 'fr' | 'de']}
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                        </div>
+                      )}
                       <CardHeader>
                         <CardTitle className="text-lg">{product.title[locale as 'nl' | 'en' | 'fr' | 'de']}</CardTitle>
                         <CardDescription>€{product.price.toFixed(2)}</CardDescription>
@@ -377,10 +401,21 @@ export default function AccountPage() {
                       return (
                         <Card
                           key={item.id}
-                          className="cursor-pointer hover:shadow-lg transition-shadow"
+                          className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden"
                           onClick={() => productForDialog && handleProductClick(productForDialog)}
                         >
-                          <CardContent className="flex items-center justify-between p-6">
+                          <CardContent className="flex items-center gap-4 p-6">
+                            {(product?.image || product) && (
+                              <div className="relative w-20 h-20 flex-shrink-0">
+                                <Image
+                                  src={product?.image || getProductPlaceholder((product as any)?.Category || (product as any)?.category || 'Book')}
+                                  alt={(product as any)?.Name || (product as any)?.title_nl || (product as any)?.title_en || 'Product'}
+                                  fill
+                                  className="object-cover rounded"
+                                  unoptimized
+                                />
+                              </div>
+                            )}
                             <div className="flex-1">
                               <h3 className="text-lg font-semibold text-[#0d1117]">
                                 {product?.Name || product?.title_nl || product?.title_en || product?.title_fr || product?.title_de || 'Product'}
