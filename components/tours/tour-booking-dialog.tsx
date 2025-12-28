@@ -33,6 +33,7 @@ interface TourBookingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultBookingDate?: string; // Pre-fill booking date (for local stories)
+  existingTourBookingId?: number; // Existing tourbooking ID (for local stories - to join existing booking)
   citySlug?: string; // City slug for the tour
 }
 
@@ -46,6 +47,7 @@ export function TourBookingDialog({
   open,
   onOpenChange,
   defaultBookingDate,
+  existingTourBookingId,
   citySlug,
 }: TourBookingDialogProps) {
   const router = useRouter();
@@ -284,6 +286,8 @@ export function TourBookingDialog({
             subjects: opMaatAnswers.subjects,
             specialWishes: opMaatAnswers.specialWishes,
           } : null,
+          // For local stories: pass existing tourbooking ID if available
+          existingTourBookingId: isLocalStories ? (existingTourBookingId || null) : null,
         }),
       });
 
@@ -506,8 +510,8 @@ export function TourBookingDialog({
             </div>
           </div>
 
-          {/* Request Tanguy Ottomer Section - Hidden for local stories tours */}
-          {!isLocalStories && (
+          {/* Request Tanguy Ottomer Section - Only shown for Antwerp, Knokke-Heist, and Spa, hidden for local stories tours */}
+          {!isLocalStories && citySlug && ['antwerpen', 'knokke-heist', 'spa'].includes(citySlug.toLowerCase()) && (
             <div className="rounded-lg border-2 p-4 transition-all hover:border-brass" style={{ borderColor: formData.requestTanguy ? 'var(--brass)' : '#e5e7eb' }}>
               <div className="flex items-center gap-4">
                 <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded">

@@ -462,23 +462,48 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
       const dateStr = booking.booking_date;
       const numberOfPeople = peopleCountByDate.get(dateStr) || 0;
       
-      bookingsMap.set(dateStr, {
-        id: booking.id,
-        tour_id: booking.tour_id,
-        booking_date: dateStr,
-        booking_time: booking.booking_time || '14:00:00',
-        is_booked: booking.is_booked !== undefined ? booking.is_booked : true, // Default to booked
-        user_id: booking.user_id,
-        customer_name: booking.customer_name,
-        customer_email: booking.customer_email,
-        customer_phone: booking.customer_phone,
-        stripe_session_id: booking.stripe_session_id,
-        booking_id: booking.booking_id || undefined, // Reference to tourbooking.id
-        status: booking.status || 'booked', // Default to booked
-        number_of_people: numberOfPeople,
-        created_at: booking.created_at,
-        updated_at: booking.updated_at,
-      });
+      // If multiple bookings exist for the same date, prioritize one with booking_id
+      const existing = bookingsMap.get(dateStr);
+      if (existing && !existing.booking_id && booking.booking_id) {
+        // Replace existing entry with one that has booking_id
+        bookingsMap.set(dateStr, {
+          id: booking.id,
+          tour_id: booking.tour_id,
+          booking_date: dateStr,
+          booking_time: booking.booking_time || '14:00:00',
+          is_booked: booking.is_booked !== undefined ? booking.is_booked : true,
+          user_id: booking.user_id,
+          customer_name: booking.customer_name,
+          customer_email: booking.customer_email,
+          customer_phone: booking.customer_phone,
+          stripe_session_id: booking.stripe_session_id,
+          booking_id: booking.booking_id || undefined, // Reference to tourbooking.id
+          status: booking.status || 'booked',
+          number_of_people: numberOfPeople,
+          created_at: booking.created_at,
+          updated_at: booking.updated_at,
+        });
+      } else if (!existing) {
+        // First booking for this date
+        bookingsMap.set(dateStr, {
+          id: booking.id,
+          tour_id: booking.tour_id,
+          booking_date: dateStr,
+          booking_time: booking.booking_time || '14:00:00',
+          is_booked: booking.is_booked !== undefined ? booking.is_booked : true, // Default to booked
+          user_id: booking.user_id,
+          customer_name: booking.customer_name,
+          customer_email: booking.customer_email,
+          customer_phone: booking.customer_phone,
+          stripe_session_id: booking.stripe_session_id,
+          booking_id: booking.booking_id || undefined, // Reference to tourbooking.id
+          status: booking.status || 'booked', // Default to booked
+          number_of_people: numberOfPeople,
+          created_at: booking.created_at,
+          updated_at: booking.updated_at,
+        });
+      }
+      // If existing already has booking_id, keep it (don't replace)
     });
     
     // Create missing bookings for upcoming Saturdays (with 0 people, status 'booked')

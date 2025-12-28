@@ -78,51 +78,70 @@ async function handleEvent(event: Stripe.Event) {
         .single();
 
       if (tourBooking) {
-  console.info(`Successfully updated tour booking for session: ${sessionId}`);
+        console.info(`Successfully updated tour booking for session: ${sessionId}`);
+        
+        // Check if this is a local stories tour and update local_tours_bookings
+        const { data: tour, error: tourError } = await supabase
+          .from('tours_table_prod')
+          .select('local_stories')
+          .eq('id', tourBooking.tour_id)
+          .single();
+        
+        if (!tourError && tour?.local_stories === true) {
+          // Update local_tours_bookings entry - ensure stripe_session_id is set and status is booked
+          const { error: localBookingError } = await supabase
+            .from('local_tours_bookings')
+            .update({ 
+              stripe_session_id: sessionId,
+              status: 'booked'
+            })
+            .eq('stripe_session_id', sessionId); // Update entries that match this session
+          
+          if (localBookingError) {
+            console.error('Error updating local_tours_bookings:', localBookingError);
+          } else {
+            console.info(`Successfully updated local_tours_bookings for session: ${sessionId}`);
+          }
+        }
 
-  const n8nWebhookUrl =
-    'https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc';
+        const n8nWebhookUrl =
+          'https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc';
 
+        const payload = {
+          ...session, // full Stripe checkout session
+          metadata: {
+            ...metadata,
+            stripe_session_id: sessionId,
+          },
+        };
 
-  const payload = {
-    ...session, // full Stripe checkout session
-    metadata: {
-      ...metadata,
-      stripe_session_id: sessionId,
-    },
-  };
+        try {
+          console.info('[N8N] Calling tour booking webhook', {
+            url: n8nWebhookUrl,
+            sessionId,
+          });
 
-  try {
-    console.info('[N8N] Calling tour booking webhook', {
-      url: n8nWebhookUrl,
-      sessionId,
-    });
+          const res = await fetch(n8nWebhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
 
-    const res = await fetch(n8nWebhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+          console.info('[N8N] Tour booking webhook response', {
+            status: res.status,
+            ok: res.ok,
+          });
 
+          if (!res.ok) {
+            const text = await res.text();
+            console.error('[N8N] Tour booking webhook error body', text);
+          }
+        } catch (err) {
+          console.error('[N8N] Failed to call tour booking webhook', err);
+        }
 
-
-    console.info('[N8N] Tour booking webhook response', {
-      status: res.status,
-      ok: res.ok,
-    });
-
-
-
-    if (!res.ok) {
-      const text = await res.text();
-      console.error('[N8N] Tour booking webhook error body', text);
-    }
-  } catch (err) {
-    console.error('[N8N] Failed to call tour booking webhook', err);
-  }
-
-  return;
-}
+        return;
+      }
 
 
       if (tourBookingError && tourBookingError.code !== 'PGRST116') {

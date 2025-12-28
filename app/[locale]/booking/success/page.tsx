@@ -99,9 +99,9 @@ export default function BookingSuccessPage() {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-        // First, fetch the booking
-        const bookingResponse = await fetch(
-          `${supabaseUrl}/rest/v1/tourbooking?stripe_session_id=eq.${sessionId}&select=*`,
+        // First, check if this is a local stories booking by querying local_tours_bookings directly
+        const localBookingResponse = await fetch(
+          `${supabaseUrl}/rest/v1/local_tours_bookings?stripe_session_id=eq.${sessionId}&select=*`,
           {
             headers: {
               'apikey': supabaseAnonKey || '',
@@ -110,20 +110,33 @@ export default function BookingSuccessPage() {
           }
         );
 
-        if (bookingResponse.ok) {
-          const bookingResponseData = await bookingResponse.json();
-          console.log('Booking data:', bookingResponseData);
-          
-          if (bookingResponseData && bookingResponseData.length > 0) {
-            const booking = bookingResponseData[0];
-            const invitee = booking.invitees?.[0];
+        let localBookingData = null;
+        let booking = null;
+        let invitee = null;
+        let tourTitle = 'Tour';
+        let tourOpMaat = false;
+        let tourLocalStories = false;
 
-            // Fetch the tour data separately
-            let tourTitle = 'Tour';
-            let tourOpMaat = false;
-            if (booking.tour_id) {
+        if (localBookingResponse.ok) {
+          const localBookingResponseData = await localBookingResponse.json();
+          console.log('Local booking data:', localBookingResponseData);
+          
+          if (localBookingResponseData && localBookingResponseData.length > 0) {
+            // Found a local stories booking - use the first one (or match by email if we have it)
+            localBookingData = localBookingResponseData[0];
+            tourLocalStories = true;
+            
+            console.log('Found local stories booking:', {
+              localBookingId: localBookingData.id,
+              tourId: localBookingData.tour_id,
+              customerEmail: localBookingData.customer_email,
+              stripeSessionId: localBookingData.stripe_session_id,
+            });
+
+            // Fetch tour data
+            if (localBookingData.tour_id) {
               const tourResponse = await fetch(
-                `${supabaseUrl}/rest/v1/tours_table_prod?id=eq.${booking.tour_id}&select=title,op_maat`,
+                `${supabaseUrl}/rest/v1/tours_table_prod?id=eq.${localBookingData.tour_id}&select=title,op_maat,local_stories`,
                 {
                   headers: {
                     'apikey': supabaseAnonKey || '',
@@ -136,7 +149,6 @@ export default function BookingSuccessPage() {
                 const tourData = await tourResponse.json();
                 if (tourData && tourData.length > 0) {
                   tourTitle = tourData[0].title;
-                  // Check op_maat property (can be boolean, string, or number)
                   tourOpMaat = tourData[0].op_maat === true || 
                                tourData[0].op_maat === 'true' || 
                                tourData[0].op_maat === 1;
@@ -144,159 +156,286 @@ export default function BookingSuccessPage() {
               }
             }
 
-            // Get upsell products from invitee
-            const upsellProducts = invitee?.upsellProducts || [];
-            
-            // Use tour's op_maat property directly (most reliable)
-            const opMaatValue = tourOpMaat;
-            
-            const bookingData = {
-              ...booking,
-              tour_title: tourTitle,
-              customer_name: invitee?.name,
-              customer_email: invitee?.email,
-              customer_phone: invitee?.phone,
-              number_of_people: invitee?.numberOfPeople,
-              language: invitee?.language,
-              special_requests: invitee?.specialRequests,
-              amount: invitee?.amount,
-              booking_date: booking.tour_datetime,
-              upsell_products: upsellProducts,
-            };
-            
-            console.log('Setting booking data for JotForm pre-fill:', {
-              bookingId: booking.id,
-              opMaat: opMaatValue,
-              customer_name: bookingData.customer_name,
-              customer_email: bookingData.customer_email,
-              customer_phone: bookingData.customer_phone,
-              inviteeData: invitee,
-            });
-            
-            setBooking(bookingData);
-            setIsOpMaat(opMaatValue);
-            
-            // Build JotForm URL with pre-filled data if it's an op maat tour
-            // JotForm uses unique field names, not IDs. These should match the unique names in your JotForm.
-            // To find unique names: In JotForm builder > Select field > Gear icon > Advanced tab > Field Details > Unique Name
-            if (opMaatValue && process.env.NEXT_PUBLIC_JOTFORM_ID) {
-              const baseUrl = `https://form.jotform.com/${process.env.NEXT_PUBLIC_JOTFORM_ID}`;
-              const params = new URLSearchParams();
-              
-              // Field unique names - these must match the "Unique Name" from JotForm Advanced tab
-              // You can override these via environment variables if needed
-              const FIELD_BOOKING_NUMBER = process.env.NEXT_PUBLIC_JOTFORM_FIELD_BOOKING_NUMBER || 'typEen';
-              const FIELD_EMAIL = process.env.NEXT_PUBLIC_JOTFORM_FIELD_EMAIL || 'email11';
-              const FIELD_TOUR_DATE = process.env.NEXT_PUBLIC_JOTFORM_FIELD_TOUR_DATE || 'datum'; // Updated based on JotForm unique name
-              
-              console.log('=== JOTFORM PRE-FILL DEBUG START ===');
-              console.log('Field mappings:', {
-                bookingNumber: FIELD_BOOKING_NUMBER,
-                email: FIELD_EMAIL,
-                tourDate: FIELD_TOUR_DATE,
-              });
-              
-              console.log('Booking data available:', {
-                bookingId: booking.id,
-                customer_email: bookingData.customer_email,
-                booking_date: bookingData.booking_date,
-                tour_datetime: booking.tour_datetime,
-              });
-              
-              // Pre-fill booking number
-              if (booking.id) {
-                const bookingId = booking.id.toString();
-                params.append(FIELD_BOOKING_NUMBER, bookingId);
-                console.log(`✓ Added booking number: ${FIELD_BOOKING_NUMBER} = "${bookingId}"`);
-              } else {
-                console.log('✗ No booking ID available');
-              }
-              
-              // Pre-fill email
-              if (bookingData.customer_email) {
-                params.append(FIELD_EMAIL, bookingData.customer_email);
-                console.log(`✓ Added email: ${FIELD_EMAIL} = "${bookingData.customer_email}"`);
-              } else {
-                console.log('✗ No customer email available');
-              }
-              
-              // Pre-fill tour date
-              const tourDateValue = bookingData.booking_date || booking.tour_datetime;
-              console.log('Tour date check:', {
-                booking_date: bookingData.booking_date,
-                tour_datetime: booking.tour_datetime,
-                tourDateValue,
-                type: typeof tourDateValue,
-              });
-              
-              if (tourDateValue) {
-                const dateObj = new Date(tourDateValue);
-                const isValidDate = !isNaN(dateObj.getTime()) && dateObj.getTime() !== 0;
-                
-                console.log('Date validation:', {
-                  dateObj: dateObj.toISOString(),
-                  isValidDate,
-                  timestamp: dateObj.getTime(),
-                });
-                
-                if (isValidDate) {
-                  // Format date as MM-DD-YYYY for JotForm
-                  const month = String(dateObj.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
-                  const day = String(dateObj.getDate()).padStart(2, '0');
-                  const year = dateObj.getFullYear();
-                  const formattedDate = `${month}-${day}-${year}`;
-                  
-                  params.append(FIELD_TOUR_DATE, formattedDate);
-                  console.log(`✓ Added tour date: ${FIELD_TOUR_DATE} = "${formattedDate}"`);
-                  console.log('Date processing:', {
-                    original: tourDateValue,
-                    formatted: formattedDate,
-                    format: 'MM-DD-YYYY',
-                    dateObj: dateObj.toISOString(),
-                  });
-                } else {
-                  console.log('✗ Invalid tour date:', {
-                    value: tourDateValue,
-                    parsed: dateObj.toISOString(),
-                    timestamp: dateObj.getTime(),
-                  });
+            // Optionally fetch tourbooking data if booking_id exists (for invitees/upsells)
+            if (localBookingData.booking_id) {
+              const tourBookingResponse = await fetch(
+                `${supabaseUrl}/rest/v1/tourbooking?id=eq.${localBookingData.booking_id}&select=*`,
+                {
+                  headers: {
+                    'apikey': supabaseAnonKey || '',
+                    'Authorization': `Bearer ${supabaseAnonKey}`,
+                  },
                 }
-              } else {
-                console.log('✗ No tour date available:', {
-                  booking_date: bookingData.booking_date,
-                  tour_datetime: booking.tour_datetime,
-                });
+              );
+
+              if (tourBookingResponse.ok) {
+                const tourBookingData = await tourBookingResponse.json();
+                if (tourBookingData && tourBookingData.length > 0) {
+                  booking = tourBookingData[0];
+                  // Find invitee that matches this customer's email
+                  invitee = booking.invitees?.find(
+                    (inv: any) => inv.email === localBookingData.customer_email
+                  ) || booking.invitees?.[0];
+                }
               }
-              
-              const queryString = params.toString();
-              const finalUrl = queryString ? `${baseUrl}?${queryString}` : baseUrl;
-              
-              console.log('=== FINAL JOTFORM URL ===');
-              console.log('Base URL:', baseUrl);
-              console.log('Query String:', queryString);
-              console.log('Full URL:', finalUrl);
-              console.log('All Parameters:', Object.fromEntries(params));
-              console.log('Parameter count:', params.toString().split('&').length);
-              console.log('=== JOTFORM PRE-FILL DEBUG END ===');
-              
-              setJotFormUrl(finalUrl);
-            } else {
-              console.log('Not building JotForm URL:', {
-                isOpMaat: opMaatValue,
-                hasFormId: !!process.env.NEXT_PUBLIC_JOTFORM_ID,
-              });
-            }
-            
-            // Fetch upsell product details if there are any
-            if (upsellProducts && upsellProducts.length > 0) {
-              console.log('Fetching upsell product details for:', upsellProducts.length, 'products');
-              await fetchUpsellProductDetails(upsellProducts);
-            } else {
-              console.log('No upsell products found in booking');
             }
           }
+        }
+
+        // If not a local stories booking, fetch from tourbooking as normal
+        if (!localBookingData) {
+          const bookingResponse = await fetch(
+            `${supabaseUrl}/rest/v1/tourbooking?stripe_session_id=eq.${sessionId}&select=*`,
+            {
+              headers: {
+                'apikey': supabaseAnonKey || '',
+                'Authorization': `Bearer ${supabaseAnonKey}`,
+              },
+            }
+          );
+
+          if (bookingResponse.ok) {
+            const bookingResponseData = await bookingResponse.json();
+            console.log('Regular booking data:', bookingResponseData);
+            
+            if (bookingResponseData && bookingResponseData.length > 0) {
+              booking = bookingResponseData[0];
+              invitee = booking.invitees?.[0];
+
+              // Fetch the tour data separately
+              if (booking.tour_id) {
+                const tourResponse = await fetch(
+                  `${supabaseUrl}/rest/v1/tours_table_prod?id=eq.${booking.tour_id}&select=title,op_maat,local_stories`,
+                  {
+                    headers: {
+                      'apikey': supabaseAnonKey || '',
+                      'Authorization': `Bearer ${supabaseAnonKey}`,
+                    },
+                  }
+                );
+                
+                if (tourResponse.ok) {
+                  const tourData = await tourResponse.json();
+                  if (tourData && tourData.length > 0) {
+                    tourTitle = tourData[0].title;
+                    tourOpMaat = tourData[0].op_maat === true || 
+                                 tourData[0].op_maat === 'true' || 
+                                 tourData[0].op_maat === 1;
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // Process booking data
+        if (localBookingData || booking) {
+          // Get upsell products from invitee
+          const upsellProducts = invitee?.upsellProducts || [];
+          
+          // Use tour's op_maat property directly (most reliable)
+          const opMaatValue = tourOpMaat;
+          
+          // For local stories tours, use local_tours_bookings data
+          let bookingData;
+          if (localBookingData) {
+            // Use local_tours_bookings data for local stories tours
+            // Convert amnt_of_people (numeric) to number if needed
+            const numberOfPeople = localBookingData.amnt_of_people 
+              ? (typeof localBookingData.amnt_of_people === 'string' 
+                  ? parseFloat(localBookingData.amnt_of_people) 
+                  : Number(localBookingData.amnt_of_people))
+              : invitee?.numberOfPeople || 1;
+            
+            // Format booking_date properly (it's a date string from the database)
+            const bookingDate = localBookingData.booking_date 
+              ? new Date(localBookingData.booking_date).toISOString()
+              : (booking?.tour_datetime || null);
+            
+            bookingData = {
+              id: booking?.id || localBookingData.booking_id || null,
+              tour_id: localBookingData.tour_id,
+              tour_title: tourTitle,
+              customer_name: localBookingData.customer_name || '',
+              customer_email: localBookingData.customer_email || '',
+              customer_phone: localBookingData.customer_phone || '',
+              number_of_people: numberOfPeople,
+              language: invitee?.language || 'nl',
+              special_requests: invitee?.specialRequests || '',
+              amount: invitee?.amount || 0,
+              booking_date: bookingDate,
+              booking_time: localBookingData.booking_time || '14:00:00',
+              tour_datetime: bookingDate,
+              upsell_products: upsellProducts,
+              is_local_stories: true,
+              // Include local booking ID for reference
+              local_booking_id: localBookingData.id,
+              status: booking?.status || 'payment_completed',
+            };
+            
+            console.log('Local stories booking data prepared:', {
+              customer_name: bookingData.customer_name,
+              customer_email: bookingData.customer_email,
+              number_of_people: bookingData.number_of_people,
+              booking_date: bookingData.booking_date,
+              booking_time: bookingData.booking_time,
+              local_booking_id: bookingData.local_booking_id,
+            });
+          } else if (booking) {
+            // Use tourbooking data for regular tours
+            bookingData = {
+              ...booking,
+              tour_title: tourTitle,
+              customer_name: invitee?.name || '',
+              customer_email: invitee?.email || '',
+              customer_phone: invitee?.phone || '',
+              number_of_people: invitee?.numberOfPeople || 1,
+              language: invitee?.language || 'nl',
+              special_requests: invitee?.specialRequests || '',
+              amount: invitee?.amount || 0,
+              booking_date: booking.tour_datetime,
+              upsell_products: upsellProducts,
+              is_local_stories: false,
+            };
+          } else {
+            // No booking found
+            console.error('No booking found for session:', sessionId);
+            setLoading(false);
+            return;
+          }
+            
+          console.log('Setting booking data for JotForm pre-fill:', {
+            bookingId: bookingData.id,
+            opMaat: opMaatValue,
+            customer_name: bookingData.customer_name,
+            customer_email: bookingData.customer_email,
+            customer_phone: bookingData.customer_phone,
+            inviteeData: invitee,
+          });
+          
+          setBooking(bookingData);
+          setIsOpMaat(opMaatValue);
+          
+          // Build JotForm URL with pre-filled data if it's an op maat tour
+          // JotForm uses unique field names, not IDs. These should match the unique names in your JotForm.
+          // To find unique names: In JotForm builder > Select field > Gear icon > Advanced tab > Field Details > Unique Name
+          if (opMaatValue && process.env.NEXT_PUBLIC_JOTFORM_ID) {
+            const baseUrl = `https://form.jotform.com/${process.env.NEXT_PUBLIC_JOTFORM_ID}`;
+            const params = new URLSearchParams();
+            
+            // Field unique names - these must match the "Unique Name" from JotForm Advanced tab
+            // You can override these via environment variables if needed
+            const FIELD_BOOKING_NUMBER = process.env.NEXT_PUBLIC_JOTFORM_FIELD_BOOKING_NUMBER || 'typEen';
+            const FIELD_EMAIL = process.env.NEXT_PUBLIC_JOTFORM_FIELD_EMAIL || 'email11';
+            const FIELD_TOUR_DATE = process.env.NEXT_PUBLIC_JOTFORM_FIELD_TOUR_DATE || 'datum'; // Updated based on JotForm unique name
+            
+            console.log('=== JOTFORM PRE-FILL DEBUG START ===');
+            console.log('Field mappings:', {
+              bookingNumber: FIELD_BOOKING_NUMBER,
+              email: FIELD_EMAIL,
+              tourDate: FIELD_TOUR_DATE,
+            });
+            
+            console.log('Booking data available:', {
+              bookingId: bookingData.id,
+              customer_email: bookingData.customer_email,
+              booking_date: bookingData.booking_date,
+              tour_datetime: bookingData.tour_datetime,
+            });
+            
+            // Pre-fill booking number
+            if (bookingData.id) {
+              const bookingId = bookingData.id.toString();
+              params.append(FIELD_BOOKING_NUMBER, bookingId);
+              console.log(`✓ Added booking number: ${FIELD_BOOKING_NUMBER} = "${bookingId}"`);
+            } else {
+              console.log('✗ No booking ID available');
+            }
+            
+            // Pre-fill email
+            if (bookingData.customer_email) {
+              params.append(FIELD_EMAIL, bookingData.customer_email);
+              console.log(`✓ Added email: ${FIELD_EMAIL} = "${bookingData.customer_email}"`);
+            } else {
+              console.log('✗ No customer email available');
+            }
+            
+            // Pre-fill tour date
+            const tourDateValue = bookingData.booking_date || bookingData.tour_datetime;
+            console.log('Tour date check:', {
+              booking_date: bookingData.booking_date,
+              tour_datetime: bookingData.tour_datetime,
+              tourDateValue,
+              type: typeof tourDateValue,
+            });
+            
+            if (tourDateValue) {
+              const dateObj = new Date(tourDateValue);
+              const isValidDate = !isNaN(dateObj.getTime()) && dateObj.getTime() !== 0;
+              
+              console.log('Date validation:', {
+                dateObj: dateObj.toISOString(),
+                isValidDate,
+                timestamp: dateObj.getTime(),
+              });
+              
+              if (isValidDate) {
+                // Format date as MM-DD-YYYY for JotForm
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                const year = dateObj.getFullYear();
+                const formattedDate = `${month}-${day}-${year}`;
+                
+                params.append(FIELD_TOUR_DATE, formattedDate);
+                console.log(`✓ Added tour date: ${FIELD_TOUR_DATE} = "${formattedDate}"`);
+                console.log('Date processing:', {
+                  original: tourDateValue,
+                  formatted: formattedDate,
+                  format: 'MM-DD-YYYY',
+                  dateObj: dateObj.toISOString(),
+                });
+              } else {
+                console.log('✗ Invalid tour date:', {
+                  value: tourDateValue,
+                  parsed: dateObj.toISOString(),
+                  timestamp: dateObj.getTime(),
+                });
+              }
+            } else {
+              console.log('✗ No tour date available:', {
+                booking_date: bookingData.booking_date,
+                tour_datetime: bookingData.tour_datetime,
+              });
+            }
+            
+            const queryString = params.toString();
+            const finalUrl = queryString ? `${baseUrl}?${queryString}` : baseUrl;
+            
+            console.log('=== FINAL JOTFORM URL ===');
+            console.log('Base URL:', baseUrl);
+            console.log('Query String:', queryString);
+            console.log('Full URL:', finalUrl);
+            console.log('All Parameters:', Object.fromEntries(params));
+            console.log('Parameter count:', params.toString().split('&').length);
+            console.log('=== JOTFORM PRE-FILL DEBUG END ===');
+            
+            setJotFormUrl(finalUrl);
+          } else {
+            console.log('Not building JotForm URL:', {
+              isOpMaat: opMaatValue,
+              hasFormId: !!process.env.NEXT_PUBLIC_JOTFORM_ID,
+            });
+          }
+          
+          // Fetch upsell product details if there are any
+          if (upsellProducts && upsellProducts.length > 0) {
+            console.log('Fetching upsell product details for:', upsellProducts.length, 'products');
+            await fetchUpsellProductDetails(upsellProducts);
+          } else {
+            console.log('No upsell products found in booking');
+          }
         } else {
-          console.error('Failed to fetch booking:', await bookingResponse.text());
+          console.error('No booking found for session:', sessionId);
         }
       } catch (error) {
         console.error('Error fetching booking:', error);

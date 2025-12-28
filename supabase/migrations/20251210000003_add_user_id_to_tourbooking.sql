@@ -48,3 +48,4 @@ CREATE POLICY "Users can view own bookings"
 
 
 
+
