@@ -224,6 +224,7 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
           open={dialogOpen}
           onOpenChange={handleDialogClose}
           defaultBookingDate={selectedBooking.booking_date}
+          existingTourBookingId={selectedBooking.booking_id || undefined}
           citySlug={citySlug}
         />
       )}

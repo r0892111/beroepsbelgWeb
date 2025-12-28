@@ -44,6 +44,7 @@ serve(async (req: Request) => {
       opMaat = false,
       upsellProducts = [], // Array of { id, title, quantity, price }
       opMaatAnswers = null, // Op maat specific answers
+      existingTourBookingId = null, // Existing tourbooking ID (for local stories - passed from frontend)
     } = await req.json()
 
     // Log received booking data for debugging
@@ -366,8 +367,9 @@ serve(async (req: Request) => {
 
     // Check if this is a local stories tour (local_stories = true)
     const isLocalStoriesTour = tour.local_stories === true;
-    let existingLocalBooking: any = null;
+    let existingTourBooking: any = null;
     let saturdayDateStr: string = '';
+    let saturdayDateTime: string = '';
     
     if (isLocalStoriesTour && bookingDate) {
       // Use combined datetime if available, otherwise use bookingDate
@@ -384,34 +386,87 @@ serve(async (req: Request) => {
         // Validate the date is valid before using it
         if (!isNaN(bookingDateObj.getTime())) {
           saturdayDateStr = bookingDateObj.toISOString().split('T')[0];
+          saturdayDateTime = `${saturdayDateStr}T14:00:00`; // Always 14:00 for local stories
         }
       }
       
-      if (saturdayDateStr) {
-        // For local stories tours, check if local_tours_booking exists for this Saturday
-        const { data: localBooking, error: localBookingError } = await supabase
-          .from('local_tours_bookings')
-          .select('*')
+      // If existingTourBookingId is passed from frontend, use it directly
+      if (existingTourBookingId) {
+        const { data: existingBooking, error: existingBookingError } = await supabase
+          .from('tourbooking')
+          .select('id, invitees, tour_datetime')
+          .eq('id', existingTourBookingId)
           .eq('tour_id', tourId)
-          .eq('booking_date', saturdayDateStr)
           .single();
         
-        if (localBookingError && localBookingError.code !== 'PGRST116') { // PGRST116 = no rows returned
-          console.error('Error checking local tours booking:', localBookingError);
-        } else {
-          existingLocalBooking = localBooking;
+        if (existingBookingError) {
+          console.error('Error fetching existing tourbooking by ID:', existingBookingError);
+        } else if (existingBooking) {
+          existingTourBooking = existingBooking;
+          console.log('Found existing tourbooking by ID:', {
+            tourbookingId: existingTourBooking.id,
+            existingInviteesCount: existingTourBooking.invitees?.length || 0,
+            saturdayDateStr,
+          });
+        }
+      } else if (saturdayDateStr) {
+        // Fallback: If no ID passed, check by date (for backwards compatibility)
+        const { data: existingBookings, error: existingBookingError } = await supabase
+          .from('tourbooking')
+          .select('id, invitees, tour_datetime')
+          .eq('tour_id', tourId)
+          .gte('tour_datetime', `${saturdayDateStr}T00:00:00`)
+          .lt('tour_datetime', `${saturdayDateStr}T23:59:59`);
+        
+        if (existingBookingError) {
+          console.error('Error checking existing tourbooking for local stories:', existingBookingError);
+        } else if (existingBookings && existingBookings.length > 0) {
+          // Found existing tourbooking for this Saturday - use the first one
+          existingTourBooking = existingBookings[0];
+          console.log('Found existing tourbooking for local stories Saturday (by date):', {
+            tourbookingId: existingTourBooking.id,
+            existingInviteesCount: existingTourBooking.invitees?.length || 0,
+            saturdayDateStr,
+          });
         }
       }
     }
 
-    // Insert booking into tourbooking table FIRST to get the booking ID
-    const { data: createdBooking, error: bookingError } = await supabase
-      .from('tourbooking')
-      .insert(bookingData)
-      .select('id, invitees')
-      .single();
+    // For local stories tours, use existing tourbooking or create new one
+    let createdBooking: any = null;
+    let bookingError: any = null;
+    
+    if (isLocalStoriesTour && existingTourBooking) {
+      // Use existing tourbooking - update stripe_session_id so webhook can find it
+      // and we'll append the new invitee later
+      const { data: updatedBooking, error: updateError } = await supabase
+        .from('tourbooking')
+        .update({ stripe_session_id: session.id })
+        .eq('id', existingTourBooking.id)
+        .select('id, invitees')
+        .single();
+      
+      if (updateError) {
+        console.error('Error updating stripe_session_id on existing tourbooking:', updateError);
+        // Fall back to using existing booking without update
+        createdBooking = existingTourBooking;
+      } else {
+        createdBooking = updatedBooking;
+        console.log('Using existing tourbooking for local stories (stripe_session_id updated):', createdBooking.id);
+      }
+    } else {
+      // Insert new booking into tourbooking table
+      const result = await supabase
+        .from('tourbooking')
+        .insert(bookingData)
+        .select('id, invitees')
+        .single();
+      
+      createdBooking = result.data;
+      bookingError = result.error;
+    }
 
-    // Verify opMaatAnswers were saved correctly
+    // Verify opMaatAnswers were saved correctly (only for new bookings)
     const savedInvitees = createdBooking?.invitees || [];
     const savedOpMaatAnswers = savedInvitees[0]?.opMaatAnswers || null;
 
@@ -420,6 +475,7 @@ serve(async (req: Request) => {
       bookingError,
       hasBookingId: !!createdBooking?.id,
       bookingId: createdBooking?.id,
+      usingExistingTourBooking: !!existingTourBooking,
       opMaatAnswersSaved: !!savedOpMaatAnswers,
       savedOpMaatAnswers: savedOpMaatAnswers ? {
         startEnd: savedOpMaatAnswers.startEnd ? '✓' : '✗',
@@ -432,7 +488,7 @@ serve(async (req: Request) => {
     if (bookingError) {
       console.error('Error creating booking:', bookingError)
     } else if (createdBooking?.id) {
-      console.log('Booking created successfully, ID:', createdBooking.id);
+      console.log('Booking created/retrieved successfully, ID:', createdBooking.id);
       
       // Check if this is a local stories tour
       if (isLocalStoriesTour && saturdayDateStr) {
@@ -441,7 +497,8 @@ serve(async (req: Request) => {
           bookingDate,
           bookingDateTime,
           saturdayDateStr,
-          hasExistingLocalBooking: !!existingLocalBooking,
+          saturdayDateTime,
+          usingExistingTourBooking: !!existingTourBooking,
         });
         
         // Extract time from combined datetime if available, otherwise use bookingTime or default to 14:00
@@ -455,7 +512,93 @@ serve(async (req: Request) => {
           bookingTimeStr = `${bookingTime}:00`; // Add seconds
         }
         
-        // Now update or create local_tours_bookings entry with the booking_id
+        // For local stories tours, always ensure the invitee is added to the tourbooking's invitees list
+        const newInvitee = {
+          name: customerName,
+          email: customerEmail,
+          phone: customerPhone || null,
+          numberOfPeople: numberOfPeople,
+          language: opMaat ? 'nl' : language,
+          specialRequests: opMaat ? null : (specialRequests || null),
+          requestTanguy: requestTanguy,
+          amount: tour.price * numberOfPeople,
+          currency: 'eur',
+          upsellProducts: upsellProducts.length > 0 ? upsellProducts : undefined,
+          opMaatAnswers: opMaatAnswers || null,
+        };
+        
+        if (existingTourBooking && createdBooking.id === existingTourBooking.id) {
+          // Using existing tourbooking - append new invitee to existing invitees array
+          const existingInvitees = existingTourBooking.invitees || [];
+          const updatedInvitees = [...existingInvitees, newInvitee];
+          
+          // Update tourbooking with new invitee added
+          const { error: updateInviteesError } = await supabase
+            .from('tourbooking')
+            .update({ invitees: updatedInvitees })
+            .eq('id', createdBooking.id);
+          
+          if (updateInviteesError) {
+            console.error('Error updating invitees for existing tourbooking:', updateInviteesError);
+          } else {
+            console.log('Successfully added new invitee to existing tourbooking:', {
+              tourbookingId: createdBooking.id,
+              totalInvitees: updatedInvitees.length,
+            });
+          }
+        } else {
+          // New tourbooking - ensure invitee is in the invitees array and tour_datetime is set correctly
+          const currentInvitees = createdBooking?.invitees || [];
+          // Check if this invitee already exists (by email) to avoid duplicates
+          const inviteeExists = currentInvitees.some((inv: any) => inv.email === customerEmail);
+          
+          if (!inviteeExists) {
+            // Add the invitee if it doesn't already exist
+            const updatedInvitees = [...currentInvitees, newInvitee];
+            
+            const updateData: any = {
+              invitees: updatedInvitees,
+            };
+            
+            // Also set tour_datetime if we have it
+            if (saturdayDateTime) {
+              updateData.tour_datetime = saturdayDateTime;
+            }
+            
+            const { error: updateError } = await supabase
+              .from('tourbooking')
+              .update(updateData)
+              .eq('id', createdBooking.id);
+            
+            if (updateError) {
+              console.error('Error updating invitees/tour_datetime for new local stories tourbooking:', updateError);
+            } else {
+              console.log('Successfully added invitee to new local stories tourbooking:', {
+                tourbookingId: createdBooking.id,
+                totalInvitees: updatedInvitees.length,
+                tour_datetime: saturdayDateTime,
+              });
+            }
+          } else {
+            // Invitee already exists, just update tour_datetime if needed
+            if (saturdayDateTime) {
+              const { error: updateDateTimeError } = await supabase
+                .from('tourbooking')
+                .update({ tour_datetime: saturdayDateTime })
+                .eq('id', createdBooking.id);
+              
+              if (updateDateTimeError) {
+                console.error('Error updating tour_datetime for new local stories booking:', updateDateTimeError);
+              }
+            }
+            console.log('Invitee already exists in tourbooking, skipping duplicate add:', {
+              tourbookingId: createdBooking.id,
+              customerEmail,
+            });
+          }
+        }
+        
+        // Always create a new local_tours_bookings entry linking to the tourbooking
         const localToursBookingData: any = {
           tour_id: tourId,
           booking_date: saturdayDateStr,
@@ -465,80 +608,36 @@ serve(async (req: Request) => {
           customer_name: customerName,
           customer_email: customerEmail,
           customer_phone: customerPhone || null,
-          stripe_session_id: session.id,
-          booking_id: createdBooking.id, // Link to the tourbooking entry
-          amnt_of_people: numberOfPeople, // Store the number of people for this booking
+          stripe_session_id: session.id, // Stripe checkout session ID for direct lookup
+          booking_id: createdBooking.id, // Link to the tourbooking entry (same for all bookings on same Saturday)
+          amnt_of_people: numberOfPeople, // Store the number of people for this specific booking
         };
         
         if (userId) {
           localToursBookingData.user_id = userId;
         }
         
-        console.log('Local stories booking - updating with booking_id:', {
-          exists: !!existingLocalBooking,
-          existingId: existingLocalBooking?.id,
-          bookingId: createdBooking.id,
+        console.log('Creating local_tours_bookings entry:', {
+          tourbookingId: createdBooking.id,
           bookingData: localToursBookingData,
         });
         
-        let localToursBookingId: string | null = null;
+        // Create new local_tours_bookings entry (multiple entries can link to same tourbooking)
+        const { data: newLocalBooking, error: insertError } = await supabase
+          .from('local_tours_bookings')
+          .insert(localToursBookingData)
+          .select()
+          .single();
         
-        if (existingLocalBooking) {
-          // Update existing booking with booking_id reference
-          const { data: updatedBooking, error: updateError } = await supabase
-            .from('local_tours_bookings')
-            .update(localToursBookingData)
-            .eq('id', existingLocalBooking.id)
-            .select()
-            .single();
-          
-          if (updateError) {
-            console.error('Error updating local tours booking:', updateError);
-            console.error('Update error details:', JSON.stringify(updateError, null, 2));
-          } else {
-            localToursBookingId = updatedBooking.id;
-            console.log('Successfully updated local tours booking with booking_id:', updatedBooking);
-            console.log('Updated booking_id value:', updatedBooking?.booking_id);
-            console.log('Local tours booking ID:', localToursBookingId);
-          }
+        if (insertError) {
+          console.error('Error creating local tours booking:', insertError);
+          console.error('Insert error details:', JSON.stringify(insertError, null, 2));
         } else {
-          // Create new booking if it doesn't exist (shouldn't happen normally, but handle it)
-          const { data: newBooking, error: insertError } = await supabase
-            .from('local_tours_bookings')
-            .insert(localToursBookingData)
-            .select()
-            .single();
-          
-          if (insertError) {
-            console.error('Error creating local tours booking:', insertError);
-            console.error('Insert error details:', JSON.stringify(insertError, null, 2));
-          } else {
-            localToursBookingId = newBooking.id;
-            console.log('Successfully created local tours booking with booking_id:', newBooking);
-            console.log('Created booking_id value:', newBooking?.booking_id);
-            console.log('Local tours booking ID:', localToursBookingId);
-          }
-        }
-        
-        // Now update tourbooking to link back to local_tours_bookings
-        if (localToursBookingId) {
-          const { data: updatedTourBooking, error: updateTourBookingError } = await supabase
-            .from('tourbooking')
-            .update({ local_tours_booking_id: localToursBookingId })
-            .eq('id', createdBooking.id)
-            .select()
-            .single();
-          
-          if (updateTourBookingError) {
-            console.error('Error updating tourbooking with local_tours_booking_id:', updateTourBookingError);
-            console.error('Update tourbooking error details:', JSON.stringify(updateTourBookingError, null, 2));
-          } else {
-            console.log('Successfully linked tourbooking to local_tours_bookings:', {
-              tourbookingId: createdBooking.id,
-              localToursBookingId: localToursBookingId,
-              updatedTourBooking,
-            });
-          }
+          console.log('Successfully created local_tours_bookings entry:', {
+            localToursBookingId: newLocalBooking.id,
+            tourbookingId: createdBooking.id,
+            bookingDate: saturdayDateStr,
+          });
         }
       } else {
         console.log('Not a local stories tour or missing bookingDate:', {
