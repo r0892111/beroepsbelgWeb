@@ -7,32 +7,38 @@
  * - Clean typography
  * - Custom "Mint Brush Stroke" Separator with Shape Divider
  */
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingCart, Heart } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
+import { supabase } from '@/lib/supabase/client';
 
-// --- Assets & Data ---
-const ASSETS = {
-  webshop1: "https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766435864572-30c172aa/Webshop1.png",
-  webshop2: "https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766435864798-db55c84b/Webshop2.jpg",
-  webshop3: "https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766435865022-a57f5b18/Webshop3.jpg",
-  webshop4: "https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766435865264-a96aaf9f/Webshop4.jpg",
-  webshop5: "https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766437288548-1ca4ac00/Webshop5.png",
-  webshop6: "https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766437288770-dd6b8700/Webshop6.jpg",
-  webshop7: "https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766437288978-900da839/Webshop7.jpg",
-};
+// --- Types ---
+interface ProductImage {
+  id: string;
+  url: string;
+  is_primary?: boolean;
+  sort_order?: number;
+}
 
-const PRODUCTS = [
-  { id: "001", title: "ANTWERPEN ZWART/WIT", subtitle: "ORGANIC FORM VESSEL", price: "€250", image: ASSETS.webshop4 },
-  { id: "002", title: "NELLO & PATRASCHE", subtitle: "TEXTURED THROW", price: "€120", image: ASSETS.webshop2 },
-  { id: "003", title: "STUDIO LIGHT", subtitle: "BRASS EDITION", price: "€180", image: ASSETS.webshop3 },
-  { id: "004", title: "ONDERNEMEN IN 'T STAD", subtitle: "CREATIVE SUITE", price: "€95", image: ASSETS.webshop1 },
-  { id: "005", title: "UITGAAN", subtitle: "NIGHT GUIDE", price: "€60", image: ASSETS.webshop5 },
-  { id: "006", title: "KNOKKE", subtitle: "COASTAL SERIES", price: "€45", image: ASSETS.webshop6 },
-  { id: "007", title: "LEUVEN", subtitle: "ACADEMIC HERITAGE", price: "€75", image: ASSETS.webshop7 },
-  { id: "008", title: "DESIGN COLLECTION", subtitle: "LIMITED ARCHIVE", price: "€140", image: ASSETS.webshop3 }, // Reusing asset for 8th item
-];
+interface WebshopProduct {
+  uuid: string;
+  Name: string;
+  Category: string;
+  "Price (EUR)": string;
+  Description: string;
+  "Additional Info": string;
+  product_images?: ProductImage[] | null;
+}
+
+interface DisplayProduct {
+  id: string;
+  title: string;
+  subtitle: string;
+  category: string;
+  price: string;
+  image: string;
+}
 
 // --- Components ---
 
@@ -76,24 +82,42 @@ const ProductCard = ({
       {/* Bordered Container - Wraps Image AND Text */}
       <div className="flex flex-col h-full border border-[#1a3628] bg-[#F0F0EB] p-4 group transition-all duration-300 hover:shadow-lg">
         {/* Image Container */}
-        <div className={`relative w-full ${aspect} mb-4 overflow-hidden border border-[#1a3628]/10 ${imageClassName}`}>
-          <img
-            src={product.image}
-            alt={product.title}
-            className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
-          />
+        <div className={`relative w-full ${aspect} mb-4 overflow-hidden border border-[#1a3628]/10 ${imageClassName} bg-[#1a3628]/5`}>
+          {product.image ? (
+            <img
+              src={product.image}
+              alt={product.title}
+              className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+              onError={(e) => {
+                // Fallback to placeholder if image fails to load
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+              }}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-[#1a3628]/30">
+              <span className="text-xs uppercase tracking-wider">No Image</span>
+            </div>
+          )}
         </div>
 
         {/* Info Area - Now Inside */}
         <div className="mt-auto flex flex-col gap-2">
+          {/* Product Name */}
           <div className="text-sm font-sans font-medium text-[#1a3628] uppercase tracking-wide truncate">
-            <span className="hidden md:inline">NO. {product.id} — </span>
-            {showSubtitle && product.subtitle}
+            {product.title}
           </div>
-          {!showSubtitle && (
-             <div className="text-sm font-sans font-medium text-[#1a3628] uppercase tracking-wide truncate">
-                {product.title}
-             </div>
+          {/* Category */}
+          {product.category && (
+            <div className="text-xs font-sans font-normal text-[#1a3628]/70 uppercase tracking-wide truncate">
+              {product.category}
+            </div>
+          )}
+          {/* Subtitle if exists */}
+          {showSubtitle && product.subtitle && (
+            <div className="text-xs font-sans font-normal text-[#1a3628]/60 uppercase tracking-wide truncate">
+              {product.subtitle}
+            </div>
           )}
           
           <div className="flex justify-between items-end mt-2">
@@ -164,6 +188,73 @@ function SeparatorWave() {
 
 export function ShopSection() {
   const t = useTranslations('shop');
+  const locale = useLocale();
+  const [products, setProducts] = useState<DisplayProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch products from webshop_data table
+        const { data, error: fetchError } = await supabase
+          .from('webshop_data')
+          .select('uuid, Name, Category, "Price (EUR)", Description, "Additional Info", product_images')
+          .order('Name', { ascending: true })
+          .limit(8); // Limit to 8 products for the grid
+
+        if (fetchError) {
+          console.error('Error fetching products:', fetchError);
+          setError('Failed to load products');
+          return;
+        }
+
+        // Transform database products to display format
+        const displayProducts: DisplayProduct[] = (data || []).map((product: WebshopProduct, index: number) => {
+          // Get primary image or first image from product_images
+          let imageUrl = '';
+          if (product.product_images && Array.isArray(product.product_images) && product.product_images.length > 0) {
+            const primaryImage = product.product_images.find(img => img.is_primary) || product.product_images[0];
+            imageUrl = primaryImage.url || '';
+          }
+
+          // Format price (European format: €21,94)
+          const priceValue = parseFloat(product["Price (EUR)"]) || 0;
+          const formattedPrice = priceValue > 0 
+            ? `€${priceValue.toFixed(2).replace('.', ',')}` 
+            : '€0,00';
+
+          // Extract title and subtitle from Name
+          // If Name contains " — " or " - ", split it; otherwise use full Name as title
+          const nameParts = product.Name.split(/[—–-]/).map(s => s.trim());
+          const title = nameParts[0] || product.Name;
+          const subtitle = nameParts.length > 1 ? nameParts.slice(1).join(' — ') : '';
+
+          return {
+            id: product.uuid,
+            title: title.toUpperCase(),
+            subtitle: subtitle.toUpperCase(),
+            category: product.Category || '',
+            price: formattedPrice,
+            image: imageUrl,
+          };
+        });
+
+        setProducts(displayProducts);
+      } catch (err) {
+        console.error('Error fetching products:', err);
+        setError('Failed to load products');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    void fetchProducts();
+  }, [locale]);
+
   return (
     <section className="relative w-full bg-[#F9F9F5]">
       <SeparatorWave />
@@ -187,14 +278,30 @@ export function ShopSection() {
 
       {/* Product Grid - 2x4 Layout (4 cols on desktop) */}
       <div className="container mx-auto px-4 lg:px-8 mb-20">
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 lg:gap-8">
-          {PRODUCTS.map((product) => (
-            <ProductCard 
-              key={product.id} 
-              product={product} 
-            />
-          ))}
-        </div>
+        {loading ? (
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 lg:gap-8">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="h-[400px] bg-[#F0F0EB] border border-[#1a3628] animate-pulse" />
+            ))}
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-[#1a3628] font-sans">{error}</p>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-[#1a3628] font-sans">{t('noProducts') || 'No products available'}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 lg:gap-8">
+            {products.map((product) => (
+              <ProductCard 
+                key={product.id} 
+                product={product} 
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Marquee Banner */}
