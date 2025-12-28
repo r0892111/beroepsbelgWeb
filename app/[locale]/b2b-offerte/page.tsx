@@ -540,7 +540,7 @@ export default function B2BQuotePage() {
           <div className="mb-8 text-center">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-navy" style={{ backgroundColor: 'var(--brass-light)' }}>
               <Sparkles className="h-4 w-4" />
-              B2B Offertes
+              Offertes
             </div>
             <h1 className="mb-3 text-4xl font-bold font-serif text-navy">{t('title')}</h1>
             <p className="text-lg" style={{ color: 'var(--slate-blue)' }}>{t('subtitle')}</p>

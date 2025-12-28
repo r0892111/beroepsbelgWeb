@@ -8,7 +8,7 @@
     "jobs": "Emplois",
     "blog": "Blog",
     "contact": "Contact",
-    "b2b": "Devis B2B",
+    "b2b": "Devis",
     "terms": "Conditions générales",
     "account": "Compte",
     "favorites": "Favoris",
@@ -266,7 +266,7 @@
     "loading": "Chargement..."
   },
   "b2b": {
-    "title": "Demander un Devis B2B",
+    "title": "Demander un Devis",
     "subtitle": "Demandez un devis pour votre sortie d'entreprise, groupe scolaire ou événement",
     "dateTime": "Date et heure",
     "dateTimeHelper": "Sélectionnez votre date et heure préférées",
@@ -297,7 +297,7 @@
     "success": "Merci! Nous vous contacterons dans les plus brefs délais.",
     "error": "Quelque chose s'est mal passé. Veuillez réessayer.",
     "successTitle": "Demande de devis reçue!",
-    "successMessage": "Merci pour votre intérêt. Nous avons bien reçu votre demande et nous vous contacterons dans les plus brefs délais pour discuter de votre tour B2B.",
+    "successMessage": "Merci pour votre intérêt. Nous avons bien reçu votre demande et nous vous contacterons dans les plus brefs délais pour discuter de votre tour.",
     "redirecting": "Vous serez redirigé vers la boutique dans {seconds} secondes...",
     "backToHome": "Retour à l'accueil",
     "exploreWebshop": "Découvrir la boutique",
