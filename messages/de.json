@@ -8,7 +8,7 @@
     "jobs": "Jobs",
     "blog": "Blog",
     "contact": "Kontakt",
-    "b2b": "B2B Angebot",
+    "b2b": "Angebot",
     "terms": "Allgemeine Geschäftsbedingungen",
     "account": "Konto",
     "favorites": "Favoriten",
@@ -266,7 +266,7 @@
     "loading": "Laden..."
   },
   "b2b": {
-    "title": "B2B Angebot Anfordern",
+    "title": "Angebot Anfordern",
     "subtitle": "Fordern Sie ein Angebot für Ihren Betriebsausflug, Ihre Schulgruppe oder Veranstaltung an",
     "dateTime": "Datum und Uhrzeit",
     "dateTimeHelper": "Wählen Sie Ihr bevorzugtes Datum und Uhrzeit",
@@ -297,7 +297,7 @@
     "success": "Vielen Dank! Wir werden uns so schnell wie möglich bei Ihnen melden.",
     "error": "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut.",
     "successTitle": "Angebotsanfrage erhalten!",
-    "successMessage": "Vielen Dank für Ihr Interesse. Wir haben Ihre Anfrage erhalten und werden uns so schnell wie möglich mit Ihnen in Verbindung setzen, um Ihre B2B-Tour zu besprechen.",
+    "successMessage": "Vielen Dank für Ihr Interesse. Wir haben Ihre Anfrage erhalten und werden uns so schnell wie möglich mit Ihnen in Verbindung setzen, um Ihre Tour zu besprechen.",
     "redirecting": "Sie werden in {seconds} Sekunden zum Webshop weitergeleitet...",
     "backToHome": "Zurück zur Startseite",
     "exploreWebshop": "Webshop erkunden",

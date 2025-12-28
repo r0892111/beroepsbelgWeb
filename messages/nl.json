@@ -8,7 +8,7 @@
     "jobs": "Jobs",
     "blog": "Blog",
     "contact": "Contact",
-    "b2b": "B2B Offerte",
+    "b2b": "Offerte",
     "terms": "Algemene voorwaarden",
     "account": "Account",
     "favorites": "Favorieten",
@@ -306,7 +306,7 @@
     "loading": "Laden..."
   },
   "b2b": {
-    "title": "B2B Offerte Aanvragen",
+    "title": "Offerte Aanvragen",
     "subtitle": "Vraag een offerte aan voor uw bedrijfsuitje, schoolgroep of evenement",
     "dateTime": "Datum en tijdstip",
     "dateTimeHelper": "Selecteer uw gewenste datum en tijd",
@@ -393,7 +393,7 @@
     "success": "Bedankt! We nemen zo snel mogelijk contact met u op.",
     "error": "Er is iets misgegaan. Probeer het opnieuw.",
     "successTitle": "Offerte aanvraag ontvangen!",
-    "successMessage": "Bedankt voor uw interesse. We hebben uw aanvraag in goede orde ontvangen en nemen zo snel mogelijk contact met u op om uw B2B tour te bespreken.",
+    "successMessage": "Bedankt voor uw interesse. We hebben uw aanvraag in goede orde ontvangen en nemen zo snel mogelijk contact met u op om uw tour te bespreken.",
     "redirecting": "U wordt over {seconds} seconden doorgestuurd naar de webshop...",
     "backToHome": "Terug naar home",
     "exploreWebshop": "Bekijk webshop",

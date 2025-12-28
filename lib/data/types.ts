@@ -30,6 +30,7 @@ export type Tour = {
   updatedAt?: string;
   image?: string; // Primary image URL for display
   tourImages?: TourImage[]; // All tour images
+  displayOrder?: number; // Display order within city (lower numbers appear first)
   options?: {
     thumbnail?: string;
     badge?: string;

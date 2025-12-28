@@ -109,9 +109,13 @@ export async function getCities(): Promise<City[]> {
 
 export async function getTours(citySlug?: string): Promise<Tour[]> {
   // Fetch all tours first, then filter client-side for better matching
+  // Order by city, then display_order (NULLS LAST), then created_at for consistent ordering
   const { data, error } = await supabaseServer
     .from('tours_table_prod')
-    .select('*');
+    .select('*')
+    .order('city', { ascending: true })
+    .order('display_order', { ascending: true, nullsFirst: false })
+    .order('created_at', { ascending: true });
   if (error) {
     throw error;
   }
@@ -149,6 +153,7 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
       updatedAt: row.updated_at,
       image: imageUrl, // Use primary image from database if available
       tourImages: tourImages.length > 0 ? tourImages : undefined,
+      displayOrder: row.display_order ? Number(row.display_order) : undefined,
       options: row.options,
     };
   });

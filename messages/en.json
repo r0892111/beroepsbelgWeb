@@ -8,7 +8,7 @@
     "jobs": "Jobs",
     "blog": "Blog",
     "contact": "Contact",
-    "b2b": "B2B Quote",
+    "b2b": "Quote",
     "terms": "Terms & Conditions",
     "account": "Account",
     "favorites": "Favorites",
@@ -266,7 +266,7 @@
     "loading": "Loading..."
   },
   "b2b": {
-    "title": "Request a B2B Quote",
+    "title": "Request a Quote",
     "subtitle": "Request a quote for your company outing, school group or event",
     "dateTime": "Date and time",
     "dateTimeHelper": "Select your preferred date and time",
@@ -297,7 +297,7 @@
     "success": "Thank you! We will contact you as soon as possible.",
     "error": "Something went wrong. Please try again.",
     "successTitle": "Quote request received!",
-    "successMessage": "Thank you for your interest. We have received your request and will contact you as soon as possible to discuss your B2B tour.",
+    "successMessage": "Thank you for your interest. We have received your request and will contact you as soon as possible to discuss your tour.",
     "redirecting": "You will be redirected to the webshop in {seconds} seconds...",
     "backToHome": "Back to home",
     "exploreWebshop": "Explore webshop",

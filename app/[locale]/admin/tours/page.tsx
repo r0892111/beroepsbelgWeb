@@ -12,10 +12,27 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, MapPin, X, Search, Image } from 'lucide-react';
+import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, MapPin, X, Search, Image, GripVertical, ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface Tour {
   id: string;
@@ -32,6 +49,7 @@ interface Tour {
   options: Record<string, any> | null;
   created_at: string | null;
   updated_at: string | null;
+  display_order: number | null;
 }
 
 interface TourFormData {
@@ -64,11 +82,20 @@ export default function AdminToursPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTour, setEditingTour] = useState<Tour | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [expandedCities, setExpandedCities] = useState<Set<string>>(new Set());
 
   // Filter and search state
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCity, setFilterCity] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Form state
   const [formData, setFormData] = useState<TourFormData>({
@@ -98,7 +125,9 @@ export default function AdminToursPage() {
       const { data, error: fetchError } = await supabase
         .from('tours_table_prod')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('city', { ascending: true })
+        .order('display_order', { ascending: true, nullsFirst: false })
+        .order('created_at', { ascending: true });
 
       if (fetchError) {
         console.error('Failed to fetch tours:', fetchError);
@@ -107,7 +136,12 @@ export default function AdminToursPage() {
       }
 
       console.log('Fetched tours:', data);
-      setTours((data as Tour[]) || []);
+      const fetchedTours = (data as Tour[]) || [];
+      setTours(fetchedTours);
+      
+      // Expand all cities by default
+      const cities = new Set(fetchedTours.map(t => t.city));
+      setExpandedCities(cities);
     } catch (err) {
       console.error('Failed to fetch tours:', err);
       setError('Failed to load tours');
@@ -264,6 +298,166 @@ export default function AdminToursPage() {
     return `${mins}m`;
   };
 
+  // Group tours by city
+  const toursByCity = filteredTours.reduce((acc, tour) => {
+    if (!acc[tour.city]) {
+      acc[tour.city] = [];
+    }
+    acc[tour.city].push(tour);
+    return acc;
+  }, {} as Record<string, Tour[]>);
+
+  // Sort cities alphabetically
+  const sortedCities = Object.keys(toursByCity).sort();
+
+  const toggleCity = (city: string) => {
+    setExpandedCities(prev => {
+      const next = new Set(prev);
+      if (next.has(city)) {
+        next.delete(city);
+      } else {
+        next.add(city);
+      }
+      return next;
+    });
+  };
+
+  const handleDragEnd = async (event: DragEndEvent, city: string) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const cityTours = toursByCity[city];
+    const oldIndex = cityTours.findIndex(t => t.id === active.id);
+    const newIndex = cityTours.findIndex(t => t.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) {
+      return;
+    }
+
+    // Optimistically update UI
+    const reorderedTours = arrayMove(cityTours, oldIndex, newIndex);
+    const updatedTours = tours.map(tour => {
+      if (tour.city === city) {
+        const newTour = reorderedTours.find(rt => rt.id === tour.id);
+        return newTour || tour;
+      }
+      return tour;
+    });
+    setTours(updatedTours);
+
+    // Update display_order in database
+    try {
+      const updates = reorderedTours.map((tour, index) => ({
+        id: tour.id,
+        display_order: index + 1,
+      }));
+
+      // Update all tours in this city with their new display_order
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('tours_table_prod')
+          .update({ display_order: update.display_order })
+          .eq('id', update.id);
+
+        if (error) {
+          console.error('Failed to update display_order:', error);
+          throw error;
+        }
+      }
+
+      toast.success(`Tour order updated for ${city}`);
+    } catch (err) {
+      console.error('Failed to update tour order:', err);
+      toast.error('Failed to update tour order');
+      // Revert on error
+      void fetchTours();
+    }
+  };
+
+  // Sortable Tour Item Component
+  const SortableTourItem = ({ tour, city }: { tour: Tour; city: string }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: tour.id });
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+      <TableRow
+        ref={setNodeRef}
+        style={style}
+        className={isDragging ? 'bg-gray-100' : ''}
+      >
+        <TableCell className="w-8">
+          <div
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-200 rounded"
+          >
+            <GripVertical className="h-4 w-4 text-gray-400" />
+          </div>
+        </TableCell>
+        <TableCell>
+          <Badge variant="outline">{tour.city}</Badge>
+        </TableCell>
+        <TableCell className="font-medium max-w-xs">
+          <div className="truncate">{tour.title}</div>
+        </TableCell>
+        <TableCell>
+          <Badge className="bg-blue-100 text-blue-900">{tour.type}</Badge>
+        </TableCell>
+        <TableCell>{formatDuration(tour.duration_minutes)}</TableCell>
+        <TableCell>
+          {tour.price ? `€${tour.price.toFixed(2)}` : 'N/A'}
+        </TableCell>
+        <TableCell>
+          <div className="flex flex-wrap gap-1 max-w-xs">
+            {tour.languages && Array.isArray(tour.languages) && tour.languages.length > 0 ? (
+              tour.languages.map((lang, idx) => (
+                <Badge key={idx} variant="outline" className="text-xs">
+                  {lang}
+                </Badge>
+              ))
+            ) : (
+              <span className="text-sm text-muted-foreground">None</span>
+            )}
+          </div>
+        </TableCell>
+        <TableCell>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => openEditDialog(tour)}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleDelete(tour)}
+              className="text-destructive hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  };
+
   if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
     return null;
   }
@@ -410,71 +604,80 @@ export default function AdminToursPage() {
                 {tours.length === 0 ? 'No tours found' : 'No tours match your filters'}
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>City</TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Duration</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Languages</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredTours.map((tour) => (
-                      <TableRow key={tour.id}>
-                        <TableCell>
-                          <Badge variant="outline">{tour.city}</Badge>
-                        </TableCell>
-                        <TableCell className="font-medium max-w-xs">
-                          <div className="truncate">{tour.title}</div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className="bg-blue-100 text-blue-900">{tour.type}</Badge>
-                        </TableCell>
-                        <TableCell>{formatDuration(tour.duration_minutes)}</TableCell>
-                        <TableCell>
-                          {tour.price ? `€${tour.price.toFixed(2)}` : 'N/A'}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1 max-w-xs">
-                            {tour.languages && Array.isArray(tour.languages) && tour.languages.length > 0 ? (
-                              tour.languages.map((lang, idx) => (
-                                <Badge key={idx} variant="outline" className="text-xs">
-                                  {lang}
-                                </Badge>
-                              ))
+              <div className="space-y-4">
+                {sortedCities.map((city) => {
+                  const cityTours = toursByCity[city];
+                  const isExpanded = expandedCities.has(city);
+                  
+                  return (
+                    <Card key={city} className="overflow-hidden">
+                      <CardHeader
+                        className="cursor-pointer hover:bg-gray-50 transition-colors"
+                        onClick={() => toggleCity(city)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="flex items-center gap-2">
+                            <MapPin className="h-5 w-5" />
+                            {city}
+                            <Badge variant="outline" className="ml-2">
+                              {cityTours.length} {cityTours.length === 1 ? 'tour' : 'tours'}
+                            </Badge>
+                          </CardTitle>
+                          <div className="flex items-center gap-2">
+                            {isExpanded ? (
+                              <ChevronUp className="h-5 w-5 text-gray-400" />
                             ) : (
-                              <span className="text-sm text-muted-foreground">None</span>
+                              <ChevronDown className="h-5 w-5 text-gray-400" />
                             )}
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openEditDialog(tour)}
+                        </div>
+                        <CardDescription>
+                          Drag tours to reorder. The order will be reflected on tour listing pages.
+                        </CardDescription>
+                      </CardHeader>
+                      {isExpanded && (
+                        <CardContent className="p-0">
+                          <div className="overflow-x-auto">
+                            <DndContext
+                              sensors={sensors}
+                              collisionDetection={closestCenter}
+                              onDragEnd={(event) => handleDragEnd(event, city)}
                             >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDelete(tour)}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="w-8"></TableHead>
+                                    <TableHead>City</TableHead>
+                                    <TableHead>Title</TableHead>
+                                    <TableHead>Type</TableHead>
+                                    <TableHead>Duration</TableHead>
+                                    <TableHead>Price</TableHead>
+                                    <TableHead>Languages</TableHead>
+                                    <TableHead>Actions</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  <SortableContext
+                                    items={cityTours.map(t => t.id)}
+                                    strategy={verticalListSortingStrategy}
+                                  >
+                                    {cityTours.map((tour) => (
+                                      <SortableTourItem
+                                        key={tour.id}
+                                        tour={tour}
+                                        city={city}
+                                      />
+                                    ))}
+                                  </SortableContext>
+                                </TableBody>
+                              </Table>
+                            </DndContext>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                        </CardContent>
+                      )}
+                    </Card>
+                  );
+                })}
               </div>
             )}
 
