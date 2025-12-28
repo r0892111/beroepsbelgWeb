@@ -80,11 +80,12 @@ export function ProductDetailDialog({ product, open, onOpenChange }: ProductDeta
       return;
     }
 
-    if (isFavorite(product.slug)) {
-      await removeFavorite(product.slug);
+    // Use UUID as product identifier (consistent with cart system)
+    if (isFavorite(product.uuid)) {
+      await removeFavorite(product.uuid);
       toast.success(t('removeFromFavorites'));
     } else {
-      await addFavorite(product.slug);
+      await addFavorite(product.uuid);
       toast.success(t('addedToFavorites'));
     }
   };
@@ -203,10 +204,10 @@ export function ProductDetailDialog({ product, open, onOpenChange }: ProductDeta
           <Button
             variant="outline"
             onClick={handleToggleFavorite}
-            className={`gap-2 ${isFavorite(product.slug) ? 'text-red-500 border-red-500' : ''}`}
+            className={`gap-2 ${isFavorite(product.uuid) ? 'text-red-500 border-red-500' : ''}`}
           >
-            <Heart className={`h-4 w-4 ${isFavorite(product.slug) ? 'fill-current' : ''}`} />
-            {isFavorite(product.slug) ? tProduct('inFavorites') : tProduct('addToFavorites')}
+            <Heart className={`h-4 w-4 ${isFavorite(product.uuid) ? 'fill-current' : ''}`} />
+            {isFavorite(product.uuid) ? tProduct('inFavorites') : tProduct('addToFavorites')}
           </Button>
           <Button
             onClick={handleAddToCart}

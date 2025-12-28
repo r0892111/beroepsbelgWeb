@@ -11,7 +11,12 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingCart, Heart } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
+import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
+import { useCartContext } from '@/lib/contexts/cart-context';
+import { useAuth } from '@/lib/contexts/auth-context';
+import { useFavoritesContext } from '@/lib/contexts/favorites-context';
+import { toast } from 'sonner';
 
 // --- Types ---
 interface ProductImage {
@@ -33,12 +38,23 @@ interface WebshopProduct {
 
 interface DisplayProduct {
   id: string;
+  uuid: string;
+  slug: string;
   title: string;
   subtitle: string;
   category: string;
   price: string;
   image: string;
 }
+
+// Helper function to generate slug from product name
+const slugify = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 
 // --- Components ---
 
@@ -69,7 +85,7 @@ const ProductCard = ({
   imageClassName = "",
   buttonClassName = "text-xs md:text-sm"
 }: { 
-  product: any, 
+  product: DisplayProduct, 
   aspect?: string, 
   showSubtitle?: boolean,
   className?: string,
@@ -77,6 +93,79 @@ const ProductCard = ({
   buttonClassName?: string
 }) => {
   const t = useTranslations('shop');
+  const tAuth = useTranslations('auth');
+  const router = useRouter();
+  const params = useParams();
+  const locale = params.locale as string;
+  const { user } = useAuth();
+  const { addToCart } = useCartContext();
+  const { isFavorite, addFavorite, removeFavorite, refetch: refetchFavorites, loading: favoritesLoading } = useFavoritesContext();
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
+
+  // Ensure favorites are fetched when user is available or when component mounts
+  useEffect(() => {
+    if (user) {
+      // Refetch favorites to ensure they're up to date
+      refetchFavorites();
+    }
+  }, [user]); // Only depend on user, refetchFavorites is stable
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!user) {
+      router.push(`/${locale}/auth/sign-in`);
+      return;
+    }
+
+    setIsAddingToCart(true);
+    try {
+      const result = await addToCart(product.uuid, 1);
+      if (result.error) {
+        toast.error(tAuth('failedToAddToCart') || 'Failed to add to cart');
+      } else {
+        toast.success(tAuth('addedToCart') || 'Added to cart');
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      toast.error(tAuth('failedToAddToCart') || 'Failed to add to cart');
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
+
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!user) {
+      router.push(`/${locale}/auth/sign-in`);
+      return;
+    }
+
+    // Use UUID as product identifier (consistent with cart system)
+    if (!product.uuid) {
+      console.error('Cannot add favorite: product has no uuid');
+      toast.error('Unable to add to favorites');
+      return;
+    }
+
+    setIsTogglingFavorite(true);
+    try {
+      if (isFavorite(product.uuid)) {
+        await removeFavorite(product.uuid);
+        toast.success(tAuth('removeFromFavorites'));
+      } else {
+        await addFavorite(product.uuid);
+        toast.success(tAuth('addedToFavorites'));
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast.error('Failed to update favorites');
+    } finally {
+      setIsTogglingFavorite(false);
+    }
+  };
   return (
     <div className={`h-full bg-transparent ${className}`}>
       {/* Bordered Container - Wraps Image AND Text */}
@@ -124,13 +213,17 @@ const ProductCard = ({
             <span className="font-sans font-bold text-[#1a3628] text-lg">{product.price}</span>
             <div className="flex gap-2">
               <button
-                className={`${buttonClassName} bg-[#1BDD95] text-white p-2 hover:bg-[#14BE82] transition-colors rounded-full flex items-center justify-center`}
-                aria-label="Add to favorites"
+                onClick={handleToggleFavorite}
+                disabled={isTogglingFavorite}
+                className={`${buttonClassName} bg-[#1BDD95] text-white p-2 hover:bg-[#14BE82] transition-colors rounded-full flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed ${isFavorite(product.uuid) ? 'bg-red-500 hover:bg-red-600' : ''}`}
+                aria-label={isFavorite(product.uuid) ? 'Remove from favorites' : 'Add to favorites'}
               >
-                <Heart size={18} strokeWidth={2.5} />
+                <Heart size={18} strokeWidth={2.5} className={isFavorite(product.uuid) ? 'fill-current' : ''} />
               </button>
               <button
-                className={`${buttonClassName} bg-[#1BDD95] text-white p-2 hover:bg-[#14BE82] transition-colors rounded-full flex items-center justify-center`}
+                onClick={handleAddToCart}
+                disabled={isAddingToCart}
+                className={`${buttonClassName} bg-[#1BDD95] text-white p-2 hover:bg-[#14BE82] transition-colors rounded-full flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed`}
                 aria-label="Add to cart"
               >
                 <ShoppingCart size={18} strokeWidth={2.5} />
@@ -232,9 +325,14 @@ export function ShopSection() {
           const nameParts = product.Name.split(/[—–-]/).map(s => s.trim());
           const title = nameParts[0] || product.Name;
           const subtitle = nameParts.length > 1 ? nameParts.slice(1).join(' — ') : '';
+          
+          // Generate slug from product name
+          const productSlug = slugify(product.Name) || product.uuid;
 
           return {
             id: product.uuid,
+            uuid: product.uuid,
+            slug: productSlug,
             title: title.toUpperCase(),
             subtitle: subtitle.toUpperCase(),
             category: product.Category || '',

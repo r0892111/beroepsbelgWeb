@@ -69,11 +69,25 @@ async function handleEvent(event: Stripe.Event) {
     console.info(`Processing checkout.session.completed: ${sessionId}, mode: ${mode}, status: ${payment_status}`);
 
     if (mode === 'payment' && payment_status === 'paid') {
-      // First, try to update a tour booking
+      // First, check if tour booking exists and its current status
+      const { data: existingBooking, error: checkError } = await supabase
+        .from('tourbooking')
+        .select('id, status, tour_id')
+        .eq('stripe_session_id', sessionId)
+        .single();
+
+      // If booking exists and is already processed, skip webhook call (idempotency)
+      if (existingBooking && existingBooking.status === 'payment_completed') {
+        console.info(`Tour booking for session ${sessionId} already processed, skipping webhook call`);
+        return;
+      }
+
+      // Update tour booking status
       const { data: tourBooking, error: tourBookingError } = await supabase
         .from('tourbooking')
         .update({ status: 'payment_completed' })
         .eq('stripe_session_id', sessionId)
+        .neq('status', 'payment_completed') // Only update if not already completed
         .select()
         .single();
 
@@ -95,7 +109,8 @@ async function handleEvent(event: Stripe.Event) {
               stripe_session_id: sessionId,
               status: 'booked'
             })
-            .eq('stripe_session_id', sessionId); // Update entries that match this session
+            .eq('stripe_session_id', sessionId)
+            .neq('status', 'booked'); // Only update if not already booked
           
           if (localBookingError) {
             console.error('Error updating local_tours_bookings:', localBookingError);
