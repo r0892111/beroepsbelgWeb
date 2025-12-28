@@ -36,11 +36,12 @@ export function ProductCard({ product }: ProductCardProps) {
       return;
     }
 
-    if (isFavorite(product.slug)) {
-      await removeFavorite(product.slug);
+    // Use UUID as product identifier (consistent with cart system)
+    if (isFavorite(product.uuid)) {
+      await removeFavorite(product.uuid);
       toast.success(t('removeFromFavorites'));
     } else {
-      await addFavorite(product.slug);
+      await addFavorite(product.uuid);
       toast.success(t('addedToFavorites'));
     }
   };
@@ -136,9 +137,9 @@ export function ProductCard({ product }: ProductCardProps) {
                 e.stopPropagation(); // Prevent card click from triggering
                 handleToggleFavorite();
               }}
-              className={`transition-all duration-300 ${isFavorite(product.slug) ? 'text-red-500' : 'hover:bg-transparent'}`}
+              className={`transition-all duration-300 ${isFavorite(product.uuid) ? 'text-red-500' : 'hover:bg-transparent'}`}
             >
-              <Heart className={`h-5 w-5 ${isFavorite(product.slug) ? 'fill-current' : ''}`} />
+              <Heart className={`h-5 w-5 ${isFavorite(product.uuid) ? 'fill-current' : ''}`} />
             </Button>
           </div>
         </CardHeader>
