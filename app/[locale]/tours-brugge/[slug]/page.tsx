@@ -2,7 +2,7 @@ import { type Locale } from '@/i18n';
 import { getTourBySlug, getTours } from '@/lib/api/content';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Share2, Facebook, Twitter, Mail, MapPin, Clock, Languages, Bike } from 'lucide-react';
+import { Share2, Facebook, Twitter, Mail, MapPin, Clock, Languages, Bike, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -66,7 +66,7 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
           <div className="mb-12">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
               <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy">{tour.title}</h1>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 {tour.type === 'bike' && (
                   <Badge variant="outline" className="flex items-center gap-1 border-brass text-navy">
                     <Bike className="h-4 w-4" />
@@ -80,6 +80,23 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
                   >
                     {getBookingTypeShortLabel(tour)}
                   </Badge>
+                )}
+                {tour.themes && tour.themes.length > 0 && (
+                  <>
+                    {tour.themes.map((theme) => (
+                      <Badge
+                        key={theme}
+                        className="text-sm px-2 py-1"
+                        style={{
+                          backgroundColor: '#1BDD95',
+                          color: 'white',
+                          border: 'none',
+                        }}
+                      >
+                        {theme}
+                      </Badge>
+                    ))}
+                  </>
                 )}
               </div>
             </div>

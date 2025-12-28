@@ -50,14 +50,14 @@ export function TourImageGallery({ images, title, fallbackImage }: TourImageGall
     <>
       <div className="mb-12 space-y-4">
         {/* Main Image */}
-        <div 
+          <div
           className="relative w-full min-h-[300px] rounded-lg border border-[#1a3628]/10 bg-gray-100 flex items-center justify-center overflow-hidden cursor-zoom-in group"
           onClick={() => {
             if (currentImage) {
               setLightboxImage(currentImage);
             }
           }}
-        >
+            >
           {currentImage && (
             <>
               <Image
@@ -100,12 +100,12 @@ export function TourImageGallery({ images, title, fallbackImage }: TourImageGall
                   </Button>
                   <div className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 text-xs text-white z-10 pointer-events-none">
                     {currentIndex + 1} / {allImages.length}
-                  </div>
+            </div>
                 </>
               )}
             </>
-          )}
-        </div>
+        )}
+      </div>
 
         {/* Thumbnail Strip */}
         {allImages.length > 1 && (
@@ -113,7 +113,7 @@ export function TourImageGallery({ images, title, fallbackImage }: TourImageGall
             {allImages.map((imageUrl, index) => {
               const image = sortedImages[index];
               return (
-                <button
+          <button
                   key={image?.id || index}
                   onClick={() => handleThumbnailClick(index)}
                   className={`relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all ${
@@ -132,14 +132,14 @@ export function TourImageGallery({ images, title, fallbackImage }: TourImageGall
                   {image?.is_primary && (
                     <div className="absolute top-1 right-1 rounded bg-yellow-500 p-0.5">
                       <div className="h-2 w-2 rounded-full bg-white" />
-                    </div>
+                </div>
                   )}
                 </button>
               );
             })}
           </div>
         )}
-      </div>
+        </div>
 
       {/* Lightbox/Zoom Modal */}
       {lightboxImage && (
@@ -161,8 +161,8 @@ export function TourImageGallery({ images, title, fallbackImage }: TourImageGall
             className="max-w-[95vw] max-h-[95vh] flex items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <img
-              src={lightboxImage}
+          <img
+            src={lightboxImage}
               alt={`${title} - Zoomed view`}
               className="max-w-full max-h-[95vh] object-contain"
               onClick={(e) => e.stopPropagation()}
