@@ -32,6 +32,14 @@ const quoteSchema = z.object({
   contactPhone: z.string().min(1),
   vatNumber: z.string().optional(),
   billingAddress: z.string().optional(),
+  // Business address fields
+  street: z.string().optional(),
+  streetNumber: z.string().optional(),
+  postalCode: z.string().optional(),
+  bus: z.string().optional(),
+  zipcode: z.string().optional(),
+  billingCity: z.string().optional(),
+  country: z.string().optional(),
   additionalInfo: z.string().optional(),
 });
 
@@ -172,7 +180,13 @@ export default function B2BQuotePage() {
   }, []);
 
   const availableTours = selectedCity
-    ? tours.filter((tour) => tour.city === selectedCity && tour.slug !== 'cadeaubon')
+    ? tours.filter((tour) => 
+        tour.city === selectedCity && 
+        tour.slug !== 'cadeaubon' &&
+        tour.local_stories !== true &&
+        tour.local_stories !== 'true' &&
+        tour.local_stories !== 1
+      )
     : [];
 
   useEffect(() => {
@@ -203,11 +217,26 @@ export default function B2BQuotePage() {
   // Combine date + timeslot
   useEffect(() => {
     if (selectedDate && selectedTimeSlot) {
+      // Validate that the selected date is at least 1 week from today
+      const selectedDateObj = new Date(selectedDate);
+      const oneWeekFromToday = new Date();
+      oneWeekFromToday.setDate(oneWeekFromToday.getDate() + 7);
+      oneWeekFromToday.setHours(0, 0, 0, 0);
+      selectedDateObj.setHours(0, 0, 0, 0);
+      
+      if (selectedDateObj < oneWeekFromToday) {
+        // Clear the date if it's less than 1 week away
+        setSelectedDate('');
+        setValue('dateTime', '');
+        toast.error(t('dateMustBeOneWeekAway') || 'De datum moet minimaal 1 week vanaf vandaag zijn');
+        return;
+      }
+      
       const [startHour] = selectedTimeSlot.split(' to ');
       const dateTimeString = `${selectedDate}T${startHour}`;
       setValue('dateTime', dateTimeString);
     }
-  }, [selectedDate, selectedTimeSlot, setValue]);
+  }, [selectedDate, selectedTimeSlot, setValue, t]);
 
   // Reset countdown when entering success step
   useEffect(() => {
@@ -303,64 +332,69 @@ export default function B2BQuotePage() {
                           (typeof selectedTourData?.op_maat === 'string' && selectedTourData.op_maat === 'true') || 
                           (typeof selectedTourData?.op_maat === 'number' && selectedTourData.op_maat === 1);
       
-      // For op maat tours, create tourbooking record first
+      // Create tourbooking record for ALL tours (to save upsell products and get booking ID)
       let createdBookingId: number | null = null;
-      if (tourIsOpMaat) {
-        try {
-          const bookingResponse = await fetch('/api/b2b-booking/create', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              tourId: data.tourId,
-              citySlug: data.city,
-              dateTime: data.dateTime,
-              language: data.language,
-              numberOfPeople: data.numberOfPeople,
-              contactFirstName: data.contactFirstName,
-              contactLastName: data.contactLastName,
-              contactEmail: data.contactEmail,
-              contactPhone: data.contactPhone,
-              companyName: data.companyName || null,
-              vatNumber: data.vatNumber || null,
-              billingAddress: data.billingAddress || null,
-              additionalInfo: data.additionalInfo || null,
-              upsellProducts: upsellProducts.map(p => ({
-                id: p.uuid,
-                title: p.title.nl,
-                quantity: p.quantity || 1,
-                price: p.price || 0,
-              })),
-              // Op maat specific answers
-              opMaatAnswers: {
-                startEnd: opMaatAnswers.startEnd,
-                cityPart: opMaatAnswers.cityPart,
-                subjects: opMaatAnswers.subjects,
-                specialWishes: opMaatAnswers.specialWishes,
-              },
-            }),
-          });
+      try {
+        const bookingResponse = await fetch('/api/b2b-booking/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            tourId: data.tourId,
+            citySlug: data.city,
+            dateTime: data.dateTime,
+            language: data.language,
+            numberOfPeople: data.numberOfPeople,
+            contactFirstName: data.contactFirstName,
+            contactLastName: data.contactLastName,
+            contactEmail: data.contactEmail,
+            contactPhone: data.contactPhone,
+            companyName: data.companyName || null,
+            vatNumber: data.vatNumber || null,
+            billingAddress: data.billingAddress || null,
+            street: data.street || null,
+            streetNumber: data.streetNumber || null,
+            postalCode: data.postalCode || null,
+            bus: data.bus || null,
+            zipcode: data.zipcode || null,
+            billingCity: data.billingCity || null,
+            country: data.country || null,
+            additionalInfo: data.additionalInfo || null,
+            upsellProducts: upsellProducts.map(p => ({
+              id: p.uuid,
+              title: p.title.nl,
+              quantity: p.quantity || 1,
+              price: p.price || 0,
+            })),
+            // Op maat specific answers (only for op maat tours)
+            opMaatAnswers: tourIsOpMaat ? {
+              startEnd: opMaatAnswers.startEnd,
+              cityPart: opMaatAnswers.cityPart,
+              subjects: opMaatAnswers.subjects,
+              specialWishes: opMaatAnswers.specialWishes,
+            } : null,
+          }),
+        });
 
-          if (!bookingResponse.ok) {
-            const errorData = await bookingResponse.json();
-            console.error('Error creating B2B booking:', errorData);
-            toast.error(t('error') || 'Failed to create booking');
-            return;
-          }
-
-          const bookingData = await bookingResponse.json();
-          console.log('B2B booking created:', bookingData);
-          
-          if (bookingData.bookingId) {
-            createdBookingId = bookingData.bookingId;
-            setBookingId(bookingData.bookingId);
-          }
-        } catch (error) {
-          console.error('Error creating B2B booking:', error);
+        if (!bookingResponse.ok) {
+          const errorData = await bookingResponse.json();
+          console.error('Error creating B2B booking:', errorData);
           toast.error(t('error') || 'Failed to create booking');
           return;
         }
+
+        const bookingData = await bookingResponse.json();
+        console.log('B2B booking created:', bookingData);
+        
+        if (bookingData.bookingId) {
+          createdBookingId = bookingData.bookingId;
+          setBookingId(bookingData.bookingId);
+        }
+      } catch (error) {
+        console.error('Error creating B2B booking:', error);
+        toast.error(t('error') || 'Failed to create booking');
+        return;
       }
       
       // Build payload for webhook (include booking ID for op maat tours)
@@ -385,6 +419,13 @@ export default function B2BQuotePage() {
         companyName: data.companyName || null,
         vatNumber: data.vatNumber || null,
         billingAddress: data.billingAddress || null,
+        street: data.street || null,
+        streetNumber: data.streetNumber || null,
+        postalCode: data.postalCode || null,
+        bus: data.bus || null,
+        zipcode: data.zipcode || null,
+        billingCity: data.billingCity || null,
+        country: data.country || null,
         // Contact info
         contactFirstName: data.contactFirstName,
         contactLastName: data.contactLastName,
@@ -403,8 +444,8 @@ export default function B2BQuotePage() {
         // Meta
         submittedAt: new Date().toISOString(),
         status: 'pending_guide_confirmation',
-        // Include booking ID if op maat tour was created
-        ...(createdBookingId && { bookingId: createdBookingId }),
+        // Always include booking ID (created for all tours)
+        bookingId: createdBookingId,
       };
 
       // Call webhook for all tours (both op maat and regular)
@@ -665,7 +706,11 @@ export default function B2BQuotePage() {
                       type="date"
                       value={selectedDate}
                       onChange={(e) => setSelectedDate(e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
+                      min={(() => {
+                        const oneWeekFromToday = new Date();
+                        oneWeekFromToday.setDate(oneWeekFromToday.getDate() + 7);
+                        return oneWeekFromToday.toISOString().split('T')[0];
+                      })()}
                       className="mt-2"
                     />
                   </div>
@@ -784,14 +829,50 @@ export default function B2BQuotePage() {
                       <Input id="companyName" {...register('companyName')} className="mt-2" />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="vatNumber" className="text-base font-semibold text-navy">{t('vatNumber')}</Label>
-                        <Input id="vatNumber" placeholder={t('vatPlaceholder')} {...register('vatNumber')} className="mt-2" />
+                    <div>
+                      <Label htmlFor="vatNumber" className="text-base font-semibold text-navy">{t('vatNumber')}</Label>
+                      <Input id="vatNumber" placeholder={t('vatPlaceholder')} {...register('vatNumber')} className="mt-2" />
+                    </div>
+
+                    {/* Address Fields */}
+                    <div className="pt-4 border-t">
+                      <h4 className="font-semibold text-navy mb-4">{t('billingAddressLabel')}</h4>
+                      
+                      <div className="grid grid-cols-3 gap-4 mb-4">
+                        <div className="col-span-2">
+                          <Label htmlFor="street" className="text-base font-semibold text-navy">{t('street')}</Label>
+                          <Input id="street" {...register('street')} className="mt-2" />
+                        </div>
+                        <div>
+                          <Label htmlFor="streetNumber" className="text-base font-semibold text-navy">{t('streetNumber')}</Label>
+                          <Input id="streetNumber" {...register('streetNumber')} className="mt-2" />
+                        </div>
                       </div>
-                      <div>
-                        <Label htmlFor="billingAddress" className="text-base font-semibold text-navy">{t('billingAddressLabel')}</Label>
-                        <Input id="billingAddress" {...register('billingAddress')} className="mt-2" />
+
+                      <div className="grid grid-cols-3 gap-4 mb-4">
+                        <div>
+                          <Label htmlFor="postalCode" className="text-base font-semibold text-navy">{t('postalCode')}</Label>
+                          <Input id="postalCode" {...register('postalCode')} className="mt-2" />
+                        </div>
+                        <div>
+                          <Label htmlFor="bus" className="text-base font-semibold text-navy">{t('bus')}</Label>
+                          <Input id="bus" placeholder={t('busPlaceholder')} {...register('bus')} className="mt-2" />
+                        </div>
+                        <div>
+                          <Label htmlFor="zipcode" className="text-base font-semibold text-navy">{t('zipcode')}</Label>
+                          <Input id="zipcode" {...register('zipcode')} className="mt-2" />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="billingCity" className="text-base font-semibold text-navy">{t('city')}</Label>
+                          <Input id="billingCity" {...register('billingCity')} className="mt-2" />
+                        </div>
+                        <div>
+                          <Label htmlFor="country" className="text-base font-semibold text-navy">{t('country')}</Label>
+                          <Input id="country" {...register('country')} className="mt-2" />
+                        </div>
                       </div>
                     </div>
                   </div>

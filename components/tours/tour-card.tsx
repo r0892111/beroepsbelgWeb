@@ -18,8 +18,14 @@ interface TourCardProps {
 
 export function TourCard({ tour, locale }: TourCardProps) {
   const t = useTranslations('common');
+  const tBooking = useTranslations('booking');
   // Note: badge field removed with options field
   const badge = undefined;
+  
+  // Calculate discounted price (10% discount for online bookings)
+  const discountRate = 0.9; // 10% discount = 90% of original price
+  const originalPrice = tour.price || 0;
+  const discountedPrice = originalPrice * discountRate;
 
   // Get image URL - use primary image if available, otherwise use placeholder
   const imageUrl = tour.image || getTourPlaceholder(tour.type, tour.city);
@@ -124,15 +130,54 @@ export function TourCard({ tour, locale }: TourCardProps) {
           borderTop: '1px solid var(--border-light)'
         }}
       >
-        <span
-          className="text-xl font-bold"
-          style={{
-            fontFamily: 'Montserrat, sans-serif',
-            color: 'var(--primary-base)'
-          }}
-        >
-          {tour.price ? `€${tour.price.toFixed(2)}` : '\u00A0'}
-        </span>
+        {tour.price ? (
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span
+                className="text-xl font-bold"
+                style={{
+                  fontFamily: 'Montserrat, sans-serif',
+                  color: 'var(--primary-base)'
+                }}
+              >
+                €{discountedPrice.toFixed(2)}
+              </span>
+              {originalPrice > discountedPrice && (
+                <>
+                  <span
+                    className="text-sm line-through"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    €{originalPrice.toFixed(2)}
+                  </span>
+                  <Badge
+                    variant="secondary"
+                    className="text-xs"
+                    style={{
+                      backgroundColor: 'var(--brass)',
+                      color: 'white',
+                    }}
+                  >
+                    -10%
+                  </Badge>
+                </>
+              )}
+            </div>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              {tBooking('onlineDiscount')}
+            </p>
+          </div>
+        ) : (
+          <span
+            className="text-xl font-bold"
+            style={{
+              fontFamily: 'Montserrat, sans-serif',
+              color: 'var(--primary-base)'
+            }}
+          >
+            {'\u00A0'}
+          </span>
+        )}
         <div className="flex items-center gap-2 w-full">
           <Button
             size="sm"
@@ -165,7 +210,7 @@ export function TourCard({ tour, locale }: TourCardProps) {
                 <TourBookingButton
                   tourId={tour.id}
                   tourTitle={tour.title}
-                  tourPrice={tour.price}
+                  tourPrice={originalPrice}
                   tourDuration={tour.durationMinutes}
                   isLocalStories={tour.local_stories}
                   opMaat={tour.op_maat}

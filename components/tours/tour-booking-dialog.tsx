@@ -74,7 +74,7 @@ export function TourBookingDialog({
     customerEmail: '',
     customerPhone: '',
     bookingDate: defaultBookingDate ? new Date(defaultBookingDate) : undefined as Date | undefined,
-    numberOfPeople: 1,
+    numberOfPeople: isLocalStories ? 4 : 15, // Local stories: default to 4 (minimum), Regular tours: default to 15 (1-15 people)
     language: 'nl',
     specialRequests: '',
     requestTanguy: false,
@@ -90,10 +90,21 @@ export function TourBookingDialog({
       setFormData(prev => ({
         ...prev,
         bookingDate: new Date(defaultBookingDate),
+        numberOfPeople: isLocalStories ? 4 : prev.numberOfPeople, // Reset to default for local stories
       }));
       setSelectedTimeSlot('14:00');
     }
-  }, [defaultBookingDate, open]);
+  }, [defaultBookingDate, open, isLocalStories]);
+
+  // Reset numberOfPeople when dialog opens for local stories tours
+  useEffect(() => {
+    if (open && isLocalStories) {
+      setFormData(prev => ({
+        ...prev,
+        numberOfPeople: 4, // Default to 4 for local stories (minimum)
+      }));
+    }
+  }, [open, isLocalStories]);
 
   // For local stories tours, always set time to 14:00 and prevent changes
   useEffect(() => {
@@ -381,14 +392,20 @@ export function TourBookingDialog({
     }
   };
 
+  // Calculate discounted price (10% discount for online bookings)
+  const discountRate = 0.9; // 10% discount = 90% of original price
+  const discountedTourPrice = tourPrice * discountRate;
+  
   // Calculate total price including upsells
   const upsellTotal = products
     .filter(p => selectedUpsell[p.uuid] && selectedUpsell[p.uuid] > 0)
     .reduce((sum, p) => sum + (p.price * (selectedUpsell[p.uuid] || 0)), 0);
   
-  // Calculate tour total based on number of people (for all tour types)
-  const tourTotal = tourPrice * formData.numberOfPeople;
+  // Calculate tour total based on number of people (for all tour types) - using discounted price
+  const originalTourTotal = tourPrice * formData.numberOfPeople;
+  const tourTotal = discountedTourPrice * formData.numberOfPeople;
   const totalPrice = tourTotal + upsellTotal;
+  const savings = originalTourTotal - tourTotal;
   
   // Debug logging
   if (process.env.NODE_ENV === 'development') {
@@ -417,8 +434,20 @@ export function TourBookingDialog({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
-          <DialogDescription>
-            {tourTitle} - €{tourPrice.toFixed(2)} {t('perPerson')}
+          <DialogDescription className="flex flex-col gap-1">
+            <span>
+              {tourTitle} - €{discountedTourPrice.toFixed(2)} {t('perPerson')}
+              {tourPrice > discountedTourPrice && (
+                <span className="ml-2 text-sm line-through text-muted-foreground">
+                  €{tourPrice.toFixed(2)}
+                </span>
+              )}
+            </span>
+            {tourPrice > discountedTourPrice && (
+              <span className="text-xs text-green-600 font-semibold">
+                {t('onlineDiscount')} - {t('youSave')} €{((tourPrice - discountedTourPrice) * formData.numberOfPeople).toFixed(2)} total
+              </span>
+            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -543,20 +572,49 @@ export function TourBookingDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="people">{t('numberOfPeople')} *</Label>
-              <Input
-                id="people"
-                type="number"
-                min="1"
-                max="50"
-                required
-                value={formData.numberOfPeople}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  const numValue = value === '' ? 1 : Math.max(1, parseInt(value, 10) || 1);
-                  console.log('Number of people changed:', { value, numValue, current: formData.numberOfPeople });
+              <Select
+                value={formData.numberOfPeople.toString()}
+                onValueChange={(value) => {
+                  // Parse the value - it represents the maximum number in the range
+                  // e.g., "15" means 1-15 people, "30" means 16-30 people, etc.
+                  const numValue = parseInt(value, 10);
                   setFormData(prev => ({ ...prev, numberOfPeople: numValue }));
                 }}
-              />
+              >
+                <SelectTrigger id="people">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(() => {
+                    const peopleLabel = formData.language === 'nl' ? 'personen' : 
+                                       formData.language === 'en' ? 'people' : 
+                                       formData.language === 'fr' ? 'personnes' : 
+                                       formData.language === 'de' ? 'Personen' : 'personen';
+                    const options = [];
+                    
+                    if (isLocalStories) {
+                      // For local stories tours, start from 1 person (minimum 4 is enforced elsewhere)
+                      for (let i = 1; i <= 120; i++) {
+                        options.push(
+                          <SelectItem key={i} value={i.toString()}>{i} {peopleLabel}</SelectItem>
+                        );
+                      }
+                    } else {
+                      // For regular tours, start with "1-15 people" option
+                      options.push(
+                        <SelectItem key="15" value="15">1-15 {peopleLabel}</SelectItem>
+                      );
+                      // Add individual options from 16 onwards, counting up by 1
+                      for (let i = 16; i <= 120; i++) {
+                        options.push(
+                          <SelectItem key={i} value={i.toString()}>{i} {peopleLabel}</SelectItem>
+                        );
+                      }
+                    }
+                    return options;
+                  })()}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
@@ -679,17 +737,32 @@ export function TourBookingDialog({
 
           <DialogFooter>
             <div className="flex w-full items-center justify-between">
-              <div className="text-lg font-bold">
-                {t('total')}: €{tourTotal.toFixed(2)}
+              <div className="flex flex-col gap-1">
+                <div className="text-lg font-bold">
+                  {t('total')}: €{totalPrice.toFixed(2)}
+                  {originalTourTotal > tourTotal && (
+                    <span className="text-sm font-normal line-through text-muted-foreground ml-2">
+                      €{originalTourTotal.toFixed(2)}
+                    </span>
+                  )}
+                </div>
                 {formData.numberOfPeople > 1 && (
-                  <span className="text-sm font-normal text-muted-foreground ml-2">
-                    ({formData.numberOfPeople} × €{tourPrice.toFixed(2)})
-                  </span>
+                  <div className="text-sm text-muted-foreground">
+                    {formData.numberOfPeople} × €{discountedTourPrice.toFixed(2)} {t('perPerson')}
+                    {tourPrice > discountedTourPrice && (
+                      <span className="line-through ml-1">€{tourPrice.toFixed(2)}</span>
+                    )}
+                  </div>
                 )}
                 {upsellTotal > 0 && (
-                  <span className="text-sm font-normal text-muted-foreground ml-2">
-                    + €{upsellTotal.toFixed(2)} extras = €{totalPrice.toFixed(2)}
-                  </span>
+                  <div className="text-sm text-muted-foreground">
+                    + €{upsellTotal.toFixed(2)} extras
+                  </div>
+                )}
+                {savings > 0 && (
+                  <div className="text-xs text-green-600 font-semibold">
+                    {t('youSave')} €{savings.toFixed(2)} ({t('onlineDiscount')})
+                  </div>
                 )}
               </div>
               <Button type="submit" disabled={loading}>

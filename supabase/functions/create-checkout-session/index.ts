@@ -72,7 +72,10 @@ serve(async (req: Request) => {
     }
 
     const finalNumberOfPeople = numberOfPeople; // Use actual number of people for all tour types
-    const amount = Math.round(tour.price * finalNumberOfPeople * 100)
+    // Apply 10% discount for online bookings
+    const discountRate = 0.9; // 10% discount = 90% of original price
+    const discountedPrice = tour.price * discountRate;
+    const amount = Math.round(discountedPrice * finalNumberOfPeople * 100)
     const tourTitle = tour.title_nl || tour.title_en || 'Tour'
     // For op_maat tours, bookingDate is empty, so don't include it in description
     const description = opMaat 
@@ -102,8 +105,12 @@ serve(async (req: Request) => {
       unit_amount_euros: (amount / 100).toFixed(2),
       quantity: 1,
       numberOfPeople: finalNumberOfPeople,
-      tourPrice: tour.price,
-      calculated_total: tour.price * finalNumberOfPeople,
+      originalPrice: tour.price,
+      discountedPrice: discountedPrice,
+      discountApplied: '10%',
+      calculated_total: discountedPrice * finalNumberOfPeople,
+      original_total: tour.price * finalNumberOfPeople,
+      savings: (tour.price * finalNumberOfPeople) - (discountedPrice * finalNumberOfPeople),
     });
 
     // Add upsell products as line items
