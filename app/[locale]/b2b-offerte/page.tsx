@@ -180,12 +180,10 @@ export default function B2BQuotePage() {
 
   const availableTours = selectedCity
     ? tours.filter((tour) => {
-        const tourWithCityId = tour as any;
-        const tourCityId = tourWithCityId.city_id;
+        // Match by city slug or city name
         const selectedCityData = cities.find(c => c.slug === selectedCity);
-        // Match by city_id if available, otherwise fallback to slug matching
-        const matchesCity = tourCityId && selectedCityData
-          ? tourCityId === selectedCityData.id
+        const matchesCity = selectedCityData
+          ? tour.city === selectedCityData.name?.nl || tour.city === selectedCityData.name?.en || tour.city === selectedCityData.name?.fr || tour.city === selectedCityData.name?.de
           : tour.city === selectedCity;
         
         return matchesCity && 
@@ -483,12 +481,8 @@ export default function B2BQuotePage() {
   const availableCities = cities.filter(city => 
     city.status === 'live' && 
     tours.some(tour => {
-      const tourWithCityId = tour as any;
-      const tourCityId = tourWithCityId.city_id;
-      // Match by city_id if available, otherwise fallback to slug matching
-      const matches = tourCityId 
-        ? tourCityId === city.id
-        : tour.city === city.slug;
+      // Match by city name in any language or slug
+      const matches = tour.city === city.name?.nl || tour.city === city.name?.en || tour.city === city.name?.fr || tour.city === city.name?.de || tour.city === city.slug;
       return matches && tour.slug !== 'cadeaubon';
     })
   );

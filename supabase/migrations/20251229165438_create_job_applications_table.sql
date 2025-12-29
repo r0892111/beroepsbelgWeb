@@ -96,3 +96,4 @@ COMMENT ON TABLE job_applications IS 'Stores job application submissions with CV
 COMMENT ON COLUMN job_applications.cv_url IS 'Supabase Storage URL for uploaded CV (PDF)';
 COMMENT ON COLUMN job_applications.photo_url IS 'Supabase Storage URL for uploaded photo (image)';
 
+
