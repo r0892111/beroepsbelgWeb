@@ -47,7 +47,7 @@ export async function CityGrid({ locale }: CityGridProps) {
               <CardFooter className="mt-auto">
                 {city.status === 'live' ? (
                   <Button asChild className="w-full">
-                    <Link href={`/${locale}/tours-${city.slug}`}>
+                    <Link href={`/${locale}/tours/${city.slug}`}>
                       {city.ctaText?.[locale] || t('discover')}
                     </Link>
                   </Button>

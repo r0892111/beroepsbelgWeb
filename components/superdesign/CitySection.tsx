@@ -308,7 +308,7 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
   const activeCity = citiesWithImages[activeIndex];
   // Get the city slug for the tours page link
   const citySlug = citySlugMap[activeCity.id] || activeCity.id;
-  const toursPageUrl = `/${locale}/tours-${citySlug}`;
+  const toursPageUrl = `/${locale}/tours/${citySlug}`;
 
   return (
     <div

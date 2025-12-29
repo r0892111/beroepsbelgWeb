@@ -74,7 +74,7 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
                 <Link
                   key={city.slug}
                   ref={(el) => { cardRefs.current[index] = el; }}
-                  href={`/${locale}/tours-${city.slug}`}
+                  href={`/${locale}/tours/${city.slug}`}
                   onMouseEnter={() => setHoveredCard(index)}
                   onMouseLeave={() => setHoveredCard(null)}
                   className={`group flex flex-col h-full overflow-hidden relative ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}

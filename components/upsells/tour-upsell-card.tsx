@@ -18,7 +18,7 @@ export function TourUpsellCard({ tour, locale }: TourUpsellCardProps) {
 
   return (
     <Link
-      href={`/${locale}/tours-${tour.city}/${tour.slug}`}
+      href={`/${locale}/tours/${tour.city}/${tour.slug}`}
       className="group block relative overflow-hidden rounded-xl border transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
       style={{
         borderColor: 'var(--border-subtle)',

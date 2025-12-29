@@ -57,7 +57,7 @@ export function TourCard({ tour, locale }: TourCardProps) {
         e.currentTarget.style.borderColor = 'var(--border-subtle)';
       }}
     >
-      <Link href={`/${locale}/tours-${tour.city}/${tour.slug}`} className="relative h-48 w-full overflow-hidden block cursor-pointer">
+      <Link href={`/${locale}/tours/${tour.city}/${tour.slug}`} className="relative h-48 w-full overflow-hidden block cursor-pointer">
           <Image
           src={imageUrl}
             alt={tour.title}
@@ -206,7 +206,7 @@ export function TourCard({ tour, locale }: TourCardProps) {
             boxShadow: 'var(--shadow-small)'
           }}
         >
-          <Link href={`/${locale}/tours-${tour.city}/${tour.slug}`}>{t('moreInfo')}</Link>
+          <Link href={`/${locale}/tours/${tour.city}/${tour.slug}`}>{t('moreInfo')}</Link>
         </Button>
           {tour.local_stories ? (
             <Button
@@ -219,7 +219,7 @@ export function TourCard({ tour, locale }: TourCardProps) {
                 boxShadow: 'var(--shadow-small)'
               }}
             >
-              <Link href={`/${locale}/tours-${tour.city}/${tour.slug}`}>{t('schedule')}</Link>
+              <Link href={`/${locale}/tours/${tour.city}/${tour.slug}`}>{t('schedule')}</Link>
             </Button>
           ) : (
             tour.price && tour.id && (

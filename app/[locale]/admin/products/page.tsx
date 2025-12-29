@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { Button } from '@/components/ui/button';
@@ -12,10 +12,27 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, Package, X, Search, RefreshCcw, Image } from 'lucide-react';
+import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, Package, X, Search, RefreshCcw, Image, GripVertical, ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface Product {
   uuid: string;
@@ -26,6 +43,8 @@ interface Product {
   "Additional Info": string | null;
   stripe_product_id?: string | null;
   stripe_price_id?: string | null;
+  display_order?: number | null;
+  category_display_order?: number | null;
 }
 
 interface ProductFormData {
@@ -50,10 +69,20 @@ export default function AdminProductsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [orderingMode, setOrderingMode] = useState<'global' | 'category'>('global');
 
   // Filter and search state
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Form state
   const [formData, setFormData] = useState<ProductFormData>({
@@ -77,6 +106,8 @@ export default function AdminProductsPage() {
       const { data, error: fetchError } = await supabase
         .from('webshop_data')
         .select('*')
+        .order('display_order', { ascending: true, nullsFirst: false })
+        .order('category_display_order', { ascending: true, nullsFirst: false })
         .order('Name', { ascending: true });
 
       if (fetchError) {
@@ -246,6 +277,271 @@ export default function AdminProductsPage() {
     return matchesSearch && matchesCategory;
   });
 
+  // Group products by category for per-category ordering
+  const productsByCategory = useMemo(() => {
+    const grouped: Record<string, Product[]> = {};
+    filteredProducts.forEach((product) => {
+      const category = product.Category || 'Other';
+      if (!grouped[category]) {
+        grouped[category] = [];
+      }
+      grouped[category].push(product);
+    });
+
+    // Sort products within each category by category_display_order, then Name
+    Object.keys(grouped).forEach((category) => {
+      grouped[category].sort((a, b) => {
+        const aOrder = a.category_display_order ?? null;
+        const bOrder = b.category_display_order ?? null;
+        if (aOrder === null && bOrder === null) {
+          return (a.Name || '').localeCompare(b.Name || '');
+        }
+        if (aOrder === null) return 1;
+        if (bOrder === null) return -1;
+        return aOrder - bOrder;
+      });
+    });
+
+    return grouped;
+  }, [filteredProducts]);
+
+  // Sort products for global ordering
+  const sortedProductsForGlobal = useMemo(() => {
+    return [...filteredProducts].sort((a, b) => {
+      const aOrder = a.display_order ?? null;
+      const bOrder = b.display_order ?? null;
+      if (aOrder === null && bOrder === null) {
+        return (a.Name || '').localeCompare(b.Name || '');
+      }
+      if (aOrder === null) return 1;
+      if (bOrder === null) return -1;
+      return aOrder - bOrder;
+    });
+  }, [filteredProducts]);
+
+  const toggleCategory = (category: string) => {
+    setExpandedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) {
+        next.delete(category);
+      } else {
+        next.add(category);
+      }
+      return next;
+    });
+  };
+
+  const handleDragEnd = async (event: DragEndEvent, category?: string) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    if (orderingMode === 'global') {
+      // Global ordering - update display_order
+      const oldIndex = sortedProductsForGlobal.findIndex(p => p.uuid === active.id);
+      const newIndex = sortedProductsForGlobal.findIndex(p => p.uuid === over.id);
+
+      if (oldIndex === -1 || newIndex === -1) {
+        return;
+      }
+
+      const reorderedProducts = arrayMove(sortedProductsForGlobal, oldIndex, newIndex);
+      const reorderedProductsWithOrder = reorderedProducts.map((product, index) => ({
+        ...product,
+        display_order: index + 1,
+      }));
+
+      const updatedProductsMap = new Map(reorderedProductsWithOrder.map(p => [p.uuid, p]));
+      const updatedProducts = products.map(product => {
+        const updatedProduct = updatedProductsMap.get(product.uuid);
+        return updatedProduct || product;
+      });
+
+      setProducts(updatedProducts);
+
+      try {
+        for (const product of reorderedProductsWithOrder) {
+          const { error } = await supabase
+            .from('webshop_data')
+            .update({ display_order: product.display_order })
+            .eq('uuid', product.uuid);
+
+          if (error) {
+            console.error('Failed to update display_order:', error);
+            throw error;
+          }
+        }
+
+        toast.success('Product order updated');
+      } catch (err) {
+        console.error('Failed to update product order:', err);
+        toast.error('Failed to update product order');
+        void fetchProducts();
+      }
+    } else if (category) {
+      // Per-category ordering - update category_display_order
+      const categoryProducts = productsByCategory[category] || [];
+      const oldIndex = categoryProducts.findIndex(p => p.uuid === active.id);
+      const newIndex = categoryProducts.findIndex(p => p.uuid === over.id);
+
+      if (oldIndex === -1 || newIndex === -1) {
+        return;
+      }
+
+      const reorderedProducts = arrayMove(categoryProducts, oldIndex, newIndex);
+      const reorderedProductsWithOrder = reorderedProducts.map((product, index) => ({
+        ...product,
+        category_display_order: index + 1,
+      }));
+
+      const updatedProductsMap = new Map(reorderedProductsWithOrder.map(p => [p.uuid, p]));
+      const updatedProducts = products.map(product => {
+        if (product.Category === category) {
+          const updatedProduct = updatedProductsMap.get(product.uuid);
+          return updatedProduct || product;
+        }
+        return product;
+      });
+
+      setProducts(updatedProducts);
+
+      try {
+        for (const product of reorderedProductsWithOrder) {
+          const { error } = await supabase
+            .from('webshop_data')
+            .update({ category_display_order: product.category_display_order })
+            .eq('uuid', product.uuid);
+
+          if (error) {
+            console.error('Failed to update category_display_order:', error);
+            throw error;
+          }
+        }
+
+        toast.success(`Product order updated for ${category}`);
+      } catch (err) {
+        console.error('Failed to update product order:', err);
+        toast.error('Failed to update product order');
+        void fetchProducts();
+      }
+    }
+  };
+
+  // Sortable Product Item Component
+  const SortableProductItem = ({ product, category }: { product: Product; category?: string }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: product.uuid });
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+      <TableRow
+        ref={setNodeRef}
+        style={style}
+        className={isDragging ? 'bg-gray-100' : ''}
+      >
+        <TableCell className="w-8">
+          <div
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-200 rounded"
+          >
+            <GripVertical className="h-4 w-4 text-gray-400" />
+          </div>
+        </TableCell>
+        <TableCell className="font-medium max-w-xs truncate">
+          {product.Name}
+        </TableCell>
+        <TableCell>
+          <Badge className="bg-blue-100 text-blue-900">{product.Category}</Badge>
+        </TableCell>
+        <TableCell>€{parseFloat(product["Price (EUR)"]?.replace(',', '.') || '0').toFixed(2)}</TableCell>
+        <TableCell className="text-xs">
+          {product.stripe_product_id ? (
+            <div className="space-y-1">
+              <div className="flex items-center gap-1 text-green-600" title={product.stripe_product_id}>
+                <span className="text-xs">✓</span>
+                <span className="font-mono text-[10px] truncate max-w-[120px]">
+                  {product.stripe_product_id.slice(0, 20)}...
+                </span>
+              </div>
+              {product.stripe_price_id ? (
+                <div className="flex items-center gap-1 text-blue-600" title={product.stripe_price_id}>
+                  <span className="text-xs">€</span>
+                  <span className="font-mono text-[10px] truncate max-w-[120px]">
+                    {product.stripe_price_id.slice(0, 20)}...
+                  </span>
+                </div>
+              ) : (
+                <span className="text-orange-600 text-[10px]">No price</span>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground text-xs">Not synced</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleSyncToStripe(product)}
+                className="h-6 px-2 text-xs"
+                title="Sync to Stripe"
+              >
+                <RefreshCcw className="h-3 w-3" />
+              </Button>
+            </div>
+          )}
+        </TableCell>
+        <TableCell className="text-sm text-muted-foreground max-w-xs truncate font-mono text-xs">
+          {product.uuid.slice(0, 8)}...
+        </TableCell>
+        <TableCell>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => openEditDialog(product)}
+              title="Edit product"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            {!product.stripe_product_id && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleSyncToStripe(product)}
+                title="Sync to Stripe"
+                className="text-blue-600 hover:text-blue-700"
+              >
+                <RefreshCcw className="h-4 w-4" />
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleDelete(product)}
+              className="text-destructive hover:text-destructive"
+              title="Delete product"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  };
+
   const clearFilters = () => {
     setSearchQuery('');
     setFilterCategory('all');
@@ -372,6 +668,27 @@ export default function AdminProductsPage() {
               )}
             </div>
 
+            {/* Ordering Mode Toggle */}
+            <div className="mb-4 flex items-center gap-4">
+              <Label className="text-sm font-semibold">Ordering Mode:</Label>
+              <div className="flex gap-2">
+                <Button
+                  variant={orderingMode === 'global' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setOrderingMode('global')}
+                >
+                  Global Order
+                </Button>
+                <Button
+                  variant={orderingMode === 'category' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setOrderingMode('category')}
+                >
+                  Per-Category Order
+                </Button>
+              </div>
+            </div>
+
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
@@ -380,103 +697,113 @@ export default function AdminProductsPage() {
               <div className="text-center py-12 text-muted-foreground">
                 {products.length === 0 ? 'No products found' : 'No products match your filters'}
               </div>
-            ) : (
+            ) : orderingMode === 'global' ? (
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Stripe IDs</TableHead>
-                      <TableHead>UUID</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredProducts.map((product) => (
-                      <TableRow key={product.uuid}>
-                        <TableCell className="font-medium max-w-xs truncate">
-                          {product.Name}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className="bg-blue-100 text-blue-900">{product.Category}</Badge>
-                        </TableCell>
-                        <TableCell>€{parseFloat(product["Price (EUR)"]?.replace(',', '.') || '0').toFixed(2)}</TableCell>
-                        <TableCell className="text-xs">
-                          {product.stripe_product_id ? (
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-1 text-green-600" title={product.stripe_product_id}>
-                                <span className="text-xs">✓</span>
-                                <span className="font-mono text-[10px] truncate max-w-[120px]">
-                                  {product.stripe_product_id.slice(0, 20)}...
-                                </span>
-                              </div>
-                              {product.stripe_price_id ? (
-                                <div className="flex items-center gap-1 text-blue-600" title={product.stripe_price_id}>
-                                  <span className="text-xs">€</span>
-                                  <span className="font-mono text-[10px] truncate max-w-[120px]">
-                                    {product.stripe_price_id.slice(0, 20)}...
-                                  </span>
-                                </div>
-                              ) : (
-                                <span className="text-orange-600 text-[10px]">No price</span>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <span className="text-muted-foreground text-xs">Not synced</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleSyncToStripe(product)}
-                                className="h-6 px-2 text-xs"
-                                title="Sync to Stripe"
-                              >
-                                <RefreshCcw className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground max-w-xs truncate font-mono text-xs">
-                          {product.uuid.slice(0, 8)}...
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openEditDialog(product)}
-                              title="Edit product"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            {!product.stripe_product_id && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleSyncToStripe(product)}
-                                title="Sync to Stripe"
-                                className="text-blue-600 hover:text-blue-700"
-                              >
-                                <RefreshCcw className="h-4 w-4" />
-                              </Button>
-                            )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDelete(product)}
-                              className="text-destructive hover:text-destructive"
-                              title="Delete product"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={(event) => handleDragEnd(event)}
+                >
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-8"></TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Price</TableHead>
+                        <TableHead>Stripe IDs</TableHead>
+                        <TableHead>UUID</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      <SortableContext
+                        items={sortedProductsForGlobal.map(p => p.uuid)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        {sortedProductsForGlobal.map((product) => (
+                          <SortableProductItem
+                            key={product.uuid}
+                            product={product}
+                          />
+                        ))}
+                      </SortableContext>
+                    </TableBody>
+                  </Table>
+                </DndContext>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {Object.keys(productsByCategory).sort().map((category) => {
+                  const categoryProducts = productsByCategory[category];
+                  const isExpanded = expandedCategories.has(category);
+
+                  return (
+                    <Card key={category}>
+                      <CardHeader className="cursor-pointer" onClick={() => toggleCategory(category)}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <CardTitle className="flex items-center gap-2">
+                              <Badge className="bg-blue-100 text-blue-900">{category}</Badge>
+                              <span className="text-sm font-normal text-muted-foreground">
+                                ({categoryProducts.length} {categoryProducts.length === 1 ? 'product' : 'products'})
+                              </span>
+                            </CardTitle>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {isExpanded ? (
+                              <ChevronUp className="h-5 w-5 text-gray-400" />
+                            ) : (
+                              <ChevronDown className="h-5 w-5 text-gray-400" />
+                            )}
+                          </div>
+                        </div>
+                        <CardDescription>
+                          Drag products to reorder within this category. The order will be reflected on the webshop page.
+                        </CardDescription>
+                      </CardHeader>
+                      {isExpanded && (
+                        <CardContent className="p-0">
+                          <div className="overflow-x-auto">
+                            <DndContext
+                              sensors={sensors}
+                              collisionDetection={closestCenter}
+                              onDragEnd={(event) => handleDragEnd(event, category)}
+                            >
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="w-8"></TableHead>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Category</TableHead>
+                                    <TableHead>Price</TableHead>
+                                    <TableHead>Stripe IDs</TableHead>
+                                    <TableHead>UUID</TableHead>
+                                    <TableHead>Actions</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  <SortableContext
+                                    items={categoryProducts.map(p => p.uuid)}
+                                    strategy={verticalListSortingStrategy}
+                                  >
+                                    {categoryProducts.map((product) => (
+                                      <SortableProductItem
+                                        key={product.uuid}
+                                        product={product}
+                                        category={category}
+                                      />
+                                    ))}
+                                  </SortableContext>
+                                </TableBody>
+                              </Table>
+                            </DndContext>
+                          </div>
+                        </CardContent>
+                      )}
+                    </Card>
+                  );
+                })}
               </div>
             )}
 
