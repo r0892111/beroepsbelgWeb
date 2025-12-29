@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { Button } from '@/components/ui/button';
@@ -43,6 +43,7 @@ export default function AdminTourImagesPage() {
 
   const [tours, setTours] = useState<TourWithImages[]>([]);
   const [allTourImages, setAllTourImages] = useState<Record<string, TourImage[]>>({});
+  const [cities, setCities] = useState<Array<{id: string, slug: string}>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -75,7 +76,17 @@ export default function AdminTourImagesPage() {
     try {
       const { data, error: fetchError } = await supabase
         .from('tours_table_prod')
-        .select('*')
+        .select(`
+          *,
+          cities:city_id (
+            id,
+            slug,
+            name_nl,
+            name_en,
+            name_fr,
+            name_de
+          )
+        `)
         .order('title', { ascending: true });
 
       if (fetchError) {
@@ -84,7 +95,14 @@ export default function AdminTourImagesPage() {
         return;
       }
 
-      return (data as Tour[]) || [];
+      // Map tours to include city_id and city slug from JOIN
+      const mappedTours = (data || []).map((row: any) => ({
+        ...row,
+        city_id: row.city_id || row.cities?.id,
+        city: row.cities?.slug || row.city, // Use slug from joined cities table
+      })) as Tour[];
+      
+      return mappedTours;
     } catch (err) {
       console.error('Failed to fetch tours:', err);
       setError('Failed to load tours');
@@ -219,6 +237,15 @@ export default function AdminTourImagesPage() {
     setLoading(true);
     setError(null);
     try {
+      // Fetch cities for matching
+      const { data: citiesData } = await supabase
+        .from('cities')
+        .select('id, slug');
+      
+      if (citiesData) {
+        setCities(citiesData);
+      }
+      
       const [toursData, imagesData, foldersData] = await Promise.all([
         fetchTours(),
         fetchTourImages(),
@@ -944,14 +971,42 @@ export default function AdminTourImagesPage() {
     }
   };
 
-  // Get unique cities for filter
-  const uniqueCities = Array.from(new Set(tours.map(tour => tour.city))).sort();
+  // Get unique cities for filter - use city_id if available, otherwise city slug
+  const uniqueCities = useMemo(() => {
+    const citySet = new Set<string>();
+    tours.forEach(tour => {
+      const tourWithCityId = tour as any;
+      const cityId = tourWithCityId.city_id;
+      if (cityId) {
+        const city = cities.find(c => c.id === cityId);
+        if (city) {
+          citySet.add(city.slug);
+        }
+      } else {
+        citySet.add(tour.city);
+      }
+    });
+    return Array.from(citySet).sort();
+  }, [tours, cities]);
 
   const filteredTours = tours.filter((tour) => {
     const matchesSearch = searchQuery === '' || 
       tour.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tour.city.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCity = filterCity === 'all' || tour.city === filterCity;
+    
+    // City filter - match by city_id if available, otherwise by slug
+    let matchesCity = filterCity === 'all';
+    if (!matchesCity) {
+      const tourWithCityId = tour as any;
+      const cityId = tourWithCityId.city_id;
+      if (cityId) {
+        const tourCity = cities.find(c => c.id === cityId);
+        matchesCity = tourCity?.slug === filterCity;
+      } else {
+        matchesCity = tour.city === filterCity;
+      }
+    }
+    
     return matchesSearch && matchesCity;
   });
 

@@ -243,8 +243,17 @@ export default function AdminToursPage() {
     try {
       const { data, error: fetchError } = await supabase
         .from('tours_table_prod')
-        .select('*')
-        .order('city', { ascending: true })
+        .select(`
+          *,
+          cities:city_id (
+            id,
+            slug,
+            name_nl,
+            name_en,
+            name_fr,
+            name_de
+          )
+        `)
         .order('display_order', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: true });
 
@@ -446,13 +455,28 @@ export default function AdminToursPage() {
   const filteredTours = tours.filter((tour) => {
     // Search filter
     const searchLower = searchQuery.toLowerCase();
+    const tourWithCityId = tour as any;
+    const cityId = tourWithCityId.city_id;
+    const citySlug = cityId ? cities.find(c => c.id === cityId)?.slug : tour.city;
+    
     const matchesSearch = !searchQuery || 
       tour.title?.toLowerCase().includes(searchLower) ||
       tour.description?.toLowerCase().includes(searchLower) ||
+      citySlug?.toLowerCase().includes(searchLower) ||
       tour.city?.toLowerCase().includes(searchLower);
 
-    // City filter
-    const matchesCity = filterCity === 'all' || tour.city === filterCity;
+    // City filter - match by city_id or city slug
+    let matchesCity = filterCity === 'all';
+    if (!matchesCity) {
+      if (cityId) {
+        // Find city by ID and match slug
+        const tourCity = cities.find(c => c.id === cityId);
+        matchesCity = tourCity?.slug === filterCity;
+      } else {
+        // Fallback: match by city name/slug
+        matchesCity = tour.city === filterCity;
+      }
+    }
 
     // Type filter
     const matchesType = filterType === 'all' || tour.type === filterType;
@@ -474,34 +498,29 @@ export default function AdminToursPage() {
     return `${mins}m`;
   };
 
-  // Helper function to match tour city name to cities table entry
-  const matchTourCityToCity = useCallback((tourCityName: string): CityData | null => {
-    if (!tourCityName || !cities.length) return null;
-    
-    // Try direct name match first (check all name fields)
-    let matched = cities.find(c => 
-      c.name_nl === tourCityName || 
-      c.name_en === tourCityName || 
-      c.name_fr === tourCityName || 
-      c.name_de === tourCityName
-    );
-    
-    // Try slug match
-    if (!matched) {
-      const tourCitySlug = citySlugify(tourCityName);
-      matched = cities.find(c => c.slug === tourCitySlug);
-    }
-    
-    return matched || null;
-  }, [cities]);
-
-  // Group tours by city and sort by display_order within each city
-  // Map tours_table_prod.city to cities.slug for proper matching
+  // Group tours by city_id (using city slug as key for display)
   const toursByCity = useMemo(() => {
     const grouped = filteredTours.reduce((acc, tour) => {
-      // Match tour city to cities table entry
-      const matchedCity = matchTourCityToCity(tour.city);
-      const cityKey = matchedCity ? matchedCity.slug : citySlugify(tour.city); // Use slug if matched, otherwise slugify the tour city
+      // Use city_id to find the city, fallback to city slug/name matching
+      const tourWithCityId = tour as any;
+      const cityId = tourWithCityId.city_id;
+      let cityKey: string;
+      
+      if (cityId) {
+        // Find city by ID
+        const matchedCity = cities.find(c => c.id === cityId);
+        cityKey = matchedCity?.slug || cityId;
+      } else {
+        // Fallback: try to match by city name/slug (for backwards compatibility)
+        const matchedCity = cities.find(c => 
+          c.name_nl === tour.city || 
+          c.name_en === tour.city || 
+          c.name_fr === tour.city || 
+          c.name_de === tour.city ||
+          c.slug === tour.city
+        );
+        cityKey = matchedCity?.slug || citySlugify(tour.city);
+      }
       
       if (!acc[cityKey]) {
         acc[cityKey] = [];
@@ -609,7 +628,14 @@ export default function AdminToursPage() {
 
     // Update the tours state - replace all tours for this city with reordered ones
     const updatedTours = tours.map(tour => {
-      if (tour.city === city) {
+      // Match by city_id or city slug
+      const tourWithCityId = tour as any;
+      const cityId = tourWithCityId.city_id;
+      const matchesCity = cityId 
+        ? cities.find(c => c.id === cityId)?.slug === city
+        : tour.city === city;
+      
+      if (matchesCity) {
         const updatedTour = updatedToursMap.get(tour.id);
         return updatedTour || tour;
       }

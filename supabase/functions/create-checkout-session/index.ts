@@ -445,7 +445,7 @@ serve(async (req: Request) => {
     
     if (isLocalStoriesTour && existingTourBooking) {
       // Use existing tourbooking - update stripe_session_id so webhook can find it
-      // and we'll append the new invitee later
+      // We'll append the new invitee later in the local stories processing section
       const { data: updatedBooking, error: updateError } = await supabase
         .from('tourbooking')
         .update({ stripe_session_id: session.id })
@@ -459,7 +459,10 @@ serve(async (req: Request) => {
         createdBooking = existingTourBooking;
       } else {
         createdBooking = updatedBooking;
-        console.log('Using existing tourbooking for local stories (stripe_session_id updated):', createdBooking.id);
+        console.log('Using existing tourbooking for local stories (stripe_session_id updated):', {
+          tourbookingId: createdBooking.id,
+          currentInviteesCount: createdBooking.invitees?.length || 0,
+        });
       }
     } else {
       // Insert new booking into tourbooking table
@@ -536,21 +539,35 @@ serve(async (req: Request) => {
         
         if (existingTourBooking && createdBooking.id === existingTourBooking.id) {
           // Using existing tourbooking - append new invitee to existing invitees array
-          const existingInvitees = existingTourBooking.invitees || [];
-          const updatedInvitees = [...existingInvitees, newInvitee];
+          // Use the current invitees from createdBooking (which was just fetched/updated)
+          const currentInvitees = createdBooking.invitees || [];
           
-          // Update tourbooking with new invitee added
-          const { error: updateInviteesError } = await supabase
-            .from('tourbooking')
-            .update({ invitees: updatedInvitees })
-            .eq('id', createdBooking.id);
+          // Check if this invitee already exists (by email) to avoid duplicates
+          const inviteeExists = currentInvitees.some((inv: any) => inv.email === customerEmail);
           
-          if (updateInviteesError) {
-            console.error('Error updating invitees for existing tourbooking:', updateInviteesError);
+          if (!inviteeExists) {
+            const updatedInvitees = [...currentInvitees, newInvitee];
+            
+            // Update tourbooking with new invitee added
+            const { error: updateInviteesError } = await supabase
+              .from('tourbooking')
+              .update({ invitees: updatedInvitees })
+              .eq('id', createdBooking.id);
+            
+            if (updateInviteesError) {
+              console.error('Error updating invitees for existing tourbooking:', updateInviteesError);
+            } else {
+              console.log('Successfully added new invitee to existing tourbooking:', {
+                tourbookingId: createdBooking.id,
+                customerEmail,
+                totalInvitees: updatedInvitees.length,
+              });
+            }
           } else {
-            console.log('Successfully added new invitee to existing tourbooking:', {
+            console.log('Invitee already exists in existing tourbooking, skipping duplicate add:', {
               tourbookingId: createdBooking.id,
-              totalInvitees: updatedInvitees.length,
+              customerEmail,
+              currentInviteesCount: currentInvitees.length,
             });
           }
         } else {
