@@ -430,7 +430,7 @@ export default function AdminProductsPage() {
   };
 
   // Product move up/down handlers
-  const handleProductMove = async (productUuid: string, category?: string, direction: 'up' | 'down') => {
+  const handleProductMove = async (productUuid: string, direction: 'up' | 'down', category?: string) => {
     let productsList: Product[];
     
     if (orderingMode === 'global') {
@@ -492,7 +492,7 @@ export default function AdminProductsPage() {
               variant="ghost"
               size="sm"
               className="h-6 w-6 p-0"
-              onClick={() => handleProductMove(product.uuid, category, 'up')}
+              onClick={() => handleProductMove(product.uuid, 'up', category)}
               disabled={index === 0}
               title="Move up"
             >
@@ -502,7 +502,7 @@ export default function AdminProductsPage() {
               variant="ghost"
               size="sm"
               className="h-6 w-6 p-0"
-              onClick={() => handleProductMove(product.uuid, category, 'down')}
+              onClick={() => handleProductMove(product.uuid, 'down', category)}
               disabled={index === totalProducts - 1}
               title="Move down"
             >
