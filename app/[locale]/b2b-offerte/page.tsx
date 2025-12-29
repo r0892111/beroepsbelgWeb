@@ -37,7 +37,6 @@ const quoteSchema = z.object({
   streetNumber: z.string().optional(),
   postalCode: z.string().optional(),
   bus: z.string().optional(),
-  zipcode: z.string().optional(),
   billingCity: z.string().optional(),
   country: z.string().optional(),
   additionalInfo: z.string().optional(),
@@ -357,7 +356,6 @@ export default function B2BQuotePage() {
             streetNumber: data.streetNumber || null,
             postalCode: data.postalCode || null,
             bus: data.bus || null,
-            zipcode: data.zipcode || null,
             billingCity: data.billingCity || null,
             country: data.country || null,
             additionalInfo: data.additionalInfo || null,
@@ -423,7 +421,6 @@ export default function B2BQuotePage() {
         streetNumber: data.streetNumber || null,
         postalCode: data.postalCode || null,
         bus: data.bus || null,
-        zipcode: data.zipcode || null,
         billingCity: data.billingCity || null,
         country: data.country || null,
         // Contact info
@@ -443,7 +440,7 @@ export default function B2BQuotePage() {
         bookingType,
         // Meta
         submittedAt: new Date().toISOString(),
-        status: 'pending_guide_confirmation',
+        status: 'quote_pending', // Quote status flow for B2B bookings
         // Always include booking ID (created for all tours)
         bookingId: createdBookingId,
       };
@@ -865,7 +862,7 @@ export default function B2BQuotePage() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-3 gap-4 mb-4">
+                      <div className="grid grid-cols-2 gap-4 mb-4">
                         <div>
                           <Label htmlFor="postalCode" className="text-base font-semibold text-navy">{t('postalCode')}</Label>
                           <Input id="postalCode" {...register('postalCode')} className="mt-2" />
@@ -873,10 +870,6 @@ export default function B2BQuotePage() {
                         <div>
                           <Label htmlFor="bus" className="text-base font-semibold text-navy">{t('bus')}</Label>
                           <Input id="bus" placeholder={t('busPlaceholder')} {...register('bus')} className="mt-2" />
-                        </div>
-                        <div>
-                          <Label htmlFor="zipcode" className="text-base font-semibold text-navy">{t('zipcode')}</Label>
-                          <Input id="zipcode" {...register('zipcode')} className="mt-2" />
                         </div>
                       </div>
 
@@ -887,7 +880,38 @@ export default function B2BQuotePage() {
                         </div>
                         <div>
                           <Label htmlFor="country" className="text-base font-semibold text-navy">{t('country')}</Label>
-                          <Input id="country" {...register('country')} className="mt-2" />
+                          <Select
+                            value={watch('country') || ''}
+                            onValueChange={(value) => setValue('country', value)}
+                          >
+                            <SelectTrigger id="country" className="mt-2">
+                              <SelectValue placeholder={t('selectCountry') || 'Select country'} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="BE">België / Belgium</SelectItem>
+                              <SelectItem value="NL">Nederland / Netherlands</SelectItem>
+                              <SelectItem value="FR">France</SelectItem>
+                              <SelectItem value="DE">Deutschland / Germany</SelectItem>
+                              <SelectItem value="GB">United Kingdom</SelectItem>
+                              <SelectItem value="US">United States</SelectItem>
+                              <SelectItem value="CA">Canada</SelectItem>
+                              <SelectItem value="AU">Australia</SelectItem>
+                              <SelectItem value="ES">España / Spain</SelectItem>
+                              <SelectItem value="IT">Italia / Italy</SelectItem>
+                              <SelectItem value="PT">Portugal</SelectItem>
+                              <SelectItem value="CH">Schweiz / Switzerland</SelectItem>
+                              <SelectItem value="AT">Österreich / Austria</SelectItem>
+                              <SelectItem value="LU">Luxembourg</SelectItem>
+                              <SelectItem value="DK">Danmark / Denmark</SelectItem>
+                              <SelectItem value="SE">Sverige / Sweden</SelectItem>
+                              <SelectItem value="NO">Norge / Norway</SelectItem>
+                              <SelectItem value="FI">Suomi / Finland</SelectItem>
+                              <SelectItem value="PL">Polska / Poland</SelectItem>
+                              <SelectItem value="CZ">Česká republika / Czech Republic</SelectItem>
+                              <SelectItem value="IE">Ireland</SelectItem>
+                              <SelectItem value="OTHER">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                     </div>
