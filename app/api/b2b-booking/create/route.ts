@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     const bookingData: any = {
       tour_id: tourId,
       stripe_session_id: null, // B2B bookings don't have Stripe session initially
-      status: 'pending_guide_confirmation', // B2B status
+      status: 'quote_pending', // Quote status flow: quote_pending → quote_sent → quote_accepted → quote_paid → confirmed
       tour_datetime: tourDatetime,
       city: citySlug || null,
       booking_type: 'B2B', // Mark as B2B booking (will be ignored if column doesn't exist)
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
     console.log('B2B booking created successfully:', {
       bookingId: createdBooking.id,
       tourId,
-      status: 'pending_guide_confirmation',
+      status: 'quote_pending',
       hasOpMaatAnswers: !!opMaatAnswers,
       opMaatAnswersSaved: !!savedOpMaatAnswers,
       opMaatAnswers: opMaatAnswers ? {
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       bookingId: createdBooking.id,
-      status: 'pending_jotform_confirmation',
+      status: 'quote_pending',
     });
   } catch (error: any) {
     console.error('Error in B2B booking creation:', error);

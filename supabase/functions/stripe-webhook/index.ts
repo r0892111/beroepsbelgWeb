@@ -69,25 +69,32 @@ async function handleEvent(event: Stripe.Event) {
     console.info(`Processing checkout.session.completed: ${sessionId}, mode: ${mode}, status: ${payment_status}`);
 
     if (mode === 'payment' && payment_status === 'paid') {
-      // First, check if tour booking exists and its current status
+      // First, check if tour booking exists and its current status and booking type
       const { data: existingBooking, error: checkError } = await supabase
         .from('tourbooking')
-        .select('id, status, tour_id')
+        .select('id, status, tour_id, booking_type')
         .eq('stripe_session_id', sessionId)
         .single();
 
+      // Determine the appropriate status based on booking type
+      let newStatus = 'payment_completed'; // Default for B2C bookings
+      if (existingBooking?.booking_type === 'B2B') {
+        // For B2B quote bookings, use quote_paid status
+        newStatus = 'quote_paid';
+      }
+
       // If booking exists and is already processed, skip webhook call (idempotency)
-      if (existingBooking && existingBooking.status === 'payment_completed') {
-        console.info(`Tour booking for session ${sessionId} already processed, skipping webhook call`);
+      if (existingBooking && existingBooking.status === newStatus) {
+        console.info(`Tour booking for session ${sessionId} already processed with status ${newStatus}, skipping webhook call`);
         return;
       }
 
       // Update tour booking status
       const { data: tourBooking, error: tourBookingError } = await supabase
         .from('tourbooking')
-        .update({ status: 'payment_completed' })
+        .update({ status: newStatus })
         .eq('stripe_session_id', sessionId)
-        .neq('status', 'payment_completed') // Only update if not already completed
+        .neq('status', newStatus) // Only update if not already at this status
         .select()
         .single();
 
