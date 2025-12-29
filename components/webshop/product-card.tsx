@@ -147,15 +147,15 @@ export function ProductCard({ product }: ProductCardProps) {
           className="flex-1 flex flex-col"
           style={{ backgroundColor: 'var(--card-content-bg)', paddingTop: '1.75rem', paddingBottom: '1.75rem' }}
         >
-          <div className="relative w-full min-h-[200px] rounded-lg border border-[#1a3628]/10 mb-4 overflow-hidden flex items-center justify-center bg-gray-50">
+          <div className="relative w-full rounded-lg border border-[#1a3628]/10 mb-4 overflow-hidden flex items-center justify-center bg-gray-50">
             <Image
               src={product.image || getProductPlaceholder(product.category)}
               alt={product.title[locale]}
-              width={800}
-              height={600}
-              className="w-full h-auto max-h-[400px] object-contain group-hover:scale-105 transition-transform duration-300"
+              width={1200}
+              height={1200}
+              className="w-full h-auto max-h-[500px] object-contain group-hover:scale-105 transition-transform duration-300"
               unoptimized
-              style={{ maxWidth: '100%' }}
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
             />
           </div>
           <p

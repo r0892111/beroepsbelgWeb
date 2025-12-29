@@ -42,6 +42,7 @@ export function MainNav({ locale }: MainNavProps) {
     { label: t('jobs'), href: `/${locale}/jobs/become-a-guide` },
     { label: t('contact'), href: `/${locale}/contact/contactformulier` },
     { label: t('b2b'), href: `/${locale}/b2b-offerte` },
+    { label: t('airbnb'), href: `/${locale}/airbnb` },
   ];
 
   return (

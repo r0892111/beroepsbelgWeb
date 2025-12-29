@@ -537,6 +537,8 @@
     "successMessage": "Bewerbung gesendet!",
     "invalidEmail": "Ungültige E-Mail-Adresse",
     "minimumCharacters": "Mindestens 50 Zeichen erforderlich",
+    "cvLabel": "CV (PDF)",
+    "photoLabel": "Foto",
     "description": "Sind Sie leidenschaftlich für belgische Kultur, Geschichte und Architektur? Haben Sie ein Talent fürs Geschichtenerzählen und teilen Sie gerne Ihr Wissen mit anderen? Dann suchen wir Sie! BeroepsBelg ist immer auf der Suche nach enthusiastischen Führern, die unsere Gäste auf eine unvergessliche Reise durch die faszinierende Geschichte unserer schönen Städte mitnehmen können.",
     "name": "Name*",
     "email": "E-Mail*",

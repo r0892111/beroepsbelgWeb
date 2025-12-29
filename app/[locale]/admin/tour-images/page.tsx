@@ -241,6 +241,12 @@ export default function AdminTourImagesPage() {
       });
 
       setTours(toursWithImages);
+      
+      // If dialog is open, refresh tourImages state
+      if (selectedTour && dialogOpen) {
+        const updatedImages = imagesData[selectedTour.id] || [];
+        setTourImages([...updatedImages].sort((a, b) => a.sort_order - b.sort_order));
+      }
     } catch (err) {
       console.error('Failed to load data:', err);
       setError('Failed to load data');
@@ -512,8 +518,17 @@ export default function AdminTourImagesPage() {
       }
 
       toast.success(`Images saved for ${selectedTour.title}`);
-      setDialogOpen(false);
+      
+      // Refresh data first
       await loadData();
+      
+      // Update tourImages state in dialog if still open
+      if (selectedTour) {
+        const updatedImages = allTourImages[selectedTour.id] || [];
+        setTourImages([...updatedImages].sort((a, b) => a.sort_order - b.sort_order));
+      }
+      
+      setDialogOpen(false);
     } catch (err: any) {
       console.error('Failed to save images:', err);
       toast.error(err.message || 'Failed to save images');
