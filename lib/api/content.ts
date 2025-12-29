@@ -112,6 +112,7 @@ export async function getCities(): Promise<City[]> {
   }
 
   const citiesFromDb = (data || []).map((row: any) => ({
+    id: row.id,
     slug: row.slug,
     name: {
       nl: row.name_nl,

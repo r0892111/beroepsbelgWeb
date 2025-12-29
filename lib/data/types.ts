@@ -3,6 +3,7 @@ import type { Locale as I18nLocale } from '@/i18n';
 export type Locale = I18nLocale;
 
 export type City = {
+  id: string;
   slug: string;
   name: Record<Locale, string>;
   teaser: Record<Locale, string>;
