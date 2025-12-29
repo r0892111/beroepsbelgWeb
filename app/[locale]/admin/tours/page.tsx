@@ -341,8 +341,8 @@ export default function AdminToursPage() {
       notes: tour.notes || '',
       options: tour.options || {},
       themes: Array.isArray(tour.themes) ? tour.themes : [],
-      local_stories: tour.local_stories === true || tour.local_stories === 'true' || tour.local_stories === 1,
-      op_maat: tour.op_maat === true || tour.op_maat === 'true' || tour.op_maat === 1,
+      local_stories: Boolean(tour.local_stories === true || (tour.local_stories as any) === 'true' || (tour.local_stories as any) === 1),
+      op_maat: Boolean(tour.op_maat === true || (tour.op_maat as any) === 'true' || (tour.op_maat as any) === 1),
     });
     setCustomLanguage('');
     setCustomTheme('');
