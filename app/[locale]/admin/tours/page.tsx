@@ -54,6 +54,8 @@ interface Tour {
   updated_at: string | null;
   display_order: number | null;
   themes: string[] | null;
+  local_stories?: boolean;
+  op_maat?: boolean;
 }
 
 interface TourFormData {
