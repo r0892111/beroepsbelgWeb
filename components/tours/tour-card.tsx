@@ -58,24 +58,24 @@ export function TourCard({ tour, locale }: TourCardProps) {
       }}
     >
       <Link href={`/${locale}/tours-${tour.city}/${tour.slug}`} className="relative h-48 w-full overflow-hidden block cursor-pointer">
-        <Image
+          <Image
           src={imageUrl}
-          alt={tour.title}
-          fill
-          className="object-cover transition-transform duration-300 group-hover:scale-105"
-        />
+            alt={tour.title}
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+          />
         {tour.type === 'Bike' && (
-          <div
-            className="absolute top-3 right-3 rounded-full p-2"
-            style={{
-              backgroundColor: 'var(--primary-base)',
-              color: 'white',
-              boxShadow: 'var(--shadow-medium)'
-            }}
-          >
-            <Bike className="h-5 w-5" />
-          </div>
-        )}
+            <div
+              className="absolute top-3 right-3 rounded-full p-2"
+              style={{
+                backgroundColor: 'var(--primary-base)',
+                color: 'white',
+                boxShadow: 'var(--shadow-medium)'
+              }}
+            >
+              <Bike className="h-5 w-5" />
+            </div>
+          )}
       </Link>
       <CardHeader
         className="flex-1 flex flex-col justify-center"
@@ -115,6 +115,23 @@ export function TourCard({ tour, locale }: TourCardProps) {
         >
           {tour.description}
         </CardDescription>
+        {tour.themes && tour.themes.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {tour.themes.map((theme) => (
+              <Badge
+                key={theme}
+                className="text-xs px-2 py-0.5"
+                style={{
+                  backgroundColor: '#1BDD95',
+                  color: 'white',
+                  border: 'none',
+                }}
+              >
+                {theme}
+              </Badge>
+            ))}
+          </div>
+        )}
         <div
           className="flex items-center gap-1 text-sm mt-2"
           style={{ color: 'var(--text-muted)' }}
@@ -179,18 +196,18 @@ export function TourCard({ tour, locale }: TourCardProps) {
           </span>
         )}
         <div className="flex items-center gap-2 w-full">
-          <Button
-            size="sm"
-            asChild
+        <Button
+          size="sm"
+          asChild
             className="flex-1"
-            style={{
-              backgroundColor: 'var(--primary-base)',
-              color: 'white',
-              boxShadow: 'var(--shadow-small)'
-            }}
-          >
-            <Link href={`/${locale}/tours-${tour.city}/${tour.slug}`}>{t('moreInfo')}</Link>
-          </Button>
+          style={{
+            backgroundColor: 'var(--primary-base)',
+            color: 'white',
+            boxShadow: 'var(--shadow-small)'
+          }}
+        >
+          <Link href={`/${locale}/tours-${tour.city}/${tour.slug}`}>{t('moreInfo')}</Link>
+        </Button>
           {tour.local_stories ? (
             <Button
               size="sm"

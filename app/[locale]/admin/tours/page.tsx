@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { Button } from '@/components/ui/button';
@@ -50,6 +50,7 @@ interface Tour {
   created_at: string | null;
   updated_at: string | null;
   display_order: number | null;
+  themes: string[] | null;
 }
 
 interface TourFormData {
@@ -64,6 +65,7 @@ interface TourFormData {
   description: string;
   notes: string;
   options: Record<string, any>;
+  themes: string[];
 }
 
 const CITY_OPTIONS = ['Antwerpen', 'Brussel', 'Brugge', 'Gent', 'Knokke-Heist', 'Leuven', 'Mechelen', 'Hasselt'];
@@ -110,7 +112,14 @@ export default function AdminToursPage() {
     description: '',
     notes: '',
     options: {},
+    themes: [],
   });
+  
+  // Custom language input state
+  const [customLanguage, setCustomLanguage] = useState('');
+  
+  // Custom theme input state
+  const [customTheme, setCustomTheme] = useState('');
 
   useEffect(() => {
     if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
@@ -175,7 +184,10 @@ export default function AdminToursPage() {
       description: '',
       notes: '',
       options: {},
+      themes: [],
     });
+    setCustomLanguage('');
+    setCustomTheme('');
     setDialogOpen(true);
   };
 
@@ -193,7 +205,10 @@ export default function AdminToursPage() {
       description: tour.description || '',
       notes: tour.notes || '',
       options: tour.options || {},
+      themes: Array.isArray(tour.themes) ? tour.themes : [],
     });
+    setCustomLanguage('');
+    setCustomTheme('');
     setDialogOpen(true);
   };
 
@@ -214,6 +229,7 @@ export default function AdminToursPage() {
         description: formData.description,
         notes: formData.notes || null,
         options: formData.options || {},
+        themes: formData.themes || [],
         updated_at: new Date().toISOString(),
       };
 
@@ -298,17 +314,33 @@ export default function AdminToursPage() {
     return `${mins}m`;
   };
 
-  // Group tours by city
-  const toursByCity = filteredTours.reduce((acc, tour) => {
-    if (!acc[tour.city]) {
-      acc[tour.city] = [];
-    }
-    acc[tour.city].push(tour);
-    return acc;
-  }, {} as Record<string, Tour[]>);
+  // Group tours by city and sort by display_order within each city
+  const toursByCity = useMemo(() => {
+    const grouped = filteredTours.reduce((acc, tour) => {
+      if (!acc[tour.city]) {
+        acc[tour.city] = [];
+      }
+      acc[tour.city].push(tour);
+      return acc;
+    }, {} as Record<string, Tour[]>);
+
+    // Sort tours within each city by display_order (nulls last), then by created_at
+    Object.keys(grouped).forEach(city => {
+      grouped[city].sort((a, b) => {
+        if (a.display_order === null && b.display_order === null) {
+          return (a.created_at || '').localeCompare(b.created_at || '');
+        }
+        if (a.display_order === null) return 1;
+        if (b.display_order === null) return -1;
+        return a.display_order - b.display_order;
+      });
+    });
+
+    return grouped;
+  }, [filteredTours]);
 
   // Sort cities alphabetically
-  const sortedCities = Object.keys(toursByCity).sort();
+  const sortedCities = useMemo(() => Object.keys(toursByCity).sort(), [toursByCity]);
 
   const toggleCity = (city: string) => {
     setExpandedCities(prev => {
@@ -329,7 +361,18 @@ export default function AdminToursPage() {
       return;
     }
 
-    const cityTours = toursByCity[city];
+    // Get current tours for this city from state, sorted by display_order
+    const cityTours = tours
+      .filter(t => t.city === city)
+      .sort((a, b) => {
+        if (a.display_order === null && b.display_order === null) {
+          return (a.created_at || '').localeCompare(b.created_at || '');
+        }
+        if (a.display_order === null) return 1;
+        if (b.display_order === null) return -1;
+        return a.display_order - b.display_order;
+      });
+    
     const oldIndex = cityTours.findIndex(t => t.id === active.id);
     const newIndex = cityTours.findIndex(t => t.id === over.id);
 
@@ -337,30 +380,38 @@ export default function AdminToursPage() {
       return;
     }
 
-    // Optimistically update UI
+    // Optimistically update UI with new order and display_order values
     const reorderedTours = arrayMove(cityTours, oldIndex, newIndex);
+    
+    // Update display_order for all reordered tours
+    const reorderedToursWithOrder = reorderedTours.map((tour, index) => ({
+      ...tour,
+      display_order: index + 1,
+    }));
+
+    // Create a map of updated tours for quick lookup
+    const updatedToursMap = new Map(reorderedToursWithOrder.map(t => [t.id, t]));
+
+    // Update the tours state - replace all tours for this city with reordered ones
     const updatedTours = tours.map(tour => {
       if (tour.city === city) {
-        const newTour = reorderedTours.find(rt => rt.id === tour.id);
-        return newTour || tour;
+        const updatedTour = updatedToursMap.get(tour.id);
+        return updatedTour || tour;
       }
       return tour;
     });
+    
+    // Set state immediately to update UI
     setTours(updatedTours);
 
     // Update display_order in database
     try {
-      const updates = reorderedTours.map((tour, index) => ({
-        id: tour.id,
-        display_order: index + 1,
-      }));
-
       // Update all tours in this city with their new display_order
-      for (const update of updates) {
+      for (const tour of reorderedToursWithOrder) {
         const { error } = await supabase
           .from('tours_table_prod')
-          .update({ display_order: update.display_order })
-          .eq('id', update.id);
+          .update({ display_order: tour.display_order })
+          .eq('id', tour.id);
 
         if (error) {
           console.error('Failed to update display_order:', error);
@@ -827,25 +878,109 @@ export default function AdminToursPage() {
                     <span className="text-sm text-muted-foreground">No languages selected</span>
                   )}
                 </div>
-                <Select
-                  value=""
-                  onValueChange={(value) => {
-                    if (!formData.languages.includes(value)) {
-                      setFormData({ ...formData, languages: [...formData.languages, value] });
-                    }
-                  }}
-                >
-                  <SelectTrigger className="bg-white">
-                    <SelectValue placeholder="Add language..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LANGUAGE_OPTIONS.filter(lang => !formData.languages.includes(lang)).map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select
+                    value=""
+                    onValueChange={(value) => {
+                      if (!formData.languages.includes(value)) {
+                        setFormData({ ...formData, languages: [...formData.languages, value] });
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="bg-white flex-1">
+                      <SelectValue placeholder="Select from list..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LANGUAGE_OPTIONS.filter(lang => !formData.languages.includes(lang)).map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex gap-2 flex-1">
+                    <Input
+                      value={customLanguage}
+                      onChange={(e) => setCustomLanguage(e.target.value)}
+                      placeholder="Or type custom language..."
+                      className="bg-white"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const lang = customLanguage.trim();
+                          if (lang && !formData.languages.includes(lang)) {
+                            setFormData({ ...formData, languages: [...formData.languages, lang] });
+                            setCustomLanguage('');
+                          }
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        const lang = customLanguage.trim();
+                        if (lang && !formData.languages.includes(lang)) {
+                          setFormData({ ...formData, languages: [...formData.languages, lang] });
+                          setCustomLanguage('');
+                        }
+                      }}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-navy font-semibold">Themes</Label>
+              <div className="border rounded-lg p-3 space-y-2 bg-white">
+                <div className="flex flex-wrap gap-2">
+                  {formData.themes.map((theme) => (
+                    <Badge key={theme} className="bg-purple-100 text-purple-900 border border-purple-300 hover:bg-purple-200 flex items-center gap-1">
+                      {theme}
+                      <X
+                        className="h-3 w-3 cursor-pointer hover:bg-purple-300/50 rounded"
+                        onClick={() => setFormData({ ...formData, themes: formData.themes.filter(t => t !== theme) })}
+                      />
+                    </Badge>
+                  ))}
+                  {formData.themes.length === 0 && (
+                    <span className="text-sm text-muted-foreground">No themes added</span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    value={customTheme}
+                    onChange={(e) => setCustomTheme(e.target.value)}
+                    placeholder="Type theme (e.g., architecture, fashion, history)..."
+                    className="bg-white flex-1"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const theme = customTheme.trim();
+                        if (theme && !formData.themes.includes(theme)) {
+                          setFormData({ ...formData, themes: [...formData.themes, theme] });
+                          setCustomTheme('');
+                        }
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const theme = customTheme.trim();
+                      if (theme && !formData.themes.includes(theme)) {
+                        setFormData({ ...formData, themes: [...formData.themes, theme] });
+                        setCustomTheme('');
+                      }
+                    }}
+                  >
+                    Add
+                  </Button>
+                </div>
               </div>
             </div>
 
