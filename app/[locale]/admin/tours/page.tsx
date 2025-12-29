@@ -1275,7 +1275,7 @@ export default function AdminToursPage() {
                 </Button>
                 <Link href={`/${locale}/admin/tour-images`}>
                   <Button variant="outline" size="sm">
-                    <Image className="h-4 w-4 mr-2" />
+                    <ImageIcon className="h-4 w-4 mr-2" />
                     Tour Images
                   </Button>
                 </Link>

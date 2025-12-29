@@ -183,8 +183,8 @@ export default function B2BQuotePage() {
         tour.city === selectedCity && 
         tour.slug !== 'cadeaubon' &&
         tour.local_stories !== true &&
-        tour.local_stories !== 'true' &&
-        tour.local_stories !== 1
+        (tour.local_stories as any) !== 'true' &&
+        (tour.local_stories as any) !== 1
       )
     : [];
 
