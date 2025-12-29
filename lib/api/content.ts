@@ -70,17 +70,48 @@ const parseNumber = (value: unknown): number | null => {
   return null;
 };
 
+export async function getCitiesFromTours(): Promise<Array<{ slug: string; name: string }>> {
+  const { data, error } = await supabaseServer
+    .from('tours_table_prod')
+    .select('city')
+    .not('city', 'is', null);
+
+  if (error) {
+    console.error('[getCitiesFromTours] Error fetching cities from tours:', error);
+    return [];
+  }
+
+  // Get unique cities, slugify them, and create city objects
+  const cityMap = new Map<string, string>();
+  (data || []).forEach((row: any) => {
+    if (row.city) {
+      const slug = citySlugify(row.city);
+      if (!cityMap.has(slug)) {
+        cityMap.set(slug, row.city);
+      }
+    }
+  });
+
+  const result: Array<{ slug: string; name: string }> = [];
+  cityMap.forEach((name, slug) => {
+    result.push({ slug, name });
+  });
+
+  return result;
+}
+
 export async function getCities(): Promise<City[]> {
   const { data, error } = await supabaseServer
     .from('cities')
     .select('*')
-    .order('slug');
+    .order('display_order', { ascending: true, nullsFirst: false })
+    .order('slug', { ascending: true });
 
   if (error) {
     throw error;
   }
 
-  const cities = (data || []).map((row: any) => ({
+  const citiesFromDb = (data || []).map((row: any) => ({
     slug: row.slug,
     name: {
       nl: row.name_nl,
@@ -100,11 +131,19 @@ export async function getCities(): Promise<City[]> {
       fr: row.cta_text_fr,
       de: row.cta_text_de,
     } : undefined,
+    comingSoonText: row.coming_soon_text_nl ? {
+      nl: row.coming_soon_text_nl,
+      en: row.coming_soon_text_en,
+      fr: row.coming_soon_text_fr,
+      de: row.coming_soon_text_de,
+    } : undefined,
     image: row.image,
     status: row.status,
   }));
 
-  return cities;
+  // Only return cities from the cities table (no merge with tour-only cities)
+  // Cities should be created through the admin panel
+  return citiesFromDb;
 }
 
 export async function getTours(citySlug?: string): Promise<Tour[]> {
@@ -120,11 +159,38 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
     throw error;
   }
 
+  // Fetch cities table for accurate matching (always fetch to ensure correct city slugs)
+  const { data: citiesData } = await supabaseServer
+    .from('cities')
+    .select('slug, name_nl, name_en, name_fr, name_de');
+  
+  // Create a map of city names to city slugs
+  const citiesMap: Map<string, string> = new Map();
+  if (citiesData) {
+    citiesData.forEach((city: any) => {
+      // Map all name variations to the city slug
+      if (city.name_nl) citiesMap.set(city.name_nl, city.slug);
+      if (city.name_en) citiesMap.set(city.name_en, city.slug);
+      if (city.name_fr) citiesMap.set(city.name_fr, city.slug);
+      if (city.name_de) citiesMap.set(city.name_de, city.slug);
+    });
+  }
+
   // Fetch tour images to get primary images
   const tourImagesMap = await getTourImages();
 
   const tours = (data || []).map((row: any): Tour => {
-    const slugifiedCity = citySlugify(row.city);
+    // Try to find matching city in cities table first
+    let slugifiedCity: string;
+    const matchedCitySlug = citiesMap.get(row.city);
+    
+    if (matchedCitySlug) {
+      // Use the slug from cities table
+      slugifiedCity = matchedCitySlug;
+    } else {
+      // Fallback to slugifying the city name
+      slugifiedCity = citySlugify(row.city);
+    }
 
     // Get tour images for this tour
     const tourImages = tourImagesMap[row.id] || [];
@@ -168,23 +234,84 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
 }
 
 export async function getTourBySlug(citySlug: string, slug: string): Promise<Tour | null> {
-  // Fetch all tours for the city and find by generated slug
+  // Fetch cities table for accurate matching
+  const { data: citiesData } = await supabaseServer
+    .from('cities')
+    .select('slug, name_nl, name_en, name_fr, name_de');
+  
+  // Create a map of city names to city slugs
+  const citiesMap: Map<string, string> = new Map();
+  if (citiesData) {
+    citiesData.forEach((city: any) => {
+      // Map all name variations to the city slug
+      if (city.name_nl) citiesMap.set(city.name_nl, city.slug);
+      if (city.name_en) citiesMap.set(city.name_en, city.slug);
+      if (city.name_fr) citiesMap.set(city.name_fr, city.slug);
+      if (city.name_de) citiesMap.set(city.name_de, city.slug);
+    });
+  }
+
+  // Fetch all tours
   const { data, error } = await supabaseServer
     .from('tours_table_prod')
     .select('*');
 
   if (error) {
+    console.error('[getTourBySlug] Database error:', error);
     throw error;
   }
 
   // Find matching tour by city and generated slug
   const matchingTour = (data || []).find((row: any) => {
-    const rowCitySlug = citySlugify(row.city);
+    // Try to find matching city in cities table first
+    let rowCitySlug: string;
+    const matchedCitySlug = citiesMap.get(row.city);
+    
+    if (matchedCitySlug) {
+      // Use the slug from cities table
+      rowCitySlug = matchedCitySlug;
+    } else {
+      // Fallback to slugifying the city name
+      rowCitySlug = citySlugify(row.city);
+    }
+    
     const rowSlug = slugify(row.title);
-    return rowCitySlug === citySlug && rowSlug === slug;
+    const matches = rowCitySlug === citySlug && rowSlug === slug;
+    
+    // Log for debugging
+    if (rowCitySlug === citySlug) {
+      console.log('[getTourBySlug] City match found:', {
+        citySlug,
+        rowCity: row.city,
+        rowCitySlug,
+        matchedCitySlug,
+        rowTitle: row.title,
+        rowSlug,
+        slug,
+        matches
+      });
+    }
+    
+    return matches;
   });
 
   if (!matchingTour) {
+    const uniqueCities = new Set<string>();
+    (data || []).forEach((r: any) => {
+      const citySlug = citySlugify(r.city);
+      uniqueCities.add(citySlug);
+    });
+    const availableCities: string[] = [];
+    uniqueCities.forEach(city => availableCities.push(city));
+    
+    console.warn('[getTourBySlug] No matching tour found:', {
+      citySlug,
+      slug,
+      availableCities,
+      availableSlugs: (data || [])
+        .filter((r: any) => citySlugify(r.city) === citySlug)
+        .map((r: any) => ({ title: r.title, slug: slugify(r.title) }))
+    });
     return null;
   }
 
@@ -209,9 +336,13 @@ export async function getTourBySlug(citySlug: string, slug: string): Promise<Tou
     allColumns: Object.keys(matchingTour),
   });
 
+  // Determine the correct city slug for the return value
+  const matchedCitySlugForReturn = citiesMap.get(matchingTour.city);
+  const finalCitySlug = matchedCitySlugForReturn || citySlugify(matchingTour.city);
+
   return {
     id: matchingTour.id,
-    city: citySlugify(matchingTour.city),
+    city: finalCitySlug,
     slug: slugify(matchingTour.title),
     title: matchingTour.title,
     type: matchingTour.type,
@@ -236,7 +367,10 @@ export async function getTourBySlug(citySlug: string, slug: string): Promise<Tou
 export async function getProducts(): Promise<Product[]> {
   const { data, error } = await supabaseServer
     .from('webshop_data')
-    .select('*');
+    .select('*')
+    .order('display_order', { ascending: true, nullsFirst: false })
+    .order('category_display_order', { ascending: true, nullsFirst: false })
+    .order('Name', { ascending: true });
   if (error) {
     throw error;
   }
@@ -305,6 +439,8 @@ export async function getProducts(): Promise<Product[]> {
       additionalInfo: additionalInfoRecord,
       label: undefined,
       image: imageUrl, // Use primary image from database if available
+      displayOrder: typeof row.display_order === 'number' ? row.display_order : undefined,
+      categoryDisplayOrder: typeof row.category_display_order === 'number' ? row.category_display_order : undefined,
     } satisfies Product;
   });
 
@@ -458,32 +594,6 @@ export async function getTourImages(): Promise<Record<string, TourImage[]>> {
   }
 }
 
-export async function getCityImages(): Promise<Record<string, { photoUrl?: string }>> {
-  try {
-    const { data, error } = await supabaseServer
-      .from('city_images')
-      .select('city_id, photo_url');
-
-    if (error) {
-      console.error('Error fetching city images:', error);
-      return {};
-    }
-
-    const imagesMap: Record<string, { photoUrl?: string }> = {};
-    (data || []).forEach((row: any) => {
-      if (row.photo_url) {
-        imagesMap[row.city_id] = {
-          photoUrl: row.photo_url,
-        };
-      }
-    });
-
-    return imagesMap;
-  } catch (err) {
-    console.error('Exception fetching city images:', err);
-    return {};
-  }
-}
 
 export async function getFaqItems(): Promise<FaqItem[]> {
   try {

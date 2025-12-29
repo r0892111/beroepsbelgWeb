@@ -9,6 +9,7 @@ export type City = {
   status?: 'live' | 'coming-soon';
   image?: string;
   ctaText?: Record<Locale, string>;
+  comingSoonText?: Record<Locale, string>;
 };
 
 export type Tour = {
@@ -51,6 +52,8 @@ export type Product = {
   additionalInfo?: Record<Locale, string>;
   label?: string;
   image?: string;
+  displayOrder?: number; // Global display order (lower numbers appear first)
+  categoryDisplayOrder?: number; // Per-category display order (lower numbers appear first within category)
 };
 
 export type ProductImage = {

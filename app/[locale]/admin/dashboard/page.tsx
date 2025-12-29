@@ -383,12 +383,6 @@ export default function AdminDashboardPage() {
                   Manage FAQ
                 </Button>
               </Link>
-              <Link href={`/${locale}/admin/city-images`}>
-                <Button className="w-full justify-start btn-primary" size="lg">
-                  <MapPin className="h-5 w-5 mr-2" />
-                  City Images
-                </Button>
-              </Link>
             </div>
           </CardContent>
         </Card>
