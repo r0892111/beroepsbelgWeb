@@ -917,3 +917,31 @@ export async function getParentBooking(bookingId: number) {
     return null;
   }
 }
+
+export async function getAirBNBListings() {
+  try {
+    const { data, error } = await supabaseServer
+      .from('airbnb')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching AirBNB listings:', error);
+      return [];
+    }
+
+    return (data || []).map((row: any) => ({
+      id: row.id,
+      url: row.url,
+      price: row.price ? Number(row.price) : null,
+      title: row.title,
+      image_url: row.image_url,
+      city: row.city,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    }));
+  } catch (err) {
+    console.error('Exception fetching AirBNB listings:', err);
+    return [];
+  }
+}

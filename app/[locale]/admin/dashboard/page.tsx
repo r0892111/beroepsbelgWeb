@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from 'next-intl';
-import { ExternalLink, LogOut, Link as LinkIcon, Home, RefreshCw, CheckCircle2, Unlink, Calendar, Users as UsersIcon, HelpCircle, MapPin, Image, Package, FileText } from 'lucide-react';
+import { ExternalLink, LogOut, Link as LinkIcon, Home, RefreshCw, CheckCircle2, Unlink, Calendar, Users as UsersIcon, HelpCircle, MapPin, Image, Package, FileText, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 
@@ -387,6 +387,12 @@ export default function AdminDashboardPage() {
                 <Button className="w-full justify-start btn-primary" size="lg">
                   <FileText className="h-5 w-5 mr-2" />
                   Job Applications
+                </Button>
+              </Link>
+              <Link href={`/${locale}/admin/airbnb`}>
+                <Button className="w-full justify-start btn-primary" size="lg">
+                  <Building2 className="h-5 w-5 mr-2" />
+                  AirBNB Listings
                 </Button>
               </Link>
             </div>

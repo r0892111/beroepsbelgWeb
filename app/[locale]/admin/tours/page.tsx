@@ -275,11 +275,24 @@ export default function AdminToursPage() {
       })) as Tour[];
       setTours(mappedTours);
       
-      // Expand all cities by default - use city_id
-      const cityKeys = new Set(mappedTours.map(t => {
+      // Expand all cities by default - normalize to city IDs
+      const cityKeys = new Set<string>();
+      mappedTours.forEach(t => {
         const tourWithCityId = t as any;
-        return tourWithCityId.city_id || t.city; // Use city_id if available, fallback to city slug
-      }));
+        let cityId = tourWithCityId.city_id;
+        
+        // If no city_id, try to find city by slug and use its ID
+        if (!cityId && t.city) {
+          const matchedCity = cities.find(c => c.slug === t.city);
+          if (matchedCity) {
+            cityId = matchedCity.id;
+          }
+        }
+        
+        if (cityId) {
+          cityKeys.add(cityId);
+        }
+      });
       setExpandedCities(cityKeys);
     } catch (err) {
       console.error('Failed to fetch tours:', err);
@@ -504,25 +517,33 @@ export default function AdminToursPage() {
     return `${mins}m`;
   };
 
-  // Group tours by city_id
+  // Group tours by city_id (normalize all keys to city IDs)
   const toursByCity = useMemo(() => {
     const grouped = filteredTours.reduce((acc, tour) => {
       const tourWithCityId = tour as any;
-      const cityId = tourWithCityId.city_id;
+      let cityId = tourWithCityId.city_id;
       
-      // Use city_id as key, fallback to city slug if no city_id
-      const key = cityId || tour.city;
-      
-      if (!acc[key]) {
-        acc[key] = [];
+      // If no city_id, try to find city by slug and use its ID
+      if (!cityId && tour.city) {
+        const matchedCity = cities.find(c => c.slug === tour.city);
+        if (matchedCity) {
+          cityId = matchedCity.id;
+        }
       }
-      acc[key].push(tour);
+      
+      // Only add if we have a valid city ID
+      if (cityId) {
+        if (!acc[cityId]) {
+          acc[cityId] = [];
+        }
+        acc[cityId].push(tour);
+      }
       return acc;
     }, {} as Record<string, Tour[]>);
 
     // Sort tours within each city by display_order (nulls last), then by created_at
-    Object.keys(grouped).forEach(city => {
-      grouped[city].sort((a, b) => {
+    Object.keys(grouped).forEach(cityId => {
+      grouped[cityId].sort((a, b) => {
         if (a.display_order === null && b.display_order === null) {
           return (a.created_at || '').localeCompare(b.created_at || '');
         }
@@ -537,33 +558,47 @@ export default function AdminToursPage() {
 
   // Sort cities by display_order from cities table, then alphabetically
   // Show ALL cities from cities table, even those without tours
+  // Return city IDs (not slugs) for consistent identification
   const sortedCities = useMemo(() => {
-    // Start with all cities from cities table
-    const allCitySlugs = new Set<string>();
-    cities.forEach(c => allCitySlugs.add(c.slug));
-    
-    // Also add any tour cities that don't have a matching city entry (for backwards compatibility)
-    Object.keys(toursByCity).forEach(tourCityKey => {
-      const matchedCity = cities.find(c => c.slug === tourCityKey);
-      if (!matchedCity) {
-        // This is a tour city that doesn't exist in cities table yet
-        allCitySlugs.add(tourCityKey);
+    // Start with all cities from cities table (use IDs)
+    const allCityIds = new Set<string>();
+    cities.forEach(c => {
+      if (c.id) {
+        allCityIds.add(c.id);
       }
     });
     
-    // Create a map of city slugs to their display_order
-    const cityOrderMap = new Map<string, number>();
-    cities.forEach(city => {
-      cityOrderMap.set(city.slug, city.display_order ?? 9999);
+    // Also add any tour cities that don't have a matching city entry (for backwards compatibility)
+    // toursByCity now uses IDs as keys, so we can add them directly
+    Object.keys(toursByCity).forEach(cityId => {
+      const matchedCity = cities.find(c => c.id === cityId);
+      if (!matchedCity && cityId) {
+        // This is a tour city that doesn't exist in cities table yet
+        // Keep it for backwards compatibility, but it won't be editable
+        allCityIds.add(cityId);
+      }
     });
     
-    return Array.from(allCitySlugs).sort((a, b) => {
+    // Create a map of city IDs to their display_order
+    const cityOrderMap = new Map<string, number>();
+    cities.forEach(city => {
+      if (city.id) {
+        cityOrderMap.set(city.id, city.display_order ?? 9999);
+      }
+    });
+    
+    return Array.from(allCityIds).sort((a, b) => {
       const orderA = cityOrderMap.get(a) ?? 9999;
       const orderB = cityOrderMap.get(b) ?? 9999;
       if (orderA !== orderB) {
         return orderA - orderB;
       }
-      return a.localeCompare(b);
+      // If same order, sort by city name for consistency
+      const cityA = cities.find(c => c.id === a);
+      const cityB = cities.find(c => c.id === b);
+      const nameA = cityA?.name_nl || cityA?.slug || a;
+      const nameB = cityB?.name_nl || cityB?.slug || b;
+      return nameA.localeCompare(nameB);
     });
   }, [toursByCity, cities]);
 
@@ -744,8 +779,9 @@ export default function AdminToursPage() {
       return;
     }
 
-    const oldIndex = cities.findIndex(c => c.slug === active.id);
-    const newIndex = cities.findIndex(c => c.slug === over.id);
+    // active.id and over.id are now city IDs (from sortedCities)
+    const oldIndex = cities.findIndex(c => c.id === active.id);
+    const newIndex = cities.findIndex(c => c.id === over.id);
 
     if (oldIndex === -1 || newIndex === -1) {
       return;
@@ -763,10 +799,14 @@ export default function AdminToursPage() {
     // Update display_order in database
     try {
       for (const city of reorderedCitiesWithOrder) {
+        if (!city.id) {
+          console.warn('City missing ID, skipping update:', city);
+          continue;
+        }
         const { error } = await supabase
           .from('cities')
           .update({ display_order: city.display_order })
-          .eq('slug', city.slug);
+          .eq('id', city.id);
 
         if (error) {
           console.error('Failed to update city display_order:', error);
@@ -1270,7 +1310,7 @@ export default function AdminToursPage() {
                         <SortableTourItem
                           key={tour.id}
                           tour={tour}
-                          city={citySlug}
+                          cityId={cityId}
                           index={index}
                           totalTours={cityTours.length}
                         />
@@ -1498,7 +1538,7 @@ export default function AdminToursPage() {
                     <SelectContent>
                       <SelectItem value="all">All Cities</SelectItem>
                       {cities.map((city) => (
-                        <SelectItem key={city.id} value={city.id}>
+                        <SelectItem key={city.id || city.slug} value={city.id || city.slug}>
                           {city.name_nl || city.slug}
                         </SelectItem>
                       ))}
