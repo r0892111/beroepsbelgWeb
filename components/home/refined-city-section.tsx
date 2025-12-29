@@ -27,7 +27,14 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
   const cityTourCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     liveCities.forEach(city => {
-      counts[city.slug] = tours.filter(tour => tour.city === city.slug).length;
+      // Match tours to cities by city_id if available, otherwise by slug
+      counts[city.slug] = tours.filter(tour => {
+        const tourWithCityId = tour as any;
+        const tourCityId = tourWithCityId.city_id;
+        return tourCityId 
+          ? tourCityId === city.id
+          : tour.city === city.slug;
+      }).length;
     });
     return counts;
   }, [liveCities, tours]);
