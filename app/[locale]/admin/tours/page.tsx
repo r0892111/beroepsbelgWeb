@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, MapPin, X, Search, Image as ImageIcon, GripVertical, ChevronDown, ChevronUp, Upload } from 'lucide-react';
+import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, MapPin, X, Search, Image as ImageIcon, GripVertical, ChevronDown, ChevronUp, Upload, ArrowUp, ArrowDown } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
@@ -643,6 +643,91 @@ export default function AdminToursPage() {
     }
   };
 
+  // Tour move up/down handlers
+  const handleTourMove = async (tourId: string, citySlug: string, direction: 'up' | 'down') => {
+    // Match city slug to actual city name using the same logic as toursByCity
+    const matchedCity = cities.find(c => c.slug === citySlug);
+    
+    // Get current tours for this city from state, sorted by display_order
+    // Use the same matching logic as toursByCity to ensure consistency
+    const cityTours = tours
+      .filter(t => {
+        if (matchedCity) {
+          // If we have a matched city, compare by city name
+          return t.city === matchedCity.name_nl;
+        }
+        // Fallback: use slugify comparison for cities not in cities table
+        return citySlugify(t.city) === citySlug;
+      })
+      .sort((a, b) => {
+        if (a.display_order === null && b.display_order === null) {
+          return (a.created_at || '').localeCompare(b.created_at || '');
+        }
+        if (a.display_order === null) return 1;
+        if (b.display_order === null) return -1;
+        return a.display_order - b.display_order;
+      });
+
+    const currentIndex = cityTours.findIndex(t => t.id === tourId);
+    if (currentIndex === -1) return;
+
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (newIndex < 0 || newIndex >= cityTours.length) return;
+
+    // Optimistically update UI with new order and display_order values
+    const reorderedTours = arrayMove(cityTours, currentIndex, newIndex);
+    
+    // Update display_order for all reordered tours
+    const reorderedToursWithOrder = reorderedTours.map((tour, index) => ({
+      ...tour,
+      display_order: index + 1,
+    }));
+
+    // Create a map of updated tours for quick lookup
+    const updatedToursMap = new Map(reorderedToursWithOrder.map(t => [t.id, t]));
+
+    // Update the tours state - replace all tours for this city with reordered ones
+    // Use the same matching logic as above
+    const updatedTours = tours.map(tour => {
+      const matchesCity = matchedCity 
+        ? tour.city === matchedCity.name_nl
+        : citySlugify(tour.city) === citySlug;
+      
+      if (matchesCity) {
+        const updatedTour = updatedToursMap.get(tour.id);
+        return updatedTour || tour;
+      }
+      return tour;
+    });
+    
+    // Set state immediately to update UI
+    setTours(updatedTours);
+
+    // Update display_order in database
+    try {
+      // Update all tours in this city with their new display_order
+      for (const tour of reorderedToursWithOrder) {
+        const { error } = await supabase
+          .from('tours_table_prod')
+          .update({ display_order: tour.display_order })
+          .eq('id', tour.id);
+
+        if (error) {
+          console.error('Failed to update display_order:', error);
+          throw error;
+        }
+      }
+
+      const cityDisplayName = matchedCity ? matchedCity.name_nl : citySlug;
+      toast.success(`Tour order updated for ${cityDisplayName}`);
+    } catch (err) {
+      console.error('Failed to update tour order:', err);
+      toast.error('Failed to update tour order');
+      // Revert on error
+      void fetchTours();
+    }
+  };
+
   // City drag and drop handler
   const handleCityDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -688,6 +773,32 @@ export default function AdminToursPage() {
       // Revert on error
       void fetchCities();
     }
+  };
+
+  // City move up/down handlers
+  const handleCityMove = async (citySlug: string, direction: 'up' | 'down') => {
+    const sortedCitiesList = [...cities].sort((a, b) => {
+      if (a.display_order === null && b.display_order === null) {
+        return (a.slug || '').localeCompare(b.slug || '');
+      }
+      if (a.display_order === null) return 1;
+      if (b.display_order === null) return -1;
+      return a.display_order - b.display_order;
+    });
+
+    const currentIndex = sortedCitiesList.findIndex(c => c.slug === citySlug);
+    if (currentIndex === -1) return;
+
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (newIndex < 0 || newIndex >= sortedCitiesList.length) return;
+
+    // Create a fake drag event to reuse existing logic
+    const fakeEvent = {
+      active: { id: citySlug },
+      over: { id: sortedCitiesList[newIndex].slug },
+    } as DragEndEvent;
+
+    await handleCityDragEnd(fakeEvent);
   };
 
   // City CRUD functions
@@ -944,7 +1055,7 @@ export default function AdminToursPage() {
   };
 
   // Sortable City Item Component
-  const SortableCityItem = ({ citySlug, cityTours }: { citySlug: string; cityTours: Tour[] }) => {
+  const SortableCityItem = ({ citySlug, cityTours, index, totalCities }: { citySlug: string; cityTours: Tour[]; index: number; totalCities: number }) => {
     const {
       attributes,
       listeners,
@@ -975,14 +1086,36 @@ export default function AdminToursPage() {
           onClick={() => toggleCity(citySlug)}
         >
           <div className="flex items-center gap-3">
-            {/* Drag handle */}
-            <div
-              {...attributes}
-              {...listeners}
-              className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-200 rounded"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <GripVertical className="h-5 w-5 text-gray-400" />
+            {/* Drag handle and up/down buttons */}
+            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+              <div
+                {...attributes}
+                {...listeners}
+                className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-200 rounded"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <GripVertical className="h-5 w-5 text-gray-400" />
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
+                onClick={() => handleCityMove(citySlug, 'up')}
+                disabled={index === 0}
+                title="Move up"
+              >
+                <ArrowUp className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
+                onClick={() => handleCityMove(citySlug, 'down')}
+                disabled={index === totalCities - 1}
+                title="Move down"
+              >
+                <ArrowDown className="h-3 w-3" />
+              </Button>
             </div>
             
             {/* City image thumbnail */}
@@ -1140,7 +1273,7 @@ export default function AdminToursPage() {
   };
 
   // Sortable Tour Item Component
-  const SortableTourItem = ({ tour, city }: { tour: Tour; city: string }) => {
+  const SortableTourItem = ({ tour, city, index, totalTours }: { tour: Tour; city: string; index: number; totalTours: number }) => {
     const {
       attributes,
       listeners,
@@ -1162,13 +1295,35 @@ export default function AdminToursPage() {
         style={style}
         className={isDragging ? 'bg-gray-100' : ''}
       >
-        <TableCell className="w-8">
-          <div
-            {...attributes}
-            {...listeners}
-            className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-200 rounded"
-          >
-            <GripVertical className="h-4 w-4 text-gray-400" />
+        <TableCell className="w-24">
+          <div className="flex items-center gap-1">
+            <div
+              {...attributes}
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-200 rounded"
+            >
+              <GripVertical className="h-4 w-4 text-gray-400" />
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={() => handleTourMove(tour.id, city, 'up')}
+              disabled={index === 0}
+              title="Move up"
+            >
+              <ArrowUp className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={() => handleTourMove(tour.id, city, 'down')}
+              disabled={index === totalTours - 1}
+              title="Move down"
+            >
+              <ArrowDown className="h-3 w-3" />
+            </Button>
           </div>
         </TableCell>
         <TableCell>
@@ -1380,13 +1535,15 @@ export default function AdminToursPage() {
                     items={sortedCities}
                     strategy={verticalListSortingStrategy}
                   >
-                    {sortedCities.map((city) => {
+                    {sortedCities.map((city, index) => {
                       const cityTours = toursByCity[city] || []; // Handle cities without tours
                       return (
                         <SortableCityItem
                           key={city}
                           citySlug={city}
                           cityTours={cityTours}
+                          index={index}
+                          totalCities={sortedCities.length}
                         />
                       );
                     })}
@@ -1447,9 +1604,14 @@ export default function AdminToursPage() {
                     setFormData({ ...formData, type: value });
                     if (value !== 'Custom') {
                       setCustomTourType(''); // Clear custom type when selecting from dropdown
+                    } else {
+                      // When selecting Custom, ensure customTourType is initialized if needed
+                      if (!customTourType) {
+                        setCustomTourType('');
+                      }
                     }
                   }}
-                  required={!customTourType.trim()}
+                  required={formData.type !== 'Custom' || !customTourType.trim()}
                 >
                   <SelectTrigger className="bg-white">
                     <SelectValue placeholder="Select type" />
@@ -1470,9 +1632,7 @@ export default function AdminToursPage() {
                       value={customTourType}
                       onChange={(e) => {
                         setCustomTourType(e.target.value);
-                        if (e.target.value.trim()) {
-                          setFormData({ ...formData, type: '' }); // Clear dropdown selection when typing custom
-                        }
+                        // Keep formData.type as 'Custom' to maintain input visibility
                       }}
                       placeholder="e.g., Segway, Helicopter, Train..."
                       className="bg-white mt-1"

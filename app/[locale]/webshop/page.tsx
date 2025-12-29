@@ -211,9 +211,11 @@ export default function WebshopPage() {
           {t('productCount', { count: filteredProducts.length })}
         </div>
 
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-8">
           {filteredProducts.map((product) => (
-            <ProductCard key={product.slug} product={product} />
+            <div key={product.slug} className="break-inside-avoid mb-8">
+              <ProductCard product={product} />
+            </div>
           ))}
         </div>
 

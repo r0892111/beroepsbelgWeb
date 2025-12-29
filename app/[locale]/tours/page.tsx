@@ -24,19 +24,24 @@ export default async function ToursPage({ params }: ToursPageProps) {
           Discover Belgium's most captivating cities with expert local guides
         </p>
 
-        <div className="grid gap-8 md:gap-10 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="columns-1 sm:columns-2 lg:columns-3 gap-8 md:gap-10">
           {cities.map((city) => (
             <div
               key={city.slug}
-              className="group flex h-full flex-col bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2"
+              className="break-inside-avoid mb-8 md:mb-10"
             >
+              <div
+                className="group flex flex-col bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2"
+              >
               {city.image && (
-                <div className="relative h-64 w-full overflow-hidden">
+                <div className="relative w-full overflow-hidden bg-gray-50 flex items-center justify-center">
                   <Image
                     src={city.image}
                     alt={city.name[locale]}
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                    width={1200}
+                    height={1200}
+                    className="w-full h-auto max-h-[600px] object-contain transition-transform duration-500 group-hover:scale-105"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
                 </div>
               )}
@@ -68,6 +73,7 @@ export default async function ToursPage({ params }: ToursPageProps) {
                     </button>
                   )}
                 </div>
+              </div>
               </div>
             </div>
           ))}

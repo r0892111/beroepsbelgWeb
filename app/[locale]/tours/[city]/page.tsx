@@ -36,9 +36,11 @@ export default async function ToursCityPage({ params }: ToursCityPageProps) {
         Tours {cityDisplayName}
       </h1>
       {tours.length > 0 ? (
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="columns-1 sm:columns-2 lg:columns-3 gap-8">
           {tours.map((tour) => (
-            <TourCard key={tour.slug} tour={tour} locale={locale} />
+            <div key={tour.slug} className="break-inside-avoid mb-8">
+              <TourCard tour={tour} locale={locale} />
+            </div>
           ))}
         </div>
       ) : (
