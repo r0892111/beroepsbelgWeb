@@ -216,6 +216,8 @@ export default function AdminToursPage() {
     notes: '',
     options: {},
     themes: [],
+    local_stories: false,
+    op_maat: false,
   });
   
   // Custom language input state
