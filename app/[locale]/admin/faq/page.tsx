@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { Button } from '@/components/ui/button';
@@ -10,10 +10,27 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, HelpCircle, X, Search } from 'lucide-react';
+import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, HelpCircle, X, Search, GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface FaqItem {
   id: number;
@@ -236,20 +253,191 @@ export default function AdminFaqPage() {
     }
   };
 
-  const filteredFaqItems = faqItems.filter((item) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
+  const filteredFaqItems = useMemo(() => {
+    return faqItems.filter((item) => {
+      if (!searchQuery) return true;
+      const query = searchQuery.toLowerCase();
+      return (
+        item.question_nl?.toLowerCase().includes(query) ||
+        item.question_en?.toLowerCase().includes(query) ||
+        item.question_fr?.toLowerCase().includes(query) ||
+        item.question_de?.toLowerCase().includes(query) ||
+        item.answer_nl?.toLowerCase().includes(query) ||
+        item.answer_en?.toLowerCase().includes(query) ||
+        item.answer_fr?.toLowerCase().includes(query) ||
+        item.answer_de?.toLowerCase().includes(query)
+      );
+    });
+  }, [faqItems, searchQuery]);
+
+  // Sort filtered items by sort_order
+  const sortedFaqItems = useMemo(() => {
+    return [...filteredFaqItems].sort((a, b) => {
+      if (a.sort_order === null && b.sort_order === null) {
+        return (a.id || 0) - (b.id || 0);
+      }
+      if (a.sort_order === null) return 1;
+      if (b.sort_order === null) return -1;
+      return a.sort_order - b.sort_order;
+    });
+  }, [filteredFaqItems]);
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Handle drag end
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const oldIndex = sortedFaqItems.findIndex(item => item.id === active.id);
+    const newIndex = sortedFaqItems.findIndex(item => item.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) {
+      return;
+    }
+
+    // Optimistically update UI
+    const reorderedItems = arrayMove(sortedFaqItems, oldIndex, newIndex);
+    const reorderedItemsWithOrder = reorderedItems.map((item, index) => ({
+      ...item,
+      sort_order: index + 1,
+    }));
+
+    setFaqItems(reorderedItemsWithOrder);
+
+    // Update sort_order in database
+    try {
+      for (const item of reorderedItemsWithOrder) {
+        const { error } = await supabase
+          .from('faq_items')
+          .update({ sort_order: item.sort_order })
+          .eq('id', item.id);
+
+        if (error) {
+          console.error('Failed to update sort_order:', error);
+          throw error;
+        }
+      }
+
+      toast.success('FAQ order updated');
+    } catch (err) {
+      console.error('Failed to update FAQ order:', err);
+      toast.error('Failed to update FAQ order');
+      // Revert on error
+      void fetchFaqItems();
+    }
+  };
+
+  // FAQ item move up/down handlers
+  const handleFaqMove = async (itemId: number, direction: 'up' | 'down') => {
+    const currentIndex = sortedFaqItems.findIndex(item => item.id === itemId);
+    if (currentIndex === -1) return;
+
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (newIndex < 0 || newIndex >= sortedFaqItems.length) return;
+
+    // Create a fake drag event to reuse existing logic
+    const fakeEvent = {
+      active: { id: itemId },
+      over: { id: sortedFaqItems[newIndex].id },
+    } as DragEndEvent;
+
+    await handleDragEnd(fakeEvent);
+  };
+
+  // Sortable FAQ Item Component
+  const SortableFaqItem = ({ item, index }: { item: FaqItem; index: number }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: item.id });
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    };
+
     return (
-      item.question_nl?.toLowerCase().includes(query) ||
-      item.question_en?.toLowerCase().includes(query) ||
-      item.question_fr?.toLowerCase().includes(query) ||
-      item.question_de?.toLowerCase().includes(query) ||
-      item.answer_nl?.toLowerCase().includes(query) ||
-      item.answer_en?.toLowerCase().includes(query) ||
-      item.answer_fr?.toLowerCase().includes(query) ||
-      item.answer_de?.toLowerCase().includes(query)
+      <TableRow
+        ref={setNodeRef}
+        style={style}
+        className={isDragging ? 'bg-gray-100' : ''}
+      >
+        <TableCell className="w-24">
+          <div className="flex items-center gap-1">
+            <div
+              {...attributes}
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-200 rounded"
+            >
+              <GripVertical className="h-4 w-4 text-gray-400" />
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={() => handleFaqMove(item.id, 'up')}
+              disabled={index === 0}
+              title="Move up"
+            >
+              <ArrowUp className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={() => handleFaqMove(item.id, 'down')}
+              disabled={index === sortedFaqItems.length - 1}
+              title="Move down"
+            >
+              <ArrowDown className="h-3 w-3" />
+            </Button>
+          </div>
+        </TableCell>
+        <TableCell className="font-medium">{item.sort_order ?? '-'}</TableCell>
+        <TableCell className="max-w-xs truncate">{item.question_nl || '-'}</TableCell>
+        <TableCell className="max-w-xs truncate">{item.question_en || '-'}</TableCell>
+        <TableCell className="max-w-md truncate text-sm text-gray-500">
+          {item.answer_nl?.substring(0, 100) || item.answer_en?.substring(0, 100) || '-'}
+          {(item.answer_nl?.length || item.answer_en?.length || 0) > 100 ? '...' : ''}
+        </TableCell>
+        <TableCell>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openEditDialog(item)}
+              className="h-8 w-8 p-0"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleDelete(item.id)}
+              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </TableCell>
+      </TableRow>
     );
-  });
+  };
 
   if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
     return null;
@@ -319,7 +507,7 @@ export default function AdminFaqPage() {
         {/* FAQ Items Table */}
         <Card>
           <CardHeader>
-            <CardTitle>FAQ Items ({filteredFaqItems.length})</CardTitle>
+            <CardTitle>FAQ Items ({sortedFaqItems.length})</CardTitle>
             <CardDescription>Manage all frequently asked questions</CardDescription>
           </CardHeader>
           <CardContent>
@@ -334,50 +522,38 @@ export default function AdminFaqPage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-16">Order</TableHead>
-                      <TableHead>Question (NL)</TableHead>
-                      <TableHead>Question (EN)</TableHead>
-                      <TableHead>Answer Preview</TableHead>
-                      <TableHead className="w-32">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredFaqItems.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium">{item.sort_order ?? '-'}</TableCell>
-                        <TableCell className="max-w-xs truncate">{item.question_nl || '-'}</TableCell>
-                        <TableCell className="max-w-xs truncate">{item.question_en || '-'}</TableCell>
-                        <TableCell className="max-w-md truncate text-sm text-gray-500">
-                          {item.answer_nl?.substring(0, 100) || item.answer_en?.substring(0, 100) || '-'}
-                          {(item.answer_nl?.length || item.answer_en?.length || 0) > 100 ? '...' : ''}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEditDialog(item)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(item.id)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-24"></TableHead>
+                        <TableHead className="w-16">Order</TableHead>
+                        <TableHead>Question (NL)</TableHead>
+                        <TableHead>Question (EN)</TableHead>
+                        <TableHead>Answer Preview</TableHead>
+                        <TableHead className="w-32">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      <SortableContext
+                        items={sortedFaqItems.map(item => item.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        {sortedFaqItems.map((item, index) => (
+                          <SortableFaqItem
+                            key={item.id}
+                            item={item}
+                            index={index}
+                          />
+                        ))}
+                      </SortableContext>
+                    </TableBody>
+                  </Table>
+                </DndContext>
               </div>
             )}
           </CardContent>
