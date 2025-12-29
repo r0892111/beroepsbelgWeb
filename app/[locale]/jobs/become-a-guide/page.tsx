@@ -388,7 +388,7 @@ export default function BecomeAGuidePage() {
                       type="file"
                       accept="application/pdf"
                       onChange={handleCvFileSelect}
-                      className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg font-inter focus:border-[#1BDD95] focus:ring-0 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#1BDD95] file:text-white hover:file:bg-[#14BE82]"
+                      className="w-full px-4 py-4 border-2 border-neutral-200 rounded-lg font-inter focus:border-[#1BDD95] focus:ring-0 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#1BDD95] file:text-white hover:file:bg-[#14BE82]"
                     />
                   </div>
                 ) : (
@@ -424,7 +424,7 @@ export default function BecomeAGuidePage() {
                       type="file"
                       accept="image/*"
                       onChange={handlePhotoFileSelect}
-                      className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg font-inter focus:border-[#1BDD95] focus:ring-0 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#1BDD95] file:text-white hover:file:bg-[#14BE82]"
+                      className="w-full px-4 py-4 border-2 border-neutral-200 rounded-lg font-inter focus:border-[#1BDD95] focus:ring-0 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#1BDD95] file:text-white hover:file:bg-[#14BE82]"
                     />
                   </div>
                 ) : (
