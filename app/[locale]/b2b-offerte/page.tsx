@@ -179,21 +179,13 @@ export default function B2BQuotePage() {
   }, []);
 
   const availableTours = selectedCity
-    ? tours.filter((tour) => {
-        const tourWithCityId = tour as any;
-        const tourCityId = tourWithCityId.city_id;
-        const selectedCityData = cities.find(c => c.slug === selectedCity);
-        // Match by city_id if available, otherwise fallback to slug matching
-        const matchesCity = tourCityId && selectedCityData
-          ? tourCityId === selectedCityData.id
-          : tour.city === selectedCity;
-        
-        return matchesCity && 
-          tour.slug !== 'cadeaubon' &&
-          tour.local_stories !== true &&
-          (tour.local_stories as any) !== 'true' &&
-          (tour.local_stories as any) !== 1;
-      })
+    ? tours.filter((tour) => 
+        tour.city === selectedCity && 
+        tour.slug !== 'cadeaubon' &&
+        tour.local_stories !== true &&
+        (tour.local_stories as any) !== 'true' &&
+        (tour.local_stories as any) !== 1
+      )
     : [];
 
   useEffect(() => {
@@ -482,15 +474,7 @@ export default function B2BQuotePage() {
   // Only show cities that are live AND have at least one tour (excluding gift cards)
   const availableCities = cities.filter(city => 
     city.status === 'live' && 
-    tours.some(tour => {
-      const tourWithCityId = tour as any;
-      const tourCityId = tourWithCityId.city_id;
-      // Match by city_id if available, otherwise fallback to slug matching
-      const matches = tourCityId 
-        ? tourCityId === city.id
-        : tour.city === city.slug;
-      return matches && tour.slug !== 'cadeaubon';
-    })
+    tours.some(tour => tour.city === city.slug && tour.slug !== 'cadeaubon')
   );
   
   // Get available languages from the selected tour
