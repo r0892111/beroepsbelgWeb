@@ -21,18 +21,109 @@ import { type Locale } from '@/i18n';
 import { useTranslations } from 'next-intl';
 import { supabase } from '@/lib/supabase/client';
 
-// City type for the component
-interface CityData {
-  id: string;
-  name: string;
-  tagline: string;
-  description: string;
-  photoUrl?: string;
-  sketchUrl?: string;
-}
-
-// Default sketch URL fallback (can be customized per city if needed)
-const DEFAULT_SKETCH_URL = 'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766323986715-d003a31d/Buildings.png';
+// Brand Data with Dual-Layer Assets
+const cities = [
+  {
+    id: 'antwerp',
+    name: 'Antwerp',
+    tagline: 'The Fashion Capital',
+    description:
+      "A pocket-sized metropolis known for diamonds, avant-garde fashion, and the cathedral's soaring spire.",
+    photoUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766764964872-c4952226/Eilandje_4_.jpg',
+    sketchUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766501496070-9e267924/AntwerpenSketchPNG.png',
+  },
+  {
+    id: 'gent',
+    name: 'Gent',
+    tagline: 'The Quirky Rebel',
+    description:
+      "History with a rock 'n roll edge. A vibrant student city centered around the imposing Gravensteen castle.",
+    photoUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766765025832-0b6e9826/best_of_gent.jpg',
+    sketchUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766501574875-bb2ed09c/GentSketchPNG.png',
+  },
+  {
+    id: 'bruges',
+    name: 'Bruges',
+    tagline: 'Venice of the North',
+    description:
+      'A medieval fairytale preserved in time. Cobblestone streets, swans on the canals, and romantic mystery.',
+    photoUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766432003277-bd292c2f/Local_Stories_Brugge.jpg',
+    sketchUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766501496312-eba11501/BruggeSketchPNG.png',
+  },
+  {
+    id: 'brussels',
+    name: 'Brussels',
+    tagline: 'The Heart of Europe',
+    description:
+      'Surrealism meets bureaucracy. Grand Place splendor, Art Nouveau gems, and the best chocolate in the world.',
+    photoUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766765100182-3c4b4aa0/Brussels.jpg',
+    sketchUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766501496521-2a49bbf5/BrusselsketchPNG.png',
+  },
+  {
+    id: 'leuven',
+    name: 'Leuven',
+    tagline: 'The Brains & The Beer',
+    description:
+      "Home to the oldest university in the Low Countries and the headquarters of the world's largest brewery.",
+    photoUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766764796761-25baade4/Leuven.jpg',
+    sketchUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766501497131-2b973fa4/LeuvenSketchPNG.png',
+  },
+  {
+    id: 'knokke-heist',
+    name: 'Knokke-Heist',
+    tagline: 'The Golden Triangle',
+    description:
+      'Luxury by the sea. High-end boutiques, art galleries, and the Zwin nature reserve make it the sophisticated coast choice.',
+    photoUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766432002840-9957e6dc/Knokkeheist.png',
+    sketchUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766501496929-04d36a34/KnokkeHeistSketchPNG.png',
+  },
+  {
+    id: 'mechelen',
+    name: 'Mechelen',
+    tagline: 'The Hidden Gem',
+    description:
+      "A city of carillons and silence. Walk the floating path on the Dyle and climb St. Rumbold's tower.",
+    photoUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766764796542-f8c04aac/mechelen.jpg',
+    sketchUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766501497337-2deb66d1/MechelenSketchPNG.png',
+  },
+  {
+    id: 'hasselt',
+    name: 'Hasselt',
+    tagline: 'The Capital of Taste',
+    description:
+      'Known for jenever gin, fashion, and being the most welcoming city. A place where good taste is a lifestyle.',
+    photoUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766764796317-9a143dff/hasselt.webp',
+    sketchUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766501496722-05333103/HasseltSketchPNG.png',
+  },
+  {
+    id: 'spa',
+    name: 'Spa',
+    tagline: 'The Pearl of the Ardennes',
+    description:
+      'The original spa town. Famous for its healing thermal waters, the casino, and lush green surroundings.',
+    photoUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766765138806-58bf47a8/SPA_.jpg',
+    // Reusing Hasselt sketch as a placeholder since no Spa sketch exists, to maintain visual consistency
+    sketchUrl:
+      'https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/uploads/ce3ebe3b-887b-4797-8470-fe9437121893/1766323986715-d003a31d/Buildings.png',
+  },
+];
 
 /**
  * The "Highlighter" Ring Component
@@ -73,6 +164,19 @@ interface CitySectionProps {
   locale?: Locale;
 }
 
+// Map city IDs to their tour page slugs
+const citySlugMap: Record<string, string> = {
+  'antwerp': 'antwerpen',
+  'gent': 'gent',
+  'bruges': 'brugge',
+  'brussels': 'brussel',
+  'leuven': 'leuven',
+  'knokke-heist': 'knokke-heist',
+  'mechelen': 'mechelen',
+  'hasselt': 'hasselt',
+  'spa': 'spa', // May not have tours page yet
+};
+
 export function CitySection({ locale = 'nl' }: CitySectionProps) {
   const t = useTranslations('citySection');
   const [activeIndex, setActiveIndex] = useState(0);
@@ -81,8 +185,6 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
   // Initialize as false to match server-side render, will update after mount
   const [isMobile, setIsMobile] = useState(false);
   const [cityImagesMap, setCityImagesMap] = useState<Record<string, { photoUrl?: string }>>({});
-  const [cities, setCities] = useState<CityData[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
@@ -90,47 +192,6 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  // Fetch cities from database
-  useEffect(() => {
-    const fetchCities = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/cities');
-        if (!response.ok) {
-          throw new Error('Failed to fetch cities');
-        }
-        const citiesData = await response.json();
-
-        // Map database cities to component format
-        const mappedCities: CityData[] = citiesData
-          .filter((city: any) => city.status === 'live') // Only show live cities
-          .map((city: any) => {
-            // Use teaser directly for both tagline and description
-            const teaser = city.teaser?.[locale] || city.teaser?.nl || '';
-
-            return {
-              id: city.slug,
-              name: city.name[locale] || city.name.nl || city.slug,
-              tagline: teaser,
-              description: teaser,
-              photoUrl: city.image || undefined,
-              sketchUrl: DEFAULT_SKETCH_URL, // Use default sketch for now
-            };
-          });
-
-        setCities(mappedCities);
-      } catch (err) {
-        console.error('Error fetching cities:', err);
-        // Fallback to empty array on error
-        setCities([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void fetchCities();
-  }, [locale]);
 
   // Fetch city images from database
   useEffect(() => {
@@ -172,8 +233,6 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
   const itemAngle = 30;
 
   useEffect(() => {
-    if (cities.length === 0) return; // Don't set up scroll handler if no cities loaded
-
     const handleScroll = (e: WheelEvent) => {
       if (window.innerWidth < 1024) return;
 
@@ -211,7 +270,7 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
       if (element) element.removeEventListener('wheel', handleScroll);
       if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
     };
-  }, [cities.length]);
+  }, []);
 
   // Touch handling
   const touchStartX = useRef(0);
@@ -246,18 +305,9 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
     photoUrl: cityImagesMap[city.id]?.photoUrl || city.photoUrl,
   }));
 
-  // Show loading state
-  if (loading || cities.length === 0) {
-    return (
-      <div className="relative w-full min-h-[900px] lg:h-[900px] h-auto overflow-hidden flex items-center justify-center font-oswald rounded-t-[2.5rem] bg-[#1BDD95]">
-        <div className="text-white text-xl">Loading cities...</div>
-      </div>
-    );
-  }
-
   const activeCity = citiesWithImages[activeIndex];
-  // Use the city slug directly from the database
-  const citySlug = activeCity.id;
+  // Get the city slug for the tours page link
+  const citySlug = citySlugMap[activeCity.id] || activeCity.id;
   const toursPageUrl = `/${locale}/tours/${citySlug}`;
 
   return (
@@ -415,7 +465,7 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
               className="text-lg md:text-2xl font-inter font-light text-neutral-800 mt-4 lg:mt-6 mb-6 md:mb-8 lg:border-l-4 lg:border-white lg:pl-6 tracking-wide"
               suppressHydrationWarning
             >
-              {activeCity.tagline}
+              {t(`${activeCity.id}.tagline`)}
             </motion.p>
 
             <motion.p
@@ -426,7 +476,7 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
               className="text-base md:text-lg text-neutral-800 leading-relaxed max-w-md mx-auto lg:mx-0 mb-4 md:mb-8 lg:mb-8 font-inter"
               suppressHydrationWarning
             >
-              {activeCity.description}
+              {t(`${activeCity.id}.description`)}
             </motion.p>
           </div>
 
