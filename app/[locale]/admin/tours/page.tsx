@@ -117,7 +117,7 @@ const citySlugify = (city: string): string => {
 };
 
 interface CityData {
-  id: string;
+  id?: string;
   slug: string;
   name_nl: string | null;
   name_en: string | null;
@@ -533,7 +533,7 @@ export default function AdminToursPage() {
     });
 
     return grouped;
-  }, [filteredTours]);
+  }, [filteredTours, cities]);
 
   // Sort cities by display_order from cities table, then alphabetically
   // Show ALL cities from cities table, even those without tours
@@ -1266,19 +1266,15 @@ export default function AdminToursPage() {
                       items={cityTours.map(t => t.id)}
                       strategy={verticalListSortingStrategy}
                     >
-                      {cityTours.map((tour, index) => {
-                        const tourWithCityId = tour as any;
-                        const tourCityId = tourWithCityId.city_id || cityId;
-                        return (
-                          <SortableTourItem
-                            key={tour.id}
-                            tour={tour}
-                            cityId={tourCityId}
-                            index={index}
-                            totalTours={cityTours.length}
-                          />
-                        );
-                      })}
+                      {cityTours.map((tour, index) => (
+                        <SortableTourItem
+                          key={tour.id}
+                          tour={tour}
+                          city={citySlug}
+                          index={index}
+                          totalTours={cityTours.length}
+                        />
+                      ))}
                     </SortableContext>
                   </TableBody>
                 </Table>

@@ -30,10 +30,8 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
       // Match tours to cities by city_id if available, otherwise by slug
       counts[city.slug] = tours.filter(tour => {
         const tourWithCityId = tour as any;
-        const tourCityId = tourWithCityId.city_id;
-        return tourCityId 
-          ? tourCityId === city.id
-          : tour.city === city.slug;
+        // Match by city name in any language or slug
+        return tour.city === city.name?.nl || tour.city === city.name?.en || tour.city === city.name?.fr || tour.city === city.name?.de || tour.city === city.slug;
       }).length;
     });
     return counts;

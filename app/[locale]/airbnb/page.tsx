@@ -125,3 +125,4 @@ export default async function AirBNBPage({ params }: AirBNBPageProps) {
   );
 }
 
+
