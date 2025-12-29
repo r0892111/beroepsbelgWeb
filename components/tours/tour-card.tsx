@@ -41,7 +41,7 @@ export function TourCard({ tour, locale }: TourCardProps) {
 
   return (
     <Card
-      className="group flex flex-col overflow-hidden"
+      className="group flex h-full flex-col overflow-hidden"
       style={{
         transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
         border: '1px solid var(--border-subtle)',
@@ -57,14 +57,12 @@ export function TourCard({ tour, locale }: TourCardProps) {
         e.currentTarget.style.borderColor = 'var(--border-subtle)';
       }}
     >
-      <Link href={`/${locale}/tours/${tour.city}/${tour.slug}`} className="relative w-full overflow-hidden block cursor-pointer bg-gray-50 flex items-center justify-center">
+      <Link href={`/${locale}/tours/${tour.city}/${tour.slug}`} className="relative h-48 w-full overflow-hidden block cursor-pointer">
           <Image
           src={imageUrl}
             alt={tour.title}
-            width={1200}
-            height={1200}
-            className="w-full h-auto max-h-[500px] object-contain transition-transform duration-300 group-hover:scale-105"
-            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
         {tour.type === 'Bike' && (
             <div

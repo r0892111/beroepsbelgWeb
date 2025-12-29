@@ -17,30 +17,12 @@ export default async function ToursCityPage({ params }: ToursCityPageProps) {
     notFound();
   }
   
-  // First check if the city exists in the cities table
-  const { getCities } = await import('@/lib/api/content');
-  const cities = await getCities();
-  const cityExists = cities.some(c => c.slug === city);
-  
-  console.log('[ToursCityPage] City check:', {
-    city,
-    cityExists,
-    cities: cities.map(c => ({ slug: c.slug, name: c.name.nl }))
-  });
-  
-  if (!cityExists) {
-    console.warn('[ToursCityPage] City not found:', city);
+  const tours = await getTours(city);
+
+  // If no tours found for this city, show 404
+  if (tours.length === 0) {
     notFound();
   }
-  
-  const tours = await getTours(city);
-  console.log('[ToursCityPage] Tours found:', {
-    city,
-    toursCount: tours.length,
-    tours: tours.map(t => ({ title: t.title, city: t.city, slug: t.slug }))
-  });
-
-  // Show the page even if no tours exist (will show "coming soon" message)
 
   // Format city name for display (capitalize first letter of each word)
   const cityDisplayName = city
@@ -54,11 +36,9 @@ export default async function ToursCityPage({ params }: ToursCityPageProps) {
         Tours {cityDisplayName}
       </h1>
       {tours.length > 0 ? (
-        <div className="columns-1 sm:columns-2 lg:columns-3 gap-8">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {tours.map((tour) => (
-            <div key={tour.slug} className="break-inside-avoid mb-8">
-              <TourCard tour={tour} locale={locale} />
-            </div>
+            <TourCard key={tour.slug} tour={tour} locale={locale} />
           ))}
         </div>
       ) : (
