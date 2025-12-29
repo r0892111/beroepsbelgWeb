@@ -83,15 +83,15 @@ export function CartSheet() {
                     const product = item.products;
                     return (
                       <div key={item.id} className="flex gap-4 py-4 border-b">
-                        <div className="relative w-20 h-20 flex-shrink-0">
-                          <Image
+                          <div className="relative w-20 h-20 flex-shrink-0">
+                            <Image
                             src={product?.image || getProductPlaceholder((product as any)?.Category || (product as any)?.category || 'Book')}
                             alt={(product as any)?.Name || (product as any)?.title_nl || (product as any)?.title_en || 'Product'}
-                            fill
-                            className="object-cover rounded"
+                              fill
+                              className="object-cover rounded"
                             unoptimized
-                          />
-                        </div>
+                            />
+                          </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-sm mb-1">
                             {(product as any)?.Name || (product as any)?.title_nl || (product as any)?.title_en || (product as any)?.title_fr || (product as any)?.title_de || 'Product'}

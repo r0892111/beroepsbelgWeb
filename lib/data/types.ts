@@ -31,6 +31,7 @@ export type Tour = {
   image?: string; // Primary image URL for display
   tourImages?: TourImage[]; // All tour images
   displayOrder?: number; // Display order within city (lower numbers appear first)
+  themes?: string[]; // Array of theme tags (e.g., architecture, fashion, history)
   options?: {
     thumbnail?: string;
     badge?: string;

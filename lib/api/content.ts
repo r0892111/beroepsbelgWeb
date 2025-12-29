@@ -154,6 +154,7 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
       image: imageUrl, // Use primary image from database if available
       tourImages: tourImages.length > 0 ? tourImages : undefined,
       displayOrder: row.display_order ? Number(row.display_order) : undefined,
+      themes: Array.isArray(row.themes) ? row.themes : undefined,
       options: row.options,
     };
   });
@@ -227,6 +228,7 @@ export async function getTourBySlug(citySlug: string, slug: string): Promise<Tou
     updatedAt: matchingTour.updated_at,
     image: imageUrl, // Use primary image from database if available
     tourImages: tourImages.length > 0 ? tourImages : undefined,
+    themes: Array.isArray(matchingTour.themes) ? matchingTour.themes : undefined,
     options: matchingTour.options,
   };
 }

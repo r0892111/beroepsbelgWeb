@@ -110,9 +110,9 @@ export default function BookingSuccessPage() {
           }
         );
 
-        let localBookingData = null;
-        let booking = null;
-        let invitee = null;
+        let localBookingData: any = null;
+        let booking: any = null;
+        let invitee: any = null;
         let tourTitle = 'Tour';
         let tourOpMaat = false;
         let tourLocalStories = false;
