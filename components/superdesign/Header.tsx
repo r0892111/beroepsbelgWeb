@@ -46,6 +46,7 @@ export function Header({ locale }: HeaderProps) {
     { label: 'Jobs', href: `/${locale}/jobs/become-a-guide`, hasDropdown: false },
     { label: 'Contact', href: `/${locale}/contact/contactformulier`, hasDropdown: false },
     { label: 'B2B', href: `/${locale}/b2b-offerte`, hasDropdown: false },
+    { label: 'AirBNB', href: `/${locale}/airbnb`, hasDropdown: false },
   ];
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);

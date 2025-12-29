@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, Package, X, Search, RefreshCcw, Image, GripVertical, ChevronDown, ChevronUp } from 'lucide-react';
+import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, Package, X, Search, RefreshCcw, Image, GripVertical, ChevronDown, ChevronUp, ArrowUp, ArrowDown } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
@@ -429,8 +429,35 @@ export default function AdminProductsPage() {
     }
   };
 
+  // Product move up/down handlers
+  const handleProductMove = async (productUuid: string, category?: string, direction: 'up' | 'down') => {
+    let productsList: Product[];
+    
+    if (orderingMode === 'global') {
+      productsList = sortedProductsForGlobal;
+    } else if (category) {
+      productsList = productsByCategory[category] || [];
+    } else {
+      return;
+    }
+
+    const currentIndex = productsList.findIndex(p => p.uuid === productUuid);
+    if (currentIndex === -1) return;
+
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (newIndex < 0 || newIndex >= productsList.length) return;
+
+    // Create a fake drag event to reuse existing logic
+    const fakeEvent = {
+      active: { id: productUuid },
+      over: { id: productsList[newIndex].uuid },
+    } as DragEndEvent;
+
+    await handleDragEnd(fakeEvent, category);
+  };
+
   // Sortable Product Item Component
-  const SortableProductItem = ({ product, category }: { product: Product; category?: string }) => {
+  const SortableProductItem = ({ product, category, index, totalProducts }: { product: Product; category?: string; index: number; totalProducts: number }) => {
     const {
       attributes,
       listeners,
@@ -452,13 +479,35 @@ export default function AdminProductsPage() {
         style={style}
         className={isDragging ? 'bg-gray-100' : ''}
       >
-        <TableCell className="w-8">
-          <div
-            {...attributes}
-            {...listeners}
-            className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-200 rounded"
-          >
-            <GripVertical className="h-4 w-4 text-gray-400" />
+        <TableCell className="w-24">
+          <div className="flex items-center gap-1">
+            <div
+              {...attributes}
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-200 rounded"
+            >
+              <GripVertical className="h-4 w-4 text-gray-400" />
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={() => handleProductMove(product.uuid, category, 'up')}
+              disabled={index === 0}
+              title="Move up"
+            >
+              <ArrowUp className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={() => handleProductMove(product.uuid, category, 'down')}
+              disabled={index === totalProducts - 1}
+              title="Move down"
+            >
+              <ArrowDown className="h-3 w-3" />
+            </Button>
           </div>
         </TableCell>
         <TableCell className="font-medium max-w-xs truncate">
@@ -707,7 +756,7 @@ export default function AdminProductsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-8"></TableHead>
+                        <TableHead className="w-24"></TableHead>
                         <TableHead>Name</TableHead>
                         <TableHead>Category</TableHead>
                         <TableHead>Price</TableHead>
@@ -721,10 +770,12 @@ export default function AdminProductsPage() {
                         items={sortedProductsForGlobal.map(p => p.uuid)}
                         strategy={verticalListSortingStrategy}
                       >
-                        {sortedProductsForGlobal.map((product) => (
+                        {sortedProductsForGlobal.map((product, index) => (
                           <SortableProductItem
                             key={product.uuid}
                             product={product}
+                            index={index}
+                            totalProducts={sortedProductsForGlobal.length}
                           />
                         ))}
                       </SortableContext>
@@ -773,7 +824,7 @@ export default function AdminProductsPage() {
                               <Table>
                                 <TableHeader>
                                   <TableRow>
-                                    <TableHead className="w-8"></TableHead>
+                                    <TableHead className="w-24"></TableHead>
                                     <TableHead>Name</TableHead>
                                     <TableHead>Category</TableHead>
                                     <TableHead>Price</TableHead>
@@ -787,11 +838,13 @@ export default function AdminProductsPage() {
                                     items={categoryProducts.map(p => p.uuid)}
                                     strategy={verticalListSortingStrategy}
                                   >
-                                    {categoryProducts.map((product) => (
+                                    {categoryProducts.map((product, index) => (
                                       <SortableProductItem
                                         key={product.uuid}
                                         product={product}
                                         category={category}
+                                        index={index}
+                                        totalProducts={categoryProducts.length}
                                       />
                                     ))}
                                   </SortableContext>
