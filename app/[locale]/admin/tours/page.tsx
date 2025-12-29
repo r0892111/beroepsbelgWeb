@@ -355,28 +355,21 @@ export default function AdminToursPage() {
     setSubmitting(true);
 
     try {
-      // Get city name from dropdown
-      const cityName = formData.city;
+      // Get city ID from dropdown (formData.city now contains city ID)
+      const cityId = formData.city;
       
-      if (!cityName) {
+      if (!cityId) {
         toast.error('Please select a city');
         setSubmitting(false);
         return;
       }
       
-      // Find the selected city in cities table to ensure we use the correct name_nl
-      const selectedCity = cities.find(c => 
-        c.name_nl === cityName || 
-        c.name_en === cityName || 
-        c.name_fr === cityName || 
-        c.name_de === cityName
-      );
+      // Find the selected city to get name_nl for backward compatibility
+      const selectedCity = cities.find(c => c.id === cityId);
       
-      // Use the name_nl from the selected city to ensure consistency
-      const finalCityName = selectedCity?.name_nl || cityName;
-
       const payload = {
-        city: finalCityName, // Store city name (from cities.name_nl) in tours_table_prod.city
+        city_id: cityId, // Store city_id foreign key
+        city: selectedCity?.name_nl || '', // Keep city name for backward compatibility
         title: formData.title,
         type: customTourType.trim() || formData.type,
         duration_minutes: formData.duration_minutes,
@@ -1328,11 +1321,11 @@ export default function AdminToursPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Cities</SelectItem>
-                      {cities.map((city) => (
-                        <SelectItem key={city.slug} value={city.name_nl || city.slug}>
-                          {city.name_nl || city.slug}
-                        </SelectItem>
-                      ))}
+                    {cities.map((city) => (
+                      <SelectItem key={city.id} value={city.id}>
+                        {city.name_nl || city.slug}
+                      </SelectItem>
+                    ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -1431,7 +1424,7 @@ export default function AdminToursPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {cities.map((city) => (
-                      <SelectItem key={city.slug} value={city.name_nl || city.slug}>
+                      <SelectItem key={city.id} value={city.id}>
                         {city.name_nl || city.slug}
                       </SelectItem>
                     ))}
