@@ -12,10 +12,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, MapPin, X, Search, Image, GripVertical, ChevronDown, ChevronUp } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, MapPin, X, Search, Image as ImageIcon, GripVertical, ChevronDown, ChevronUp, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import Image from 'next/image';
+import { useCallback } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -66,11 +69,76 @@ interface TourFormData {
   notes: string;
   options: Record<string, any>;
   themes: string[];
+  local_stories: boolean;
+  op_maat: boolean;
 }
 
-const CITY_OPTIONS = ['Antwerpen', 'Brussel', 'Brugge', 'Gent', 'Knokke-Heist', 'Leuven', 'Mechelen', 'Hasselt'];
 const LANGUAGE_OPTIONS = ['Nederlands', 'Engels', 'Frans', 'Duits', 'Spaans', 'Italiaans'];
 const TOUR_TYPE_OPTIONS = ['Walking', 'Biking', 'Bus', 'Private', 'Group', 'Boat', 'Food', 'Custom'];
+
+// Client-side slugify function (matches server-side citySlugify logic)
+const slugify = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+const citySlugify = (city: string): string => {
+  if (!city) return '';
+  const cityMap: Record<string, string> = {
+    'antwerpen': 'antwerp',
+    'antwerp': 'antwerp',
+    'anvers': 'antwerp',
+    'brussel': 'brussels',
+    'brussels': 'brussels',
+    'bruxelles': 'brussels',
+    'brugge': 'bruges',
+    'bruges': 'bruges',
+    'gent': 'gent',
+    'ghent': 'gent',
+    'gand': 'gent',
+    'leuven': 'leuven',
+    'louvain': 'leuven',
+    'mechelen': 'mechelen',
+    'malines': 'mechelen',
+    'hasselt': 'hasselt',
+    'knokke-heist': 'knokke-heist',
+    'knokke heist': 'knokke-heist',
+    'knokkeheis': 'knokke-heist',
+    'knokke': 'knokke-heist',
+    'heist': 'knokke-heist',
+  };
+  const normalized = city.toLowerCase().trim();
+  return cityMap[normalized] || slugify(normalized);
+};
+
+interface CityData {
+  slug: string;
+  name_nl: string | null;
+  name_en: string | null;
+  name_fr: string | null;
+  name_de: string | null;
+  teaser_nl: string | null;
+  teaser_en: string | null;
+  teaser_fr: string | null;
+  teaser_de: string | null;
+  cta_text_nl: string | null;
+  cta_text_en: string | null;
+  cta_text_fr: string | null;
+  cta_text_de: string | null;
+  coming_soon_text_nl: string | null;
+  coming_soon_text_en: string | null;
+  coming_soon_text_fr: string | null;
+  coming_soon_text_de: string | null;
+  image: string | null;
+  status: 'live' | 'coming-soon' | null;
+  display_order: number | null;
+}
+
+const STORAGE_BUCKET = 'WebshopItemsImages';
+const STORAGE_FOLDER = 'City Images';
 
 export default function AdminToursPage() {
   const { user, profile, signOut } = useAuth();
@@ -85,6 +153,36 @@ export default function AdminToursPage() {
   const [editingTour, setEditingTour] = useState<Tour | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [expandedCities, setExpandedCities] = useState<Set<string>>(new Set());
+
+  // City management state
+  const [cities, setCities] = useState<CityData[]>([]);
+  const [cityDialogOpen, setCityDialogOpen] = useState(false);
+  const [cityImageDialogOpen, setCityImageDialogOpen] = useState(false);
+  const [selectedCity, setSelectedCity] = useState<CityData | null>(null);
+  const [cityUploading, setCityUploading] = useState(false);
+  const [cityImageDragActive, setCityImageDragActive] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  
+  // City form state
+  const [cityFormData, setCityFormData] = useState<CityData>({
+    slug: '',
+    name_nl: null,
+    name_en: null,
+    name_fr: null,
+    name_de: null,
+    teaser_nl: null,
+    teaser_en: null,
+    teaser_fr: null,
+    teaser_de: null,
+    cta_text_nl: null,
+    cta_text_en: null,
+    cta_text_fr: null,
+    cta_text_de: null,
+    status: 'live',
+    display_order: null,
+  });
+  const [isNewCity, setIsNewCity] = useState(false);
 
   // Filter and search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -120,6 +218,9 @@ export default function AdminToursPage() {
   
   // Custom theme input state
   const [customTheme, setCustomTheme] = useState('');
+  
+  // Custom tour type input state
+  const [customTourType, setCustomTourType] = useState('');
 
   useEffect(() => {
     if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
@@ -159,9 +260,29 @@ export default function AdminToursPage() {
     }
   };
 
+  const fetchCities = async () => {
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('cities')
+        .select('*')
+        .order('display_order', { ascending: true, nullsFirst: false })
+        .order('slug', { ascending: true });
+
+      if (fetchError) {
+        console.error('Failed to fetch cities:', fetchError);
+        return;
+      }
+
+      setCities((data || []) as CityData[]);
+    } catch (err) {
+      console.error('Failed to fetch cities:', err);
+    }
+  };
+
   useEffect(() => {
     if (user && (profile?.isAdmin || profile?.is_admin)) {
       void fetchTours();
+      void fetchCities();
     }
   }, [user, profile]);
 
@@ -185,18 +306,23 @@ export default function AdminToursPage() {
       notes: '',
       options: {},
       themes: [],
+      local_stories: false,
+      op_maat: false,
     });
     setCustomLanguage('');
     setCustomTheme('');
+    setCustomTourType('');
     setDialogOpen(true);
   };
 
   const openEditDialog = (tour: Tour) => {
     setEditingTour(tour);
+    // Check if tour type is in the predefined options
+    const isCustomType = tour.type && !TOUR_TYPE_OPTIONS.includes(tour.type);
     setFormData({
       city: tour.city || '',
       title: tour.title || '',
-      type: tour.type || '',
+      type: isCustomType ? 'Custom' : (tour.type || ''),
       duration_minutes: tour.duration_minutes || 120,
       price: tour.price,
       start_location: tour.start_location || '',
@@ -206,9 +332,12 @@ export default function AdminToursPage() {
       notes: tour.notes || '',
       options: tour.options || {},
       themes: Array.isArray(tour.themes) ? tour.themes : [],
+      local_stories: tour.local_stories === true || tour.local_stories === 'true' || tour.local_stories === 1,
+      op_maat: tour.op_maat === true || tour.op_maat === 'true' || tour.op_maat === 1,
     });
     setCustomLanguage('');
     setCustomTheme('');
+    setCustomTourType(isCustomType ? tour.type : '');
     setDialogOpen(true);
   };
 
@@ -217,10 +346,30 @@ export default function AdminToursPage() {
     setSubmitting(true);
 
     try {
+      // Get city name from dropdown
+      const cityName = formData.city;
+      
+      if (!cityName) {
+        toast.error('Please select a city');
+        setSubmitting(false);
+        return;
+      }
+      
+      // Find the selected city in cities table to ensure we use the correct name_nl
+      const selectedCity = cities.find(c => 
+        c.name_nl === cityName || 
+        c.name_en === cityName || 
+        c.name_fr === cityName || 
+        c.name_de === cityName
+      );
+      
+      // Use the name_nl from the selected city to ensure consistency
+      const finalCityName = selectedCity?.name_nl || cityName;
+
       const payload = {
-        city: formData.city,
+        city: finalCityName, // Store city name (from cities.name_nl) in tours_table_prod.city
         title: formData.title,
-        type: formData.type,
+        type: customTourType.trim() || formData.type,
         duration_minutes: formData.duration_minutes,
         price: formData.price,
         start_location: formData.start_location || null,
@@ -230,6 +379,8 @@ export default function AdminToursPage() {
         notes: formData.notes || null,
         options: formData.options || {},
         themes: formData.themes || [],
+        local_stories: formData.local_stories || false,
+        op_maat: formData.op_maat || false,
         updated_at: new Date().toISOString(),
       };
 
@@ -314,13 +465,39 @@ export default function AdminToursPage() {
     return `${mins}m`;
   };
 
+  // Helper function to match tour city name to cities table entry
+  const matchTourCityToCity = useCallback((tourCityName: string): CityData | null => {
+    if (!tourCityName || !cities.length) return null;
+    
+    // Try direct name match first (check all name fields)
+    let matched = cities.find(c => 
+      c.name_nl === tourCityName || 
+      c.name_en === tourCityName || 
+      c.name_fr === tourCityName || 
+      c.name_de === tourCityName
+    );
+    
+    // Try slug match
+    if (!matched) {
+      const tourCitySlug = citySlugify(tourCityName);
+      matched = cities.find(c => c.slug === tourCitySlug);
+    }
+    
+    return matched || null;
+  }, [cities]);
+
   // Group tours by city and sort by display_order within each city
+  // Map tours_table_prod.city to cities.slug for proper matching
   const toursByCity = useMemo(() => {
     const grouped = filteredTours.reduce((acc, tour) => {
-      if (!acc[tour.city]) {
-        acc[tour.city] = [];
+      // Match tour city to cities table entry
+      const matchedCity = matchTourCityToCity(tour.city);
+      const cityKey = matchedCity ? matchedCity.slug : citySlugify(tour.city); // Use slug if matched, otherwise slugify the tour city
+      
+      if (!acc[cityKey]) {
+        acc[cityKey] = [];
       }
-      acc[tour.city].push(tour);
+      acc[cityKey].push(tour);
       return acc;
     }, {} as Record<string, Tour[]>);
 
@@ -337,10 +514,39 @@ export default function AdminToursPage() {
     });
 
     return grouped;
-  }, [filteredTours]);
+  }, [filteredTours, matchTourCityToCity]);
 
-  // Sort cities alphabetically
-  const sortedCities = useMemo(() => Object.keys(toursByCity).sort(), [toursByCity]);
+  // Sort cities by display_order from cities table, then alphabetically
+  // Show ALL cities from cities table, even those without tours
+  const sortedCities = useMemo(() => {
+    // Start with all cities from cities table
+    const allCitySlugs = new Set<string>();
+    cities.forEach(c => allCitySlugs.add(c.slug));
+    
+    // Also add any tour cities that don't have a matching city entry (for backwards compatibility)
+    Object.keys(toursByCity).forEach(tourCityKey => {
+      const matchedCity = cities.find(c => c.slug === tourCityKey);
+      if (!matchedCity) {
+        // This is a tour city that doesn't exist in cities table yet
+        allCitySlugs.add(tourCityKey);
+      }
+    });
+    
+    // Create a map of city slugs to their display_order
+    const cityOrderMap = new Map<string, number>();
+    cities.forEach(city => {
+      cityOrderMap.set(city.slug, city.display_order ?? 9999);
+    });
+    
+    return Array.from(allCitySlugs).sort((a, b) => {
+      const orderA = cityOrderMap.get(a) ?? 9999;
+      const orderB = cityOrderMap.get(b) ?? 9999;
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      return a.localeCompare(b);
+    });
+  }, [toursByCity, cities]);
 
   const toggleCity = (city: string) => {
     setExpandedCities(prev => {
@@ -426,6 +632,502 @@ export default function AdminToursPage() {
       // Revert on error
       void fetchTours();
     }
+  };
+
+  // City drag and drop handler
+  const handleCityDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const oldIndex = cities.findIndex(c => c.slug === active.id);
+    const newIndex = cities.findIndex(c => c.slug === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) {
+      return;
+    }
+
+    // Optimistically update UI
+    const reorderedCities = arrayMove(cities, oldIndex, newIndex);
+    const reorderedCitiesWithOrder = reorderedCities.map((city, index) => ({
+      ...city,
+      display_order: index + 1,
+    }));
+
+    setCities(reorderedCitiesWithOrder);
+
+    // Update display_order in database
+    try {
+      for (const city of reorderedCitiesWithOrder) {
+        const { error } = await supabase
+          .from('cities')
+          .update({ display_order: city.display_order })
+          .eq('slug', city.slug);
+
+        if (error) {
+          console.error('Failed to update city display_order:', error);
+          throw error;
+        }
+      }
+
+      toast.success('City order updated');
+    } catch (err) {
+      console.error('Failed to update city order:', err);
+      toast.error('Failed to update city order');
+      // Revert on error
+      void fetchCities();
+    }
+  };
+
+  // City CRUD functions
+  const openCityDialog = (city?: CityData) => {
+    if (city) {
+      // Check if city exists in cities table
+      const existsInDb = cities.some(c => c.slug === city.slug);
+      setSelectedCity(city);
+      setIsNewCity(!existsInDb);
+      setCityFormData({
+        slug: city.slug,
+        name_nl: city.name_nl,
+        name_en: city.name_en,
+        name_fr: city.name_fr,
+        name_de: city.name_de,
+        teaser_nl: city.teaser_nl,
+        teaser_en: city.teaser_en,
+        teaser_fr: city.teaser_fr,
+        teaser_de: city.teaser_de,
+        cta_text_nl: city.cta_text_nl,
+        cta_text_en: city.cta_text_en,
+        cta_text_fr: city.cta_text_fr,
+        cta_text_de: city.cta_text_de,
+        coming_soon_text_nl: city.coming_soon_text_nl,
+        coming_soon_text_en: city.coming_soon_text_en,
+        coming_soon_text_fr: city.coming_soon_text_fr,
+        coming_soon_text_de: city.coming_soon_text_de,
+        image: city.image,
+        status: city.status || 'live',
+        display_order: city.display_order,
+      });
+    } else {
+      setSelectedCity(null);
+      setIsNewCity(true);
+      setCityFormData({
+        slug: '',
+        name_nl: null,
+        name_en: null,
+        name_fr: null,
+        name_de: null,
+        teaser_nl: null,
+        teaser_en: null,
+        teaser_fr: null,
+        teaser_de: null,
+        cta_text_nl: null,
+        cta_text_en: null,
+        cta_text_fr: null,
+        cta_text_de: null,
+        coming_soon_text_nl: null,
+        coming_soon_text_en: null,
+        coming_soon_text_fr: null,
+        coming_soon_text_de: null,
+        image: null,
+        status: 'live',
+        display_order: null,
+      });
+    }
+    setCityDialogOpen(true);
+  };
+
+  const handleCitySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCityUploading(true);
+
+    try {
+      const payload = {
+        ...cityFormData,
+        // Ensure all required fields are present
+        name_nl: cityFormData.name_nl || '',
+        name_en: cityFormData.name_en || '',
+        name_fr: cityFormData.name_fr || '',
+        name_de: cityFormData.name_de || '',
+        teaser_nl: cityFormData.teaser_nl || '',
+        teaser_en: cityFormData.teaser_en || '',
+        teaser_fr: cityFormData.teaser_fr || '',
+        teaser_de: cityFormData.teaser_de || '',
+      };
+
+      if (isNewCity) {
+        // Create new city
+        const { error } = await supabase
+          .from('cities')
+          .insert([payload]);
+
+        if (error) throw error;
+        toast.success('City created successfully');
+      } else {
+        // Update existing city
+        const { error } = await supabase
+          .from('cities')
+          .update(payload)
+          .eq('slug', selectedCity!.slug);
+
+        if (error) throw error;
+        toast.success('City updated successfully');
+      }
+
+      setCityDialogOpen(false);
+      void fetchCities();
+    } catch (err: any) {
+      console.error('Failed to save city:', err);
+      toast.error(err.message || 'Failed to save city');
+    } finally {
+      setCityUploading(false);
+    }
+  };
+
+  const handleCityDelete = async () => {
+    if (!selectedCity || !confirm(`Are you sure you want to delete city "${selectedCity.slug}"?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('cities')
+        .delete()
+        .eq('slug', selectedCity.slug);
+
+      if (error) throw error;
+      toast.success('City deleted successfully');
+      setCityDialogOpen(false);
+      void fetchCities();
+    } catch (err: any) {
+      console.error('Failed to delete city:', err);
+      toast.error(err.message || 'Failed to delete city');
+    }
+  };
+
+  // City image functions
+  const openCityImageDialog = (city: CityData) => {
+    setSelectedCity(city);
+    
+    if (city.image) {
+      setPhotoPreview(city.image);
+    } else {
+      setPhotoPreview(null);
+    }
+    
+    setPhotoFile(null);
+    setCityImageDialogOpen(true);
+  };
+
+  const handleCityImageDrag = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setCityImageDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setCityImageDragActive(false);
+    }
+  }, []);
+
+  const handleCityImageFileSelect = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error('File size must be less than 50MB');
+      return;
+    }
+
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCityImageDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCityImageDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      if (file.type.startsWith('image/')) {
+        handleCityImageFileSelect(file);
+      } else {
+        toast.error('Please drop an image file');
+      }
+    }
+  }, []);
+
+  const handleCityImageFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      handleCityImageFileSelect(e.target.files[0]);
+    }
+  };
+
+  const uploadCityImageFile = async (file: File, cityId: string): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${cityId}_${Date.now()}.${fileExt}`;
+      const filePath = `${STORAGE_FOLDER}/${cityId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      const { data } = supabase.storage
+        .from(STORAGE_BUCKET)
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (err) {
+      console.error('Failed to upload file:', err);
+      throw err;
+    }
+  };
+
+  const handleCityImageSave = async () => {
+    if (!selectedCity) return;
+
+    setCityUploading(true);
+
+    try {
+      let photoUrl: string | null = null;
+
+      if (photoFile) {
+        const cityId = citySlugify(selectedCity.slug);
+        photoUrl = await uploadCityImageFile(photoFile, cityId);
+      } else if (photoPreview && photoPreview.startsWith('http')) {
+        photoUrl = photoPreview;
+      }
+
+      // Update cities table directly
+      const { error } = await supabase
+        .from('cities')
+        .update({ image: photoUrl })
+        .eq('slug', selectedCity.slug);
+
+      if (error) throw error;
+
+      toast.success(`Image saved for ${selectedCity.slug}`);
+      setCityImageDialogOpen(false);
+      await fetchCities();
+    } catch (err: any) {
+      console.error('Failed to save city image:', err);
+      toast.error(err.message || 'Failed to save image');
+    } finally {
+      setCityUploading(false);
+    }
+  };
+
+  // Sortable City Item Component
+  const SortableCityItem = ({ citySlug, cityTours }: { citySlug: string; cityTours: Tour[] }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: citySlug });
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    };
+
+    const cityData = cities.find(c => c.slug === citySlug);
+    const cityImageUrl = cityData?.image || null;
+    const isExpanded = expandedCities.has(citySlug);
+
+    return (
+      <Card
+        ref={setNodeRef}
+        style={style}
+        className={`overflow-hidden ${isDragging ? 'bg-gray-100' : ''}`}
+      >
+        <CardHeader
+          className="cursor-pointer hover:bg-gray-50 transition-colors"
+          onClick={() => toggleCity(citySlug)}
+        >
+          <div className="flex items-center gap-3">
+            {/* Drag handle */}
+            <div
+              {...attributes}
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-200 rounded"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <GripVertical className="h-5 w-5 text-gray-400" />
+            </div>
+            
+            {/* City image thumbnail */}
+            {cityImageUrl && (
+              <div className="relative w-16 h-16 flex-shrink-0 rounded overflow-hidden border">
+                <Image
+                  src={cityImageUrl}
+                  alt={citySlug}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            )}
+            
+            {/* City info */}
+            <div className="flex-1">
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                {cityData?.name_nl || citySlug}
+                <Badge variant="outline" className="ml-2">
+                  {cityTours.length} {cityTours.length === 1 ? 'tour' : 'tours'}
+                </Badge>
+              </CardTitle>
+              <CardDescription>
+                Drag cities to reorder. The order will be reflected on the /tours page.
+              </CardDescription>
+            </div>
+            
+            {/* Action buttons */}
+            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (cityData) {
+                    openCityImageDialog(cityData);
+                  } else {
+                    // Create a temporary city object for cities that only exist in tours
+                    const tempCity: CityData = {
+                      slug: citySlug,
+                      name_nl: citySlug,
+                      name_en: null,
+                      name_fr: null,
+                      name_de: null,
+                      teaser_nl: null,
+                      teaser_en: null,
+                      teaser_fr: null,
+                      teaser_de: null,
+                      cta_text_nl: null,
+                      cta_text_en: null,
+                      cta_text_fr: null,
+                      cta_text_de: null,
+                      coming_soon_text_nl: null,
+                      coming_soon_text_en: null,
+                      coming_soon_text_fr: null,
+                      coming_soon_text_de: null,
+                      image: null,
+                      status: 'live',
+                      display_order: null,
+                    };
+                    openCityImageDialog(tempCity);
+                  }
+                }}
+              >
+                <ImageIcon className="h-4 w-4 mr-2" />
+                Edit Image
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (cityData) {
+                    openCityDialog(cityData);
+                  } else {
+                    // Create a temporary city object for cities that only exist in tours
+                    const tempCity: CityData = {
+                      slug: citySlug,
+                      name_nl: citySlug,
+                      name_en: null,
+                      name_fr: null,
+                      name_de: null,
+                      teaser_nl: null,
+                      teaser_en: null,
+                      teaser_fr: null,
+                      teaser_de: null,
+                      cta_text_nl: null,
+                      cta_text_en: null,
+                      cta_text_fr: null,
+                      cta_text_de: null,
+                      coming_soon_text_nl: null,
+                      coming_soon_text_en: null,
+                      coming_soon_text_fr: null,
+                      coming_soon_text_de: null,
+                      image: null,
+                      status: 'live',
+                      display_order: null,
+                    };
+                    openCityDialog(tempCity);
+                  }
+                }}
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit City
+              </Button>
+              {isExpanded ? (
+                <ChevronUp className="h-5 w-5 text-gray-400" />
+              ) : (
+                <ChevronDown className="h-5 w-5 text-gray-400" />
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        {isExpanded && (
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={(event) => handleDragEnd(event, citySlug)}
+              >
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-8"></TableHead>
+                      <TableHead>City</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Duration</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Languages</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <SortableContext
+                      items={cityTours.map(t => t.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {cityTours.map((tour) => (
+                        <SortableTourItem
+                          key={tour.id}
+                          tour={tour}
+                          city={citySlug}
+                        />
+                      ))}
+                    </SortableContext>
+                  </TableBody>
+                </Table>
+              </DndContext>
+            </div>
+          </CardContent>
+        )}
+      </Card>
+    );
   };
 
   // Sortable Tour Item Component
@@ -568,6 +1270,10 @@ export default function AdminToursPage() {
                     Tour Images
                   </Button>
                 </Link>
+                <Button onClick={() => openCityDialog()} className="btn-primary" variant="outline">
+                  <MapPin className="h-4 w-4 mr-2" />
+                  Create City
+                </Button>
                 <Button onClick={openAddDialog} className="btn-primary">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Tour
@@ -613,9 +1319,9 @@ export default function AdminToursPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Cities</SelectItem>
-                      {CITY_OPTIONS.map((city) => (
-                        <SelectItem key={city} value={city}>
-                          {city}
+                      {cities.map((city) => (
+                        <SelectItem key={city.slug} value={city.name_nl || city.slug}>
+                          {city.name_nl || city.slug}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -656,79 +1362,27 @@ export default function AdminToursPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {sortedCities.map((city) => {
-                  const cityTours = toursByCity[city];
-                  const isExpanded = expandedCities.has(city);
-                  
-                  return (
-                    <Card key={city} className="overflow-hidden">
-                      <CardHeader
-                        className="cursor-pointer hover:bg-gray-50 transition-colors"
-                        onClick={() => toggleCity(city)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="flex items-center gap-2">
-                            <MapPin className="h-5 w-5" />
-                            {city}
-                            <Badge variant="outline" className="ml-2">
-                              {cityTours.length} {cityTours.length === 1 ? 'tour' : 'tours'}
-                            </Badge>
-                          </CardTitle>
-                          <div className="flex items-center gap-2">
-                            {isExpanded ? (
-                              <ChevronUp className="h-5 w-5 text-gray-400" />
-                            ) : (
-                              <ChevronDown className="h-5 w-5 text-gray-400" />
-                            )}
-                          </div>
-                        </div>
-                        <CardDescription>
-                          Drag tours to reorder. The order will be reflected on tour listing pages.
-                        </CardDescription>
-                      </CardHeader>
-                      {isExpanded && (
-                        <CardContent className="p-0">
-                          <div className="overflow-x-auto">
-                            <DndContext
-                              sensors={sensors}
-                              collisionDetection={closestCenter}
-                              onDragEnd={(event) => handleDragEnd(event, city)}
-                            >
-                              <Table>
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead className="w-8"></TableHead>
-                                    <TableHead>City</TableHead>
-                                    <TableHead>Title</TableHead>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead>Duration</TableHead>
-                                    <TableHead>Price</TableHead>
-                                    <TableHead>Languages</TableHead>
-                                    <TableHead>Actions</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  <SortableContext
-                                    items={cityTours.map(t => t.id)}
-                                    strategy={verticalListSortingStrategy}
-                                  >
-                                    {cityTours.map((tour) => (
-                                      <SortableTourItem
-                                        key={tour.id}
-                                        tour={tour}
-                                        city={city}
-                                      />
-                                    ))}
-                                  </SortableContext>
-                                </TableBody>
-                              </Table>
-                            </DndContext>
-                          </div>
-                        </CardContent>
-                      )}
-                    </Card>
-                  );
-                })}
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleCityDragEnd}
+                >
+                  <SortableContext
+                    items={sortedCities}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {sortedCities.map((city) => {
+                      const cityTours = toursByCity[city] || []; // Handle cities without tours
+                      return (
+                        <SortableCityItem
+                          key={city}
+                          citySlug={city}
+                          cityTours={cityTours}
+                        />
+                      );
+                    })}
+                  </SortableContext>
+                </DndContext>
               </div>
             )}
 
@@ -758,16 +1412,18 @@ export default function AdminToursPage() {
                 <Label htmlFor="city" className="text-navy font-semibold">City*</Label>
                 <Select
                   value={formData.city}
-                  onValueChange={(value) => setFormData({ ...formData, city: value })}
+                  onValueChange={(value) => {
+                    setFormData({ ...formData, city: value });
+                  }}
                   required
                 >
                   <SelectTrigger className="bg-white">
                     <SelectValue placeholder="Select city" />
                   </SelectTrigger>
                   <SelectContent>
-                    {CITY_OPTIONS.map((city) => (
-                      <SelectItem key={city} value={city}>
-                        {city}
+                    {cities.map((city) => (
+                      <SelectItem key={city.slug} value={city.name_nl || city.slug}>
+                        {city.name_nl || city.slug}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -778,8 +1434,13 @@ export default function AdminToursPage() {
                 <Label htmlFor="type" className="text-navy font-semibold">Tour Type*</Label>
                 <Select
                   value={formData.type}
-                  onValueChange={(value) => setFormData({ ...formData, type: value })}
-                  required
+                  onValueChange={(value) => {
+                    setFormData({ ...formData, type: value });
+                    if (value !== 'Custom') {
+                      setCustomTourType(''); // Clear custom type when selecting from dropdown
+                    }
+                  }}
+                  required={!customTourType.trim()}
                 >
                   <SelectTrigger className="bg-white">
                     <SelectValue placeholder="Select type" />
@@ -792,6 +1453,24 @@ export default function AdminToursPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {formData.type === 'Custom' && (
+                  <div className="mt-2">
+                    <Label htmlFor="customTourType" className="text-sm text-muted-foreground">Custom Tour Type*</Label>
+                    <Input
+                      id="customTourType"
+                      value={customTourType}
+                      onChange={(e) => {
+                        setCustomTourType(e.target.value);
+                        if (e.target.value.trim()) {
+                          setFormData({ ...formData, type: '' }); // Clear dropdown selection when typing custom
+                        }
+                      }}
+                      placeholder="e.g., Segway, Helicopter, Train..."
+                      className="bg-white mt-1"
+                      required
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1009,6 +1688,29 @@ export default function AdminToursPage() {
               />
             </div>
 
+            <div className="flex items-center gap-6">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="local_stories"
+                  checked={formData.local_stories}
+                  onCheckedChange={(checked) => setFormData({ ...formData, local_stories: checked === true })}
+                />
+                <Label htmlFor="local_stories" className="text-navy font-semibold cursor-pointer">
+                  Local Stories
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="op_maat"
+                  checked={formData.op_maat}
+                  onCheckedChange={(checked) => setFormData({ ...formData, op_maat: checked === true })}
+                />
+                <Label htmlFor="op_maat" className="text-navy font-semibold cursor-pointer">
+                  Op Maat (Customizable)
+                </Label>
+              </div>
+            </div>
+
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancel
@@ -1018,6 +1720,326 @@ export default function AdminToursPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* City CRUD Dialog */}
+      <Dialog open={cityDialogOpen} onOpenChange={setCityDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{isNewCity ? 'Create New City' : 'Edit City'}</DialogTitle>
+            <DialogDescription>
+              {isNewCity ? 'Create a new city entry' : 'Update city information'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleCitySubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="city-slug" className="text-navy font-semibold">Slug*</Label>
+              <Input
+                id="city-slug"
+                value={cityFormData.slug}
+                onChange={(e) => setCityFormData({ ...cityFormData, slug: e.target.value })}
+                required
+                disabled={!isNewCity}
+                className="bg-white"
+                placeholder="e.g., antwerpen"
+              />
+              {!isNewCity && (
+                <p className="text-xs text-muted-foreground mt-1">Slug cannot be changed for existing cities</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="city-name-nl" className="text-navy font-semibold">Name (NL)*</Label>
+                <Input
+                  id="city-name-nl"
+                  value={cityFormData.name_nl || ''}
+                  onChange={(e) => setCityFormData({ ...cityFormData, name_nl: e.target.value || null })}
+                  required
+                  className="bg-white"
+                />
+              </div>
+              <div>
+                <Label htmlFor="city-name-en" className="text-navy font-semibold">Name (EN)*</Label>
+                <Input
+                  id="city-name-en"
+                  value={cityFormData.name_en || ''}
+                  onChange={(e) => setCityFormData({ ...cityFormData, name_en: e.target.value || null })}
+                  required
+                  className="bg-white"
+                />
+              </div>
+              <div>
+                <Label htmlFor="city-name-fr" className="text-navy font-semibold">Name (FR)*</Label>
+                <Input
+                  id="city-name-fr"
+                  value={cityFormData.name_fr || ''}
+                  onChange={(e) => setCityFormData({ ...cityFormData, name_fr: e.target.value || null })}
+                  required
+                  className="bg-white"
+                />
+              </div>
+              <div>
+                <Label htmlFor="city-name-de" className="text-navy font-semibold">Name (DE)*</Label>
+                <Input
+                  id="city-name-de"
+                  value={cityFormData.name_de || ''}
+                  onChange={(e) => setCityFormData({ ...cityFormData, name_de: e.target.value || null })}
+                  required
+                  className="bg-white"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="city-teaser-nl" className="text-navy font-semibold">Teaser (NL)*</Label>
+                <Textarea
+                  id="city-teaser-nl"
+                  value={cityFormData.teaser_nl || ''}
+                  onChange={(e) => setCityFormData({ ...cityFormData, teaser_nl: e.target.value || null })}
+                  required
+                  rows={3}
+                  className="bg-white"
+                />
+              </div>
+              <div>
+                <Label htmlFor="city-teaser-en" className="text-navy font-semibold">Teaser (EN)*</Label>
+                <Textarea
+                  id="city-teaser-en"
+                  value={cityFormData.teaser_en || ''}
+                  onChange={(e) => setCityFormData({ ...cityFormData, teaser_en: e.target.value || null })}
+                  required
+                  rows={3}
+                  className="bg-white"
+                />
+              </div>
+              <div>
+                <Label htmlFor="city-teaser-fr" className="text-navy font-semibold">Teaser (FR)*</Label>
+                <Textarea
+                  id="city-teaser-fr"
+                  value={cityFormData.teaser_fr || ''}
+                  onChange={(e) => setCityFormData({ ...cityFormData, teaser_fr: e.target.value || null })}
+                  required
+                  rows={3}
+                  className="bg-white"
+                />
+              </div>
+              <div>
+                <Label htmlFor="city-teaser-de" className="text-navy font-semibold">Teaser (DE)*</Label>
+                <Textarea
+                  id="city-teaser-de"
+                  value={cityFormData.teaser_de || ''}
+                  onChange={(e) => setCityFormData({ ...cityFormData, teaser_de: e.target.value || null })}
+                  required
+                  rows={3}
+                  className="bg-white"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="city-cta-nl" className="text-navy font-semibold">CTA Text (NL)</Label>
+                <Input
+                  id="city-cta-nl"
+                  value={cityFormData.cta_text_nl || ''}
+                  onChange={(e) => setCityFormData({ ...cityFormData, cta_text_nl: e.target.value || null })}
+                  className="bg-white"
+                />
+              </div>
+              <div>
+                <Label htmlFor="city-cta-en" className="text-navy font-semibold">CTA Text (EN)</Label>
+                <Input
+                  id="city-cta-en"
+                  value={cityFormData.cta_text_en || ''}
+                  onChange={(e) => setCityFormData({ ...cityFormData, cta_text_en: e.target.value || null })}
+                  className="bg-white"
+                />
+              </div>
+              <div>
+                <Label htmlFor="city-cta-fr" className="text-navy font-semibold">CTA Text (FR)</Label>
+                <Input
+                  id="city-cta-fr"
+                  value={cityFormData.cta_text_fr || ''}
+                  onChange={(e) => setCityFormData({ ...cityFormData, cta_text_fr: e.target.value || null })}
+                  className="bg-white"
+                />
+              </div>
+              <div>
+                <Label htmlFor="city-cta-de" className="text-navy font-semibold">CTA Text (DE)</Label>
+                <Input
+                  id="city-cta-de"
+                  value={cityFormData.cta_text_de || ''}
+                  onChange={(e) => setCityFormData({ ...cityFormData, cta_text_de: e.target.value || null })}
+                  className="bg-white"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="city-coming-soon-nl" className="text-navy font-semibold">Coming Soon Text (NL)</Label>
+                <Input
+                  id="city-coming-soon-nl"
+                  value={cityFormData.coming_soon_text_nl || ''}
+                  onChange={(e) => setCityFormData({ ...cityFormData, coming_soon_text_nl: e.target.value || null })}
+                  className="bg-white"
+                  placeholder="e.g., VERWACHT 2025"
+                />
+              </div>
+              <div>
+                <Label htmlFor="city-coming-soon-en" className="text-navy font-semibold">Coming Soon Text (EN)</Label>
+                <Input
+                  id="city-coming-soon-en"
+                  value={cityFormData.coming_soon_text_en || ''}
+                  onChange={(e) => setCityFormData({ ...cityFormData, coming_soon_text_en: e.target.value || null })}
+                  className="bg-white"
+                  placeholder="e.g., COMING 2025"
+                />
+              </div>
+              <div>
+                <Label htmlFor="city-coming-soon-fr" className="text-navy font-semibold">Coming Soon Text (FR)</Label>
+                <Input
+                  id="city-coming-soon-fr"
+                  value={cityFormData.coming_soon_text_fr || ''}
+                  onChange={(e) => setCityFormData({ ...cityFormData, coming_soon_text_fr: e.target.value || null })}
+                  className="bg-white"
+                  placeholder="e.g., PRÉVU 2025"
+                />
+              </div>
+              <div>
+                <Label htmlFor="city-coming-soon-de" className="text-navy font-semibold">Coming Soon Text (DE)</Label>
+                <Input
+                  id="city-coming-soon-de"
+                  value={cityFormData.coming_soon_text_de || ''}
+                  onChange={(e) => setCityFormData({ ...cityFormData, coming_soon_text_de: e.target.value || null })}
+                  className="bg-white"
+                  placeholder="e.g., ERWARTET 2025"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="city-status" className="text-navy font-semibold">Status*</Label>
+              <Select
+                value={cityFormData.status || 'live'}
+                onValueChange={(value) => setCityFormData({ ...cityFormData, status: value as 'live' | 'coming-soon' })}
+              >
+                <SelectTrigger className="bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="live">Live</SelectItem>
+                  <SelectItem value="coming-soon">Coming Soon</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <DialogFooter>
+              {!isNewCity && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleCityDelete}
+                  className="mr-auto"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              )}
+              <Button type="button" variant="outline" onClick={() => setCityDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={cityUploading} className="btn-primary">
+                {cityUploading ? 'Saving...' : isNewCity ? 'Create City' : 'Update City'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* City Image Dialog */}
+      <Dialog open={cityImageDialogOpen} onOpenChange={setCityImageDialogOpen}>
+        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Manage Image for {selectedCity?.name_nl || selectedCity?.slug}</DialogTitle>
+            <DialogDescription>
+              Upload or update the photo image for this city
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            <div className="space-y-2">
+              <Label>City Photo</Label>
+              <div
+                className={`relative rounded-lg border-2 border-dashed p-6 transition-colors ${
+                  cityImageDragActive ? 'border-blue-400 bg-blue-50' : 'border-gray-300 bg-gray-50'
+                }`}
+                onDragEnter={handleCityImageDrag}
+                onDragLeave={handleCityImageDrag}
+                onDragOver={handleCityImageDrag}
+                onDrop={handleCityImageDrop}
+              >
+                {photoPreview ? (
+                  <div className="relative aspect-video w-full overflow-hidden rounded-lg">
+                    <Image
+                      src={photoPreview}
+                      alt="Photo preview"
+                      fill
+                      className="object-cover"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="absolute right-2 top-2"
+                      onClick={() => {
+                        setPhotoFile(null);
+                        setPhotoPreview(null);
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center space-y-4">
+                    <Upload className="h-12 w-12 text-gray-400" />
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600">
+                        Drag and drop an image here, or click to select
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">PNG, JPG, WEBP up to 50MB</p>
+                    </div>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleCityImageFileInput}
+                      className="hidden"
+                      id="city-photo-upload"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById('city-photo-upload')?.click()}
+                    >
+                      Select Photo
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setCityImageDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCityImageSave} disabled={cityUploading}>
+              {cityUploading ? 'Uploading...' : 'Save Image'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
