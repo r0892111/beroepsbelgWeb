@@ -1,5 +1,5 @@
 import { type Locale } from '@/i18n';
-import { getTourBySlug, getTours } from '@/lib/api/content';
+import { getTourBySlug } from '@/lib/api/content';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Share2, Facebook, Twitter, Mail, MapPin, Clock, Languages, Bike, Sparkles } from 'lucide-react';
@@ -12,16 +12,12 @@ import { LocalToursBooking } from '@/components/tours/local-tours-booking';
 import { getBookingTypeShortLabel } from '@/lib/utils';
 
 interface TourDetailPageProps {
-  params: Promise<{ locale: Locale; slug: string }>;
+  params: Promise<{ locale: Locale; city: string; slug: string }>;
 }
 
-export async function generateStaticParams() {
-  const tours = await getTours('gent');
-  return tours.map((tour) => ({
-    slug: tour.slug,
-  }));
-}
+export const dynamicParams = true;
 
+// Format duration from minutes to readable string
 const formatDuration = (minutes: number, t: any) => {
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
@@ -39,15 +35,41 @@ const formatDuration = (minutes: number, t: any) => {
 };
 
 export default async function TourDetailPage({ params }: TourDetailPageProps) {
-  const { locale, slug } = await params;
-  const tour = await getTourBySlug('gent', slug);
-
-  if (!tour) {
+  const { locale, city, slug } = await params;
+  
+  // Validate parameters
+  if (!city || typeof city !== 'string' || !slug || typeof slug !== 'string') {
+    console.warn('[TourDetailPage] Invalid parameters:', { city, slug });
     notFound();
   }
+  
+  // Add logging for debugging
+  console.log('[TourDetailPage] Looking for tour:', { city, slug, locale });
+  
+  try {
+    const tour = await getTourBySlug(city, slug);
+
+    if (!tour) {
+      console.warn('[TourDetailPage] Tour not found:', { city, slug });
+      notFound();
+    }
+    
+    console.log('[TourDetailPage] Found tour:', { id: tour.id, title: tour.title, city: tour.city });
 
   const t = await getTranslations('common');
   const tTour = await getTranslations('tourDetail');
+  const tBooking = await getTranslations('booking');
+
+  // Calculate discounted price (10% discount for online bookings)
+  const discountRate = 0.9;
+  const originalPrice = tour.price || 0;
+  const discountedPrice = originalPrice * discountRate;
+
+  // Format city name for display (capitalize first letter of each word)
+  const cityDisplayName = city
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 
   return (
     <div className="bg-ivory min-h-screen">
@@ -55,11 +77,11 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
         <div className="mx-auto max-w-5xl">
           <div className="mb-6">
             <Link
-              href={`/${locale}/tours-gent`}
+              href={`/${locale}/tours/${city}`}
               className="text-sm font-semibold transition-colors hover:opacity-70"
               style={{ color: 'var(--brass)' }}
             >
-              ← {tTour('backToCity', { city: 'Gent' })}
+              ← {tTour('backToCity', { city: cityDisplayName })}
             </Link>
           </div>
 
@@ -68,7 +90,10 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
               <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy">{tour.title}</h1>
               <div className="flex items-center gap-2 flex-wrap">
                 {tour.type === 'bike' && (
-                  <Badge variant="outline" className="flex items-center gap-1 border-brass text-navy">
+                  <Badge
+                    variant="outline"
+                    className="flex items-center gap-1 border-brass text-navy"
+                  >
                     <Bike className="h-4 w-4" />
                     {tTour('bikeTour')}
                   </Badge>
@@ -101,9 +126,28 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
               </div>
             </div>
             {tour.price && (
-              <p className="text-3xl font-serif font-bold" style={{ color: 'var(--brass)' }}>
-                €{tour.price.toFixed(2)}
-              </p>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-3">
+                  <p className="text-3xl font-serif font-bold" style={{ color: 'var(--brass)' }}>
+                    €{discountedPrice.toFixed(2)}
+                  </p>
+                  <span className="text-xl line-through" style={{ color: 'var(--text-muted)' }}>
+                    €{originalPrice.toFixed(2)}
+                  </span>
+                  <Badge
+                    className="text-sm"
+                    style={{
+                      backgroundColor: 'var(--brass)',
+                      color: 'white',
+                    }}
+                  >
+                    -10%
+                  </Badge>
+                </div>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  {tBooking('onlineDiscount')}
+                </p>
+              </div>
             )}
           </div>
 
@@ -121,11 +165,36 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
         <div className="mb-12 space-y-6">
           {tour.description && (
             <div className="prose max-w-none">
-              {tour.description.split('\n\n').map((paragraph, idx) => (
-                <p key={idx} className="text-base leading-relaxed" style={{ color: 'var(--slate-blue)' }}>
-                  {paragraph}
-                </p>
-              ))}
+              {tour.description.split('\n\n').map((paragraph, idx) => {
+                const hasFAQ = paragraph.includes('FAQ');
+                if (hasFAQ) {
+                  const parts = paragraph.split(/(FAQ-pagina|FAQ page|page FAQ|FAQ-Seite)/gi);
+                  return (
+                    <p key={idx} className="text-base leading-relaxed" style={{ color: 'var(--slate-blue)' }}>
+                      {parts.map((part, partIdx) => {
+                        if (/FAQ-pagina|FAQ page|page FAQ|FAQ-Seite/i.test(part)) {
+                          return (
+                            <Link
+                              key={partIdx}
+                              href={`/${locale}/faq`}
+                              className="font-semibold underline hover:opacity-80 transition-opacity"
+                              style={{ color: 'var(--brass)' }}
+                            >
+                              {part}
+                            </Link>
+                          );
+                        }
+                        return <span key={partIdx}>{part}</span>;
+                      })}
+                    </p>
+                  );
+                }
+                return (
+                  <p key={idx} className="text-base leading-relaxed" style={{ color: 'var(--slate-blue)' }}>
+                    {paragraph}
+                  </p>
+                );
+              })}
             </div>
           )}
           {tour.notes && (
@@ -201,7 +270,7 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
             tourTitle={tour.title}
             tourPrice={tour.price || 0}
             tourDuration={tour.durationMinutes}
-            citySlug="gent"
+            citySlug={city}
           />
         )}
 
@@ -210,11 +279,11 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
             <TourBookingButton
               tourId={tour.id}
               tourTitle={tour.title}
-              tourPrice={tour.price}
+              tourPrice={originalPrice}
               tourDuration={tour.durationMinutes}
               isLocalStories={false}
               opMaat={tour.op_maat}
-              citySlug="gent"
+              citySlug={city}
             />
           </div>
         )}
@@ -225,13 +294,25 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
             {t('share')}
           </h3>
           <div className="flex gap-4">
-            <Button variant="outline" size="icon" className="border-brass hover:bg-brass hover:text-navy transition-all">
+            <Button
+              variant="outline"
+              size="icon"
+              className="border-brass hover:bg-brass hover:text-navy transition-all"
+            >
               <Facebook className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" className="border-brass hover:bg-brass hover:text-navy transition-all">
+            <Button
+              variant="outline"
+              size="icon"
+              className="border-brass hover:bg-brass hover:text-navy transition-all"
+            >
               <Twitter className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" className="border-brass hover:bg-brass hover:text-navy transition-all">
+            <Button
+              variant="outline"
+              size="icon"
+              className="border-brass hover:bg-brass hover:text-navy transition-all"
+            >
               <Mail className="h-4 w-4" />
             </Button>
           </div>
@@ -240,4 +321,9 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
       </div>
     </div>
   );
+  } catch (error) {
+    console.error('[TourDetailPage] Error fetching tour:', error);
+    notFound();
+  }
 }
+
