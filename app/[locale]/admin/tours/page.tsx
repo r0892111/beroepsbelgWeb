@@ -117,6 +117,7 @@ const citySlugify = (city: string): string => {
 };
 
 interface CityData {
+  id: string;
   slug: string;
   name_nl: string | null;
   name_en: string | null;
@@ -168,6 +169,7 @@ export default function AdminToursPage() {
   
   // City form state
   const [cityFormData, setCityFormData] = useState<CityData>({
+    id: '',
     slug: '',
     name_nl: null,
     name_en: null,
@@ -193,7 +195,7 @@ export default function AdminToursPage() {
 
   // Filter and search state
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterCity, setFilterCity] = useState<string>('all');
+  const [filterCity, setFilterCity] = useState<string>('all'); // 'all' or city_id UUID
   const [filterType, setFilterType] = useState<string>('all');
 
   // Drag and drop sensors
@@ -264,12 +266,21 @@ export default function AdminToursPage() {
       }
 
       console.log('Fetched tours:', data);
-      const fetchedTours = (data as Tour[]) || [];
-      setTours(fetchedTours);
+      const fetchedTours = (data as any[]) || [];
+      // Map the fetched data to Tour format, using city_id from JOIN
+      const mappedTours = fetchedTours.map((row: any) => ({
+        ...row,
+        city_id: row.city_id || row.cities?.id,
+        city: row.cities?.slug || row.city, // Use slug from joined cities table for display
+      })) as Tour[];
+      setTours(mappedTours);
       
-      // Expand all cities by default
-      const cities = new Set(fetchedTours.map(t => t.city));
-      setExpandedCities(cities);
+      // Expand all cities by default - use city_id
+      const cityKeys = new Set(mappedTours.map(t => {
+        const tourWithCityId = t as any;
+        return tourWithCityId.city_id || t.city; // Use city_id if available, fallback to city slug
+      }));
+      setExpandedCities(cityKeys);
     } catch (err) {
       console.error('Failed to fetch tours:', err);
       setError('Failed to load tours');
@@ -457,7 +468,8 @@ export default function AdminToursPage() {
     const searchLower = searchQuery.toLowerCase();
     const tourWithCityId = tour as any;
     const cityId = tourWithCityId.city_id;
-    const citySlug = cityId ? cities.find(c => c.id === cityId)?.slug : tour.city;
+    // Get city slug for search (from JOIN or fallback)
+    const citySlug = tourWithCityId.cities?.slug || tour.city;
     
     const matchesSearch = !searchQuery || 
       tour.title?.toLowerCase().includes(searchLower) ||
@@ -465,17 +477,11 @@ export default function AdminToursPage() {
       citySlug?.toLowerCase().includes(searchLower) ||
       tour.city?.toLowerCase().includes(searchLower);
 
-    // City filter - match by city_id or city slug
+    // City filter - match by city_id
     let matchesCity = filterCity === 'all';
     if (!matchesCity) {
-      if (cityId) {
-        // Find city by ID and match slug
-        const tourCity = cities.find(c => c.id === cityId);
-        matchesCity = tourCity?.slug === filterCity;
-      } else {
-        // Fallback: match by city name/slug
-        matchesCity = tour.city === filterCity;
-      }
+      // Match by city_id directly
+      matchesCity = cityId === filterCity;
     }
 
     // Type filter
@@ -498,34 +504,19 @@ export default function AdminToursPage() {
     return `${mins}m`;
   };
 
-  // Group tours by city_id (using city slug as key for display)
+  // Group tours by city_id
   const toursByCity = useMemo(() => {
     const grouped = filteredTours.reduce((acc, tour) => {
-      // Use city_id to find the city, fallback to city slug/name matching
       const tourWithCityId = tour as any;
       const cityId = tourWithCityId.city_id;
-      let cityKey: string;
       
-      if (cityId) {
-        // Find city by ID
-        const matchedCity = cities.find(c => c.id === cityId);
-        cityKey = matchedCity?.slug || cityId;
-      } else {
-        // Fallback: try to match by city name/slug (for backwards compatibility)
-        const matchedCity = cities.find(c => 
-          c.name_nl === tour.city || 
-          c.name_en === tour.city || 
-          c.name_fr === tour.city || 
-          c.name_de === tour.city ||
-          c.slug === tour.city
-        );
-        cityKey = matchedCity?.slug || citySlugify(tour.city);
-      }
+      // Use city_id as key, fallback to city slug if no city_id
+      const key = cityId || tour.city;
       
-      if (!acc[cityKey]) {
-        acc[cityKey] = [];
+      if (!acc[key]) {
+        acc[key] = [];
       }
-      acc[cityKey].push(tour);
+      acc[key].push(tour);
       return acc;
     }, {} as Record<string, Tour[]>);
 
@@ -542,7 +533,7 @@ export default function AdminToursPage() {
     });
 
     return grouped;
-  }, [filteredTours, matchTourCityToCity]);
+  }, [filteredTours]);
 
   // Sort cities by display_order from cities table, then alphabetically
   // Show ALL cities from cities table, even those without tours
@@ -588,16 +579,19 @@ export default function AdminToursPage() {
     });
   };
 
-  const handleDragEnd = async (event: DragEndEvent, city: string) => {
+  const handleDragEnd = async (event: DragEndEvent, cityId: string) => {
     const { active, over } = event;
 
     if (!over || active.id === over.id) {
       return;
     }
 
-    // Get current tours for this city from state, sorted by display_order
+    // Get current tours for this city_id from state, sorted by display_order
     const cityTours = tours
-      .filter(t => t.city === city)
+      .filter(t => {
+        const tourWithCityId = t as any;
+        return tourWithCityId.city_id === cityId;
+      })
       .sort((a, b) => {
         if (a.display_order === null && b.display_order === null) {
           return (a.created_at || '').localeCompare(b.created_at || '');
@@ -626,14 +620,10 @@ export default function AdminToursPage() {
     // Create a map of updated tours for quick lookup
     const updatedToursMap = new Map(reorderedToursWithOrder.map(t => [t.id, t]));
 
-    // Update the tours state - replace all tours for this city with reordered ones
+    // Update the tours state - replace all tours for this city_id with reordered ones
     const updatedTours = tours.map(tour => {
-      // Match by city_id or city slug
       const tourWithCityId = tour as any;
-      const cityId = tourWithCityId.city_id;
-      const matchesCity = cityId 
-        ? cities.find(c => c.id === cityId)?.slug === city
-        : tour.city === city;
+      const matchesCity = tourWithCityId.city_id === cityId;
       
       if (matchesCity) {
         const updatedTour = updatedToursMap.get(tour.id);
@@ -660,7 +650,8 @@ export default function AdminToursPage() {
         }
       }
 
-      toast.success(`Tour order updated for ${city}`);
+      const cityData = cities.find(c => c.id === cityId);
+      toast.success(`Tour order updated for ${cityData?.name_nl || cityId}`);
     } catch (err) {
       console.error('Failed to update tour order:', err);
       toast.error('Failed to update tour order');
@@ -670,20 +661,12 @@ export default function AdminToursPage() {
   };
 
   // Tour move up/down handlers
-  const handleTourMove = async (tourId: string, citySlug: string, direction: 'up' | 'down') => {
-    // Match city slug to actual city name using the same logic as toursByCity
-    const matchedCity = cities.find(c => c.slug === citySlug);
-    
-    // Get current tours for this city from state, sorted by display_order
-    // Use the same matching logic as toursByCity to ensure consistency
+  const handleTourMove = async (tourId: string, cityId: string, direction: 'up' | 'down') => {
+    // Get current tours for this city_id from state, sorted by display_order
     const cityTours = tours
       .filter(t => {
-        if (matchedCity) {
-          // If we have a matched city, compare by city name
-          return t.city === matchedCity.name_nl;
-        }
-        // Fallback: use slugify comparison for cities not in cities table
-        return citySlugify(t.city) === citySlug;
+        const tourWithCityId = t as any;
+        return tourWithCityId.city_id === cityId;
       })
       .sort((a, b) => {
         if (a.display_order === null && b.display_order === null) {
@@ -712,12 +695,10 @@ export default function AdminToursPage() {
     // Create a map of updated tours for quick lookup
     const updatedToursMap = new Map(reorderedToursWithOrder.map(t => [t.id, t]));
 
-    // Update the tours state - replace all tours for this city with reordered ones
-    // Use the same matching logic as above
+    // Update the tours state - replace all tours for this city_id with reordered ones
     const updatedTours = tours.map(tour => {
-      const matchesCity = matchedCity 
-        ? tour.city === matchedCity.name_nl
-        : citySlugify(tour.city) === citySlug;
+      const tourWithCityId = tour as any;
+      const matchesCity = tourWithCityId.city_id === cityId;
       
       if (matchesCity) {
         const updatedTour = updatedToursMap.get(tour.id);
@@ -744,7 +725,8 @@ export default function AdminToursPage() {
         }
       }
 
-      const cityDisplayName = matchedCity ? matchedCity.name_nl : citySlug;
+      const cityData = cities.find(c => c.id === cityId);
+      const cityDisplayName = cityData?.name_nl || cityId;
       toast.success(`Tour order updated for ${cityDisplayName}`);
     } catch (err) {
       console.error('Failed to update tour order:', err);
@@ -802,7 +784,7 @@ export default function AdminToursPage() {
   };
 
   // City move up/down handlers
-  const handleCityMove = async (citySlug: string, direction: 'up' | 'down') => {
+  const handleCityMove = async (cityId: string, direction: 'up' | 'down') => {
     const sortedCitiesList = [...cities].sort((a, b) => {
       if (a.display_order === null && b.display_order === null) {
         return (a.slug || '').localeCompare(b.slug || '');
@@ -812,7 +794,7 @@ export default function AdminToursPage() {
       return a.display_order - b.display_order;
     });
 
-    const currentIndex = sortedCitiesList.findIndex(c => c.slug === citySlug);
+    const currentIndex = sortedCitiesList.findIndex(c => c.id === cityId);
     if (currentIndex === -1) return;
 
     const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
@@ -820,8 +802,8 @@ export default function AdminToursPage() {
 
     // Create a fake drag event to reuse existing logic
     const fakeEvent = {
-      active: { id: citySlug },
-      over: { id: sortedCitiesList[newIndex].slug },
+      active: { id: cityId },
+      over: { id: sortedCitiesList[newIndex].id },
     } as DragEndEvent;
 
     await handleCityDragEnd(fakeEvent);
@@ -835,6 +817,7 @@ export default function AdminToursPage() {
       setSelectedCity(city);
       setIsNewCity(!existsInDb);
       setCityFormData({
+        id: city.id,
         slug: city.slug,
         name_nl: city.name_nl,
         name_en: city.name_en,
@@ -860,6 +843,7 @@ export default function AdminToursPage() {
       setSelectedCity(null);
       setIsNewCity(true);
       setCityFormData({
+        id: '',
         slug: '',
         name_nl: null,
         name_en: null,
@@ -1081,7 +1065,7 @@ export default function AdminToursPage() {
   };
 
   // Sortable City Item Component
-  const SortableCityItem = ({ citySlug, cityTours, index, totalCities }: { citySlug: string; cityTours: Tour[]; index: number; totalCities: number }) => {
+  const SortableCityItem = ({ cityId, cityTours, index, totalCities }: { cityId: string; cityTours: Tour[]; index: number; totalCities: number }) => {
     const {
       attributes,
       listeners,
@@ -1089,7 +1073,7 @@ export default function AdminToursPage() {
       transform,
       transition,
       isDragging,
-    } = useSortable({ id: citySlug });
+    } = useSortable({ id: cityId });
 
     const style = {
       transform: CSS.Transform.toString(transform),
@@ -1097,9 +1081,9 @@ export default function AdminToursPage() {
       opacity: isDragging ? 0.5 : 1,
     };
 
-    const cityData = cities.find(c => c.slug === citySlug);
+    const cityData = cities.find(c => c.id === cityId);
     const cityImageUrl = cityData?.image || null;
-    const isExpanded = expandedCities.has(citySlug);
+    const isExpanded = expandedCities.has(cityId);
 
     return (
       <Card
@@ -1109,7 +1093,7 @@ export default function AdminToursPage() {
       >
         <CardHeader
           className="cursor-pointer hover:bg-gray-50 transition-colors"
-          onClick={() => toggleCity(citySlug)}
+          onClick={() => toggleCity(cityId)}
         >
           <div className="flex items-center gap-3">
             {/* Drag handle and up/down buttons */}
@@ -1126,7 +1110,7 @@ export default function AdminToursPage() {
                 variant="ghost"
                 size="sm"
                 className="h-6 w-6 p-0"
-                onClick={() => handleCityMove(citySlug, 'up')}
+                onClick={() => handleCityMove(cityId, 'up')}
                 disabled={index === 0}
                 title="Move up"
               >
@@ -1136,7 +1120,7 @@ export default function AdminToursPage() {
                 variant="ghost"
                 size="sm"
                 className="h-6 w-6 p-0"
-                onClick={() => handleCityMove(citySlug, 'down')}
+                onClick={() => handleCityMove(cityId, 'down')}
                 disabled={index === totalCities - 1}
                 title="Move down"
               >
@@ -1149,7 +1133,7 @@ export default function AdminToursPage() {
               <div className="relative w-16 h-16 flex-shrink-0 rounded overflow-hidden border">
                 <Image
                   src={cityImageUrl}
-                  alt={citySlug}
+                  alt={cityData?.name_nl || cityId}
                   fill
                   className="object-cover"
                 />
@@ -1160,7 +1144,7 @@ export default function AdminToursPage() {
             <div className="flex-1">
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5" />
-                {cityData?.name_nl || citySlug}
+                {cityData?.name_nl || cityId}
                 <Badge variant="outline" className="ml-2">
                   {cityTours.length} {cityTours.length === 1 ? 'tour' : 'tours'}
                 </Badge>
@@ -1181,8 +1165,9 @@ export default function AdminToursPage() {
                   } else {
                     // Create a temporary city object for cities that only exist in tours
                     const tempCity: CityData = {
-                      slug: citySlug,
-                      name_nl: citySlug,
+                      id: cityId,
+                      slug: cityId,
+                      name_nl: cityId,
                       name_en: null,
                       name_fr: null,
                       name_de: null,
@@ -1218,8 +1203,9 @@ export default function AdminToursPage() {
                   } else {
                     // Create a temporary city object for cities that only exist in tours
                     const tempCity: CityData = {
-                      slug: citySlug,
-                      name_nl: citySlug,
+                      id: cityId,
+                      slug: cityId,
+                      name_nl: cityId,
                       name_en: null,
                       name_fr: null,
                       name_de: null,
@@ -1260,7 +1246,7 @@ export default function AdminToursPage() {
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
-                onDragEnd={(event) => handleDragEnd(event, citySlug)}
+                onDragEnd={(event) => handleDragEnd(event, cityId)}
               >
                 <Table>
                   <TableHeader>
@@ -1280,13 +1266,19 @@ export default function AdminToursPage() {
                       items={cityTours.map(t => t.id)}
                       strategy={verticalListSortingStrategy}
                     >
-                      {cityTours.map((tour) => (
-                        <SortableTourItem
-                          key={tour.id}
-                          tour={tour}
-                          city={citySlug}
-                        />
-                      ))}
+                      {cityTours.map((tour, index) => {
+                        const tourWithCityId = tour as any;
+                        const tourCityId = tourWithCityId.city_id || cityId;
+                        return (
+                          <SortableTourItem
+                            key={tour.id}
+                            tour={tour}
+                            cityId={tourCityId}
+                            index={index}
+                            totalTours={cityTours.length}
+                          />
+                        );
+                      })}
                     </SortableContext>
                   </TableBody>
                 </Table>
@@ -1299,7 +1291,7 @@ export default function AdminToursPage() {
   };
 
   // Sortable Tour Item Component
-  const SortableTourItem = ({ tour, city, index, totalTours }: { tour: Tour; city: string; index: number; totalTours: number }) => {
+  const SortableTourItem = ({ tour, cityId, index, totalTours }: { tour: Tour; cityId: string; index: number; totalTours: number }) => {
     const {
       attributes,
       listeners,
@@ -1334,7 +1326,7 @@ export default function AdminToursPage() {
               variant="ghost"
               size="sm"
               className="h-6 w-6 p-0"
-              onClick={() => handleTourMove(tour.id, city, 'up')}
+              onClick={() => handleTourMove(tour.id, cityId, 'up')}
               disabled={index === 0}
               title="Move up"
             >
@@ -1344,7 +1336,7 @@ export default function AdminToursPage() {
               variant="ghost"
               size="sm"
               className="h-6 w-6 p-0"
-              onClick={() => handleTourMove(tour.id, city, 'down')}
+              onClick={() => handleTourMove(tour.id, cityId, 'down')}
               disabled={index === totalTours - 1}
               title="Move down"
             >
@@ -1510,7 +1502,7 @@ export default function AdminToursPage() {
                     <SelectContent>
                       <SelectItem value="all">All Cities</SelectItem>
                       {cities.map((city) => (
-                        <SelectItem key={city.slug} value={city.name_nl || city.slug}>
+                        <SelectItem key={city.id} value={city.id}>
                           {city.name_nl || city.slug}
                         </SelectItem>
                       ))}
@@ -1566,7 +1558,7 @@ export default function AdminToursPage() {
                       return (
                         <SortableCityItem
                           key={city}
-                          citySlug={city}
+                          cityId={city}
                           cityTours={cityTours}
                           index={index}
                           totalCities={sortedCities.length}
