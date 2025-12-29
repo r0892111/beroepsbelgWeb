@@ -179,6 +179,11 @@ export default function AdminToursPage() {
     cta_text_en: null,
     cta_text_fr: null,
     cta_text_de: null,
+    coming_soon_text_nl: null,
+    coming_soon_text_en: null,
+    coming_soon_text_fr: null,
+    coming_soon_text_de: null,
+    image: null,
     status: 'live',
     display_order: null,
   });
