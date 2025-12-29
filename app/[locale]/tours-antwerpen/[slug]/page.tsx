@@ -49,6 +49,12 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
 
   const t = await getTranslations('common');
   const tTour = await getTranslations('tourDetail');
+  const tBooking = await getTranslations('booking');
+
+  // Calculate discounted price (10% discount for online bookings)
+  const discountRate = 0.9;
+  const originalPrice = tour.price || 0;
+  const discountedPrice = originalPrice * discountRate;
 
   return (
     <div className="bg-ivory min-h-screen">
@@ -88,9 +94,28 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
               </div>
             </div>
             {tour.price && (
-              <p className="text-3xl font-serif font-bold" style={{ color: 'var(--brass)' }}>
-                €{tour.price.toFixed(2)}
-              </p>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-3">
+                  <p className="text-3xl font-serif font-bold" style={{ color: 'var(--brass)' }}>
+                    €{discountedPrice.toFixed(2)}
+                  </p>
+                  <span className="text-xl line-through" style={{ color: 'var(--text-muted)' }}>
+                    €{originalPrice.toFixed(2)}
+                  </span>
+                  <Badge
+                    className="text-sm"
+                    style={{
+                      backgroundColor: 'var(--brass)',
+                      color: 'white',
+                    }}
+                  >
+                    -10%
+                  </Badge>
+                </div>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  {tBooking('onlineDiscount')}
+                </p>
+              </div>
             )}
           </div>
 
@@ -200,7 +225,7 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
             <TourBookingButton
               tourId={tour.id}
               tourTitle={tour.title}
-              tourPrice={tour.price}
+              tourPrice={originalPrice}
               tourDuration={tour.durationMinutes}
               isLocalStories={false}
               opMaat={tour.op_maat}

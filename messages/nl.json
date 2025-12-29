@@ -352,6 +352,13 @@
     "vatNumber": "BTW-nummer*",
     "vatPlaceholder": "BE0123456789",
     "billingAddressLabel": "Factuuradres*",
+    "street": "Straat",
+    "streetNumber": "Nummer",
+    "postalCode": "Postcode",
+    "bus": "Bus",
+    "busPlaceholder": "Optioneel",
+    "zipcode": "Postcode",
+    "country": "Land",
     "commentsLabel": "Opmerkingen",
     "commentsPlaceholder": "Eventuele bijzonderheden of wensen...",
     "backButton": "← Terug",
@@ -436,6 +443,10 @@
     "total": "Totaal"
   },
   "booking": {
+    "onlineDiscount": "10% korting bij online boeken",
+    "originalPrice": "Originele prijs",
+    "discountedPrice": "Prijs met korting",
+    "youSave": "Je bespaart",
     "title": "Tour Boeken",
     "perPerson": "per persoon",
     "fullName": "Volledige naam",
@@ -453,7 +464,11 @@
     "total": "Totaal",
     "processing": "Verwerken...",
     "proceedToPayment": "Doorgaan naar betaling",
-    "bookNow": "Boek nu"
+    "bookNow": "Boek nu",
+    "onlineDiscount": "10% korting bij online boeken",
+    "originalPrice": "Originele prijs",
+    "discountedPrice": "Prijs met korting",
+    "youSave": "Je bespaart"
   },
   "product": {
     "description": "Beschrijving",
@@ -487,7 +502,11 @@
     "type": "Type",
     "localStoriesTitle": "Belangrijke Informatie",
     "localStoriesTime": "Tours zijn enkel beschikbaar van 14:00u tot 16:00u",
-    "localStoriesMinimum": "Minimum van 4 personen vereist"
+    "localStoriesMinimum": "Minimum van 4 personen vereist",
+    "onlineDiscount": "10% korting bij online boeken",
+    "originalPrice": "Originele prijs",
+    "discountedPrice": "Prijs met korting",
+    "youSave": "Je bespaart"
   },
   "faq": {
     "title": "FAQ",
@@ -627,10 +646,14 @@
   "bookingSuccess": {
     "loading": "Boekingsgegevens laden...",
     "notFound": "Boeking niet gevonden",
+    "notFoundTitle": "Boeking niet gevonden",
     "notFoundDesc": "We konden uw boekingsgegevens niet vinden.",
+    "notFoundDescription": "We konden uw boekingsgegevens niet vinden.",
     "returnHome": "Terug naar home",
     "confirmed": "Boeking bevestigd!",
+    "title": "Boeking bevestigd!",
     "confirmedDesc": "Uw tour is succesvol geboekt. U ontvangt binnenkort een bevestigingsmail.",
+    "description": "Uw tour is succesvol geboekt. U ontvangt binnenkort een bevestigingsmail.",
     "bookingDetails": "Boekingsgegevens",
     "tour": "Tour",
     "date": "Datum",
@@ -643,7 +666,13 @@
     "specialRequests": "Speciale verzoeken",
     "whatsNext": "Wat nu?",
     "whatsNextDesc": "U ontvangt een bevestigingsmail met alle details van uw boeking. We kijken ernaar uit u te verwelkomen op de tour!",
-    "browseTours": "Meer tours bekijken"
+    "nextSteps": "U ontvangt een bevestigingsmail met alle details van uw boeking. We kijken ernaar uit u te verwelkomen op de tour!",
+    "browseTours": "Meer tours bekijken",
+    "dateToBeDetermined": "Datum wordt bepaald",
+    "noDate": "Geen datum",
+    "customerName": "Naam",
+    "email": "E-mail",
+    "purchasedProducts": "Gekochte producten"
   },
   "bookingCancelled": {
     "title": "Boeking geannuleerd",
