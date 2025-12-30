@@ -117,14 +117,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-      // Get redirect parameter from URL if present
+      // Get redirect parameter and locale from URL if present
       const urlParams = new URLSearchParams(window.location.search);
       const redirect = urlParams.get('redirect');
       
-      // Build redirect URL with redirect parameter if present
-      let redirectTo = `${window.location.origin}/auth/callback`;
+      // Extract locale from current path or use 'nl' as default
+      const pathMatch = window.location.pathname.match(/^\/([a-z]{2})\//);
+      const locale = pathMatch ? pathMatch[1] : 'nl';
+      
+      // Build redirect URL with redirect parameter and locale
+      let redirectTo = `${window.location.origin}/auth/callback?locale=${locale}`;
       if (redirect) {
-        redirectTo += `?redirect=${encodeURIComponent(redirect)}`;
+        redirectTo += `&redirect=${encodeURIComponent(redirect)}`;
+      } else {
+        // Default redirect to account page with locale
+        redirectTo += `&redirect=${encodeURIComponent(`/${locale}/account`)}`;
       }
       
       const { error } = await supabase.auth.signInWithOAuth({
