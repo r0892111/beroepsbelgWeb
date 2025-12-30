@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -45,6 +46,8 @@ interface Product {
   stripe_price_id?: string | null;
   display_order?: number | null;
   category_display_order?: number | null;
+  featured_on_homepage?: boolean;
+  homepage_featured_order?: number | null;
 }
 
 interface ProductFormData {
@@ -71,6 +74,7 @@ export default function AdminProductsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [orderingMode, setOrderingMode] = useState<'global' | 'category'>('global');
+  const [activeTab, setActiveTab] = useState<'all' | 'featured'>('all');
 
   // Filter and search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -265,6 +269,157 @@ export default function AdminProductsPage() {
     }
   };
 
+  const handleToggleFeatured = async (product: Product) => {
+    try {
+      const newFeaturedStatus = !product.featured_on_homepage;
+
+      if (newFeaturedStatus) {
+        // If featuring, get the max order and assign next number
+        const { data: featuredProducts } = await supabase
+          .from('webshop_data')
+          .select('homepage_featured_order')
+          .eq('featured_on_homepage', true)
+          .not('homepage_featured_order', 'is', null)
+          .order('homepage_featured_order', { ascending: false })
+          .limit(1);
+
+        const maxOrder = featuredProducts && featuredProducts.length > 0 
+          ? (featuredProducts[0].homepage_featured_order as number) 
+          : 0;
+        const newOrder = maxOrder + 1;
+
+        const { error } = await supabase
+          .from('webshop_data')
+          .update({
+            featured_on_homepage: true,
+            homepage_featured_order: newOrder,
+          })
+          .eq('uuid', product.uuid);
+
+        if (error) throw error;
+      } else {
+        // If un-featuring, set homepage_featured_order to NULL
+        const { error } = await supabase
+          .from('webshop_data')
+          .update({
+            featured_on_homepage: false,
+            homepage_featured_order: null,
+          })
+          .eq('uuid', product.uuid);
+
+        if (error) throw error;
+
+        // Reorder remaining featured products to be sequential
+        const { data: remainingFeatured } = await supabase
+          .from('webshop_data')
+          .select('uuid')
+          .eq('featured_on_homepage', true)
+          .order('homepage_featured_order', { ascending: true, nullsFirst: false })
+          .order('Name', { ascending: true });
+
+        if (remainingFeatured) {
+          for (let i = 0; i < remainingFeatured.length; i++) {
+            await supabase
+              .from('webshop_data')
+              .update({ homepage_featured_order: i + 1 })
+              .eq('uuid', remainingFeatured[i].uuid);
+          }
+        }
+      }
+
+      // Refresh products
+      await fetchProducts();
+
+      toast.success(
+        newFeaturedStatus 
+          ? 'Product added to homepage. Reorder in the Featured Products tab.' 
+          : 'Product removed from homepage'
+      );
+    } catch (err) {
+      console.error('Failed to toggle featured status:', err);
+      toast.error('Failed to update featured status');
+      await fetchProducts();
+    }
+  };
+
+  // Handle drag-and-drop reordering for featured products
+  const handleFeaturedDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const featuredProducts = products
+      .filter(p => p.featured_on_homepage === true)
+      .sort((a, b) => {
+        const aOrder = a.homepage_featured_order ?? 999999;
+        const bOrder = b.homepage_featured_order ?? 999999;
+        if (aOrder !== bOrder) return aOrder - bOrder;
+        return (a.Name || '').localeCompare(b.Name || '');
+      });
+
+    const oldIndex = featuredProducts.findIndex(p => p.uuid === active.id);
+    const newIndex = featuredProducts.findIndex(p => p.uuid === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) {
+      return;
+    }
+
+    const reorderedProducts = arrayMove(featuredProducts, oldIndex, newIndex);
+
+    // Update all featured products with sequential order numbers (1, 2, 3, ...)
+    try {
+      for (let i = 0; i < reorderedProducts.length; i++) {
+        const { error } = await supabase
+          .from('webshop_data')
+          .update({ homepage_featured_order: i + 1 })
+          .eq('uuid', reorderedProducts[i].uuid);
+
+        if (error) throw error;
+      }
+
+      // Update local state
+      const updatedProducts = products.map(p => {
+        const reorderedIndex = reorderedProducts.findIndex(rp => rp.uuid === p.uuid);
+        if (reorderedIndex !== -1 && p.featured_on_homepage) {
+          return { ...p, homepage_featured_order: reorderedIndex + 1 };
+        }
+        return p;
+      });
+
+      setProducts(updatedProducts);
+      toast.success('Featured products order updated');
+    } catch (err) {
+      console.error('Failed to update featured products order:', err);
+      toast.error('Failed to update order');
+      await fetchProducts();
+    }
+  };
+
+  const handleUpdateHomepageOrder = async (productUuid: string, newOrder: number) => {
+    try {
+      const { error } = await supabase
+        .from('webshop_data')
+        .update({ homepage_featured_order: newOrder })
+        .eq('uuid', productUuid);
+
+      if (error) throw error;
+
+      // Update local state
+      setProducts(products.map(p => 
+        p.uuid === productUuid 
+          ? { ...p, homepage_featured_order: newOrder }
+          : p
+      ));
+
+      toast.success('Homepage order updated');
+    } catch (err) {
+      console.error('Failed to update homepage order:', err);
+      toast.error('Failed to update homepage order');
+    }
+  };
+
   // Filter and search logic
   const filteredProducts = products.filter((product) => {
     const searchLower = searchQuery.toLowerCase();
@@ -456,6 +611,67 @@ export default function AdminProductsPage() {
     await handleDragEnd(fakeEvent, category);
   };
 
+  // Sortable Featured Product Item Component
+  const SortableFeaturedProductItem = ({ product }: { product: Product }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: product.uuid });
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+      <TableRow
+        ref={setNodeRef}
+        style={style}
+        className={`cursor-move ${isDragging ? 'bg-gray-100' : ''}`}
+      >
+        <TableCell className="w-24">
+          <div
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-200 rounded"
+          >
+            <GripVertical className="h-4 w-4 text-gray-400" />
+          </div>
+        </TableCell>
+        <TableCell className="font-medium max-w-xs truncate">
+          {product.Name}
+        </TableCell>
+        <TableCell>
+          <Badge className="bg-blue-100 text-blue-900">{product.Category}</Badge>
+        </TableCell>
+        <TableCell>€{parseFloat(product["Price (EUR)"]?.replace(',', '.') || '0').toFixed(2)}</TableCell>
+        <TableCell>
+          <Badge className="bg-[#1BDD95] text-white">
+            {product.homepage_featured_order ?? 'Unordered'}
+          </Badge>
+        </TableCell>
+        <TableCell>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleToggleFeatured(product)}
+              title="Remove from homepage"
+              className="text-[#1BDD95] hover:text-[#14BE82] border-[#1BDD95]"
+            >
+              <Home className="h-4 w-4" />
+            </Button>
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  };
+
   // Sortable Product Item Component
   const SortableProductItem = ({ product, category, index, totalProducts }: { product: Product; category?: string; index: number; totalProducts: number }) => {
     const {
@@ -565,6 +781,15 @@ export default function AdminProductsPage() {
             >
               <Pencil className="h-4 w-4" />
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleToggleFeatured(product)}
+              title={product.featured_on_homepage ? "Hide from homepage" : "Show on homepage"}
+              className={product.featured_on_homepage ? "text-[#1BDD95] hover:text-[#14BE82] border-[#1BDD95]" : ""}
+            >
+              <Home className="h-4 w-4" />
+            </Button>
             {!product.stripe_product_id && (
               <Button
                 variant="outline"
@@ -633,7 +858,7 @@ export default function AdminProductsPage() {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Package className="h-5 w-5" />
-                  All Products
+                  Products Management
                 </CardTitle>
                 <CardDescription>
                   Manage webshop products. Changes automatically sync to Stripe via webhook.
@@ -669,6 +894,13 @@ export default function AdminProductsPage() {
               </div>
             )}
 
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'all' | 'featured')} className="w-full">
+              <TabsList className="mb-6">
+                <TabsTrigger value="all">All Products</TabsTrigger>
+                <TabsTrigger value="featured">Featured Products</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="all">
             {/* Search and Filters */}
             <div className="space-y-4 mb-6">
               <div className="flex items-center gap-4">
@@ -866,6 +1098,76 @@ export default function AdminProductsPage() {
                 {filteredProducts.length !== products.length && ` (filtered from ${products.length} total)`}
               </div>
             )}
+              </TabsContent>
+
+              <TabsContent value="featured">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-sm text-muted-foreground">
+                      Drag and drop to reorder featured products. Order determines display order on homepage.
+                    </p>
+                  </div>
+
+                  {loading ? (
+                    <div className="text-center py-8 text-muted-foreground">Loading featured products...</div>
+                  ) : (
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleFeaturedDragEnd}
+                    >
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-24"></TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Category</TableHead>
+                            <TableHead>Price</TableHead>
+                            <TableHead>Order</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          <SortableContext
+                            items={products
+                              .filter(p => p.featured_on_homepage === true)
+                              .sort((a, b) => {
+                                const aOrder = a.homepage_featured_order ?? 999999;
+                                const bOrder = b.homepage_featured_order ?? 999999;
+                                if (aOrder !== bOrder) return aOrder - bOrder;
+                                return (a.Name || '').localeCompare(b.Name || '');
+                              })
+                              .map(p => p.uuid)}
+                            strategy={verticalListSortingStrategy}
+                          >
+                            {products
+                              .filter(p => p.featured_on_homepage === true)
+                              .sort((a, b) => {
+                                const aOrder = a.homepage_featured_order ?? 999999;
+                                const bOrder = b.homepage_featured_order ?? 999999;
+                                if (aOrder !== bOrder) return aOrder - bOrder;
+                                return (a.Name || '').localeCompare(b.Name || '');
+                              })
+                              .map((product) => (
+                                <SortableFeaturedProductItem
+                                  key={product.uuid}
+                                  product={product}
+                                />
+                              ))}
+                          </SortableContext>
+                        </TableBody>
+                      </Table>
+                    </DndContext>
+                  )}
+
+                  {!loading && products.filter(p => p.featured_on_homepage === true).length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No featured products. Use the Home icon in the All Products tab to feature products.
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>

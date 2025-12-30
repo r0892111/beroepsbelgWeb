@@ -39,7 +39,8 @@
     "addToCart": "Ajouter au panier",
     "curated": "Sélectionnée",
     "collection": "Collection",
-    "exclusiveItems": "Livres, affiches et objets exclusifs"
+    "exclusiveItems": "Livres, affiches et objets exclusifs",
+    "viewAllProducts": "Voir Tous les Produits"
   },
   "header": {
     "account": "Compte",
