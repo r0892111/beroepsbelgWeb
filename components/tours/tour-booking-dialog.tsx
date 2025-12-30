@@ -78,6 +78,7 @@ export function TourBookingDialog({
     language: 'nl',
     specialRequests: '',
     requestTanguy: false,
+    extraHour: false, // For opMaat tours: add extra hour (3 hours instead of 2)
   });
 
   // Tanguy availability state
@@ -113,6 +114,14 @@ export function TourBookingDialog({
     }
   }, [isLocalStories, open]);
 
+  // Calculate actual duration (accounting for extra hour for opMaat tours)
+  const actualDuration = useMemo(() => {
+    if (opMaat && formData.extraHour) {
+      return 180; // 3 hours
+    }
+    return tourDuration;
+  }, [opMaat, formData.extraHour, tourDuration]);
+
   // Check Tanguy's availability when date/time changes
   useEffect(() => {
     const checkTanguyAvailability = async () => {
@@ -143,7 +152,7 @@ export function TourBookingDialog({
           body: JSON.stringify({
             date: dateStr,
             time: selectedTimeSlot,
-            durationMinutes: tourDuration,
+            durationMinutes: actualDuration,
           }),
         });
 
@@ -175,7 +184,7 @@ export function TourBookingDialog({
     };
 
     void checkTanguyAvailability();
-  }, [formData.bookingDate, selectedTimeSlot, citySlug, isLocalStories, tourDuration]);
+  }, [formData.bookingDate, selectedTimeSlot, citySlug, isLocalStories, actualDuration]);
 
   // Log when upsell dialog state changes
   useEffect(() => {
@@ -245,7 +254,7 @@ export function TourBookingDialog({
     }
 
     // Otherwise, generate regular time slots
-    const durationMinutes = tourDuration;
+    const durationMinutes = actualDuration;
     const startHour = 10; // 10:00
     const endHour = 18; // 18:00
 
@@ -269,7 +278,7 @@ export function TourBookingDialog({
     }
 
     return slots;
-  }, [tourDuration, isLocalStories]);
+  }, [actualDuration, isLocalStories]);
 
   // Format duration for display
   const formatDuration = (minutes: number) => {
@@ -364,7 +373,9 @@ export function TourBookingDialog({
             cityPart: opMaatAnswers.cityPart,
             subjects: opMaatAnswers.subjects,
             specialWishes: opMaatAnswers.specialWishes,
+            extraHour: formData.extraHour,
           } : null,
+          durationMinutes: actualDuration, // Include actual duration in booking
           // For local stories: pass existing tourbooking ID if available
           existingTourBookingId: isLocalStories ? (existingTourBookingId || null) : null,
         }),
@@ -431,7 +442,7 @@ export function TourBookingDialog({
         onOpenChange(isOpen);
       }}
     >
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription className="flex flex-col gap-1">
@@ -566,7 +577,7 @@ export function TourBookingDialog({
           </div>
           
           <p className="text-xs text-muted-foreground -mt-2">
-            Tourduur: {formatDuration(tourDuration)}
+            Tourduur: {formatDuration(actualDuration)}
           </p>
 
           <div className="grid grid-cols-2 gap-4">
@@ -692,6 +703,9 @@ export function TourBookingDialog({
                        <p className="mt-1 text-sm text-slate-blue">
                          {t('requestTanguyDescription')}
                        </p>
+                       <p className="mt-2 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200">
+                         {t('tanguyLanguageDisclaimer')}
+                       </p>
                      </div>
                    </div>
                  </div>
@@ -716,6 +730,30 @@ export function TourBookingDialog({
                </div>
              </div>
            ) : null
+          )}
+
+          {/* Extra Hour Checkbox - Only for opMaat tours */}
+          {opMaat && (
+            <div className="rounded-lg border-2 p-4 border-gray-200">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="extraHour"
+                  checked={formData.extraHour}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, extraHour: checked === true })
+                  }
+                  className="mt-1"
+                />
+                <div className="flex-1">
+                  <Label
+                    htmlFor="extraHour"
+                    className="cursor-pointer text-base font-semibold text-navy"
+                  >
+                    {t('addExtraHour')}
+                  </Label>
+                </div>
+              </div>
+            </div>
           )}
 
           <div className="space-y-2">
@@ -793,7 +831,7 @@ export function TourBookingDialog({
           }
         }}
       >
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh]" style={{ zIndex: 60 }}>
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto" style={{ zIndex: 60 }}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <div className="p-2 rounded-lg" style={{ backgroundColor: 'var(--primary-base)', color: 'white' }}>
@@ -985,7 +1023,7 @@ export function TourBookingDialog({
           setShowOpMaatDialog(isOpen);
         }}
       >
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh]" style={{ zIndex: 70 }}>
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto" style={{ zIndex: 70 }}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <div className="p-2 rounded-lg" style={{ backgroundColor: 'var(--primary-base)', color: 'white' }}>

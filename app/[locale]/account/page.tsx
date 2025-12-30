@@ -15,6 +15,7 @@ import type { Product } from '@/lib/data/types';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { ProductDetailDialog } from '@/components/webshop/product-detail-dialog';
+import { CheckoutDialog } from '@/components/webshop/checkout-dialog';
 import { supabase } from '@/lib/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
@@ -41,6 +42,7 @@ export default function AccountPage() {
   const [tours, setTours] = useState<Map<string, any>>(new Map());
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [bookingsLoading, setBookingsLoading] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   const handleProductClick = (product: Product) => {
     setSelectedProduct(product);
@@ -479,7 +481,10 @@ export default function AccountPage() {
                         <Button asChild variant="outline" className="flex-1">
                           <Link href={`/${locale}/webshop`}>{t('continueShopping')}</Link>
                         </Button>
-                        <Button className="flex-1 bg-[#92F0B1] text-[#0d1117] hover:bg-[#6ee7a8]">
+                        <Button 
+                          className="flex-1 bg-[#92F0B1] text-[#0d1117] hover:bg-[#6ee7a8]"
+                          onClick={() => setCheckoutOpen(true)}
+                        >
                           {t('checkout')}
                         </Button>
                       </div>
@@ -704,6 +709,12 @@ export default function AccountPage() {
           onOpenChange={setShowProductDialog}
         />
       )}
+
+      <CheckoutDialog
+        open={checkoutOpen}
+        onOpenChange={setCheckoutOpen}
+        totalAmount={cartTotal}
+      />
     </div>
   );
 }

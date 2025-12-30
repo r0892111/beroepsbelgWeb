@@ -462,6 +462,8 @@
     "specialRequestsPlaceholder": "Bijzondere wensen of verzoeken...",
     "requestTanguy": "Vraag Tanguy Ottomer aan",
     "requestTanguyDescription": "Wilt u dat Tanguy Ottomer, oprichter van Beroepsbelg, persoonlijk uw tour begeleidt?",
+    "tanguyLanguageDisclaimer": "Let op: Tanguy geeft tours alleen in het Nederlands of Engels.",
+    "addExtraHour": "Extra uur toevoegen (3 uur in plaats van 2 uur)",
     "total": "Totaal",
     "processing": "Verwerken...",
     "proceedToPayment": "Doorgaan naar betaling",
@@ -532,7 +534,7 @@
     "getInTouch": "Neem Contact Op",
     "subtitle": "We horen graag van u",
     "address": "Adres",
-    "addressLabel": "Adres",
+    "addressLabel": "Locatie",
     "email": "E-mail",
     "emailLabel": "E-mail",
     "phone": "Telefoon",
@@ -600,7 +602,7 @@
     "required": "Dit veld is verplicht"
   },
   "lecture": {
-    "title": "Lezing: De Boerentoren",
+    "title": "Lezing",
     "date": "Datum",
     "onRequest": "Op aanvraag",
     "location": "Locatie",
@@ -611,7 +613,28 @@
     "description2": "Van de ambitieuze bouwplannen in de jaren '20 tot de moderne transformatie, u ontdekt de architecturale hoogtepunten, de verhalen van de mensen die er werkten, en de rol die het gebouw speelde in de ontwikkeling van Antwerpen als moderne metropool.",
     "description": "In deze boeiende lezing neemt Tanguy Ottomer je mee op een reis door de fascinerende geschiedenis van de Boerentoren, Antwerpen's meest iconische wolkenkrabber. Van de bouw in de jaren '30 tot zijn rol in het hedendaagse stadsbeeld, ontdek je hoe dit gebouw de stad heeft gevormd en een symbool blijft van ambitie en innovatie.",
     "bookLecture": "Boek deze lezing",
-    "moreInfo": "Meer informatie"
+    "moreInfo": "Meer informatie",
+    "disclaimer": "Let op: Lezingen worden alleen gegeven in het Nederlands of Engels, maar iedereen is welkom!",
+    "booking": {
+      "title": "Boek Lezing",
+      "description": "Vul het onderstaande formulier in om een lezing aan te vragen. We nemen contact met u op om de details te bevestigen.",
+      "name": "Naam",
+      "nameRequired": "Naam is verplicht",
+      "nameMinLength": "Naam moet minimaal 2 tekens lang zijn",
+      "phone": "Telefoon",
+      "email": "E-mail",
+      "contactRequired": "Geef een telefoonnummer of e-mailadres op",
+      "emailInvalid": "Voer een geldig e-mailadres in",
+      "preferredDate": "Gewenste datum",
+      "numberOfPeople": "Aantal personen",
+      "numberOfPeopleInvalid": "Voer een geldig aantal personen in",
+      "locationDescription": "Locatiebeschrijving",
+      "needsRoom": "We hebben een ruimte/auditorium nodig die door BeroepsBelg wordt verzorgd",
+      "submit": "Verzend boekingsverzoek",
+      "cancel": "Annuleren",
+      "submitting": "Verzenden...",
+      "success": "Boekingsverzoek succesvol verzonden! We nemen binnenkort contact met u op."
+    }
   },
   "disclaimer": {
     "title": "Algemene Voorwaarden",

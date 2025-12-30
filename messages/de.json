@@ -415,6 +415,8 @@
     "specialRequestsPlaceholder": "Besondere Anforderungen oder Wünsche...",
     "requestTanguy": "Tanguy Ottomer anfragen",
     "requestTanguyDescription": "Möchten Sie, dass Tanguy Ottomer, Gründer von Beroepsbelg, Ihre Tour persönlich begleitet?",
+    "tanguyLanguageDisclaimer": "Hinweis: Tanguy gibt Touren nur auf Niederländisch oder Englisch.",
+    "addExtraHour": "Zusätzliche Stunde hinzufügen (3 Stunden statt 2 Stunden)",
     "total": "Gesamt",
     "processing": "Verarbeitung...",
     "proceedToPayment": "Weiter zur Zahlung",
@@ -485,7 +487,7 @@
     "getInTouch": "Kontaktieren Sie uns",
     "subtitle": "Wir würden uns freuen, von Ihnen zu hören",
     "address": "Adresse",
-    "addressLabel": "Adresse",
+    "addressLabel": "Standort",
     "email": "E-Mail",
     "emailLabel": "E-Mail",
     "phone": "Telefon",
@@ -553,7 +555,7 @@
     "required": "Dieses Feld ist erforderlich"
   },
   "lecture": {
-    "title": "Vortrag: Der Boerentoren",
+    "title": "Vortrag",
     "date": "Datum",
     "onRequest": "Auf Anfrage",
     "location": "Standort",
@@ -564,7 +566,28 @@
     "bookLecture": "Diesen Vortrag buchen",
     "moreInfo": "Mehr Informationen",
     "description1": "Der Boerentoren, auch bekannt als der KBC-Turm, ist ein ikonisches Gebäude in Antwerpens Stadtbild. Dieser Vortrag nimmt Sie mit durch die faszinierende Geschichte dessen, was einst Europas höchstes Gebäude war.",
-    "description2": "Von den ehrgeizigen Bauplänen der 1920er Jahre bis zur modernen Transformation entdecken Sie die architektonischen Höhepunkte, die Geschichten der Menschen, die dort arbeiteten, und die Rolle, die das Gebäude in der Entwicklung Antwerpens als moderne Metropole spielte."
+    "description2": "Von den ehrgeizigen Bauplänen der 1920er Jahre bis zur modernen Transformation entdecken Sie die architektonischen Höhepunkte, die Geschichten der Menschen, die dort arbeiteten, und die Rolle, die das Gebäude in der Entwicklung Antwerpens als moderne Metropole spielte.",
+    "disclaimer": "Hinweis: Vorträge werden nur auf Niederländisch oder Englisch gehalten, aber alle sind willkommen!",
+    "booking": {
+      "title": "Vortrag buchen",
+      "description": "Bitte füllen Sie das untenstehende Formular aus, um einen Vortrag anzufragen. Wir werden Sie kontaktieren, um die Details zu bestätigen.",
+      "name": "Name",
+      "nameRequired": "Name ist erforderlich",
+      "nameMinLength": "Name muss mindestens 2 Zeichen lang sein",
+      "phone": "Telefon",
+      "email": "E-Mail",
+      "contactRequired": "Bitte geben Sie eine Telefonnummer oder E-Mail-Adresse an",
+      "emailInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+      "preferredDate": "Bevorzugtes Datum",
+      "numberOfPeople": "Anzahl der Personen",
+      "numberOfPeopleInvalid": "Bitte geben Sie eine gültige Anzahl von Personen ein",
+      "locationDescription": "Standortbeschreibung",
+      "needsRoom": "Wir benötigen, dass BeroepsBelg einen Raum/Auditorium bereitstellt",
+      "submit": "Buchungsanfrage absenden",
+      "cancel": "Abbrechen",
+      "submitting": "Wird gesendet...",
+      "success": "Buchungsanfrage erfolgreich übermittelt! Wir werden Sie bald kontaktieren."
+    }
   },
   "disclaimer": {
     "title": "Allgemeine Geschäftsbedingungen",

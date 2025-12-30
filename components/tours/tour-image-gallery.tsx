@@ -170,11 +170,6 @@ export function TourImageGallery({ images, title, fallbackImage }: TourImageGall
                       unoptimized
                     />
                   )}
-                  {image?.is_primary && (
-                    <div className="absolute top-1 right-1 rounded bg-yellow-500 p-0.5">
-                      <div className="h-2 w-2 rounded-full bg-white" />
-                </div>
-                  )}
                 </button>
               );
             })}

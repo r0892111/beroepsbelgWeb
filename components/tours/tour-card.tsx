@@ -27,11 +27,13 @@ export function TourCard({ tour, locale }: TourCardProps) {
   const originalPrice = tour.price || 0;
   const discountedPrice = originalPrice * discountRate;
 
-  // Get primary media - check if it's a video or image
-  const primaryMedia = tour.tourImages?.find((img) => img.is_primary) || tour.tourImages?.[0];
-  const isPrimaryVideo = primaryMedia?.media_type === 'video';
+  // Get image URL - use primary image if available, otherwise use placeholder
   const imageUrl = tour.image || getTourPlaceholder(tour.type, tour.city);
-  const videoUrl = isPrimaryVideo ? primaryMedia?.image_url : null;
+  
+  // Determine if primary media is a video
+  // Check primaryMediaType first, then fallback to URL extension detection
+  const isVideo = tour.primaryMediaType === 'video' || 
+    (imageUrl && /\.(mp4|webm|mov)$/i.test(imageUrl));
 
   // Format duration
   const formatDuration = (minutes: number) => {
@@ -61,16 +63,16 @@ export function TourCard({ tour, locale }: TourCardProps) {
       }}
     >
       <Link href={`/${locale}/tours/${tour.city}/${tour.slug}`} className="relative h-48 w-full overflow-hidden block cursor-pointer">
-        {isPrimaryVideo && videoUrl ? (
+        {isVideo ? (
           <video
-            src={videoUrl}
+            src={imageUrl}
             autoPlay
             loop
             muted
             playsInline
             preload="metadata"
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            style={{ position: 'absolute', inset: 0 }}
+            aria-label={tour.title}
           />
         ) : (
           <Image
