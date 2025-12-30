@@ -572,6 +572,7 @@ export async function getTourImages(): Promise<Record<string, TourImage[]>> {
           image_url: img.url || img.image_url,
           is_primary: img.is_primary || false,
           sort_order: img.sort_order !== undefined ? img.sort_order : index,
+          media_type: img.media_type || 'image', // Default to 'image' for backward compatibility
           storage_folder_name: img.storage_folder_name || undefined,
           created_at: img.created_at,
           updated_at: img.updated_at,

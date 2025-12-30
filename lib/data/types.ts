@@ -75,6 +75,7 @@ export type TourImage = {
   image_url: string;
   is_primary: boolean;
   sort_order: number;
+  media_type?: 'image' | 'video'; // Defaults to 'image' for backward compatibility
   storage_folder_name?: string;
   created_at?: string;
   updated_at?: string;
