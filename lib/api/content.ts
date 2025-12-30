@@ -70,49 +70,45 @@ const parseNumber = (value: unknown): number | null => {
   return null;
 };
 
-export async function getCitiesFromTours(): Promise<Array<{ slug: string; name: string }>> {
-  const { data, error } = await supabaseServer
-    .from('tours_table_prod')
-    .select('city')
-    .not('city', 'is', null);
 
-  if (error) {
-    console.error('[getCitiesFromTours] Error fetching cities from tours:', error);
-    return [];
-  }
-
-  // Get unique cities, slugify them, and create city objects
-  const cityMap = new Map<string, string>();
-  (data || []).forEach((row: any) => {
-    if (row.city) {
-      const slug = citySlugify(row.city);
-      if (!cityMap.has(slug)) {
-        cityMap.set(slug, row.city);
-      }
-    }
-  });
-
-  const result: Array<{ slug: string; name: string }> = [];
-  cityMap.forEach((name, slug) => {
-    result.push({ slug, name });
-  });
-
-  return result;
-}
-
+/**
+ * Get all cities from the cities table, ordered by display_order.
+ * IMPORTANT: This fetches from the cities table ONLY, not from tours_table_prod.
+ * The order comes from cities.display_order, ensuring consistent ordering across the app.
+ */
 export async function getCities(): Promise<City[]> {
+  // SELECT specific fields FROM cities ORDER BY cities.display_order
+  // Using explicit field selection instead of * to ensure correct ordering
+  // Cache is always cleared - this function always fetches fresh data from the database
   const { data, error } = await supabaseServer
     .from('cities')
-    .select('*')
-    .order('display_order', { ascending: true, nullsFirst: false })
-    .order('slug', { ascending: true });
+    .select('id, slug, name_nl, name_en, name_fr, name_de, teaser_nl, teaser_en, teaser_fr, teaser_de, cta_text_nl, cta_text_en, cta_text_fr, cta_text_de, coming_soon_text_nl, coming_soon_text_en, coming_soon_text_fr, coming_soon_text_de, image, status, display_order')
+    .order('display_order', { ascending: true });
 
   if (error) {
     throw error;
   }
 
-  console.log('[getCities] Fetched cities from database:', 
-    (data || []).map((row: any) => ({ slug: row.slug, display_order: row.display_order }))
+  // Log raw data from database to compare with SQL editor
+  // This will show exactly what Supabase is returning
+  console.log('[getCities] Raw data from Supabase query (ALL FIELDS):', 
+    JSON.stringify((data || []).map((row: any) => ({ 
+      id: row.id,
+      slug: row.slug, 
+      name_nl: row.name_nl,
+      display_order: row.display_order,
+      display_order_type: typeof row.display_order,
+      created_at: row.created_at
+    })), null, 2)
+  );
+  
+  // Also log in the same format as SQL editor for easy comparison
+  console.log('[getCities] Cities in query order:', 
+    (data || []).map((row: any) => ({ 
+      slug: row.slug, 
+      name_nl: row.name_nl,
+      display_order: row.display_order
+    }))
   );
 
   const citiesFromDb = (data || []).map((row: any) => ({
@@ -147,8 +143,7 @@ export async function getCities(): Promise<City[]> {
     displayOrder: row.display_order,
   }));
 
-  // Only return cities from the cities table (no merge with tour-only cities)
-  // Cities should be created through the admin panel
+  // Return cities in database query order (already sorted by display_order)
   return citiesFromDb;
 }
 

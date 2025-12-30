@@ -5,6 +5,10 @@ import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 import { ArrowRight } from 'lucide-react';
 
+// Force dynamic rendering to always fetch fresh data (no caching)
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface ToursPageProps {
   params: Promise<{ locale: Locale }>;
 }
@@ -13,7 +17,8 @@ export default async function ToursPage({ params }: ToursPageProps) {
   const { locale } = await params;
   const t = await getTranslations('common');
   const cities = await getCities();
-
+  
+  
   return (
     <div className="min-h-screen bg-[#F9F9F7] py-16 md:py-24 px-4 md:px-8">
       <div className="max-w-7xl mx-auto">
