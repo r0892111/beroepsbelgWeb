@@ -65,6 +65,15 @@ export default function SignInPage() {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
+      // Get redirect parameter from URL if present, otherwise use account page with locale
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirect = searchParams.get('redirect') || `/${locale}/account`;
+      
+      // Update URL to include redirect parameter for signInWithGoogle to pick up
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('redirect', redirect);
+      window.history.replaceState({}, '', newUrl.toString());
+      
       const { error } = await signInWithGoogle();
       if (error) {
         toast.error(error.message);
