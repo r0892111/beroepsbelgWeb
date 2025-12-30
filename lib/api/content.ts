@@ -111,6 +111,10 @@ export async function getCities(): Promise<City[]> {
     throw error;
   }
 
+  console.log('[getCities] Fetched cities from database:', 
+    (data || []).map((row: any) => ({ slug: row.slug, display_order: row.display_order }))
+  );
+
   const citiesFromDb = (data || []).map((row: any) => ({
     id: row.id,
     slug: row.slug,
@@ -140,6 +144,7 @@ export async function getCities(): Promise<City[]> {
     } : undefined,
     image: row.image,
     status: row.status,
+    displayOrder: row.display_order,
   }));
 
   // Only return cities from the cities table (no merge with tour-only cities)
