@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Home, LogOut, RefreshCw, Upload, X, Image as ImageIcon, MapPin, Star, ArrowUp, ArrowDown, Search } from 'lucide-react';
+import { Home, LogOut, RefreshCw, Upload, X, Image as ImageIcon, Video, MapPin, Star, ArrowUp, ArrowDown, Search, Play } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
@@ -33,7 +33,8 @@ interface TourWithImages extends Tour {
 }
 
 const STORAGE_BUCKET = 'Tour Photos';
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB for images
+const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB for videos
 
 export default function AdminTourImagesPage() {
   const { user, profile, signOut } = useAuth();
@@ -61,7 +62,7 @@ export default function AdminTourImagesPage() {
   const [uploadPreviews, setUploadPreviews] = useState<string[]>([]);
   
   // Folder image states
-  const [folderImages, setFolderImages] = useState<Array<{name: string, url: string}>>([]);
+  const [folderImages, setFolderImages] = useState<Array<{name: string, url: string, media_type: 'image' | 'video'}>>([]);
   const [selectedFolderImages, setSelectedFolderImages] = useState<string[]>([]);
   const [loadingFolderImages, setLoadingFolderImages] = useState(false);
   const [tableExists, setTableExists] = useState<boolean | null>(null);
@@ -146,6 +147,7 @@ export default function AdminTourImagesPage() {
             image_url: img.url || img.image_url,
             is_primary: img.is_primary || false,
             sort_order: img.sort_order !== undefined ? img.sort_order : index,
+            media_type: img.media_type || 'image', // Default to 'image' for backward compatibility
             storage_folder_name: img.storage_folder_name || undefined,
             created_at: img.created_at,
             updated_at: img.updated_at,
@@ -188,7 +190,7 @@ export default function AdminTourImagesPage() {
     }
   };
 
-  const fetchFolderImages = async (folderName: string): Promise<Array<{name: string, url: string}>> => {
+  const fetchFolderImages = async (folderName: string): Promise<Array<{name: string, url: string, media_type: 'image' | 'video'}>> => {
     if (!folderName) return [];
     
     setLoadingFolderImages(true);
@@ -202,38 +204,44 @@ export default function AdminTourImagesPage() {
 
       if (error) {
         console.error('Failed to list folder images:', error);
-        toast.error('Failed to load images from folder');
+        toast.error('Failed to load media from folder');
         return [];
       }
 
-      // Filter for image files
-      const imageFiles = (data || []).filter(file => 
-        file.name && file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+      // Filter for image and video files
+      const mediaFiles = (data || []).filter(file => 
+        file.name && (
+          file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i) ||
+          file.name.match(/\.(mp4|webm|mov)$/i)
+        )
       );
 
-      // Get public URLs
-      const imagesWithUrls = imageFiles.map(file => {
+      // Get public URLs and determine media type
+      const mediaWithUrls = mediaFiles.map(file => {
         const { data: urlData } = supabase.storage
           .from(STORAGE_BUCKET)
           .getPublicUrl(`${folderName}/${file.name}`);
         
+        const isVideo = file.name.match(/\.(mp4|webm|mov)$/i);
+        
         return {
           name: file.name,
-          url: urlData.publicUrl
+          url: urlData.publicUrl,
+          media_type: (isVideo ? 'video' : 'image') as 'image' | 'video'
         };
       });
 
-      return imagesWithUrls;
+      return mediaWithUrls;
     } catch (err) {
-      console.error('Failed to fetch folder images:', err);
-      toast.error('Failed to load images from folder');
+      console.error('Failed to fetch folder media:', err);
+      toast.error('Failed to load media from folder');
       return [];
     } finally {
       setLoadingFolderImages(false);
     }
   };
 
-  const loadData = async () => {
+  const loadData = async (): Promise<Record<string, TourImage[]> | null> => {
     setLoading(true);
     setError(null);
     try {
@@ -274,10 +282,13 @@ export default function AdminTourImagesPage() {
         const updatedImages = imagesData[selectedTour.id] || [];
         setTourImages([...updatedImages].sort((a, b) => a.sort_order - b.sort_order));
       }
+      
+      return imagesData;
     } catch (err) {
       console.error('Failed to load data:', err);
       setError('Failed to load data');
       toast.error('Failed to load data');
+      return null;
     } finally {
       setLoading(false);
     }
@@ -288,6 +299,17 @@ export default function AdminTourImagesPage() {
       void loadData();
     }
   }, [user, profile]);
+
+  // Cleanup video object URLs on unmount
+  useEffect(() => {
+    return () => {
+      uploadPreviews.forEach((preview) => {
+        if (preview.startsWith('blob:')) {
+          URL.revokeObjectURL(preview);
+        }
+      });
+    };
+  }, []);
 
   const handleLogout = () => {
     signOut();
@@ -358,12 +380,12 @@ export default function AdminTourImagesPage() {
 
     if (e.dataTransfer.files) {
       const files = Array.from(e.dataTransfer.files).filter((file) =>
-        file.type.startsWith('image/')
+        file.type.startsWith('image/') || file.type.startsWith('video/')
       );
       if (files.length > 0) {
         handleFilesSelect(files);
       } else {
-        toast.error('Please drop image files');
+        toast.error('Please drop image or video files');
       }
     }
   }, []);
@@ -376,32 +398,57 @@ export default function AdminTourImagesPage() {
   };
 
   const handleFilesSelect = (files: File[]) => {
-    const imageFiles = files.filter((file) => file.type.startsWith('image/'));
-    if (imageFiles.length === 0) {
-      toast.error('Please select image files');
+    const mediaFiles = files.filter((file) => 
+      file.type.startsWith('image/') || file.type.startsWith('video/')
+    );
+    if (mediaFiles.length === 0) {
+      toast.error('Please select image or video files');
       return;
     }
 
-    // Check file sizes
-    const oversizedFiles = imageFiles.filter((file) => file.size > MAX_FILE_SIZE);
-    if (oversizedFiles.length > 0) {
-      toast.error(`Some files exceed 50MB limit`);
-      return;
-    }
-
-    setUploadFiles((prev) => [...prev, ...imageFiles]);
+    // Check file sizes - images max 50MB, videos max 100MB
+    const oversizedImages = mediaFiles.filter(
+      (file) => file.type.startsWith('image/') && file.size > MAX_FILE_SIZE
+    );
+    const oversizedVideos = mediaFiles.filter(
+      (file) => file.type.startsWith('video/') && file.size > MAX_VIDEO_SIZE
+    );
     
-    // Create previews
-    imageFiles.forEach((file) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setUploadPreviews((prev) => [...prev, reader.result as string]);
-      };
-      reader.readAsDataURL(file);
+    if (oversizedImages.length > 0) {
+      toast.error(`Some image files exceed 50MB limit`);
+      return;
+    }
+    if (oversizedVideos.length > 0) {
+      toast.error(`Some video files exceed 100MB limit`);
+      return;
+    }
+
+    setUploadFiles((prev) => [...prev, ...mediaFiles]);
+    
+    // Create previews - images as data URLs, videos as object URLs
+    mediaFiles.forEach((file) => {
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setUploadPreviews((prev) => [...prev, reader.result as string]);
+        };
+        reader.readAsDataURL(file);
+      } else if (file.type.startsWith('video/')) {
+        const videoUrl = URL.createObjectURL(file);
+        setUploadPreviews((prev) => [...prev, videoUrl]);
+      }
     });
   };
 
   const removeUploadFile = (index: number) => {
+    // Clean up video object URLs to prevent memory leaks
+    const file = uploadFiles[index];
+    if (file?.type.startsWith('video/')) {
+      const previewUrl = uploadPreviews[index];
+      if (previewUrl && previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    }
     setUploadFiles((prev) => prev.filter((_, i) => i !== index));
     setUploadPreviews((prev) => prev.filter((_, i) => i !== index));
   };
@@ -484,6 +531,7 @@ export default function AdminTourImagesPage() {
             url: img.url || img.image_url,
             is_primary: img.is_primary || false,
             sort_order: img.sort_order !== undefined ? img.sort_order : index,
+            media_type: img.media_type || 'image', // Default to 'image' for backward compatibility
             storage_folder_name: img.storage_folder_name,
             created_at: img.created_at,
             updated_at: img.updated_at,
@@ -502,16 +550,21 @@ export default function AdminTourImagesPage() {
         ? Math.max(...currentImages.map((img) => img.sort_order))
         : -1;
 
-      // Prepare new images to add
-      const newImages = newImageUrls.map((url, index) => ({
-        id: `${selectedTour.id}-${Date.now()}-${index}`,
-        url: url,
-        is_primary: currentImages.length === 0 && index === 0, // First image is primary if no existing images
-        sort_order: maxSortOrder + index + 1,
-        storage_folder_name: folderName,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }));
+      // Prepare new images/videos to add - detect media type from file
+      const newImages = newImageUrls.map((url, index) => {
+        const file = uploadFiles[index];
+        const mediaType = file.type.startsWith('video/') ? 'video' : 'image';
+        return {
+          id: `${selectedTour.id}-${Date.now()}-${index}`,
+          url: url,
+          is_primary: currentImages.length === 0 && index === 0, // First media is primary if no existing media
+          sort_order: maxSortOrder + index + 1,
+          media_type: mediaType,
+          storage_folder_name: folderName,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+      });
 
       // Merge with existing images from database (not from state)
       const existingImages = currentImages.map(img => ({
@@ -519,6 +572,7 @@ export default function AdminTourImagesPage() {
         url: img.url,
         is_primary: img.is_primary,
         sort_order: img.sort_order,
+        media_type: img.media_type || 'image',
         storage_folder_name: img.storage_folder_name || folderName,
         created_at: img.created_at,
         updated_at: img.updated_at,
@@ -544,14 +598,14 @@ export default function AdminTourImagesPage() {
         throw updateError;
       }
 
-      toast.success(`Images saved for ${selectedTour.title}`);
+      toast.success(`Media saved for ${selectedTour.title}`);
       
       // Refresh data first
-      await loadData();
+      const freshImagesData = await loadData();
       
-      // Update tourImages state in dialog if still open
-      if (selectedTour) {
-        const updatedImages = allTourImages[selectedTour.id] || [];
+      // Update tourImages state in dialog if still open using fresh data
+      if (selectedTour && freshImagesData) {
+        const updatedImages = freshImagesData[selectedTour.id] || [];
         setTourImages([...updatedImages].sort((a, b) => a.sort_order - b.sort_order));
       }
       
@@ -580,6 +634,7 @@ export default function AdminTourImagesPage() {
         url: img.image_url,
         is_primary: img.id === imageId,
         sort_order: img.sort_order,
+        media_type: img.media_type || 'image',
         storage_folder_name: img.storage_folder_name,
         created_at: img.created_at,
         updated_at: new Date().toISOString(),
@@ -603,10 +658,10 @@ export default function AdminTourImagesPage() {
       }
 
       toast.success('Primary image updated');
-      await loadData();
-      // Refresh dialog
-      if (selectedTour) {
-        const images = allTourImages[selectedTour.id] || [];
+      const freshImagesData = await loadData();
+      // Refresh dialog using fresh data directly from loadData return value
+      if (selectedTour && freshImagesData) {
+        const images = freshImagesData[selectedTour.id] || [];
         setTourImages([...images].sort((a, b) => a.sort_order - b.sort_order));
       }
     } catch (err: any) {
@@ -652,6 +707,7 @@ export default function AdminTourImagesPage() {
         url: img.image_url,
         is_primary: img.is_primary,
         sort_order: img.sort_order,
+        media_type: img.media_type || 'image',
         storage_folder_name: img.storage_folder_name,
         created_at: img.created_at,
         updated_at: img.updated_at,
@@ -680,11 +736,13 @@ export default function AdminTourImagesPage() {
       toast.success('Image deleted');
       
       // Reload all data to ensure consistency
-      await loadData();
+      const freshImagesData = await loadData();
       
-      // Refresh dialog state after loadData completes
-      const refreshedImages = allTourImages[selectedTour.id] || [];
-      setTourImages([...refreshedImages].sort((a, b) => a.sort_order - b.sort_order));
+      // Refresh dialog state using fresh data directly from loadData return value
+      if (freshImagesData) {
+        const refreshedImages = freshImagesData[selectedTour.id] || [];
+        setTourImages([...refreshedImages].sort((a, b) => a.sort_order - b.sort_order));
+      }
     } catch (err: any) {
       console.error('Failed to delete image:', err);
       toast.error('Failed to delete image');
@@ -722,6 +780,7 @@ export default function AdminTourImagesPage() {
         url: img.image_url,
         is_primary: img.is_primary,
         sort_order: index,
+        media_type: img.media_type || 'image',
         storage_folder_name: img.storage_folder_name,
         created_at: img.created_at,
         updated_at: new Date().toISOString(),
@@ -745,10 +804,10 @@ export default function AdminTourImagesPage() {
       }
 
       toast.success('Image order updated');
-      await loadData();
-      // Refresh dialog
-      if (selectedTour) {
-        const images = allTourImages[selectedTour.id] || [];
+      const freshImagesData = await loadData();
+      // Refresh dialog using fresh data directly from loadData return value
+      if (selectedTour && freshImagesData) {
+        const images = freshImagesData[selectedTour.id] || [];
         setTourImages([...images].sort((a, b) => a.sort_order - b.sort_order));
       }
     } catch (err: any) {
@@ -835,6 +894,7 @@ export default function AdminTourImagesPage() {
         url: img.image_url,
         is_primary: img.is_primary,
         sort_order: img.sort_order,
+        media_type: img.media_type || 'image',
         storage_folder_name: selectedFolder,
         created_at: img.created_at,
         updated_at: new Date().toISOString(),
@@ -904,18 +964,24 @@ export default function AdminTourImagesPage() {
       const existingUrls = new Set(tourImages.map(img => img.image_url));
       const newImages = selectedFolderImages
         .filter(url => !existingUrls.has(url))
-        .map((url, index) => ({
-          id: `${selectedTour.id}-${Date.now()}-${index}`,
-          url: url,
-          is_primary: tourImages.length === 0 && index === 0,
-          sort_order: maxSortOrder + index + 1,
-          storage_folder_name: selectedFolder,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }));
+        .map((url, index) => {
+          // Find the media type from folderImages
+          const folderItem = folderImages.find(item => item.url === url);
+          const mediaType = folderItem?.media_type || 'image';
+          return {
+            id: `${selectedTour.id}-${Date.now()}-${index}`,
+            url: url,
+            is_primary: tourImages.length === 0 && index === 0,
+            sort_order: maxSortOrder + index + 1,
+            media_type: mediaType,
+            storage_folder_name: selectedFolder,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+        });
 
       if (newImages.length === 0) {
-        toast.info('All selected images are already added');
+        toast.info('All selected media are already added');
         return;
       }
 
@@ -925,6 +991,7 @@ export default function AdminTourImagesPage() {
         url: img.image_url,
         is_primary: img.is_primary,
         sort_order: img.sort_order,
+        media_type: img.media_type || 'image',
         storage_folder_name: img.storage_folder_name,
         created_at: img.created_at,
         updated_at: img.updated_at,
@@ -953,15 +1020,12 @@ export default function AdminTourImagesPage() {
       setSelectedFolderImages([]);
       
       // Reload data to ensure state is synchronized
-      await loadData();
+      const freshImagesData = await loadData();
       
-      // Refresh dialog state with fresh data after loadData completes
-      if (selectedTour) {
-        // Use a small delay to ensure loadData has updated allTourImages
-        setTimeout(() => {
-          const refreshedImages = allTourImages[selectedTour.id] || [];
-          setTourImages([...refreshedImages].sort((a, b) => a.sort_order - b.sort_order));
-        }, 100);
+      // Refresh dialog state with fresh data directly from loadData return value
+      if (selectedTour && freshImagesData) {
+        const refreshedImages = freshImagesData[selectedTour.id] || [];
+        setTourImages([...refreshedImages].sort((a, b) => a.sort_order - b.sort_order));
       }
     } catch (err: any) {
       console.error('Failed to add folder images:', err);
@@ -1105,20 +1169,34 @@ export default function AdminTourImagesPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {/* Primary Image Preview */}
+                      {/* Primary Media Preview */}
                       <div>
-                        <Label className="mb-2 block text-sm font-medium">Primary Image</Label>
+                        <Label className="mb-2 block text-sm font-medium">Primary Media</Label>
                         {primaryImageUrl ? (
                           <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
-                            <Image
-                              src={primaryImageUrl}
-                              alt={tour.title}
-                              fill
-                              className="object-cover"
-                            />
+                            {tour.primaryImage?.media_type === 'video' ? (
+                              <video
+                                src={primaryImageUrl}
+                                className="w-full h-full object-cover"
+                                preload="metadata"
+                              />
+                            ) : (
+                              <Image
+                                src={primaryImageUrl}
+                                alt={tour.title}
+                                fill
+                                className="object-cover"
+                              />
+                            )}
                             {tour.primaryImage?.is_primary && (
                               <div className="absolute left-2 top-2 rounded bg-yellow-500 px-2 py-1 text-xs font-semibold text-white">
                                 Primary
+                              </div>
+                            )}
+                            {tour.primaryImage?.media_type === 'video' && (
+                              <div className="absolute right-2 top-2 rounded bg-blue-500 px-2 py-1 text-xs font-semibold text-white flex items-center gap-1">
+                                <Video className="h-3 w-3" />
+                                Video
                               </div>
                             )}
                           </div>
@@ -1130,7 +1208,7 @@ export default function AdminTourImagesPage() {
                       </div>
 
                       <div className="text-sm text-gray-500">
-                        {tour.imageCount} image{tour.imageCount !== 1 ? 's' : ''} total
+                        {tour.imageCount} media item{tour.imageCount !== 1 ? 's' : ''} total
                       </div>
 
                       <Button
@@ -1191,7 +1269,7 @@ export default function AdminTourImagesPage() {
                   )}
                 </div>
                 <p className="text-xs text-gray-500">
-                  Select an existing folder or create a new one. Images will be uploaded to this folder.
+                  Select an existing folder or create a new one. Images and videos will be uploaded to this folder.
                 </p>
               </div>
 
@@ -1199,7 +1277,7 @@ export default function AdminTourImagesPage() {
               {selectedFolder && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label>Images in Folder: {selectedFolder}</Label>
+                    <Label>Media in Folder: {selectedFolder}</Label>
                     <Button
                       variant="outline"
                       size="sm"
@@ -1212,7 +1290,7 @@ export default function AdminTourImagesPage() {
                   </div>
                   {loadingFolderImages ? (
                     <div className="text-center py-8 text-sm text-gray-500">
-                      Loading images from folder...
+                      Loading media from folder...
                     </div>
                   ) : folderImages.length > 0 ? (
                     <div className="space-y-4">
@@ -1220,6 +1298,7 @@ export default function AdminTourImagesPage() {
                         {folderImages.map((folderImg, index) => {
                           const isAlreadyAdded = tourImages.some(img => img.image_url === folderImg.url);
                           const isSelected = selectedFolderImages.includes(folderImg.url);
+                          const isVideo = folderImg.media_type === 'video';
                           
                           return (
                             <div
@@ -1232,12 +1311,25 @@ export default function AdminTourImagesPage() {
                                   : 'border-gray-200'
                               }`}
                             >
-                              <Image
-                                src={folderImg.url}
-                                alt={folderImg.name}
-                                fill
-                                className="object-cover"
-                              />
+                              {isVideo ? (
+                                <video
+                                  src={folderImg.url}
+                                  className="w-full h-full object-cover"
+                                  preload="metadata"
+                                />
+                              ) : (
+                                <Image
+                                  src={folderImg.url}
+                                  alt={folderImg.name}
+                                  fill
+                                  className="object-cover"
+                                />
+                              )}
+                              {isVideo && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+                                  <Play className="h-8 w-8 text-white" />
+                                </div>
+                              )}
                               {isAlreadyAdded && (
                                 <div className="absolute left-2 top-2 rounded bg-green-500 px-2 py-1 text-xs font-semibold text-white">
                                   Already Added
@@ -1266,13 +1358,13 @@ export default function AdminTourImagesPage() {
                           className="w-full"
                           disabled={uploading}
                         >
-                          {uploading ? 'Adding...' : `Add ${selectedFolderImages.length} Selected Image${selectedFolderImages.length !== 1 ? 's' : ''}`}
+                          {uploading ? 'Adding...' : `Add ${selectedFolderImages.length} Selected Media Item${selectedFolderImages.length !== 1 ? 's' : ''}`}
                         </Button>
                       )}
                     </div>
                   ) : (
                     <div className="text-center py-8 text-sm text-gray-500 border-2 border-dashed rounded-lg">
-                      No images found in this folder
+                      No media found in this folder
                     </div>
                   )}
                 </div>
@@ -1293,24 +1385,37 @@ export default function AdminTourImagesPage() {
                   {uploadPreviews.length > 0 ? (
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-                        {uploadPreviews.map((preview, index) => (
-                          <div key={index} className="relative aspect-video overflow-hidden rounded-lg border">
-                            <Image
-                              src={preview}
-                              alt={`Preview ${index + 1}`}
-                              fill
-                              className="object-cover"
-                            />
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              className="absolute right-2 top-2"
-                              onClick={() => removeUploadFile(index)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
+                        {uploadPreviews.map((preview, index) => {
+                          const file = uploadFiles[index];
+                          const isVideo = file?.type.startsWith('video/');
+                          return (
+                            <div key={index} className="relative aspect-video overflow-hidden rounded-lg border">
+                              {isVideo ? (
+                                <video
+                                  src={preview}
+                                  controls
+                                  preload="metadata"
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <Image
+                                  src={preview}
+                                  alt={`Preview ${index + 1}`}
+                                  fill
+                                  className="object-cover"
+                                />
+                              )}
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="absolute right-2 top-2"
+                                onClick={() => removeUploadFile(index)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   ) : (
@@ -1318,13 +1423,13 @@ export default function AdminTourImagesPage() {
                       <Upload className="h-12 w-12 text-gray-400" />
                       <div className="text-center">
                         <p className="text-sm text-gray-600">
-                          Drag and drop images here, or click to select
+                          Drag and drop images or videos here, or click to select
                         </p>
-                        <p className="mt-1 text-xs text-gray-500">PNG, JPG, WEBP up to 50MB each</p>
+                        <p className="mt-1 text-xs text-gray-500">PNG, JPG, WEBP, MP4, WEBM, MOV up to 50MB (images) / 100MB (videos)</p>
                       </div>
                       <Input
                         type="file"
-                        accept="image/*"
+                        accept="image/*,video/*"
                         multiple
                         onChange={handleFileInput}
                         className="hidden"
@@ -1335,7 +1440,7 @@ export default function AdminTourImagesPage() {
                         variant="outline"
                         onClick={() => document.getElementById('image-upload')?.click()}
                       >
-                        Select Images
+                        Select Images/Videos
                       </Button>
                     </div>
                   )}
@@ -1345,31 +1450,46 @@ export default function AdminTourImagesPage() {
               {/* Existing Images */}
               {tourImages.length > 0 && (
                 <div className="space-y-2">
-                  <Label>Existing Images ({tourImages.length})</Label>
+                  <Label>Existing Media ({tourImages.length})</Label>
                   <div className="space-y-3">
-                    {tourImages.map((image, index) => (
-                      <div
-                        key={image.id}
-                        className="flex items-center gap-4 rounded-lg border p-3"
-                      >
+                    {tourImages.map((image, index) => {
+                      const isVideo = image.media_type === 'video';
+                      return (
+                        <div
+                          key={image.id}
+                          className="flex items-center gap-4 rounded-lg border p-3"
+                        >
                         <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg">
-                          <Image
-                            src={image.image_url}
-                            alt={`Image ${index + 1}`}
-                            fill
-                            className="object-cover"
-                          />
+                          {isVideo ? (
+                            <video
+                              src={image.image_url}
+                              className="w-full h-full object-cover"
+                              preload="metadata"
+                            />
+                          ) : (
+                            <Image
+                              src={image.image_url}
+                              alt={`Media ${index + 1}`}
+                              fill
+                              className="object-cover"
+                            />
+                          )}
                           {image.is_primary && (
                             <div className="absolute left-1 top-1 rounded bg-yellow-500 p-1">
                               <Star className="h-3 w-3 fill-white text-white" />
                             </div>
                           )}
+                          {isVideo && (
+                            <div className="absolute right-1 top-1 rounded bg-blue-500 p-1">
+                              <Video className="h-3 w-3 text-white" />
+                            </div>
+                          )}
                         </div>
                         <div className="flex-1">
-                          <div className="text-sm font-medium">
-                            Image {index + 1}
+                          <div className="text-sm font-medium flex items-center gap-2">
+                            {isVideo ? 'Video' : 'Image'} {index + 1}
                             {image.is_primary && (
-                              <span className="ml-2 rounded bg-yellow-100 px-2 py-0.5 text-xs text-yellow-800">
+                              <span className="rounded bg-yellow-100 px-2 py-0.5 text-xs text-yellow-800">
                                 Primary
                               </span>
                             )}
@@ -1412,8 +1532,9 @@ export default function AdminTourImagesPage() {
                             <X className="h-4 w-4" />
                           </Button>
                         </div>
-                      </div>
-                    ))}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
