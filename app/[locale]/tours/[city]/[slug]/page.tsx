@@ -15,6 +15,9 @@ interface TourDetailPageProps {
   params: Promise<{ locale: Locale; city: string; slug: string }>;
 }
 
+// Force dynamic rendering to always fetch fresh data (no caching)
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 export const dynamicParams = true;
 
 // Format duration from minutes to readable string
