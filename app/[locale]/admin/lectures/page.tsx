@@ -429,15 +429,22 @@ export default function AdminLecturesPage() {
       if (uploadFiles.length > 0 && lectureId) {
         setUploadingImages(true);
         try {
-          const uploadedUrls = await uploadFilesToStorage(uploadFiles, lectureId);
+          // TypeScript: validate lectureId before using it
+          if (!lectureId) {
+            throw new Error('lectureId is required to upload lecture images');
+          }
+
+          // Assign to const to ensure TypeScript narrows the type
+          const validLectureId: string = lectureId;
+          const uploadedUrls = await uploadFilesToStorage(uploadFiles, validLectureId);
           
           const newImages: LectureImage[] = uploadedUrls.map((url, index) => ({
-            id: `${lectureId}-new-${Date.now()}-${index}`,
-            lecture_id: lectureId,
+            id: `${validLectureId}-new-${Date.now()}-${index}`,
+            lecture_id: validLectureId, // now guaranteed to be string
             image_url: url,
             is_primary: allImages.length === 0 && index === 0, // First image is primary if no existing images
             sort_order: allImages.length + index,
-            storage_folder_name: `${STORAGE_FOLDER}/${lectureId}`,
+            storage_folder_name: `${STORAGE_FOLDER}/${validLectureId}`,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           }));
