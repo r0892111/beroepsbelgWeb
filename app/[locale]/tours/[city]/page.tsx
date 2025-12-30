@@ -3,11 +3,14 @@ import { getTours } from '@/lib/api/content';
 import { TourCard } from '@/components/tours/tour-card';
 import { notFound } from 'next/navigation';
 
+// Force dynamic rendering to always fetch fresh data (no caching)
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const dynamicParams = true;
+
 interface ToursCityPageProps {
   params: Promise<{ locale: Locale; city: string }>;
 }
-
-export const dynamicParams = true;
 
 export default async function ToursCityPage({ params }: ToursCityPageProps) {
   const { locale, city } = await params;
@@ -18,6 +21,7 @@ export default async function ToursCityPage({ params }: ToursCityPageProps) {
   }
   
   const tours = await getTours(city);
+  console.log(tours);
 
   // If no tours found for this city, show 404
   if (tours.length === 0) {
