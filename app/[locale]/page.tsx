@@ -2,6 +2,10 @@ import { type Locale } from '@/i18n';
 import { HeroSection } from '@/components/superdesign';
 import { getCities, getTours, getProducts } from '@/lib/data';
 
+// Force dynamic rendering to always fetch fresh data (no caching)
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface HomePageProps {
   params: Promise<{ locale: Locale }>;
 }
