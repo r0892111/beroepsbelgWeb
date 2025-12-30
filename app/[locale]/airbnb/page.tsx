@@ -5,6 +5,10 @@ import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 import { ArrowRight, MapPin, Home } from 'lucide-react';
 
+// Force dynamic rendering to always fetch fresh data (no caching)
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface AirBNBPageProps {
   params: Promise<{ locale: Locale }>;
 }

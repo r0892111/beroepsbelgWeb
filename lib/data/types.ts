@@ -15,7 +15,8 @@ export type City = {
 
 export type Tour = {
   id: string;
-  city: string;
+  city: string; // City slug (kept for backward compatibility)
+  cityId?: string; // City ID (primary way to link tours to cities)
   slug: string;
   title: string;
   type: string;

@@ -27,11 +27,14 @@ export function RefinedCitySection({ locale, cities, tours }: RefinedCitySection
   const cityTourCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     liveCities.forEach(city => {
-      // Match tours to cities by city_id if available, otherwise by slug
+      // Match tours to cities by cityId (primary method) or city slug (fallback)
       counts[city.slug] = tours.filter(tour => {
-        const tourWithCityId = tour as any;
-        // Match by city name in any language or slug
-        return tour.city === city.name?.nl || tour.city === city.name?.en || tour.city === city.name?.fr || tour.city === city.name?.de || tour.city === city.slug;
+        // Primary: match by cityId
+        if (tour.cityId && tour.cityId === city.id) {
+          return true;
+        }
+        // Fallback: match by city slug
+        return tour.city === city.slug;
       }).length;
     });
     return counts;
