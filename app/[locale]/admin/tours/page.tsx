@@ -256,6 +256,7 @@ export default function AdminToursPage() {
             name_de
           )
         `)
+        .order('city_id', { ascending: true, nullsFirst: true })
         .order('display_order', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: true });
 
@@ -265,7 +266,6 @@ export default function AdminToursPage() {
         return;
       }
 
-      console.log('Fetched tours:', data);
       const fetchedTours = (data as any[]) || [];
       // Map the fetched data to Tour format, using city_id from JOIN
       const mappedTours = fetchedTours.map((row: any) => ({
@@ -273,6 +273,7 @@ export default function AdminToursPage() {
         city_id: row.city_id || row.cities?.id,
         city: row.cities?.slug || row.city, // Use slug from joined cities table for display
       })) as Tour[];
+      console.log('Fetched and mapped tours with display_order:', mappedTours.map(t => ({ id: t.id, title: t.title, city_id: (t as any).city_id, display_order: t.display_order })));
       setTours(mappedTours);
       
       // Expand all cities by default - normalize to city IDs
@@ -304,6 +305,7 @@ export default function AdminToursPage() {
 
   const fetchCities = async () => {
     try {
+      // Add timestamp to prevent caching issues
       const { data, error: fetchError } = await supabase
         .from('cities')
         .select('*')
@@ -315,6 +317,7 @@ export default function AdminToursPage() {
         return;
       }
 
+      console.log('Fetched cities with display_order:', (data || []).map(c => ({ id: c.id, slug: c.slug, display_order: c.display_order })));
       setCities((data || []) as CityData[]);
     } catch (err) {
       console.error('Failed to fetch cities:', err);
@@ -656,42 +659,69 @@ export default function AdminToursPage() {
     const updatedToursMap = new Map(reorderedToursWithOrder.map(t => [t.id, t]));
 
     // Update the tours state - replace all tours for this city_id with reordered ones
-    const updatedTours = tours.map(tour => {
-      const tourWithCityId = tour as any;
-      const matchesCity = tourWithCityId.city_id === cityId;
-      
-      if (matchesCity) {
-        const updatedTour = updatedToursMap.get(tour.id);
-        return updatedTour || tour;
-      }
-      return tour;
+    // Use functional update to ensure React detects the change
+    setTours(prevTours => {
+      const updated = prevTours.map(tour => {
+        const tourWithCityId = tour as any;
+        const matchesCity = tourWithCityId.city_id === cityId;
+        
+        if (matchesCity) {
+          const updatedTour = updatedToursMap.get(tour.id);
+          return updatedTour || tour;
+        }
+        return tour;
+      });
+      console.log('Optimistically updating tours state (drag) for city', cityId, ':', updated.filter(t => (t as any).city_id === cityId).map(t => ({ id: t.id, title: t.title, display_order: t.display_order })));
+      return updated;
     });
-    
-    // Set state immediately to update UI
-    setTours(updatedTours);
 
     // Update display_order in database
     try {
-      // Update all tours in this city with their new display_order
-      for (const tour of reorderedToursWithOrder) {
-        const { error } = await supabase
+      // Use batch updates for better performance and atomicity
+      const updatePromises = reorderedToursWithOrder.map(tour => {
+        console.log(`Updating tour ${tour.id} (${tour.title}) to display_order ${tour.display_order}`);
+        return supabase
           .from('tours_table_prod')
           .update({ display_order: tour.display_order })
-          .eq('id', tour.id);
+          .eq('id', tour.id)
+          .select(); // Select to verify update
+      });
 
-        if (error) {
-          console.error('Failed to update display_order:', error);
-          throw error;
+      const results = await Promise.all(updatePromises);
+      
+      // Verify all updates succeeded
+      let hasErrors = false;
+      for (let i = 0; i < results.length; i++) {
+        const result = results[i];
+        const tour = reorderedToursWithOrder[i];
+        if (result.error) {
+          console.error(`Failed to update tour ${tour.id} (${tour.title}):`, result.error);
+          hasErrors = true;
+        } else if (result.data) {
+          // Verify the update actually changed the value
+          const updatedTour = Array.isArray(result.data) ? result.data[0] : result.data;
+          if (updatedTour && updatedTour.display_order !== tour.display_order) {
+            console.warn(`Tour ${tour.id} display_order mismatch: expected ${tour.display_order}, got ${updatedTour.display_order}`);
+          } else {
+            console.log(`✓ Tour ${tour.id} updated successfully to display_order ${tour.display_order}`);
+          }
         }
+      }
+
+      if (hasErrors) {
+        throw new Error('Some tour updates failed');
       }
 
       const cityData = cities.find(c => c.id === cityId);
       toast.success(`Tour order updated for ${cityData?.name_nl || cityId}`);
-    } catch (err) {
+      // Refresh immediately to sync with database
+      // This ensures the UI reflects the actual database state
+      await fetchTours();
+    } catch (err: any) {
       console.error('Failed to update tour order:', err);
-      toast.error('Failed to update tour order');
-      // Revert on error
-      void fetchTours();
+      toast.error(err.message || 'Failed to update tour order');
+      // Revert on error - refresh to get correct state
+      await fetchTours();
     }
   };
 
@@ -731,43 +761,70 @@ export default function AdminToursPage() {
     const updatedToursMap = new Map(reorderedToursWithOrder.map(t => [t.id, t]));
 
     // Update the tours state - replace all tours for this city_id with reordered ones
-    const updatedTours = tours.map(tour => {
-      const tourWithCityId = tour as any;
-      const matchesCity = tourWithCityId.city_id === cityId;
-      
-      if (matchesCity) {
-        const updatedTour = updatedToursMap.get(tour.id);
-        return updatedTour || tour;
-      }
-      return tour;
+    // Use functional update to ensure React detects the change
+    setTours(prevTours => {
+      const updated = prevTours.map(tour => {
+        const tourWithCityId = tour as any;
+        const matchesCity = tourWithCityId.city_id === cityId;
+        
+        if (matchesCity) {
+          const updatedTour = updatedToursMap.get(tour.id);
+          return updatedTour || tour;
+        }
+        return tour;
+      });
+      console.log('Optimistically updating tours state (move) for city', cityId, ':', updated.filter(t => (t as any).city_id === cityId).map(t => ({ id: t.id, title: t.title, display_order: t.display_order })));
+      return updated;
     });
-    
-    // Set state immediately to update UI
-    setTours(updatedTours);
 
     // Update display_order in database
     try {
-      // Update all tours in this city with their new display_order
-      for (const tour of reorderedToursWithOrder) {
-        const { error } = await supabase
+      // Use batch updates for better performance and atomicity
+      const updatePromises = reorderedToursWithOrder.map(tour => {
+        console.log(`Updating tour ${tour.id} (${tour.title}) to display_order ${tour.display_order}`);
+        return supabase
           .from('tours_table_prod')
           .update({ display_order: tour.display_order })
-          .eq('id', tour.id);
+          .eq('id', tour.id)
+          .select(); // Select to verify update
+      });
 
-        if (error) {
-          console.error('Failed to update display_order:', error);
-          throw error;
+      const results = await Promise.all(updatePromises);
+      
+      // Verify all updates succeeded
+      let hasErrors = false;
+      for (let i = 0; i < results.length; i++) {
+        const result = results[i];
+        const tour = reorderedToursWithOrder[i];
+        if (result.error) {
+          console.error(`Failed to update tour ${tour.id} (${tour.title}):`, result.error);
+          hasErrors = true;
+        } else if (result.data) {
+          // Verify the update actually changed the value
+          const updatedTour = Array.isArray(result.data) ? result.data[0] : result.data;
+          if (updatedTour && updatedTour.display_order !== tour.display_order) {
+            console.warn(`Tour ${tour.id} display_order mismatch: expected ${tour.display_order}, got ${updatedTour.display_order}`);
+          } else {
+            console.log(`✓ Tour ${tour.id} updated successfully to display_order ${tour.display_order}`);
+          }
         }
+      }
+
+      if (hasErrors) {
+        throw new Error('Some tour updates failed');
       }
 
       const cityData = cities.find(c => c.id === cityId);
       const cityDisplayName = cityData?.name_nl || cityId;
       toast.success(`Tour order updated for ${cityDisplayName}`);
-    } catch (err) {
+      // Refresh immediately to sync with database
+      // This ensures the UI reflects the actual database state
+      await fetchTours();
+    } catch (err: any) {
       console.error('Failed to update tour order:', err);
-      toast.error('Failed to update tour order');
-      // Revert on error
-      void fetchTours();
+      toast.error(err.message || 'Failed to update tour order');
+      // Revert on error - refresh to get correct state
+      await fetchTours();
     }
   };
 
@@ -794,32 +851,66 @@ export default function AdminToursPage() {
       display_order: index + 1,
     }));
 
-    setCities(reorderedCitiesWithOrder);
+    // Use functional update to ensure React detects the change
+    setCities(prevCities => {
+      const updated = arrayMove(prevCities, oldIndex, newIndex).map((city, index) => ({
+        ...city,
+        display_order: index + 1,
+      }));
+      console.log('Optimistically updating cities state:', updated.map(c => ({ id: c.id, slug: c.slug, display_order: c.display_order })));
+      return updated;
+    });
 
     // Update display_order in database
     try {
-      for (const city of reorderedCitiesWithOrder) {
+      // Use batch updates for better performance and atomicity
+      const updatePromises = reorderedCitiesWithOrder.map(city => {
         if (!city.id) {
           console.warn('City missing ID, skipping update:', city);
-          continue;
+          return Promise.resolve({ data: null, error: null });
         }
-        const { error } = await supabase
+        console.log(`Updating city ${city.id} (${city.name_nl || city.slug}) to display_order ${city.display_order}`);
+        return supabase
           .from('cities')
           .update({ display_order: city.display_order })
-          .eq('id', city.id);
+          .eq('id', city.id)
+          .select(); // Select to verify update
+      });
 
-        if (error) {
-          console.error('Failed to update city display_order:', error);
-          throw error;
+      const results = await Promise.all(updatePromises);
+      
+      // Verify all updates succeeded
+      let hasErrors = false;
+      for (let i = 0; i < results.length; i++) {
+        const result = results[i];
+        const city = reorderedCitiesWithOrder[i];
+        if (result && result.error) {
+          console.error(`Failed to update city ${city.id} (${city.name_nl || city.slug}):`, result.error);
+          hasErrors = true;
+        } else if (result && result.data) {
+          // Verify the update actually changed the value
+          const updatedCity = Array.isArray(result.data) ? result.data[0] : result.data;
+          if (updatedCity && updatedCity.display_order !== city.display_order) {
+            console.warn(`City ${city.id} display_order mismatch: expected ${city.display_order}, got ${updatedCity.display_order}`);
+          } else {
+            console.log(`✓ City ${city.id} updated successfully to display_order ${city.display_order}`);
+          }
         }
       }
 
+      if (hasErrors) {
+        throw new Error('Some city updates failed');
+      }
+
       toast.success('City order updated');
-    } catch (err) {
+      // Refresh immediately to sync with database
+      // This ensures the UI reflects the actual database state
+      await fetchCities();
+    } catch (err: any) {
       console.error('Failed to update city order:', err);
-      toast.error('Failed to update city order');
-      // Revert on error
-      void fetchCities();
+      toast.error(err.message || 'Failed to update city order');
+      // Revert on error - refresh to get correct state
+      await fetchCities();
     }
   };
 

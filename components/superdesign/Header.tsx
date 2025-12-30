@@ -74,7 +74,7 @@ export function Header({ locale }: HeaderProps) {
         {/* Logo */}
         <Link
           href={`/${locale}`}
-          className="flex items-center gap-3 cursor-pointer relative z-[101]"
+          className="flex items-center gap-3 cursor-pointer relative z-[101] flex-shrink-0 min-w-[120px]"
         >
           <Image
             src="/Beroepsbelg Logo.png"
@@ -87,7 +87,7 @@ export function Header({ locale }: HeaderProps) {
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-4 xl:gap-6 flex-1 min-w-0 justify-center max-w-4xl mx-4 overflow-x-auto">
           {navItems.map((item) => (
             <Link
               key={item.label}
@@ -101,7 +101,7 @@ export function Header({ locale }: HeaderProps) {
           {(profile?.isAdmin || profile?.is_admin) && (
             <Link
               href={`/${locale}/admin/dashboard`}
-              className="text-sm font-semibold transition-all duration-300 px-4 py-2 rounded-full border-2 border-[#1BDD95] text-[#1BDD95] hover:bg-[#1BDD95] hover:text-white"
+              className="text-sm font-semibold transition-all duration-300 px-3 py-2 rounded-full border-2 border-[#1BDD95] text-[#1BDD95] hover:bg-[#1BDD95] hover:text-white flex-shrink-0 whitespace-nowrap"
             >
               Admin
             </Link>
@@ -109,7 +109,7 @@ export function Header({ locale }: HeaderProps) {
         </nav>
 
         {/* Right Icons & Mobile Toggle */}
-        <div className="flex items-center gap-2 md:gap-4 relative z-[101]">
+        <div className="flex items-center gap-2 md:gap-4 relative z-[101] flex-shrink-0">
           {/* Language Selector - Desktop */}
           <div className="hidden md:flex items-center gap-1 text-sm font-medium mr-2">
             {locales.map((loc, index) => (
