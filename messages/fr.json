@@ -416,6 +416,8 @@
     "specialRequestsPlaceholder": "Exigences ou demandes particulières...",
     "requestTanguy": "Demander Tanguy Ottomer",
     "requestTanguyDescription": "Souhaitez-vous que Tanguy Ottomer, fondateur de Beroepsbelg, accompagne personnellement votre visite?",
+    "tanguyLanguageDisclaimer": "Note: Tanguy ne donne des visites qu'en néerlandais ou en anglais.",
+    "addExtraHour": "Ajouter une heure supplémentaire (3 heures au lieu de 2 heures)",
     "total": "Total",
     "processing": "Traitement...",
     "proceedToPayment": "Procéder au paiement",
@@ -486,7 +488,7 @@
     "getInTouch": "Contactez-nous",
     "subtitle": "Nous serions ravis de vous entendre",
     "address": "Adresse",
-    "addressLabel": "Adresse",
+    "addressLabel": "Lieu",
     "email": "E-mail",
     "emailLabel": "E-mail",
     "phone": "Téléphone",
@@ -554,7 +556,7 @@
     "required": "Ce champ est obligatoire"
   },
   "lecture": {
-    "title": "Conférence : La Boerentoren",
+    "title": "Conférence",
     "date": "Date",
     "onRequest": "Sur demande",
     "location": "Lieu",
@@ -565,7 +567,28 @@
     "bookLecture": "Réserver cette conférence",
     "moreInfo": "Plus d'informations",
     "description1": "La Boerentoren, également connue sous le nom de tour KBC, est un bâtiment emblématique du paysage urbain anversois. Cette conférence vous emmène à travers l'histoire fascinante de ce qui fut autrefois le plus haut bâtiment d'Europe.",
-    "description2": "Des projets de construction ambitieux des années 1920 à la transformation moderne, vous découvrirez les points forts architecturaux, les histoires des personnes qui y ont travaillé et le rôle que le bâtiment a joué dans le développement d'Anvers en tant que métropole moderne."
+    "description2": "Des projets de construction ambitieux des années 1920 à la transformation moderne, vous découvrirez les points forts architecturaux, les histoires des personnes qui y ont travaillé et le rôle que le bâtiment a joué dans le développement d'Anvers en tant que métropole moderne.",
+    "disclaimer": "Note: Les conférences ne sont données qu'en néerlandais ou en anglais, mais tous sont les bienvenus!",
+    "booking": {
+      "title": "Réserver une conférence",
+      "description": "Veuillez remplir le formulaire ci-dessous pour demander une conférence. Nous vous contacterons pour confirmer les détails.",
+      "name": "Nom",
+      "nameRequired": "Le nom est requis",
+      "nameMinLength": "Le nom doit contenir au moins 2 caractères",
+      "phone": "Téléphone",
+      "email": "E-mail",
+      "contactRequired": "Veuillez fournir un numéro de téléphone ou une adresse e-mail",
+      "emailInvalid": "Veuillez entrer une adresse e-mail valide",
+      "preferredDate": "Date préférée",
+      "numberOfPeople": "Nombre de personnes",
+      "numberOfPeopleInvalid": "Veuillez entrer un nombre valide de personnes",
+      "locationDescription": "Description de l'emplacement",
+      "needsRoom": "Nous avons besoin que BeroepsBelg fournisse une salle/auditorium",
+      "submit": "Soumettre la demande de réservation",
+      "cancel": "Annuler",
+      "submitting": "Envoi en cours...",
+      "success": "Demande de réservation soumise avec succès! Nous vous contacterons bientôt."
+    }
   },
   "disclaimer": {
     "title": "Conditions Générales",

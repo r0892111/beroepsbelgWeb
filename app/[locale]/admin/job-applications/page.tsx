@@ -507,7 +507,7 @@ export default function AdminJobApplicationsPage() {
 
       {/* CV Viewing Dialog */}
       <Dialog open={!!viewingCv} onOpenChange={() => setViewingCv(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{viewingCv?.name}</DialogTitle>
             <DialogDescription>
@@ -535,7 +535,7 @@ export default function AdminJobApplicationsPage() {
 
       {/* Photo Viewing Dialog */}
       <Dialog open={!!viewingPhoto} onOpenChange={() => setViewingPhoto(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{viewingPhoto?.name}</DialogTitle>
           </DialogHeader>

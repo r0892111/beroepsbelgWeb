@@ -32,6 +32,7 @@ export type Tour = {
   createdAt?: string;
   updatedAt?: string;
   image?: string; // Primary image URL for display
+  primaryMediaType?: 'image' | 'video'; // Type of primary media (image or video)
   tourImages?: TourImage[]; // All tour images
   displayOrder?: number; // Display order within city (lower numbers appear first)
   themes?: string[]; // Array of theme tags (e.g., architecture, fashion, history)
@@ -97,4 +98,53 @@ export type PressLink = {
   name: string;
   url: string;
   logo?: string;
+};
+
+export type LectureImage = {
+  id: string;
+  lecture_id: string;
+  image_url: string;
+  is_primary: boolean;
+  sort_order: number;
+  storage_folder_name?: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type Lecture = {
+  id: string;
+  title: string; // Dutch
+  title_en?: string; // English
+  date?: string; // Dutch (e.g., "Op aanvraag")
+  date_en?: string; // English (e.g., "On request")
+  location?: string; // Dutch
+  location_en?: string; // English
+  group_size?: string; // Dutch (e.g., "10-50 personen")
+  group_size_en?: string; // English (e.g., "10-50 people")
+  description1?: string; // Dutch - First description paragraph
+  description1_en?: string; // English - First description paragraph
+  description2?: string; // Dutch - Second description paragraph
+  description2_en?: string; // English - Second description paragraph
+  description?: string; // Dutch - Full description (for expanded view)
+  description_en?: string; // English - Full description (for expanded view)
+  image?: string; // Primary image URL from image_url column
+  lectureImages?: LectureImage[]; // Array of lecture images
+  display_order?: number; // For ordering lectures
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type LectureBooking = {
+  id?: string;
+  lecture_id?: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  preferred_date?: string;
+  number_of_people?: number;
+  location_description?: string;
+  needs_room_provided: boolean;
+  status?: 'pending' | 'confirmed' | 'cancelled';
+  created_at?: string;
+  updated_at?: string;
 };
