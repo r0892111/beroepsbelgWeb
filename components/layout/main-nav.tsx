@@ -63,7 +63,7 @@ export function MainNav({ locale }: MainNavProps) {
 
       <div className="container mx-auto px-6 md:px-12">
         <div className={`flex items-center justify-between transition-all duration-500 ${isScrolled ? 'h-16' : 'h-20'}`}>
-          <Link href={`/${locale}`} className="flex items-center group relative">
+          <Link href={`/${locale}`} className="flex items-center group relative flex-shrink-0 min-w-[120px]">
             <div className="relative">
               {/* Turquoise glow on hover */}
               <div
@@ -81,12 +81,12 @@ export function MainNav({ locale }: MainNavProps) {
             </div>
           </Link>
 
-          <nav className="hidden items-center gap-8 lg:flex">
+          <nav className="hidden items-center gap-4 xl:gap-6 lg:flex flex-1 min-w-0 justify-center max-w-4xl mx-4 overflow-x-auto scrollbar-hide">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-sm font-semibold transition-all duration-300 relative group py-2"
+                className="text-sm font-semibold transition-all duration-300 relative group py-2 flex-shrink-0 whitespace-nowrap"
                 style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-primary)', letterSpacing: '0.025em' }}
               >
                 <span className="relative z-10 group-hover:text-[var(--green-accent)] transition-colors duration-300">
@@ -111,7 +111,7 @@ export function MainNav({ locale }: MainNavProps) {
             {(profile?.isAdmin || profile?.is_admin) && (
               <Link
                 href={`/${locale}/admin/dashboard`}
-                className="text-sm font-semibold transition-all duration-300 relative group px-4 py-2 rounded-full"
+                className="text-sm font-semibold transition-all duration-300 relative group px-3 py-2 rounded-full flex-shrink-0 whitespace-nowrap"
                 style={{
                   fontFamily: 'Montserrat, sans-serif',
                   color: 'var(--green-accent)',
@@ -130,7 +130,7 @@ export function MainNav({ locale }: MainNavProps) {
             )}
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Link href={`/${locale}/account`} className="relative hidden sm:inline-flex group">
               <Button variant="ghost" size="icon" className="hover:bg-transparent relative">
                 <User className="h-5 w-5 transition-all duration-300 group-hover:text-[var(--green-accent)] group-hover:scale-110" />
