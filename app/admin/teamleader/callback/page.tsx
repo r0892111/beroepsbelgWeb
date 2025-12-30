@@ -102,7 +102,6 @@ export default function TeamleaderCallbackPage() {
         error?: string;
       }>('teamleader-auth', {
         body: {
-          action: 'exchange',
           code,
           redirect_uri: redirectUri,
           user_id: user.id

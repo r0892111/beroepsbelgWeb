@@ -89,14 +89,13 @@ export default function TeamleaderCallbackPage() {
       setStatus('loading');
       setMessage(t('teamleaderConnecting') || 'Connecting to Teamleader...');
 
-      const redirectUri = `${window.location.origin}/${locale}/admin/teamleader/callback`;
+      const redirectUri = `${window.location.origin}/admin/teamleader/callback`;
       const { data, error } = await supabase.functions.invoke<{
         success: boolean;
         teamleader_user_id?: string;
         error?: string;
       }>('teamleader-auth', {
         body: {
-          action: 'exchange',
           code,
           redirect_uri: redirectUri,
           user_id: user.id
