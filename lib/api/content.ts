@@ -148,32 +148,38 @@ export async function getCities(): Promise<City[]> {
 }
 
 export async function getTours(citySlug?: string): Promise<Tour[]> {
-  // Fetch all tours first, then filter client-side for better matching
-  // Order by city, then display_order (NULLS LAST), then created_at for consistent ordering
+  // Fetch tours with city_id JOIN to link by ID instead of name matching
+  // Order by city_id, then display_order (NULLS LAST), then created_at for consistent ordering
   const { data, error } = await supabaseServer
     .from('tours_table_prod')
-    .select('*')
-    .order('city', { ascending: true })
+    .select(`
+      *,
+      cities:city_id (
+        id,
+        slug,
+        name_nl,
+        name_en,
+        name_fr,
+        name_de
+      )
+    `)
+    .order('city_id', { ascending: true, nullsFirst: false })
     .order('display_order', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: true });
+  
   if (error) {
     throw error;
   }
 
-  // Fetch cities table for accurate matching (always fetch to ensure correct city slugs)
+  // Fetch cities table to create a map of city IDs to slugs (for filtering)
   const { data: citiesData } = await supabaseServer
     .from('cities')
-    .select('slug, name_nl, name_en, name_fr, name_de');
+    .select('id, slug');
   
-  // Create a map of city names to city slugs
-  const citiesMap: Map<string, string> = new Map();
+  const cityIdToSlugMap: Map<string, string> = new Map();
   if (citiesData) {
     citiesData.forEach((city: any) => {
-      // Map all name variations to the city slug
-      if (city.name_nl) citiesMap.set(city.name_nl, city.slug);
-      if (city.name_en) citiesMap.set(city.name_en, city.slug);
-      if (city.name_fr) citiesMap.set(city.name_fr, city.slug);
-      if (city.name_de) citiesMap.set(city.name_de, city.slug);
+      cityIdToSlugMap.set(city.id, city.slug);
     });
   }
 
@@ -181,16 +187,24 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
   const tourImagesMap = await getTourImages();
 
   const tours = (data || []).map((row: any): Tour => {
-    // Try to find matching city in cities table first
-    let slugifiedCity: string;
-    const matchedCitySlug = citiesMap.get(row.city);
+    // Get city_id from the tour row (prefer direct column, then from JOIN)
+    const cityId = row.city_id || row.cities?.id;
+    const cityData = row.cities;
     
-    if (matchedCitySlug) {
-      // Use the slug from cities table
-      slugifiedCity = matchedCitySlug;
+    // Determine city slug: use from JOIN if available, otherwise fallback to old logic
+    let tourCitySlug: string;
+    if (cityData && cityData.slug) {
+      tourCitySlug = cityData.slug;
+    } else if (cityId && cityIdToSlugMap.has(cityId)) {
+      tourCitySlug = cityIdToSlugMap.get(cityId)!;
     } else {
-      // Fallback to slugifying the city name
-      slugifiedCity = citySlugify(row.city);
+      // Fallback: try to match by city name (old logic for backward compatibility)
+      const matchedCitySlug = cityIdToSlugMap.get(row.city);
+      if (matchedCitySlug) {
+        tourCitySlug = matchedCitySlug;
+      } else {
+        tourCitySlug = citySlugify(row.city);
+      }
     }
 
     // Get tour images for this tour
@@ -203,7 +217,8 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
 
     return {
       id: row.id,
-      city: slugifiedCity,
+      city: tourCitySlug, // Keep city slug for backward compatibility
+      cityId: cityId || undefined, // Primary way to link tours to cities
       slug: slugify(row.title),
       title: row.title,
       type: row.type,
@@ -226,92 +241,69 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
     };
   });
 
-  // Filter by exact city slug if provided (for more accurate matching)
-  const filteredTours = citySlug 
-    ? tours.filter(t => t.city === citySlug)
-    : tours;
+  // Filter by city slug if provided (convert slug to city ID for accurate matching)
+  let filteredTours = tours;
+  if (citySlug) {
+    // Find city ID from slug
+    const cityId = Array.from(cityIdToSlugMap.entries()).find(([_, slug]) => slug === citySlug)?.[0];
+    if (cityId) {
+      // Filter by cityId (primary method)
+      filteredTours = tours.filter(t => t.cityId === cityId);
+    } else {
+      // Fallback to slug matching (for backward compatibility)
+      filteredTours = tours.filter(t => t.city === citySlug);
+    }
+  }
 
   return filteredTours;
 }
 
 export async function getTourBySlug(citySlug: string, slug: string): Promise<Tour | null> {
-  // Fetch cities table for accurate matching
-  const { data: citiesData } = await supabaseServer
+  // First, find the city ID from the city slug
+  const { data: cityData } = await supabaseServer
     .from('cities')
-    .select('slug, name_nl, name_en, name_fr, name_de');
-  
-  // Create a map of city names to city slugs
-  const citiesMap: Map<string, string> = new Map();
-  if (citiesData) {
-    citiesData.forEach((city: any) => {
-      // Map all name variations to the city slug
-      if (city.name_nl) citiesMap.set(city.name_nl, city.slug);
-      if (city.name_en) citiesMap.set(city.name_en, city.slug);
-      if (city.name_fr) citiesMap.set(city.name_fr, city.slug);
-      if (city.name_de) citiesMap.set(city.name_de, city.slug);
-    });
-  }
+    .select('id, slug')
+    .eq('slug', citySlug)
+    .single();
 
-  // Fetch all tours
+  // Fetch tours with city_id JOIN to link by ID
   const { data, error } = await supabaseServer
     .from('tours_table_prod')
-    .select('*');
+    .select(`
+      *,
+      cities:city_id (
+        id,
+        slug
+      )
+    `);
 
   if (error) {
     console.error('[getTourBySlug] Database error:', error);
     throw error;
   }
 
-  // Find matching tour by city and generated slug
+  // Find matching tour by city_id (if city found) or city slug, and generated slug
   const matchingTour = (data || []).find((row: any) => {
-    // Try to find matching city in cities table first
-    let rowCitySlug: string;
-    const matchedCitySlug = citiesMap.get(row.city);
-    
-    if (matchedCitySlug) {
-      // Use the slug from cities table
-      rowCitySlug = matchedCitySlug;
-    } else {
-      // Fallback to slugifying the city name
-      rowCitySlug = citySlugify(row.city);
-    }
-    
     const rowSlug = slugify(row.title);
-    const matches = rowCitySlug === citySlug && rowSlug === slug;
+    const slugMatches = rowSlug === slug;
     
-    // Log for debugging
-    if (rowCitySlug === citySlug) {
-      console.log('[getTourBySlug] City match found:', {
-        citySlug,
-        rowCity: row.city,
-        rowCitySlug,
-        matchedCitySlug,
-        rowTitle: row.title,
-        rowSlug,
-        slug,
-        matches
-      });
+    if (!slugMatches) return false;
+    
+    // If we found the city by slug, match by city_id (primary method)
+    if (cityData && row.city_id === cityData.id) {
+      return true;
     }
     
-    return matches;
+    // Fallback: match by city slug from JOIN or from old city field
+    const tourCitySlug = row.cities?.slug || citySlugify(row.city);
+    return tourCitySlug === citySlug;
   });
 
   if (!matchingTour) {
-    const uniqueCities = new Set<string>();
-    (data || []).forEach((r: any) => {
-      const citySlug = citySlugify(r.city);
-      uniqueCities.add(citySlug);
-    });
-    const availableCities: string[] = [];
-    uniqueCities.forEach(city => availableCities.push(city));
-    
     console.warn('[getTourBySlug] No matching tour found:', {
       citySlug,
       slug,
-      availableCities,
-      availableSlugs: (data || [])
-        .filter((r: any) => citySlugify(r.city) === citySlug)
-        .map((r: any) => ({ title: r.title, slug: slugify(r.title) }))
+      cityId: cityData?.id,
     });
     return null;
   }
@@ -330,6 +322,7 @@ export async function getTourBySlug(citySlug: string, slug: string): Promise<Tou
   console.log('getTourBySlug: Raw matching tour data:', {
     id: matchingTour.id,
     title: matchingTour.title,
+    city_id: matchingTour.city_id,
     local_stories_raw: matchingTour.local_stories,
     local_stories_type: typeof matchingTour.local_stories,
     local_stories_processed: localStoriesValue,
@@ -338,12 +331,12 @@ export async function getTourBySlug(citySlug: string, slug: string): Promise<Tou
   });
 
   // Determine the correct city slug for the return value
-  const matchedCitySlugForReturn = citiesMap.get(matchingTour.city);
-  const finalCitySlug = matchedCitySlugForReturn || citySlugify(matchingTour.city);
+  const finalCitySlug = matchingTour.cities?.slug || citySlugify(matchingTour.city);
 
   return {
     id: matchingTour.id,
     city: finalCitySlug,
+    cityId: matchingTour.city_id || undefined,
     slug: slugify(matchingTour.title),
     title: matchingTour.title,
     type: matchingTour.type,
