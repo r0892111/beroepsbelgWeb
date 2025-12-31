@@ -241,7 +241,7 @@ export default function AccountPage() {
   }
 
   const favoriteProducts = products.filter((p) =>
-    favorites.some((fav) => fav.product_id === p.slug)
+    favorites.some((fav) => fav.product_id === p.uuid)
   );
 
   // Use cart items directly - they already have products populated from JOIN
@@ -358,7 +358,7 @@ export default function AccountPage() {
                         <Button
                           onClick={(e) => {
                             e.stopPropagation();
-                            removeFavorite(product.slug);
+                            removeFavorite(product.uuid);
                             toast.success(t('removeFromFavorites'));
                           }}
                           variant="outline"

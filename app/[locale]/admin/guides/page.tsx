@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, Users, X, Search, Filter, Calendar, Mail } from 'lucide-react';
+import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, Users, X, Search, Filter, Calendar, Mail, Phone, MapPin, Globe, Clock, Award, Upload, Image as ImageIcon, Cake } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
@@ -30,6 +30,8 @@ interface Guide {
   phonenumber: string | null;
   google_calendar_id: string | null;
   Email: string | null;
+  profile_picture: string | null;
+  birthday: string | null;
 }
 
 interface GuideFormData {
@@ -38,11 +40,12 @@ interface GuideFormData {
   languages: string[];
   tour_types: string[];
   preferences: string[];
-  availability: string;
   tours_done: number;
   content: string;
   phonenumber: string;
   Email: string;
+  profile_picture: string;
+  birthday: string;
 }
 
 const CITY_OPTIONS = ['Antwerpen', 'Brussel', 'Brugge', 'Gent', 'Knokke-Heist', 'Leuven', 'Mechelen', 'Hasselt'];
@@ -50,6 +53,8 @@ const LANGUAGE_OPTIONS = ['Nederlands', 'Engels', 'Frans', 'Duits', 'Spaans', 'I
 const TOUR_TYPE_OPTIONS = ['Walking', 'Biking', 'Bus', 'Private', 'Group'];
 const AVAILABILITY_OPTIONS = ['Available', 'Limited', 'Unavailable'];
 const PREFERENCE_OPTIONS = ['Morning', 'Afternoon', 'Evening', 'Weekend', 'Weekday'];
+const STORAGE_BUCKET = 'WebshopItemsImages';
+const STORAGE_FOLDER = 'Guide Photos';
 
 export default function AdminGuidesPage() {
   const { user, profile, signOut } = useAuth();
@@ -61,8 +66,13 @@ export default function AdminGuidesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [selectedGuide, setSelectedGuide] = useState<Guide | null>(null);
   const [editingGuide, setEditingGuide] = useState<Guide | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null);
+  const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   // Filter and search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,11 +87,12 @@ export default function AdminGuidesPage() {
     languages: [],
     tour_types: [],
     preferences: [],
-    availability: 'Available',
     tours_done: 0,
     content: '',
     phonenumber: '',
     Email: '',
+    profile_picture: '',
+    birthday: '',
   });
 
   useEffect(() => {
@@ -126,6 +137,48 @@ export default function AdminGuidesPage() {
     router.push(`/${locale}`);
   };
 
+  const uploadProfilePicture = async (file: File, guideId: number): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `guide_${guideId}_${Date.now()}.${fileExt}`;
+      const filePath = `${STORAGE_FOLDER}/${guideId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      const { data } = supabase.storage
+        .from(STORAGE_BUCKET)
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (err) {
+      console.error('Failed to upload file:', err);
+      throw err;
+    }
+  };
+
+  const handleProfilePictureSelect = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+    setProfilePictureFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setProfilePicturePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const openAddDialog = () => {
     setEditingGuide(null);
     setFormData({
@@ -134,13 +187,21 @@ export default function AdminGuidesPage() {
       languages: [],
       tour_types: [],
       preferences: [],
-      availability: 'Available',
       tours_done: 0,
       content: '',
       phonenumber: '',
       Email: '',
+      profile_picture: '',
+      birthday: '',
     });
+    setProfilePictureFile(null);
+    setProfilePicturePreview(null);
     setDialogOpen(true);
+  };
+
+  const openProfileDialog = (guide: Guide) => {
+    setSelectedGuide(guide);
+    setProfileDialogOpen(true);
   };
 
   const openEditDialog = (guide: Guide) => {
@@ -151,34 +212,56 @@ export default function AdminGuidesPage() {
       languages: Array.isArray(guide.languages) ? guide.languages : [],
       tour_types: Array.isArray(guide.tour_types) ? guide.tour_types : [],
       preferences: Array.isArray(guide.preferences) ? guide.preferences : [],
-      availability: guide.availability || 'Available',
       tours_done: guide.tours_done || 0,
       content: guide.content || '',
       phonenumber: guide.phonenumber || '',
       Email: guide.Email || '',
+      profile_picture: guide.profile_picture || '',
+      birthday: guide.birthday || '',
     });
+    setProfilePictureFile(null);
+    setProfilePicturePreview(guide.profile_picture || null);
     setDialogOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    setUploading(true);
 
     try {
+      let profilePictureUrl = formData.profile_picture;
+
+      // Upload profile picture if a new file is selected
+      if (profilePictureFile) {
+        if (editingGuide) {
+          profilePictureUrl = await uploadProfilePicture(profilePictureFile, editingGuide.id);
+        } else {
+          // For new guides, we need to create the guide first, then upload the picture
+          // We'll handle this after insertion
+        }
+      }
+
       if (editingGuide) {
         // Update existing guide - include tours_done
-        const payload = {
+        // Note: availability is not editable through the admin panel
+        const payload: any = {
           name: formData.name,
           cities: formData.cities,
           languages: formData.languages,
           tour_types: formData.tour_types,
           preferences: formData.preferences,
-          availability: formData.availability,
           tours_done: formData.tours_done,
           content: formData.content,
           phonenumber: formData.phonenumber,
           Email: formData.Email,
+          birthday: formData.birthday || null,
         };
+
+        // Only update profile_picture if we have a new URL or existing one
+        if (profilePictureUrl) {
+          payload.profile_picture = profilePictureUrl;
+        }
 
         const { error } = await supabase
           .from('guides_temp')
@@ -189,33 +272,53 @@ export default function AdminGuidesPage() {
         toast.success('Guide updated successfully');
       } else {
         // Create new guide - exclude tours_done so it defaults to 0 or null in DB
-        const payload = {
+        // Note: availability is not editable through the admin panel, will use database default
+        const payload: any = {
           name: formData.name,
           cities: formData.cities,
           languages: formData.languages,
           tour_types: formData.tour_types,
           preferences: formData.preferences,
-          availability: formData.availability,
           content: formData.content,
           phonenumber: formData.phonenumber,
           Email: formData.Email,
+          birthday: formData.birthday || null,
         };
 
-        const { error } = await supabase
+        const { data: newGuide, error: insertError } = await supabase
           .from('guides_temp')
-          .insert([payload]);
+          .insert([payload])
+          .select()
+          .single();
 
-        if (error) throw error;
+        if (insertError) throw insertError;
+
+        // Upload profile picture for new guide if provided
+        if (profilePictureFile && newGuide) {
+          profilePictureUrl = await uploadProfilePicture(profilePictureFile, newGuide.id);
+          
+          // Update the guide with the profile picture URL
+          const { error: updateError } = await supabase
+            .from('guides_temp')
+            .update({ profile_picture: profilePictureUrl })
+            .eq('id', newGuide.id);
+
+          if (updateError) throw updateError;
+        }
+
         toast.success('Guide created successfully');
       }
 
       setDialogOpen(false);
+      setProfilePictureFile(null);
+      setProfilePicturePreview(null);
       void fetchGuides();
     } catch (err) {
       console.error('Failed to save guide:', err);
       toast.error('Failed to save guide');
     } finally {
       setSubmitting(false);
+      setUploading(false);
     }
   };
 
@@ -505,9 +608,9 @@ export default function AdminGuidesPage() {
                   </TableHeader>
                   <TableBody>
                     {filteredGuides.map((guide) => (
-                      <TableRow key={guide.id}>
+                      <TableRow key={guide.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openProfileDialog(guide)}>
                         <TableCell className="font-medium">#{guide.id}</TableCell>
-                        <TableCell>{guide.name || 'N/A'}</TableCell>
+                        <TableCell className="font-medium hover:text-primary transition-colors">{guide.name || 'N/A'}</TableCell>
                         <TableCell className="text-sm">{guide.Email || 'N/A'}</TableCell>
                         <TableCell className="text-sm">{guide.phonenumber || 'N/A'}</TableCell>
                         <TableCell>
@@ -550,7 +653,7 @@ export default function AdminGuidesPage() {
                             {guide.availability || 'N/A'}
                           </Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
                           {guide.google_calendar_id ? (
                             <Badge className="bg-green-100 text-green-800 flex items-center gap-1 w-fit">
                               <Calendar className="h-3 w-3" />
@@ -570,7 +673,7 @@ export default function AdminGuidesPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                             <Button
                               variant="outline"
                               size="sm"
@@ -652,22 +755,62 @@ export default function AdminGuidesPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="availability" className="text-navy font-semibold">Availability*</Label>
-                <Select
-                  value={formData.availability}
-                  onValueChange={(value) => setFormData({ ...formData, availability: value })}
-                >
-                  <SelectTrigger className="bg-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {AVAILABILITY_OPTIONS.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="birthday" className="text-navy font-semibold flex items-center gap-2">
+                  <Cake className="h-4 w-4" />
+                  Birthday
+                </Label>
+                <Input
+                  id="birthday"
+                  type="date"
+                  value={formData.birthday}
+                  onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
+                  className="bg-white"
+                />
+              </div>
+            </div>
+
+
+            <div>
+              <Label className="text-navy font-semibold flex items-center gap-2">
+                <ImageIcon className="h-4 w-4" />
+                Profile Picture
+              </Label>
+              <div className="space-y-2">
+                {(profilePicturePreview || formData.profile_picture) && (
+                  <div className="relative w-32 h-32 rounded-lg overflow-hidden border-2 border-gray-200">
+                    <img
+                      src={profilePicturePreview || formData.profile_picture}
+                      alt="Profile preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-1 right-1"
+                      onClick={() => {
+                        setProfilePictureFile(null);
+                        setProfilePicturePreview(null);
+                        setFormData({ ...formData, profile_picture: '' });
+                      }}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        handleProfilePictureSelect(e.target.files[0]);
+                      }
+                    }}
+                    className="bg-white"
+                  />
+                  {uploading && <span className="text-sm text-muted-foreground">Uploading...</span>}
+                </div>
               </div>
             </div>
 
@@ -859,6 +1002,276 @@ export default function AdminGuidesPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Guide Profile Dialog */}
+      <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {selectedGuide && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold text-navy flex items-center gap-2">
+                  <Users className="h-6 w-6" />
+                  {selectedGuide.name || 'Guide Profile'}
+                </DialogTitle>
+                <DialogDescription>
+                  Complete guide profile and information
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-6 py-4">
+                {/* Profile Picture and Basic Info */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      Profile
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-start gap-4">
+                      {selectedGuide.profile_picture ? (
+                        <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-gray-200 flex-shrink-0">
+                          <img
+                            src={selectedGuide.profile_picture}
+                            alt={selectedGuide.name || 'Guide'}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                          <Users className="h-12 w-12 text-gray-400" />
+                        </div>
+                      )}
+                      <div className="flex-1 grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-sm font-semibold text-muted-foreground">Guide ID</Label>
+                          <p className="text-lg font-medium">#{selectedGuide.id}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-semibold text-muted-foreground">Tours Completed</Label>
+                          <p className="text-lg font-medium flex items-center gap-2">
+                            <Award className="h-4 w-4" />
+                            {selectedGuide.tours_done || 0}
+                          </p>
+                        </div>
+                        {selectedGuide.birthday && (
+                          <div>
+                            <Label className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                              <Cake className="h-4 w-4" />
+                              Birthday
+                            </Label>
+                            <p className="text-base">
+                              {new Date(selectedGuide.birthday).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Basic Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      Contact Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                        <Mail className="h-4 w-4" />
+                        Email
+                      </Label>
+                      <p className="text-base">{selectedGuide.Email || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                        <Phone className="h-4 w-4" />
+                        Phone Number
+                      </Label>
+                      <p className="text-base">{selectedGuide.phonenumber || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        Availability
+                      </Label>
+                      <Badge
+                        className={
+                          selectedGuide.availability === 'Available'
+                            ? 'bg-green-100 text-green-800'
+                            : selectedGuide.availability === 'Limited'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                        }
+                      >
+                        {selectedGuide.availability || 'N/A'}
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Cities */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <MapPin className="h-5 w-5" />
+                      Cities
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {selectedGuide.cities && Array.isArray(selectedGuide.cities) && selectedGuide.cities.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {selectedGuide.cities.map((city, idx) => (
+                          <Badge key={idx} variant="outline" className="text-sm">
+                            {city}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No cities assigned</p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Languages */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Globe className="h-5 w-5" />
+                      Languages
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {selectedGuide.languages && Array.isArray(selectedGuide.languages) && selectedGuide.languages.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {selectedGuide.languages.map((lang, idx) => (
+                          <Badge key={idx} variant="outline" className="text-sm">
+                            {lang}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No languages specified</p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Tour Types */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      Tour Types
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {selectedGuide.tour_types && Array.isArray(selectedGuide.tour_types) && selectedGuide.tour_types.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {selectedGuide.tour_types.map((type, idx) => (
+                          <Badge key={idx} variant="outline" className="text-sm">
+                            {type}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No tour types specified</p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Preferences */}
+                {selectedGuide.preferences && Array.isArray(selectedGuide.preferences) && selectedGuide.preferences.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Preferences</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedGuide.preferences.map((pref, idx) => (
+                          <Badge key={idx} variant="outline" className="text-sm">
+                            {pref}
+                          </Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Description/Bio */}
+                {selectedGuide.content && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Description</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm whitespace-pre-wrap">{selectedGuide.content}</p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Calendar Status */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      Calendar Integration
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {selectedGuide.google_calendar_id ? (
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-green-100 text-green-800 flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          Connected
+                        </Badge>
+                        <p className="text-sm text-muted-foreground">Calendar ID: {selectedGuide.google_calendar_id}</p>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">Not Connected</Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setProfileDialogOpen(false);
+                            handleSendCalendarInvite(selectedGuide);
+                          }}
+                        >
+                          <Mail className="h-3 w-3 mr-1" />
+                          Send Invite
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setProfileDialogOpen(false);
+                    openEditDialog(selectedGuide);
+                  }}
+                >
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit Guide
+                </Button>
+                <Button onClick={() => setProfileDialogOpen(false)}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>

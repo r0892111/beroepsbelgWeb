@@ -61,12 +61,22 @@ export function TourBookingDialog({
   const [productsLoading, setProductsLoading] = useState(false);
   const [selectedUpsell, setSelectedUpsell] = useState<Record<string, number>>({});
   const [showUpsellDialog, setShowUpsellDialog] = useState(false);
+  const [showAddressDialog, setShowAddressDialog] = useState(false);
   const [showOpMaatDialog, setShowOpMaatDialog] = useState(false);
   const [opMaatAnswers, setOpMaatAnswers] = useState({
     startEnd: '',
     cityPart: '',
     subjects: '',
     specialWishes: '',
+  });
+
+  const [addressData, setAddressData] = useState({
+    fullName: '',
+    birthdate: '',
+    street: '',
+    city: '',
+    postalCode: '',
+    country: 'België',
   });
 
   const [formData, setFormData] = useState({
@@ -358,6 +368,15 @@ export function TourBookingDialog({
           citySlug: citySlug || null,
           opMaat: opMaat,
           upsellProducts: upsellProducts, // Include upsell products in checkout session
+          // Address data for shipping (only if upsell products are selected)
+          shippingAddress: upsellProducts.length > 0 ? {
+            fullName: addressData.fullName,
+            birthdate: addressData.birthdate,
+            street: addressData.street,
+            city: addressData.city,
+            postalCode: addressData.postalCode,
+            country: addressData.country,
+          } : null,
           // Op maat specific answers
           opMaatAnswers: opMaat ? {
             startEnd: opMaatAnswers.startEnd,
@@ -383,6 +402,7 @@ export function TourBookingDialog({
 
       // Close dialogs and redirect to Stripe
       setShowUpsellDialog(false);
+      setShowAddressDialog(false);
       setShowOpMaatDialog(false);
       window.location.href = url;
     } catch (err) {
@@ -793,8 +813,8 @@ export function TourBookingDialog({
           }
         }}
       >
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh]" style={{ zIndex: 60 }}>
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] flex flex-col" style={{ zIndex: 60 }}>
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <div className="p-2 rounded-lg" style={{ backgroundColor: 'var(--primary-base)', color: 'white' }}>
                 <Gift className="h-5 w-5" />
@@ -807,12 +827,13 @@ export function TourBookingDialog({
           </DialogHeader>
 
           {productsLoading ? (
-            <div className="flex items-center justify-center py-12">
+            <div className="flex items-center justify-center py-12 flex-1">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : products.length > 0 ? (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col flex-1 min-h-0 space-y-4">
+              <div className="overflow-y-auto flex-1 pr-2 -mr-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {products.map((product) => {
                   const quantity = selectedUpsell[product.uuid] || 0;
                   const isSelected = quantity > 0;
@@ -826,13 +847,13 @@ export function TourBookingDialog({
                     <div
                       key={product.uuid}
                       className={cn(
-                        "p-5 rounded-xl border-2 transition-all",
+                        "p-5 rounded-xl border-2 transition-all flex flex-col h-full",
                         isSelected
                           ? 'border-[var(--primary-base)] bg-[var(--primary-base)]/5 shadow-md'
                           : 'border-gray-200 hover:border-gray-300 hover:shadow-sm bg-white'
                       )}
                     >
-                      <div className="flex items-start gap-4 mb-4">
+                      <div className="flex items-start gap-4 mb-4 flex-shrink-0">
                         <div className="relative w-20 h-20 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
                           {product.image ? (
                             <Image src={product.image} alt={product.title.nl} fill className="object-cover" />
@@ -843,83 +864,95 @@ export function TourBookingDialog({
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-base leading-tight mb-2">
+                          <p className="font-semibold text-base leading-tight mb-2 line-clamp-2">
                             {product.title.nl}
                           </p>
                           <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 mb-2">
                             {categoryLabels[product.category] || product.category}
                           </span>
-                          <p className="text-xl font-bold mt-2" style={{ color: 'var(--primary-base)' }}>
+                          <p className="text-xl font-bold" style={{ color: 'var(--primary-base)' }}>
                             €{product.price.toFixed(2)}
                           </p>
                         </div>
                       </div>
                       
-                      {isSelected ? (
-                        <div className="flex items-center justify-between gap-3 pt-4 border-t border-gray-200">
-                          <span className="text-sm font-medium text-muted-foreground">Aantal:</span>
-                          <div className="flex items-center gap-3">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => decrementUpsell(product.uuid)}
-                              className="h-9 w-9 p-0 rounded-full"
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                            <span className="text-lg font-semibold min-w-[2.5rem] text-center">
-                              {quantity}
-                            </span>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => incrementUpsell(product.uuid)}
-                              className="h-9 w-9 p-0 rounded-full"
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
+                      <div className="mt-auto pt-4 border-t border-gray-200 flex-shrink-0">
+                        {isSelected ? (
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="text-sm font-medium text-muted-foreground">Aantal:</span>
+                            <div className="flex items-center gap-3">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => decrementUpsell(product.uuid)}
+                                className="h-9 w-9 p-0 rounded-full"
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <span className="text-lg font-semibold min-w-[2.5rem] text-center">
+                                {quantity}
+                              </span>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => incrementUpsell(product.uuid)}
+                                className="h-9 w-9 p-0 rounded-full"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => incrementUpsell(product.uuid)}
-                          className="w-full"
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Toevoegen
-                        </Button>
-                      )}
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => incrementUpsell(product.uuid)}
+                            className="w-full h-9"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Toevoegen
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
+                </div>
               </div>
               
-              {upsellTotal > 0 && (
-                <div className="pt-4 border-t border-gray-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      Extra producten ({Object.values(selectedUpsell).reduce((sum, qty) => sum + qty, 0)}):
-                    </span>
-                    <span className="text-lg font-bold" style={{ color: 'var(--primary-base)' }}>
-                      €{upsellTotal.toFixed(2)}
-                    </span>
+              {/* Fixed summary section - always visible */}
+              <div className="flex-shrink-0 pt-4 border-t border-gray-200 bg-white">
+                {upsellTotal > 0 && (
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Extra producten ({Object.values(selectedUpsell).reduce((sum, qty) => sum + qty, 0)}):
+                      </span>
+                      <span className="text-lg font-bold" style={{ color: 'var(--primary-base)' }}>
+                        €{upsellTotal.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <span className="text-base font-semibold">Tour:</span>
+                      <span className="text-base font-semibold">€{tourTotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between pt-2">
+                      <span className="text-lg font-bold">Totaal:</span>
+                      <span className="text-xl font-bold" style={{ color: 'var(--primary-base)' }}>
+                        €{totalPrice.toFixed(2)}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between pt-2 border-t">
+                )}
+                {upsellTotal === 0 && (
+                  <div className="flex items-center justify-between mb-4">
                     <span className="text-base font-semibold">Tour:</span>
                     <span className="text-base font-semibold">€{tourTotal.toFixed(2)}</span>
                   </div>
-                  <div className="flex items-center justify-between pt-2">
-                    <span className="text-lg font-bold">Totaal:</span>
-                    <span className="text-xl font-bold" style={{ color: 'var(--primary-base)' }}>
-                      €{totalPrice.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           ) : (
             <div className="py-8 text-center text-muted-foreground">
@@ -928,12 +961,12 @@ export function TourBookingDialog({
           )}
 
           {error && (
-            <div className="rounded-md bg-red-50 p-3 text-sm text-red-800 border border-red-200">
+            <div className="rounded-md bg-red-50 p-3 text-sm text-red-800 border border-red-200 flex-shrink-0">
               {error}
             </div>
           )}
 
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+          <DialogFooter className="flex-col sm:flex-row gap-2 flex-shrink-0">
             <Button
               type="button"
               variant="outline"
@@ -952,11 +985,19 @@ export function TourBookingDialog({
             <Button
               type="button"
               onClick={() => {
-                // If op maat tour, show op maat questions dialog first
-                if (opMaat) {
+                // Check if upsell products are selected - if yes, show address dialog first
+                const hasUpsellProducts = upsellTotal > 0;
+                
+                if (hasUpsellProducts) {
+                  // Show address dialog for shipping
+                  setShowUpsellDialog(false);
+                  setShowAddressDialog(true);
+                } else if (opMaat) {
+                  // If op maat tour, show op maat questions dialog first
                   setShowUpsellDialog(false);
                   setShowOpMaatDialog(true);
                 } else {
+                  // No upsell products, proceed directly to checkout
                   proceedToCheckout();
                 }
               }}
@@ -971,6 +1012,167 @@ export function TourBookingDialog({
               ) : (
                 <>
                   {opMaat ? 'Verder →' : `Doorgaan naar betaling${upsellTotal > 0 ? ` (€${totalPrice.toFixed(2)})` : ''}`}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Address Dialog for Upsell Products */}
+      <Dialog 
+        open={showAddressDialog} 
+        onOpenChange={(isOpen) => {
+          setShowAddressDialog(isOpen);
+        }}
+      >
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Verzendgegevens
+            </DialogTitle>
+            <DialogDescription>
+              Vul je gegevens in voor de verzending van je producten
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="fullName" className="text-sm font-semibold">
+                Volledige naam *
+              </Label>
+              <Input
+                id="fullName"
+                value={addressData.fullName}
+                onChange={(e) => setAddressData({ ...addressData, fullName: e.target.value })}
+                placeholder="Jan Janssen"
+                required
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="birthdate" className="text-sm font-semibold">
+                Geboortedatum *
+              </Label>
+              <Input
+                id="birthdate"
+                type="date"
+                value={addressData.birthdate}
+                onChange={(e) => setAddressData({ ...addressData, birthdate: e.target.value })}
+                required
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="street" className="text-sm font-semibold">
+                Straat en huisnummer *
+              </Label>
+              <Input
+                id="street"
+                value={addressData.street}
+                onChange={(e) => setAddressData({ ...addressData, street: e.target.value })}
+                placeholder="Kerkstraat 123"
+                required
+                className="mt-1"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="postalCode" className="text-sm font-semibold">
+                  Postcode *
+                </Label>
+                <Input
+                  id="postalCode"
+                  value={addressData.postalCode}
+                  onChange={(e) => setAddressData({ ...addressData, postalCode: e.target.value })}
+                  placeholder="1000"
+                  required
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="city" className="text-sm font-semibold">
+                  Stad *
+                </Label>
+                <Input
+                  id="city"
+                  value={addressData.city}
+                  onChange={(e) => setAddressData({ ...addressData, city: e.target.value })}
+                  placeholder="Brussel"
+                  required
+                  className="mt-1"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="country" className="text-sm font-semibold">
+                Land *
+              </Label>
+              <Input
+                id="country"
+                value={addressData.country}
+                onChange={(e) => setAddressData({ ...addressData, country: e.target.value })}
+                required
+                className="mt-1"
+              />
+            </div>
+          </div>
+
+          {error && (
+            <div className="rounded-md bg-red-50 p-3 text-sm text-red-800 border border-red-200">
+              {error}
+            </div>
+          )}
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowAddressDialog(false);
+                setShowUpsellDialog(true);
+              }}
+              className="w-full sm:w-auto"
+            >
+              Terug
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                // Validate required fields
+                if (!addressData.fullName || !addressData.birthdate || !addressData.street || 
+                    !addressData.postalCode || !addressData.city || !addressData.country) {
+                  setError('Vul alle verplichte velden in');
+                  return;
+                }
+
+                setError(null);
+
+                // If op maat tour, show op maat questions dialog next
+                if (opMaat) {
+                  setShowAddressDialog(false);
+                  setShowOpMaatDialog(true);
+                } else {
+                  // Proceed to checkout with address data
+                  proceedToCheckout();
+                }
+              }}
+              disabled={loading}
+              className="w-full sm:w-auto"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Verwerken...
+                </>
+              ) : (
+                <>
+                  {opMaat ? 'Verder →' : `Doorgaan naar betaling (€${totalPrice.toFixed(2)})`}
                 </>
               )}
             </Button>
@@ -1067,8 +1269,15 @@ export function TourBookingDialog({
               type="button"
               variant="outline"
               onClick={() => {
-                setShowOpMaatDialog(false);
-                setShowUpsellDialog(true);
+                // Check if we came from address dialog (has upsell products)
+                const hasUpsellProducts = upsellTotal > 0;
+                if (hasUpsellProducts) {
+                  setShowOpMaatDialog(false);
+                  setShowAddressDialog(true);
+                } else {
+                  setShowOpMaatDialog(false);
+                  setShowUpsellDialog(true);
+                }
               }}
               className="w-full sm:w-auto"
             >

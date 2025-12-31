@@ -69,12 +69,32 @@ async function handleEvent(event: Stripe.Event) {
     console.info(`Processing checkout.session.completed: ${sessionId}, mode: ${mode}, status: ${payment_status}`);
 
     if (mode === 'payment' && payment_status === 'paid') {
+      // Check if this is a local stories booking by checking local_tours_bookings first
+      const { data: localBooking, error: localBookingError } = await supabase
+        .from('local_tours_bookings')
+        .select('id, status, booking_id, tour_id')
+        .eq('stripe_session_id', sessionId)
+        .maybeSingle();
+
+      const isLocalStories = !!localBooking;
+
+      // For local stories bookings, check if the tour is actually a local stories tour
+      let tourIsLocalStories = false;
+      if (isLocalStories && localBooking?.tour_id) {
+        const { data: tour } = await supabase
+          .from('tours_table_prod')
+          .select('local_stories')
+          .eq('id', localBooking.tour_id)
+          .maybeSingle();
+        tourIsLocalStories = tour?.local_stories === true || tour?.local_stories === 'true' || tour?.local_stories === 1;
+      }
+
       // First, check if tour booking exists and its current status and booking type
       const { data: existingBooking, error: checkError } = await supabase
         .from('tourbooking')
         .select('id, status, tour_id, booking_type')
         .eq('stripe_session_id', sessionId)
-        .single();
+        .maybeSingle(); // Use maybeSingle() instead of single() to handle cases where no booking exists yet
 
       // Determine the appropriate status based on booking type
       let newStatus = 'payment_completed'; // Default for B2C bookings
@@ -83,10 +103,20 @@ async function handleEvent(event: Stripe.Event) {
         newStatus = 'quote_paid';
       }
 
-      // If booking exists and is already processed, skip webhook call (idempotency)
-      if (existingBooking && existingBooking.status === newStatus) {
-        console.info(`Tour booking for session ${sessionId} already processed with status ${newStatus}, skipping webhook call`);
-        return;
+      // For local stories bookings: always process the webhook
+      // The tourbooking is the parent (one per Saturday tour), and local_tours_bookings is just another signup
+      // Each person joining should trigger the webhook, regardless of the parent tourbooking status
+      if (tourIsLocalStories) {
+        // Always process local stories bookings - each signup is independent
+        // The update queries below have built-in idempotency (they won't update if already at target status)
+        console.info(`Processing local stories booking for session ${sessionId} - tourbooking status: ${existingBooking?.status || 'none'}, local_tours_bookings status: ${localBooking?.status || 'none'}`);
+      } else {
+        // For non-local-stories bookings, use the original idempotency check
+        // If booking exists and is already processed, skip webhook call (idempotency)
+        if (existingBooking && existingBooking.status === newStatus) {
+          console.info(`Tour booking for session ${sessionId} already processed with status ${newStatus}, skipping webhook call`);
+          return;
+        }
       }
 
       // Update tour booking status
@@ -96,19 +126,101 @@ async function handleEvent(event: Stripe.Event) {
         .eq('stripe_session_id', sessionId)
         .neq('status', newStatus) // Only update if not already at this status
         .select()
-        .single();
+        .maybeSingle(); // Use maybeSingle() to handle cases where no booking exists or already at target status
+
+      // Determine tour_id for local stories check (from existingBooking, tourBooking, or localBooking)
+      const tourIdForCheck = existingBooking?.tour_id || tourBooking?.tour_id || localBooking?.tour_id;
 
       if (tourBooking) {
         console.info(`Successfully updated tour booking for session: ${sessionId}`);
-        
-        // Check if this is a local stories tour and update local_tours_bookings
+      } else if (tourBookingError && tourBookingError.code !== 'PGRST116') {
+        // PGRST116 = no rows found, which is fine - might be a webshop order or local stories booking
+        console.error(`Error updating tour booking for session ${sessionId}:`, tourBookingError);
+      } else {
+        // No booking updated - might already be at target status or doesn't exist yet
+        console.info(`Tour booking for session ${sessionId} not updated (may already be at status ${newStatus} or doesn't exist)`);
+      }
+      
+      // For local stories bookings, always process webhook regardless of tourbooking status
+      // The tourbooking is the parent (one per Saturday tour), and local_tours_bookings is just another signup
+      if (tourIsLocalStories) {
+        // Always update local_tours_bookings for local stories bookings
+        if (tourIdForCheck) {
+          const { data: tour, error: tourError } = await supabase
+            .from('tours_table_prod')
+            .select('local_stories')
+            .eq('id', tourIdForCheck)
+            .maybeSingle();
+          
+          if (!tourError && (tour?.local_stories === true || tour?.local_stories === 'true' || tour?.local_stories === 1)) {
+            // Update local_tours_bookings entry - ensure stripe_session_id is set and status is booked
+            const { error: localBookingUpdateError } = await supabase
+              .from('local_tours_bookings')
+              .update({ 
+                stripe_session_id: sessionId,
+                status: 'booked'
+              })
+              .eq('stripe_session_id', sessionId)
+              .neq('status', 'booked'); // Only update if not already booked
+            
+            if (localBookingUpdateError) {
+              console.error('Error updating local_tours_bookings:', localBookingUpdateError);
+            } else {
+              console.info(`Successfully updated local_tours_bookings for session: ${sessionId}`);
+            }
+          }
+        }
+
+        // Always call N8N webhook for local stories bookings (each signup is independent)
+        const n8nWebhookUrl =
+          'https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc';
+
+        const payload = {
+          ...session, // full Stripe checkout session
+          metadata: {
+            ...metadata,
+            stripe_session_id: sessionId,
+          },
+        };
+
+        try {
+          console.info('[N8N] Calling tour booking webhook for local stories booking', {
+            url: n8nWebhookUrl,
+            sessionId,
+          });
+
+          const res = await fetch(n8nWebhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+
+          console.info('[N8N] Tour booking webhook response', {
+            status: res.status,
+            ok: res.ok,
+          });
+
+          if (!res.ok) {
+            const text = await res.text();
+            console.error('[N8N] Tour booking webhook error body', text);
+          }
+        } catch (err) {
+          console.error('[N8N] Failed to call tour booking webhook', err);
+        }
+
+        return; // Done processing local stories booking
+      }
+
+      // For non-local-stories bookings, only process if we have a tourBooking
+      if (tourBooking) {
+        // Check if this is a local stories tour and update local_tours_bookings (shouldn't happen here, but just in case)
         const { data: tour, error: tourError } = await supabase
           .from('tours_table_prod')
           .select('local_stories')
           .eq('id', tourBooking.tour_id)
-          .single();
+          .maybeSingle();
         
-        if (!tourError && tour?.local_stories === true) {
+        if (!tourError && (tour?.local_stories === true || tour?.local_stories === 'true' || tour?.local_stories === 1)) {
           // Update local_tours_bookings entry - ensure stripe_session_id is set and status is booked
           const { error: localBookingError } = await supabase
             .from('local_tours_bookings')
