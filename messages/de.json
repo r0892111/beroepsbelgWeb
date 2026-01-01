@@ -99,7 +99,19 @@
     "searchPlaceholder": "Touren, Produkte suchen...",
     "copyright": "© 2024 Beroepsbelg. Alle Rechte vorbehalten.",
     "allRightsReserved": "Alle Rechte vorbehalten",
-    "terms": "Bedingungen"
+    "terms": "Bedingungen",
+    "newsletter": {
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "consentText": "Ich stimme der",
+      "privacyPolicy": "Datenschutzrichtlinie zu",
+      "invalidEmail": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+      "nameRequired": "Bitte geben Sie Ihren Vor- und Nachnamen ein",
+      "consentRequired": "Sie müssen der Datenschutzrichtlinie zustimmen",
+      "success": "Erfolgreich für den Newsletter angemeldet!",
+      "error": "Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+      "submitting": "..."
+    }
   },
   "cookie": {
     "message": "Wir verwenden Cookies, um Ihre Erfahrung zu verbessern.",
@@ -608,20 +620,223 @@
     "copyrightContent": "Alle Inhalte auf unserer Website, einschließlich Texte, Bilder und Logos, sind urheberrechtlich geschützt und dürfen ohne vorherige schriftliche Genehmigung nicht verwendet werden."
   },
   "privacy": {
-    "title": "Datenschutzrichtlinie",
-    "intro": "BeroepsBelg respektiert Ihre Privatsphäre und geht sorgfältig mit Ihren personenbezogenen Daten um. Diese Datenschutzrichtlinie erklärt, welche Daten wir sammeln, warum wir sie sammeln und wie wir sie verwenden.",
-    "dataCollection": "Datenerfassung",
-    "dataCollectionContent": "Wir sammeln personenbezogene Daten, die Sie uns bei der Buchung einer Tour, beim Abonnieren unseres Newsletters oder bei der Kontaktaufnahme mit uns zur Verfügung stellen. Dazu gehören Ihr Name, Ihre E-Mail-Adresse, Telefonnummer und alle anderen Informationen, die Sie mit uns teilen.",
-    "dataUsage": "Datenverwendung",
-    "dataUsageContent": "Wir verwenden Ihre personenbezogenen Daten zur Bearbeitung Ihrer Buchung, zum Versenden von Bestätigungen und relevanten Informationen zu Ihrer Tour sowie zur Verbesserung unserer Dienstleistungen. Wir geben Ihre Daten niemals ohne Ihre ausdrückliche Zustimmung an Dritte weiter, es sei denn, dies ist gesetzlich vorgeschrieben.",
-    "dataRetention": "Datenspeicherung",
-    "dataRetentionContent": "Wir bewahren Ihre personenbezogenen Daten so lange auf, wie es für die in dieser Datenschutzrichtlinie beschriebenen Zwecke erforderlich ist oder wie gesetzlich vorgeschrieben.",
-    "yourRights": "Ihre Rechte",
-    "yourRightsContent": "Sie haben jederzeit das Recht, Ihre personenbezogenen Daten einzusehen, zu korrigieren oder zu löschen. Sie können auch der Verarbeitung Ihrer Daten widersprechen oder die Datenübertragbarkeit beantragen. Kontaktieren Sie uns, wenn Sie diese Rechte ausüben möchten.",
-    "cookies": "Cookies",
-    "cookiesContent": "Unsere Website verwendet Cookies, um Ihre Benutzererfahrung zu verbessern. Sie können Ihre Cookie-Einstellungen über das Cookie-Banner auf unserer Website verwalten.",
-    "contact": "Kontakt",
-    "contactContent": "Wenn Sie Fragen zu dieser Datenschutzrichtlinie oder zur Verarbeitung Ihrer personenbezogenen Daten haben, kontaktieren Sie uns bitte per E-Mail oder Telefon."
+    "title": "Privacy & Cookie Policy",
+    "disclaimer": "Die ursprüngliche Version dieser Datenschutz- und Cookie-Richtlinie ist auf Niederländisch. Beroepsbelg ist nicht verantwortlich für Fehlinterpretationen der übersetzten Versionen. Sie können jederzeit info@beroepsbelg.be kontaktieren, wenn Sie Fragen haben.",
+    "intro": "Diese \"Privacy Policy\" regelt die Verarbeitung Ihrer personenbezogenen Daten durch den für die Verarbeitung Verantwortlichen: Beroepsbelg mit eingetragenem Sitz in Vrijdagmarkt 12 - 2000 Antwerpen und eingetragen im K.B.O. unter der Nummer BE0599 930 251 (nachfolgend: \"Beroepsbelg\"). Sie werden gebeten, diese Datenschutzrichtlinie sorgfältig zu lesen, da sie wesentliche Informationen darüber enthält, wie Ihre personenbezogenen Daten verarbeitet werden und welche Cookies verwendet werden. Durch die Bereitstellung Ihrer personenbezogenen Daten auf der Website und durch die Bereitstellung personenbezogener Daten über die auf dieser Website angegebenen E-Mail-Adressen erklären Sie, dass Sie diese Datenschutzrichtlinie zur Kenntnis genommen haben und ausdrücklich damit einverstanden sind sowie mit der Verarbeitung selbst.",
+    "article1": {
+      "title": "Artikel 1 - Allgemein",
+      "content": "Beroepsbelg hält sich an die Anti-Spam-Bestimmungen aus Buch XII des Wirtschaftsgesetzbuches bezüglich des \"Rechts der elektronischen Wirtschaft\".\n\nBeroepsbelg ist auch durch die aktuelle Datenschutzrichtlinie mit der Europäischen Verordnung 2016/679 vom 27. April 2016 über den Schutz personenbezogener Daten in Einklang.\n\nDer für die Verarbeitung Ihrer personenbezogenen Daten Verantwortliche ist Beroepsbelg. Eine Erklärung wurde bei der Kommission zum Schutz der Privatsphäre bezüglich der Verarbeitung Ihrer personenbezogenen Daten hinterlegt."
+    },
+    "article2": {
+      "title": "Artikel 2 - Personendaten",
+      "section21": {
+        "title": "2.1 Personendaten, die Sie uns mitteilen:",
+        "content": "Kategorie 1: wenn Sie sich nicht registriert haben: Ihre IP-Adresse;\n\nKategorie 2: wenn Formulare ausgefüllt oder Bestellungen ohne Registrierung aufgegeben wurden: alle Felder im Formular sowie Ihre IP-Adresse;\n\nKategorie 3: wenn Sie sich registriert haben: alle Felder im Formular sowie Ihre IP-Adresse und Ihr Passwort;\n\nKategorie 4: über Cookies."
+      },
+      "section22": {
+        "title": "2.2 Beroepsbelg kann Daten von Ihnen (Personendaten) auf verschiedene Weise sammeln:",
+        "content": "a. durch die Verwendung von Cookies (siehe unten);\n\nb. wenn Sie sich registrieren und die Website nutzen;"
+      },
+      "section23": {
+        "title": "2.3",
+        "content": "Die Website verwendet auch Cookies, die bestimmte personenbezogene Daten sammeln. Für die Bestimmungen bezüglich der Verwendung von Cookies siehe Artikel 8."
+      }
+    },
+    "article3": {
+      "title": "Artikel 3 - Zwecke der Verarbeitung",
+      "section31": {
+        "title": "3.1 Allgemeine Zwecke:",
+        "content": "Beroepsbelg wird die von Ihnen gesammelten Personendaten nur für die folgenden Zwecke verwenden:\n\nKategorie 1: zur Bereitstellung und Verbesserung dieser Website und zur Aufnahme von Personendaten in anonyme Statistiken, aus denen die Identität bestimmter Personen oder Unternehmen nicht ermittelt werden kann, basierend auf den berechtigten Interessen von Beroepsbelg, seine Website und Dienstleistungen kontinuierlich zu verbessern;\n\nKategorie 2: zur Verwaltung Ihres Kontos auf dieser Website im Hinblick auf die Nutzung unseres Beroepsbelg und der Website, wobei die rechtliche Grundlage die Erfüllung einer von Ihnen angeforderten Vereinbarung ist, und, falls von Ihnen angegeben, auch zum Versenden von Direktmarketing, wobei die rechtliche Grundlage Ihre ausdrückliche vorherige Zustimmung ist;\n\nKategorie 3: zum Versenden von Direktmarketing, Newslettern, Aktionen und Werbeaktionen an Sie, wobei die rechtliche Grundlage Ihre ausdrückliche vorherige Zustimmung ist;\n\nKategorie 4: zur Verbesserung der Benutzererfahrung und für statistische Zwecke (siehe unten), wobei die rechtliche Grundlage Ihre ausdrückliche vorherige Zustimmung ist;\n\nSie sind nicht verpflichtet, Ihre Personendaten preiszugeben, verstehen aber, dass es nicht möglich sein wird, bestimmte Dienstleistungen zu erbringen, wenn Sie Ihrer Verarbeitung nicht zustimmen."
+      },
+      "section32": {
+        "title": "3.2 Direktmarketing:",
+        "content": "Personendaten werden auch für Direktmarketing verwendet, vorausgesetzt, Sie haben hierfür eine zusätzliche ausdrückliche Zustimmung gegeben (\"Opt-in\").\n\nWenn Sie bereits in unserer Mailingliste für den Erhalt von Marketingmaterial in Papier- und/oder elektronischer Form aufgenommen wurden, kann Beroepsbelg Ihre Daten zum Versenden von Marketing und anderem Material bezüglich Beroepsbelg, seiner Produkte und/oder Dienstleistungen verwenden. Beroepsbelg kann die von Ihnen bereitgestellten Daten zur Aktualisierung der von Beroepsbelg gespeicherten Dokumente verwenden.\n\nDiese Zustimmung kann jederzeit ohne Begründung und kostenlos widerrufen werden, z.B. durch Klicken auf den entsprechenden Abmeldelink am Ende jeder Werbe-E-Mail-Nachricht."
+      },
+      "section33": {
+        "title": "3.3 Übertragung an Dritte:",
+        "content": "Im Falle einer vollständigen oder teilweisen Umstrukturierung oder Übertragung von Aktivitäten von Beroepsbelg, wodurch seine Geschäftstätigkeiten umstrukturiert, übertragen oder eingestellt werden, oder wenn Beroepsbelg bankrott geht, kann dies bedeuten, dass Ihre Daten ganz oder teilweise an neue Einheiten oder Dritte übertragen werden, über die die Geschäftstätigkeiten von Beroepsbelg ganz oder teilweise ausgeführt werden.\n\nBeroepsbelg wird angemessene Anstrengungen unternehmen, Sie im Voraus über die Tatsache zu informieren, dass Beroepsbelg Ihre Daten an den genannten Dritten offenlegt, aber Sie erkennen auch an, dass dies unter allen Umständen nicht technisch oder kommerziell machbar ist.\n\nBeroepsbelg wird Ihre Personendaten nicht verkaufen, noch vermieten, verteilen oder anderweitig kommerziell Dritten zur Verfügung stellen, außer wie oben beschrieben oder mit Ihrer vorherigen Zustimmung."
+      },
+      "section34": {
+        "title": "3.4 Rechtliche Anforderungen:",
+        "content": "In seltenen Fällen kann es vorkommen, dass Beroepsbelg Ihre Personendaten aufgrund einer gerichtlichen Anordnung oder zur Einhaltung anderer zwingender Gesetze oder Vorschriften offenlegen muss. Beroepsbelg wird angemessene Anstrengungen unternehmen, Sie im Voraus darüber zu informieren, es sei denn, dies unterliegt rechtlichen Beschränkungen."
+      }
+    },
+    "article4": {
+      "title": "Artikel 4 - Dauer der Verarbeitung",
+      "content": "Personendaten werden von uns für einen Zeitraum gespeichert und verarbeitet, der je nach den Zwecken der Verarbeitung und je nach dem Vertragsverhältnis zwischen Beroepsbelg und Ihnen erforderlich ist."
+    },
+    "article5": {
+      "title": "Artikel 5 - Ihre Rechte",
+      "section51": {
+        "title": "5.1 Recht auf Zugang und Einsicht:",
+        "content": "Sie haben das Recht, jederzeit kostenlos Zugang zu Ihren personenbezogenen Daten zu erhalten sowie über die Verwendung informiert zu werden, die wir von Ihren personenbezogenen Daten machen."
+      },
+      "section52": {
+        "title": "5.2 Recht auf Verbesserung, Löschung und Einschränkung:",
+        "content": "Sie sind frei zu entscheiden, ob Sie Ihre persönlichen Daten mit Beroepsbelg teilen möchten oder nicht. Sie haben auch das Recht, uns zu bitten, Ihre personenbezogenen Daten zu korrigieren, zu ergänzen oder zu löschen. Sie erkennen an, dass, wenn Sie der Weitergabe Ihrer personenbezogenen Daten nicht zustimmen oder die Löschung Ihrer personenbezogenen Daten beantragen, bestimmte Dienstleistungen und Produkte nicht bereitgestellt werden können.\n\nSie können auch beantragen, dass Einschränkungen für die Verarbeitung Ihrer Personendaten festgelegt werden."
+      },
+      "section53": {
+        "title": "5.3 Widerspruchsrecht:",
+        "content": "Sie haben auch ein Recht, der Verarbeitung Ihrer personenbezogenen Daten aus schwerwiegenden und berechtigten Gründen zu widersprechen.\n\nDarüber hinaus haben Sie jederzeit das Recht, der Verwendung personenbezogener Daten für Direktmarketing-Zwecke zu widersprechen; in einem solchen Fall müssen Sie keine Gründe angeben."
+      },
+      "section54": {
+        "title": "5.4 Recht auf freie Datenübertragung:",
+        "content": "Sie haben das Recht, Ihre Personendaten, die von uns verarbeitet werden, in strukturierter, üblicher und maschinenlesbarer Form zu erhalten und/oder an andere für die Verarbeitung Verantwortliche zu übertragen."
+      },
+      "section55": {
+        "title": "5.5 Recht auf Widerruf der Zustimmung:",
+        "content": "Soweit die Verarbeitung auf Ihrer vorherigen Zustimmung basiert, haben Sie das Recht, diese Zustimmung zu widerrufen."
+      },
+      "section56": {
+        "title": "5.6 Ausübung Ihrer Rechte:",
+        "content": "Sie können Ihre Rechte ausüben, indem Sie uns zu diesem Zweck kontaktieren, entweder per E-Mail an info@BeroepsBelg.be oder per Post an Beroepsbelg Vrijdagmarkt 12 - 2000 Antwerpen"
+      },
+      "section57": {
+        "title": "5.7 Automatisierte Entscheidungen und Profiling:",
+        "content": "Die Verarbeitung Ihrer personenbezogenen Daten umfasst kein Profiling und wir werden auch keine automatisierten Entscheidungen über Sie treffen."
+      },
+      "section58": {
+        "title": "5.8 Recht auf Beschwerde:",
+        "content": "Sie haben das Recht, eine Beschwerde bei der belgischen Datenschutzkommission einzureichen: Kommission zum Schutz der Privatsphäre, Drukpersstraat 35, 1000 Brüssel, Tel. +32 (0)2 274 48 00, Fax +32 (0)2 274 48 35, E-Mail: contact@apd-gba.be.\n\nDies beeinträchtigt nicht eine Anordnung eines Zivilgerichts.\n\nWenn Sie Schaden durch die Verarbeitung Ihrer personenbezogenen Daten erleiden, können Sie einen Anspruch auf Schadensersatz geltend machen."
+      }
+    },
+    "article6": {
+      "title": "Artikel 6 - Sicherheit und Vertraulichkeit",
+      "section61": {
+        "title": "6.1",
+        "content": "Wir haben Sicherheitsmaßnahmen entwickelt, die technisch und organisatorisch angepasst sind, um die Zerstörung, den Verlust, die Fälschung, die Änderung, den unbefugten Zugriff oder die versehentliche Benachrichtigung an Dritte von gesammelten personenbezogenen Daten sowie jede andere unbefugte Verarbeitung dieser Daten zu verhindern."
+      },
+      "section62": {
+        "title": "6.2",
+        "content": "Unter keinen Umständen kann Beroepsbelg für direkte oder indirekte Schäden haftbar gemacht werden, die sich aus einer fehlerhaften oder rechtswidrigen Verwendung durch einen Dritten der personenbezogenen Daten ergeben."
+      },
+      "section63": {
+        "title": "6.3",
+        "content": "Sie müssen jederzeit die Sicherheitsvorschriften einhalten, z.B. indem Sie jeden unbefugten Zugriff auf Ihre Anmeldedaten und Ihren Code verhindern. Sie sind daher allein verantwortlich für die Nutzung der Website von Ihrem Computer, Ihrer IP-Adresse sowie für Ihre Identifikationsdaten sowie für deren Vertraulichkeit."
+      }
+    },
+    "article7": {
+      "title": "Artikel 7 - Zugang durch Dritte",
+      "content": "Um Ihre personenbezogenen Daten verarbeiten zu können, erlauben wir unseren Mitarbeitern den Zugriff auf Ihre personenbezogenen Daten.\n\nWir garantieren ein ähnliches Schutzniveau, indem wir vertragliche Verpflichtungen auferlegen, die dieser Datenschutzrichtlinie ähnlich sind und die gegen diese Mitarbeiter und Beauftragten durchgesetzt werden können."
+    },
+    "article8": {
+      "title": "Artikel 8 - Cookies",
+      "section81": {
+        "title": "8.1 Was sind Cookies?",
+        "content": "Ein \"Cookie\" ist eine kleine Datei, die vom Server von Beroepsbelg gesendet und auf der Festplatte Ihres Computers platziert wird. Die auf diesen Cookies gespeicherten Informationen können nur von uns gelesen werden und nur für die Dauer des Besuchs auf der Website."
+      },
+      "section82": {
+        "title": "8.2 Warum verwenden wir Cookies?",
+        "content": "Unsere Website verwendet Cookies und ähnliche Technologien, um Ihre Nutzungspräferenzen von denen anderer Benutzer unserer Website zu unterscheiden. Dies hilft uns, Ihnen eine bessere Benutzererfahrung zu bieten, wenn Sie unsere Website besuchen, und ermöglicht es uns auch, unsere Website zu optimieren.\n\nInfolge der jüngsten Gesetzesänderungen sind alle Websites, die auf bestimmte Teile der Europäischen Union ausgerichtet sind, verpflichtet, Ihre Zustimmung für die Verwendung oder Speicherung von Cookies und ähnlichen Technologien auf Ihren Computern oder mobilen Geräten einzuholen. Diese Cookie-Richtlinie bietet Ihnen klare und umfassende Informationen über die Cookies, die wir verwenden, und die Gründe, warum wir sie verwenden."
+      },
+      "section83": {
+        "title": "8.3 Arten von Cookies:",
+        "content": "Obwohl es verschiedene Arten von Cookies gibt, die in Bezug auf Funktionalität, Herkunft oder Speicherdauer unterschieden werden, unterscheidet die Gesetzgebung hauptsächlich zwischen Cookies, die funktional oder technisch notwendig sind, einerseits und allen anderen Cookies andererseits.\n\nDie Website verwendet nur die folgenden Cookies:\n\nFunktionale Cookies\n\nName\tHerkunft\tFunktion\tSpeicherzeit\nwebhero_session\tAktuelle Domain\tVerknüpfung der aktiven Serversitzung mit dem Besucher (verwendet für Spracheinstellungen, Anmeldung)\tBis nach der Sitzung\nXSRF-TOKEN\tAktuelle Domain\tEin Token, das Formulare vor Spam schützt\tBis nach der Sitzung\n\nNicht-funktionale Cookies\n\nName\tHerkunft\tFunktion\tSpeicherzeit\n_ga_B3NK8C92ZR\tgoogle.com\tDirekt\t2 Jahre\n_ga\tgoogle.com\tDirekt\t2 Jahre\n_gid\tgoogle.com\tDirekt\t1 Tag\n\nFür Cookies, die von Dritten (z.B. Google Analytics) platziert wurden, lesen Sie bitte die Erklärungen, die diese Parteien auf ihren jeweiligen Websites geben. Hinweis: Wir üben keinen Einfluss auf den Inhalt dieser Erklärungen aus, noch auf den Inhalt der Cookies dieser Dritten: Google Analytics Cookies"
+      },
+      "section84": {
+        "title": "8.4. Ihre Zustimmung:",
+        "content": "Sie können Cookies jederzeit ablehnen oder blockieren, indem Sie die Konfigurationsparameter Ihres Navigationssystems ändern. Das Deaktivieren von Cookies kann bedeuten, dass Sie bestimmte Funktionen der Website nicht verwenden können.\n\nWenn Sie weitere Fragen oder Kommentare zur Verarbeitung Ihrer personenbezogenen Daten haben, kontaktieren Sie uns bitte, entweder per E-Mail an info@BeroepsBelg.be oder per Post an Beroepsbelg Vrijdagmarkt 12 - 2000 Antwerpen oder über den Bereich \"Kontakt\" auf der Website.\n\nWeitere Informationen über Cookies finden Sie auch unter: http://www.allaboutcookies.org/\n\nWeitere Informationen über Online-Verhaltenswerbung und Online-Datenschutz finden Sie hier: http://www.youronlinechoices.eu/"
+      }
+    }
+  },
+  "terms": {
+    "title": "Allgemeine Geschäftsbedingungen",
+    "disclaimer": "Die ursprüngliche Version dieser Allgemeinen Geschäftsbedingungen ist auf Niederländisch. Beroepsbelg ist nicht verantwortlich für Fehlinterpretationen der übersetzten Versionen. Sie können jederzeit info@beroepsbelg.be kontaktieren, wenn Sie Fragen haben.",
+    "intro": "Dies sind die allgemeinen Geschäftsbedingungen (nachfolgend: \"Allgemeine Geschäftsbedingungen\") von Beroepsbelg mit eingetragenem Sitz in Vrijdagmarkt 12 - 2000 Antwerpen und eingetragen im K.B.O. unter der Nummer BE0599 930 251. (Nachfolgend: \"Beroepsbelg\").",
+    "general": {
+      "title": "Allgemeine Geschäftsbedingungen",
+      "article1": {
+        "title": "Artikel 1 – Anwendungsbereich",
+        "content": "Diese Allgemeinen Geschäftsbedingungen gelten für jedes Angebot, jedes Angebot und jede geschlossene Vereinbarung bezüglich der von uns angebotenen Produkte und/oder Dienstleistungen.\n\nDiese Allgemeinen Geschäftsbedingungen gelten unter Ausschluss der allgemeinen Geschäftsbedingungen des Kunden."
+      },
+      "article2": {
+        "title": "Artikel 2 – Angebote",
+        "content": "Unsere Angebote sind rein indikativ und unverbindlich und verfallen, wenn sie nicht innerhalb von 30 Kalendertagen vom Kunden angenommen werden. Angebote werden erst rechtsgültig als Vereinbarung durch Unterzeichnung des Angebots durch den Kunden und durch uns. Wir behalten uns außerdem das Recht vor, bestimmte Aufträge ohne Angabe von Gründen abzulehnen."
+      },
+      "article3": {
+        "title": "Artikel 3 – Preis und Zahlung",
+        "content": "Der Preis für unsere Waren/Dienstleistungen ist der im Angebot angegebene.\n\nAlle unsere Rechnungen sind innerhalb von 14 Tagen nach Erhalt zahlbar, es sei denn, das Angebot legt ein anderes Fälligkeitsdatum fest. Wenn wir eine Anzahlung verlangen, werden wir unsere Aktivitäten erst nach Erhalt der Anzahlung aufnehmen.\n\nFür jede Verzögerung der Zahlung ist der Kunde ab dem Fälligkeitsdatum der Rechnung automatisch und ohne vorherige Mahnung Verzugszinsen in Höhe von 1% pro begonnenem Monat schuldig, wobei jeder begonnene Monat als voller Monat zählt, und dies unbeschadet eventueller Entschädigungen und Kosten. Ebenfalls automatisch und ohne vorherige Mahnung ist eine Pauschale in Höhe von 10% des Rechnungsbetrags mit einem Minimum von 250 Euro als Schadensersatzklausel geschuldet, dies ohne vorherige Mahnung und zusätzlich zum Hauptbetrag, den Verzugszinsen, den Inkassokosten, Mahn-, Verfolgungskosten und Ausgaben aufgrund von Zeitverlust und gerichtlichen oder rechtlichen Kosten. Diese Schadensersatzklausel beeinträchtigt nicht die Verpflichtung, die vereinbarten Verzugszinsen zu zahlen.\n\nStreitigkeiten müssen uns innerhalb von fünf Werktagen nach Versendung der Rechnung per Einschreiben mitgeteilt werden, andernfalls sind sie unzulässig."
+      },
+      "article4": {
+        "title": "Artikel 4 - Dauer der Vereinbarung und Kündigung",
+        "content": "Unsere Vereinbarungen können wie in unseren Angeboten beschrieben geschlossen werden. Die Vereinbarung kann jederzeit von uns einseitig und ohne gerichtliche Intervention gekündigt werden, wenn sich der Kunde in einem Zustand des Konkurses oder des gerichtlichen Vergleichs befindet oder wenn der Kunde seine Rechnungen nicht bezahlt."
+      },
+      "article5": {
+        "title": "Artikel 5 – Geistige Eigentumsrechte",
+        "content": "Unsere Website, Logos, Texte, Fotos, Namen und im Allgemeinen unsere gesamte Kommunikation sind durch geistige Eigentumsrechte geschützt, die entweder bei uns, bei unseren Lieferanten oder anderen Rechteinhabern liegen.\n\nUnter geistigen Eigentumsrechten werden Patent-, Urheber-, Marken-, Zeichnungs- und Modellrechte und/oder andere (geistige Eigentums-)Rechte verstanden, einschließlich patentierbarer und/oder nicht patentierbarer technischer und/oder kommerzieller Know-how, Methoden und Konzepte.\n\nEs ist verboten, die in diesem Artikel beschriebenen geistigen Eigentumsrechte zu nutzen und/oder zu ändern. So darf der Kunde beispielsweise unsere Zeichnungen, Fotos, Namen, Texte, Logos, Farbkombinationen usw. nicht kopieren oder reproduzieren, ohne unsere vorherige und ausdrückliche schriftliche Genehmigung."
+      },
+      "article6": {
+        "title": "Artikel 6 – Vertraulichkeit und Datenschutz",
+        "content": "Wir sind verantwortlich für die Verarbeitung Ihrer personenbezogenen Daten und verarbeiten diese gemäß der Allgemeinen Datenschutzverordnung;\n\nFür weitere Informationen über die Verarbeitung personenbezogener Daten verweisen wir auf unsere Datenschutz- & Cookie-Richtlinie."
+      },
+      "article7": {
+        "title": "Artikel 7 – Haftung",
+        "content": "Wir haften nicht, außer bei Vorsatz oder grober Fahrlässigkeit. Darüber hinaus haften wir nicht für direkte oder indirekte Schäden (wie z.B. Folgeschäden, entgangener Gewinn, verpasste Einsparungen oder Schäden durch Geschäftsstagnation), für die wir in diesen Bedingungen unsere Haftung nicht ausdrücklich festgelegt haben. Unsere Haftung wird in allen Fällen auf den Betrag des für diese Bestellung vereinbarten Preises (zzgl. MwSt.) beschränkt.\n\nWir tun alles in unserer Macht stehende, um 24 Stunden am Tag und 7 Tage die Woche Zugang zur Website zu gewähren. Angesichts der technischen Eigenschaften des Internets und der Computerressourcen und angesichts der Notwendigkeit, periodische Wartungs-, Update- oder Upgrade-Arbeiten durchzuführen, können wir jedoch keinen ununterbrochenen Zugang und Service garantieren. Im Falle einer normalerweise akzeptablen Unterbrechung oder Störung des Zugangs oder des Service tun wir alles in unserer Macht stehende, um dies innerhalb eines so kurzen Zeitraums wie möglich zu beheben. Solche normalerweise akzeptablen Unterbrechungen oder Störungen sind der Dienstleistung über das Internet eigen und können nicht als Mängel angesehen werden."
+      },
+      "article8": {
+        "title": "Artikel 8 - Höhere Gewalt",
+        "content": "Im Falle von höherer Gewalt sind wir nicht verpflichtet, unsere Verpflichtungen zu erfüllen. In diesem Fall können wir entweder unsere Verpflichtungen für die Dauer der höheren Gewalt aussetzen oder die Vereinbarung endgültig auflösen.\n\nHöhere Gewalt ist jeder Umstand außerhalb unseres Willens und unserer Kontrolle, der die Erfüllung unserer Verpflichtungen ganz oder teilweise verhindert. Hierunter verstehen wir unter anderem, aber nicht beschränkt auf: Streiks, unerwartete Staus, Unfälle auf europäischen Straßen, Feuer, Geschäftsstörungen, Stromausfälle, Störungen in einem (Telekommunikations-)Netzwerk oder einer Verbindung oder verwendeten Kommunikationssystemen und/oder die Nichtverfügbarkeit der Website zu irgendeinem Zeitpunkt, Nichtlieferung oder verspätete Lieferung durch Lieferanten oder andere eingeschaltete Dritte,…"
+      },
+      "article9": {
+        "title": "Artikel 9 – Nichtigkeit und Vollständigkeit",
+        "content": "Diese Allgemeinen Geschäftsbedingungen bilden die vollständige Vereinbarung zwischen dem Kunden und uns in Bezug auf die darin enthaltene Materie.\n\nWenn eine oder mehrere Bestimmungen dieser Allgemeinen Geschäftsbedingungen zu irgendeinem Zeitpunkt ganz oder teilweise rechtswidrig, nichtig oder aus irgendeinem anderen Grund nicht durchsetzbar wären, wird diese Klausel als von diesen Allgemeinen Geschäftsbedingungen trennbar angesehen und wird die Gültigkeit und Durchsetzbarkeit der verbleibenden Bestimmungen nicht beeinträchtigen."
+      },
+      "article10": {
+        "title": "Artikel 10 - Zuständigkeit und anwendbares Recht",
+        "content": "Belgisches Recht gilt für alle Streitigkeiten, die mit unseren Angeboten und/oder Vereinbarungen zusammenhängen oder daraus resultieren. Im Falle von Streitigkeiten oder Auseinandersetzungen sind nur die Gerichte des Gerichtsbezirks unseres eingetragenen Sitzes zuständig."
+      }
+    },
+    "webshop": {
+      "title": "Allgemeine Geschäftsbedingungen Webshop beroepsbelg",
+      "article1": {
+        "title": "Artikel 1 Identität des Verkäufers",
+        "content": "Wir sind: beroepsbelg\nAdresse: Vrijdagmarkt 12 - 2000 Antwerpen\nE-Mail-Adresse: info@BeroepsBelg.be\nTelefonnummer: +32(0)3 430 23 30\nUnternehmensnummer: BE0599 930 251\nBankkontonummer:"
+      },
+      "article2": {
+        "title": "Artikel 2 Anwendbarkeit & Bedingungen",
+        "content": "Unsere allgemeinen Geschäftsbedingungen gelten für jedes Angebot von uns als Webshop-Betreiber an Sie als Verbraucher (jede natürliche Person, die ausschließlich zu nicht-beruflichen Zwecken auf den Markt gebrachte Produkte oder Dienstleistungen erwirbt oder verwendet).\n\nWir liefern nur in . Wenn Sie eine Lieferadresse in einem anderen Land angeben, können wir Ihre Bestellung ablehnen.\n\nUm eine Bestellung aufgeben zu können, müssen Sie mindestens 18 Jahre alt sein. Wenn Sie nicht 18 sind, bitten wir Sie, die Bestellung von Ihren Eltern oder dem gesetzlichen Vormund aufgeben zu lassen. Wenn wir feststellen, dass eine Bestellung von einem Minderjährigen aufgegeben wurde, können wir diese Bestellung ablehnen.\n\nDas Aufgeben einer Bestellung auf der Website gilt als ausdrückliche Annahme unserer allgemeinen Verkaufsbedingungen, die immer über die Website verfügbar sind.\n\nWenn Sie online bestellen, liefern wir Ihnen außerdem zusammen mit der Bestellbestätigung oder spätestens bei der Lieferung eine Kopie dieser allgemeinen Geschäftsbedingungen in einem Format, das Sie speichern oder drucken können. Wir empfehlen Ihnen, dies immer zu tun.\n\nWenn zusätzlich zu diesen allgemeinen Geschäftsbedingungen auch zusätzliche besondere Bedingungen gelten, gilt das oben Gesagte auch für diese besonderen Bedingungen. Wenn unsere allgemeinen Geschäftsbedingungen mit diesen besonderen Bedingungen in Konflikt stehen würden, können Sie als Verbraucher immer den für Sie günstigsten Text zu Ihren Gunsten anrufen."
+      },
+      "article3": {
+        "title": "Artikel 3 Unser Angebot und Ihre Bestellung",
+        "content": "Wenn ein Angebot nur eine begrenzte Gültigkeitsdauer hat oder bestimmten Bedingungen unterliegt, geben wir dies ausdrücklich in unserem Angebot an.\n\nWir beschreiben immer so vollständig und genau wie möglich, was wir Ihnen verkaufen und wie der Bestellvorgang ablaufen wird. Die Beschreibung ist auf jeden Fall ausreichend detailliert, damit Sie eine gute Bewertung vornehmen können. Wenn wir Bilder verwenden, sind diese eine wahrheitsgetreue Darstellung der angebotenen Waren und/oder Dienstleistungen. Fehler passieren jedoch, und wenn wir uns eindeutig geirrt haben, sind wir nicht verpflichtet, Ihnen trotzdem zu liefern.\n\nIhre Bestellung ist vollständig und die Vereinbarung zwischen uns ist endgültig, sobald wir Ihre Bestellung per E-Mail bestätigen und sobald wir für Ihre Zahlungstransaktion mit Kredit- oder Debitkarten die Genehmigung des Kartenausstellers erhalten haben. Wir akzeptieren . Wenn der Aussteller Ihrer Karte sich weigert, Ihrer Zahlung an uns zuzustimmen, können wir nicht für Verzögerungen bei der Lieferung und/oder Nichtlieferung Ihrer Bestellung verantwortlich gemacht werden. Bestellungen ohne gültige Zahlung im Namen des registrierten Karteninhabers werden nicht akzeptiert oder verarbeitet.\n\nUm ein Produkt zu kaufen, fügen Sie das Produkt zu Ihrem Warenkorb hinzu. Dann geben Sie Ihre Kontaktdaten und Rechnungsdaten ein. Anschließend wählen Sie Ihre Lieferart: . Im letzten Schritt erhalten Sie eine Übersichtsseite, akzeptieren Sie unsere allgemeinen Geschäftsbedingungen und bestätigen Sie Ihre Zahlung durch Drücken der Bestelltaste mit der Beschriftung \"Bestellung mit Zahlungsverpflichtung\". Sobald Sie diese Schritte abgeschlossen haben, ist Ihr Kauf endgültig."
+      },
+      "article4": {
+        "title": "Artikel 4 Widerrufsrecht",
+        "content": "Wenn Sie Waren oder Dienstleistungen bei uns kaufen, haben Sie innerhalb von 14 Tagen ab Lieferung oder Abschluss der Vereinbarung das Recht, uns von Ihrer Entscheidung zu informieren, sich von der Vereinbarung zurückzuziehen. Danach müssen Sie die Waren innerhalb von 14 Kalendertagen zurücksenden (die Versandkosten hierfür zahlen Sie selbst). Nach Erhalt erstatten wir Ihnen den vollen Kaufpreis mit demselben Zahlungsmittel, mit dem Sie bezahlt haben.\n\nDie direkten Kosten für die Rücksendung der Waren gehen also zu Ihren Lasten. Wir werden angeben, was die Kosten hierfür sind oder eine Schätzung vornehmen, wenn dies nicht vernünftigerweise im Voraus berechnet werden kann. Wenn die Waren nicht per Post zurückgesendet werden können, werden wir sie bei Ihnen abholen und Ihnen hierfür keine Kosten berechnen.\n\nWir können mit der Rückerstattung warten, bis wir die Waren zurückerhalten haben oder bis Sie nachgewiesen haben, dass Sie die Waren zurückgesendet haben, je nachdem, was zuerst eintritt.\n\nWährend der ersten 14 Tage nach der Lieferung erwarten wir, dass Sie die Bestellung und die Verpackung sorgfältig behandeln. Wenn Sie die Waren noch wie oben beschrieben zurücksenden können möchten, dürfen Sie sie nur in dem Maße auspacken oder verwenden, wie es notwendig ist, um beurteilen zu können, ob Sie den Artikel behalten möchten. Zurückgesendete Waren dürfen getestet worden sein, dürfen aber nicht verwendet worden sein. Wenn Sie die Waren zurücksenden, muss dies, wenn möglich, zusammen mit der Originalverpackung, mit allen gelieferten Zubehörteilen und im Originalzustand und in der Originalverpackung und unter Berücksichtigung unserer Anweisungen unten erfolgen.\n\nSie können Ihr Rücksendepaket per Post oder Kurier zurücksenden.\n\nUm Ihr Widerrufsrecht ordnungsgemäß auszuüben, können Sie uns per E-Mail mitteilen, dass Sie Ihre Bestellung zurücksenden möchten. Wir senden Ihnen per E-Mail eine Empfangsbestätigung Ihres Widerrufs. Ein Musterformular ist hier verfügbar."
+      },
+      "article5": {
+        "title": "Artikel 5 Der Preis",
+        "content": "Während des Zeitraums, den wir in unserem Angebot angeben, ändern sich unsere Preise nicht, außer bei Preisänderungen aufgrund von Änderungen der Mehrwertsteuersätze.\n\nUnsere Preise enthalten alle Steuern, Mehrwertsteuer, Abgaben und Dienstleistungen, sofern nicht anders angegeben. Sie werden also nie überrascht. Wir können jedoch entscheiden, zusätzlich zum Kaufpreis auch die Versandkosten zu berechnen. In diesem Fall erwähnen wir dies immer, bevor Sie Ihren Kauf endgültig abschließen."
+      },
+      "article6": {
+        "title": "Artikel 6 Zahlung",
+        "content": "Wir können Zahlungen nur über die Zahlungsmodule auf unserer Website akzeptieren.\n\nUm eine sichere Online-Zahlung und die Sicherheit Ihrer personenbezogenen Daten zu gewährleisten, werden die Transaktionsdaten mit SSL-Technologie verschlüsselt und über das Internet gesendet. Um mit SSL zu zahlen, benötigen Sie keine spezielle Software. Sie erkennen eine sichere SSL-Verbindung am \"Schloss\" in der unteren Statusleiste Ihres Browsers."
+      },
+      "article7": {
+        "title": "Artikel 7 Konformität und Garantie",
+        "content": "Wir garantieren, dass unsere Waren Ihrer Bestellung entsprechen und den normalen Erwartungen entsprechen, die Sie daran haben dürfen, unter Berücksichtigung der Produktspezifikationen. Wir garantieren Ihnen natürlich auch, dass unsere Waren allen zum Zeitpunkt Ihrer Bestellung bestehenden Gesetzen entsprechen.\n\nDarüber hinaus wenden wir in Bezug auf die Lieferung von Waren die gesetzliche Mindestgarantiezeit von zwei Jahren an, wenn die Ware nicht der aufgegebenen Bestellung entspricht. Dies bedeutet, dass bei Mängeln oder Defekten an der Ware bis zu 2 Jahren nach der Lieferung diese Ware kostenlos repariert oder ersetzt wird. Soweit dies möglich und vernünftig ist, haben Sie die Wahl zwischen Reparatur oder Ersatz. Nur wenn die Reparatur oder der Ersatz übermäßig oder unmöglich ist oder nicht innerhalb einer angemessenen Frist durchgeführt werden kann, haben Sie das Recht, eine Preisminderung oder die Auflösung des Kaufvertrags zu verlangen."
+      },
+      "article8": {
+        "title": "Artikel 8 Lieferung und Ausführung",
+        "content": "Alle Waren und Dienstleistungen werden an die von Ihnen bei Ihrer Bestellung angegebene Adresse geliefert.\n\nWenn ein Artikel auf Lager ist, wird er an Ihre Lieferadresse in geliefert. Wenn ein Artikel nicht im Webshop-Lager ist, wird er an Ihre Lieferadresse in geliefert.\n\nWenn wir nicht rechtzeitig liefern können, benachrichtigen wir Sie immer vor Ablauf der vorgesehenen Lieferfrist. Wenn wir dies nicht tun, können Sie Ihre Bestellung kostenlos stornieren. In diesem Fall erstatten wir Ihnen spätestens 30 Tage nach Auflösung zurück.\n\nUnsere Sendungen erfolgen immer auf unser Risiko. Sie müssen sich also keine Sorgen um Waren machen, die in der Post verloren gehen. Wenn Sie uns jedoch Waren innerhalb von 14 Tagen nach dem Kauf zurücksenden, weil Sie sie lieber nicht behalten möchten, sind Sie für den Transport verantwortlich.\n\nWenn die von uns gelieferten Waren während des Transports beschädigt wurden, nicht mit den auf dem Lieferschein aufgeführten Artikeln übereinstimmen oder nicht mit den von Ihnen bestellten Artikeln übereinstimmen, müssen Sie dies so schnell wie möglich und sicherlich innerhalb von 3 Tagen melden und die Artikel innerhalb von 14 Kalendertagen nach Erhalt an uns zurücksenden. Wir können nicht für Folgeschäden aufgrund verspäteter Lieferung oder Nichtlieferung durch den von dem Unternehmen beauftragten Transporteur verantwortlich gemacht werden. Unsere Haftung bleibt in solchen Fällen auf den Wert der Artikel beschränkt, von denen nachgewiesen wird, dass sie nicht vom Kunden erhalten wurden."
+      },
+      "article9": {
+        "title": "Artikel 9 Dauer",
+        "content": "Der Verbraucher kann eine Vereinbarung, die auf unbestimmte Zeit geschlossen wurde, jederzeit unter Einhaltung der vereinbarten Kündigungsregeln und einer Kündigungsfrist von höchstens einem Monat kündigen.\n\nEine Vereinbarung, die auf bestimmte Zeit geschlossen wurde, hat eine Laufzeit von höchstens zwei Jahren.\n\nWenn in einer Warenvereinbarung bestimmter Dauer vereinbart wurde, dass die Vereinbarung bei Schweigen des Verbrauchers aus der Ferne verlängert wird, wird die Vereinbarung als Vereinbarung auf unbestimmte Zeit fortgesetzt und die Kündigungsfrist nach Fortsetzung der Vereinbarung beträgt höchstens einen Monat.\n\nWenn eine Dienstleistungsvereinbarung bestimmter Dauer, die zwischen dem Unternehmen und dem Verbraucher geschlossen wurde, eine Klausel zur stillschweigenden Verlängerung enthält, wird diese Klausel in fetten Buchstaben und in einem Rahmen getrennt vom Text auf der Vorderseite der ersten Seite platziert.\n\nDiese Klausel gibt die Folgen der stillschweigenden Verlängerung an, einschließlich der Bestimmung des folgenden Absatzes bezüglich der Kündigung sowie des letzten Datums, an dem sich der Verbraucher gegen die stillschweigende Verlängerung der Vereinbarung widersetzen kann und die Art und Weise, wie er dies mitteilt. Der Verbraucher kann nach der stillschweigenden Verlängerung einer Dienstleistungsvereinbarung bestimmter Dauer die Vereinbarung jederzeit ohne Entschädigung unter Einhaltung der Kündigungsfrist von höchstens zwei Monaten kündigen."
+      },
+      "article10": {
+        "title": "Artikel 10 Höhere Gewalt",
+        "content": "Im Falle von höherer Gewalt sind wir nicht verpflichtet, unsere Verpflichtungen zu erfüllen. In diesem Fall können wir entweder unsere Verpflichtungen für die Dauer der höheren Gewalt aussetzen oder die Vereinbarung endgültig auflösen.\n\nHöhere Gewalt ist jeder Umstand außerhalb unseres Willens und unserer Kontrolle, der die Erfüllung unserer Verpflichtungen ganz oder teilweise verhindert. Hierunter verstehen wir unter anderem Streiks, Feuer, Geschäftsstörungen, Stromausfälle, Störungen in einem (Telekommunikations-)Netzwerk oder einer Verbindung oder verwendeten Kommunikationssystemen und/oder die Nichtverfügbarkeit unserer Website zu irgendeinem Zeitpunkt, Nichtlieferung oder verspätete Lieferung durch Lieferanten oder andere eingeschaltete Dritte,..."
+      },
+      "article11": {
+        "title": "Artikel 11 Geistiges Eigentum",
+        "content": "Unsere Website, Logos, Texte, Fotos, Namen und im Allgemeinen unsere gesamte Kommunikation sind durch geistige Eigentumsrechte geschützt, die entweder bei uns, bei unseren Lieferanten oder anderen Rechteinhabern liegen.\n\nEs ist verboten, die in diesem Artikel beschriebenen geistigen Eigentumsrechte zu nutzen und/oder zu ändern. So dürfen Sie beispielsweise Zeichnungen, Fotos, Namen, Texte, Logos, Farbkombinationen usw. nicht kopieren oder reproduzieren, ohne unsere vorherige und ausdrückliche schriftliche Genehmigung."
+      },
+      "article12": {
+        "title": "Artikel 12 Beschwerdeverfahren und Streitigkeiten",
+        "content": "Wir hoffen natürlich immer, dass alle unsere Kunden zu 100% zufrieden sind. Wenn Sie dennoch Beschwerden über unsere Dienstleistungen haben, können Sie uns über die E-Mail-Adresse kontaktieren: info@BeroepsBelg.be. Wir tun alles, um Ihre Beschwerde innerhalb von 7 Tagen zu bearbeiten.\n\nBei der außergerichtlichen Beilegung des Streits ist der Verbraucherombudsmann-Dienst der Bundesregierung zuständig, jeden Antrag auf außergerichtliche Beilegung von Verbraucherstreitigkeiten entgegenzunehmen. Dieser wird wiederum entweder den Antrag selbst bearbeiten oder an eine qualifizierte Stelle weiterleiten. Sie können den Verbraucherombudsmann-Dienst über diesen Link erreichen: http://www.consumentenombudsdienst.be//nl\n\nBei Streitigkeiten mit grenzüberschreitendem Charakter können Sie außerdem die Online-Streitbeilegungsplattform der Europäischen Union über diesen Link anrufen: http://ec.europa.eu/odr.\n\nAlle Vereinbarungen, die wir mit unseren Kunden schließen, unabhängig von ihrem Wohnsitz, unterliegen ausschließlich belgischem Recht, und bei Streitigkeiten sind nur die zuständigen belgischen Gerichte zuständig. Wenn aus Gründen des internationalen Rechts dennoch ein anderes Recht anwendbar ist, wird bei der Auslegung der aktuellen allgemeinen Geschäftsbedingungen in erster Linie auf das Wirtschaftsgesetzbuch zurückgegriffen."
+      }
+    }
   },
   "bookingSuccess": {
     "loading": "Buchungsdetails werden geladen...",

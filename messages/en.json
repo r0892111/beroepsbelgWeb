@@ -100,7 +100,19 @@
     "searchPlaceholder": "Search tours, products...",
     "copyright": "© 2024 Beroepsbelg. All rights reserved.",
     "allRightsReserved": "All rights reserved",
-    "terms": "Terms"
+    "terms": "Terms",
+    "newsletter": {
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "consentText": "I agree to the",
+      "privacyPolicy": "privacy policy",
+      "invalidEmail": "Please enter a valid email address",
+      "nameRequired": "Please enter your first and last name",
+      "consentRequired": "You must agree to the privacy policy",
+      "success": "Successfully subscribed to newsletter!",
+      "error": "Subscription failed. Please try again.",
+      "submitting": "..."
+    }
   },
   "cookie": {
     "message": "We use cookies to improve your experience.",
@@ -265,7 +277,90 @@
     "teamleaderBackToDashboard": "Back to Dashboard",
     "teamleaderRedirecting": "Redirecting to dashboard...",
     "home": "Home",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "guideBehaviour": {
+      "title": "Guide Behaviour",
+      "subtitle": "Behaviour signals from tours, photo habits, and client info requests",
+      "totalTours": "Total Tours",
+      "totalPhotos": "Total Photos",
+      "totalPhotoMoments": "Total Photo Moments",
+      "totalClientInfoRequests": "Total Client Info Requests",
+      "allGuidesDataset": "All guides, current dataset",
+      "behaviourLeaderboard": "Behaviour Leaderboard",
+      "topPerformers": "Top performers by selected metric",
+      "engagementScore": "Engagement Score",
+      "mostTours": "Most Tours",
+      "mostPhotosPerTour": "Most Photos per Tour",
+      "mostClientInfoRequestsPerTour": "Most Client Info Requests per Tour",
+      "viewAllGuides": "View all guides",
+      "watchlist": "Watchlist",
+      "guidesNeedAttention": "Guides who may need attention",
+      "noGuidesNeedAttention": "No guides need attention at this time",
+      "allGuides": "All Guides",
+      "completeOverview": "Complete behaviour overview",
+      "searchPlaceholder": "Search by guide name...",
+      "onlyFavourites": "Only favourites",
+      "guide": "Guide",
+      "toursDone": "Tours done",
+      "photosTaken": "Photos taken",
+      "photoMoments": "Photo moments",
+      "clientInfoRequests": "Client info requests",
+      "photosPerTour": "Photos per tour",
+      "status": "Status",
+      "inactive": "Inactive",
+      "new": "New",
+      "emerging": "Emerging",
+      "consistent": "Consistent",
+      "highPerformer": "High Performer",
+      "needsAttention": "Needs Attention",
+      "strong": "Strong",
+      "contentFocused": "Content focused",
+      "lowPhotoActivity": "Low photo activity",
+      "highClientInfoRequests": "Often requests client info",
+      "newOrInactive": "New or inactive",
+      "noGuidesFound": "No guides found matching your filters",
+      "failedToLoad": "Failed to load guide behaviour data",
+      "lessThanOnePhotoPerTour": "less than 1 photo/tour",
+      "lessPhotosThanAverage": "less photos than average",
+      "oftenRequestsClientInfo": "often requests client info",
+      "dashboard": "Dashboard",
+      "logout": "Logout",
+      "tours": "tours",
+      "photosPerTourShort": "photos/tour",
+      "tableView": "Table",
+      "chartsView": "Charts",
+      "charts": {
+        "toursDone": "Tours Done",
+        "toursDoneDesc": "Comparison of tours done per guide",
+        "photosPerTour": "Photos per Tour",
+        "photosPerTourDesc": "Comparison of photos per tour per guide",
+        "toursVsPhotos": "Tours vs Photos",
+        "toursVsPhotosDesc": "Correlation between tours done and photo activity",
+        "statusDistribution": "Status Distribution",
+        "statusDistributionDesc": "Number of guides per status category",
+        "keyMetricsByStatus": "Key Metrics by Status",
+        "keyMetricsByStatusDesc": "Average metrics per status category",
+        "avgTours": "Avg Tours",
+        "avgPhotosPerTour": "Avg Photos/Tour",
+        "avgClientInfo": "Avg Client Info"
+      },
+      "categoryOverview": {
+        "title": "Status Categories Overview",
+        "description": "Explanation of the logic behind each status badge",
+        "tourCountCategories": "Tour Count Categories",
+        "issueFlags": "Issue Flags",
+        "positiveIndicators": "Positive Indicators",
+        "inactiveDesc": "0 tours done",
+        "newDesc": "1-2 tours done",
+        "emergingDesc": "3-5 tours done",
+        "consistentDesc": "6+ tours done, average performance",
+        "lowPhotoActivityDesc": "Less than 1 photo/tour OR less than 50% of median photos per tour",
+        "highClientInfoRequestsDesc": "More than 3 client info requests AND more than 2x the median",
+        "needsAttentionDesc": "Has both low photo activity AND high client info requests",
+        "contentFocusedDesc": "Photos per tour is equal to or higher than the median",
+        "highPerformerDesc": "Tours done in top 50%, low requests (≤ median), has activity, no issues"
+      }
+    }
   },
   "b2b": {
     "title": "Request a Quote",
@@ -609,20 +704,223 @@
     "copyrightContent": "All content on our website, including texts, images and logos, is protected by copyright and may not be used without prior written permission."
   },
   "privacy": {
-    "title": "Privacy Policy",
-    "intro": "BeroepsBelg respects your privacy and handles your personal data with care. This privacy policy explains which data we collect, why we collect it and how we use it.",
-    "dataCollection": "Data Collection",
-    "dataCollectionContent": "We collect personal data that you provide to us when booking a tour, subscribing to our newsletter or contacting us. This includes your name, email address, phone number and any other information you share with us.",
-    "dataUsage": "Data Usage",
-    "dataUsageContent": "We use your personal data to process your booking, send you confirmations and relevant information about your tour, and to improve our services. We will never share your data with third parties without your explicit consent, unless legally required.",
-    "dataRetention": "Data Retention",
-    "dataRetentionContent": "We retain your personal data for as long as necessary for the purposes described in this privacy policy, or as required by law.",
-    "yourRights": "Your Rights",
-    "yourRightsContent": "You have the right to view, correct or delete your personal data at any time. You can also object to the processing of your data or request data portability. Contact us if you wish to exercise these rights.",
-    "cookies": "Cookies",
-    "cookiesContent": "Our website uses cookies to improve your user experience. You can manage your cookie preferences via the cookie banner on our website.",
-    "contact": "Contact",
-    "contactContent": "If you have any questions about this privacy policy or the processing of your personal data, please contact us via email or phone."
+    "title": "Privacy & Cookie Policy",
+    "disclaimer": "The original version of this privacy & cookie policy is in Dutch. Beroepsbelg is not responsible for any misinterpretations of the translated versions. You can contact info@beroepsbelg.be at any time if you have any questions.",
+    "intro": "This \"Privacy Policy\" regulates the processing of your personal data by the data controller who has responsibility for the processing: Beroepsbelg, having its registered office at Vrijdagmarkt 12 - 2000 Antwerpen and registered in the Kruispuntbank van Ondernemingen [equivalent to Companies House] under number BE0599 930 251 (hereinafter: \"Beroepsbelg\"). You are advised to read this Privacy Policy carefully, because it contains essential information about how your personal data are processed and which cookies are used. By providing your personal data on the website and by providing Personal Data via the email addresses specified on this website, you declare that you have taken note of this Privacy Policy and expressly agree to it as well as to the processing itself.",
+    "article1": {
+      "title": "Article 1 - General",
+      "content": "Beroepsbelg complies with the anti-spam provisions of Book XII of the Code of Economic Law concerning the \"law of the electronic economy\".\n\nBeroepsbelg is also in line with the European Regulation 2016/679 of 27 April 2016 on the protection of personal data by means of the current Privacy Policy.\n\nThe data controller for the processing of your personal data is Beroepsbelg. A statement was deposited with the Committee for the Protection of Privacy regarding the processing of your personal data."
+    },
+    "article2": {
+      "title": "Article 2 - Personal data",
+      "section21": {
+        "title": "2.1 Personal data that you communicate to us:",
+        "content": "Category 1: if you have not registered: your IP address;\n\nCategory 2: when forms have been filled in or orders have been placed without registration: all fields in the form, as well as your IP address;\n\nCategory 3: if you have registered: all fields in the form, as well as your IP address and password;\n\nCategory 4: via cookies."
+      },
+      "section22": {
+        "title": "2.2 Beroepsbelg can collect data from you (Personal Data) in different ways:",
+        "content": "a. through the use of cookies (see below);\n\nb. when you register and when you use the Website;"
+      },
+      "section23": {
+        "title": "2.3",
+        "content": "The Website also uses cookies that collect certain personal data. For the provisions regarding the use of cookies, see Article 8."
+      }
+    },
+    "article3": {
+      "title": "Article 3 - Purposes of the processing",
+      "section31": {
+        "title": "3.1 General purposes:",
+        "content": "Beroepsbelg will only use the Personal Data collected from you for the following purposes:\n\nCategory 1: for providing and improving this Website and for including Personal Data in anonymous statistics, from which the identity of specific persons or companies cannot be determined, based on the legitimate interests of Beroepsbelg to continuously improve its Website and services;\n\nCategory 2: for managing your account on this Website with a view to the use of our Beroepsbelg and website, having as its legal basis the performance of an agreement that was requested by you, and, if indicated by you, also for sending out direct marketing, having as its legal basis your explicit prior consent;\n\nCategory 3: for sending out to you direct marketing, newsletters, promotions and promotions, having as its legal basis your explicit prior consent;\n\nCategory 4: for improving the user experience and for statistical purposes (see below), having as its legal basis your explicit prior consent;\n\nYou are not obliged to release Your Personal Data, but you understand that it will not be possible to provide certain services if You do not give your consent to processing."
+      },
+      "section32": {
+        "title": "3.2 Direct marketing:",
+        "content": "Personal data will also be used for direct marketing, provided You have given additional explicit consent for this (\"opt-in\").\n\nIf you have already been included in our mailing list for receiving marketing material in paper and/or electronic form, Beroepsbelg may use your details for sending marketing and other material with regard to Beroepsbelg, its products and/or services. Beroepsbelg can use the data you provide for updating documents stored by Beroepsbelg.\n\nThis consent can be withdrawn at any time, without justification and free of charge, for example by clicking on the appropriate unsubscribe link at the bottom of each promotional e-mail message."
+      },
+      "section33": {
+        "title": "3.3 Transfer to third parties:",
+        "content": "In the event of a complete or partial reorganisation or transfer of activities of Beroepsbelg, whereby its business activities are reorganised, transferred or ceased, or if Beroepsbelg goes bankrupt, this may mean that your data are transferred wholly or partly to new entities or third parties via whom the business activities of Beroepsbelg are performed wholly or partly.\n\nBeroepsbelg will make reasonable efforts to inform you in advance of the fact that Beroepsbelg discloses your details to said third party, but you also acknowledge that this is not technically or commercially feasible under all circumstances.\n\nBeroepsbelg will not sell your Personal Data, nor rent, distribute or otherwise make commercially available to third parties, except as described above or with your prior consent."
+      },
+      "section34": {
+        "title": "3.4 Legal requirements:",
+        "content": "In rare cases, it may occur that Beroepsbelg must disclose your Personal Data pursuant to a court order or to comply with other mandatory laws or regulations. Beroepsbelg will make reasonable efforts to inform you in advance of this, unless this is subject to legal restrictions."
+      }
+    },
+    "article4": {
+      "title": "Article 4 - Duration of the processing",
+      "content": "Personal data are stored and processed by us for a period that is necessary, depending on the purposes of the processing and depending on the contractual relationship between Beroepsbelg and You."
+    },
+    "article5": {
+      "title": "Article 5 - Your rights",
+      "section51": {
+        "title": "5.1 Right of access and inspection:",
+        "content": "You have the right to receive access to your personal data free of charge at any time, as well as the right to be informed of the use that We make of Your personal data."
+      },
+      "section52": {
+        "title": "5.2 Right of improvement, deletion and restriction:",
+        "content": "You are free to decide whether or not to share your personal details with Beroepsbelg. You also have the right to request Us to correct, supplement or delete Your personal data. You acknowledge that if you do not give consent to the sharing of your personal data or if you request your personal data to be deleted, then it will not be possible to provide certain services and products.\n\nYou may also request that restrictions are placed on the processing of your Personal Data."
+      },
+      "section53": {
+        "title": "5.3 Right to object:",
+        "content": "You also have a right to object to the processing of your personal data for serious and legitimate reasons.\n\nIn addition, you always have the right to object to the use of personal data for direct marketing purposes; in such a case, you do not have to give reasons."
+      },
+      "section54": {
+        "title": "5.4 Right to freely transfer data:",
+        "content": "You have the right to obtain your Personal Data that have been processed by Us in a structured, standard and machine-readable form and/or to transfer it to other data controllers."
+      },
+      "section55": {
+        "title": "5.5 Right to withdraw consent:",
+        "content": "Insofar as processing is based on your prior consent, you have the right to withdraw that consent."
+      },
+      "section56": {
+        "title": "5.6 Exercising your rights:",
+        "content": "You can exercise your rights by contacting us for this purpose, either by email to info@BeroepsBelg.be, or by post to Beroepsbelg Vrijdagmarkt 12 - 2000 Antwerpen"
+      },
+      "section57": {
+        "title": "5.7 Automated decisions and profiling:",
+        "content": "The processing of your personal data does not include profiling and we will not make automated decisions about You either."
+      },
+      "section58": {
+        "title": "5.8 Right to complain:",
+        "content": "You have the right to file a complaint with the Belgian Privacy Commission: Commission for the Protection of Privacy, Drukpersstraat 35, 1000 Brussels, Tel +32 (0)2 274 48 00, Fax +32 (0)2 274 48 35, email: contact@apd-gba.be.\n\nThis is without prejudice to a court order given by a civil court.\n\nIf you suffer damage as a result of the processing of your personal data, you can submit a claim for compensation."
+      }
+    },
+    "article6": {
+      "title": "Article 6 - Security and confidentiality",
+      "section61": {
+        "title": "6.1",
+        "content": "We have developed security measures that are technically and organisationally adapted to prevent the destruction, loss, forgery, modification, unauthorised access or notification by mistake to third parties of personal data that have been collected as well as any other unauthorised processing of these data."
+      },
+      "section62": {
+        "title": "6.2",
+        "content": "Under no circumstances can Beroepsbelg be held liable for any direct or indirect damage resulting from incorrect or unlawful use by a third party of the personal data."
+      },
+      "section63": {
+        "title": "6.3",
+        "content": "You must comply with the security regulations at all times, for example by preventing any unauthorised access to your login and code. You are therefore solely responsible for the use made of the Website from Your computer, IP address as well as for Your identification data, as well as for the confidentiality thereof."
+      }
+    },
+    "article7": {
+      "title": "Article 7 - Access by third parties",
+      "content": "In order to process your personal data, We allow our employees to access Your personal data.\n\nWe guarantee a similar level of protection by imposing contractual obligations which are similar to this Privacy Policy and which can be enforced against these employees and appointees."
+    },
+    "article8": {
+      "title": "Article 8 - Cookies",
+      "section81": {
+        "title": "8.1 What are cookies?",
+        "content": "A \"cookie\" is a small file sent by the server of Beroepsbelg and placed on the hard drive of your computer. The information stored on these cookies can only be read by Us and only for the duration of the visit to the Website."
+      },
+      "section82": {
+        "title": "8.2 Why do we use cookies?",
+        "content": "Our site uses cookies and similar technologies to differentiate your usage preferences from those of other users of our Website. This helps us to provide you with a better user experience when you visit our Website website and also allows us to optimise our Website.\n\nAs a result of recent legislative changes, all websites aimed at certain parts of the European Union are required to seek your consent for the use or storage of cookies and similar technologies on your computers or mobile devices. This cookie policy provides you with clear and comprehensive information on the cookies we use and the reasons why we use them."
+      },
+      "section83": {
+        "title": "8.3 Types of cookies:",
+        "content": "Although there are different types of cookies, distinguished in terms of functionality, origin or storage period, the legislation mainly distinguishes between cookies that are functionally or technically necessary on the one hand and all other cookies on the other hand.\n\nThe Website only uses the following cookies:\n\nFunctional cookies\n\nName\tOrigin\tFunction\tStorage time\nwebhero_session\tCurrent domain\tLinking the active server session to the visitor (used for language settings, logging in)\tUntil after the session\nXSRF-TOKEN\tCurrent domain\tA token that serves to protect forms against spam\tUntil after the session\n\nNon-functional cookies\n\nName\tOrigin\tFunction\tStorage time\n_ga_B3NK8C92ZR\tgoogle.com\tDirect\t2 years\n_ga\tgoogle.com\tDirect\t2 years\n_gid\tgoogle.com\tDirect\t1 day\n\nFor cookies placed by third parties (e.g. Google Analytics), please read the statements that these parties give on their respective websites. N.B.: we do not exercise any influence on the content of these statements, nor on the content of the cookies of these third parties: Google Analytics cookies"
+      },
+      "section84": {
+        "title": "8.4. Your consent:",
+        "content": "You can always refuse or block cookies by changing the configuration parameters of your navigation system. Disabling cookies may mean that you cannot use certain features of the Website.\n\nIf you have further questions or comments regarding the processing of Your personal data, please contact us, either by email to info@BeroepsBelg.be, or by post to Beroepsbelg Vrijdagmarkt 12 - 2000 Antwerpen, or by going to the \"Contact us\" part on the Website.\n\nMore information about cookies can also be found on: http://www.allaboutcookies.org/\n\nMore information about online behavioural advertising and online privacy can be found here: http://www.youronlinechoices.eu/"
+      }
+    }
+  },
+  "terms": {
+    "title": "Terms & Conditions",
+    "disclaimer": "The original version of these terms and conditions is in Dutch. Beroepsbelg is not responsible for any misinterpretations of the translated versions. You can contact info@beroepsbelg.be at any time if you have any questions.",
+    "intro": "These are the general terms and conditions (hereinafter: \"Terms & Conditions\") of Beroepsbelg with registered office at Vrijdagmarkt 12 - 2000 Antwerpen and registered in the K.B.O. under number BE0599 930 251. (Hereinafter: \"Beroepsbelg\").",
+    "general": {
+      "title": "General Terms & Conditions",
+      "article1": {
+        "title": "Article 1 – Scope",
+        "content": "These Terms & Conditions apply to every offer, every quotation and every agreement concluded regarding products and/or services offered by us.\n\nThese Terms & Conditions apply to the exclusion of the general terms and conditions of the Customer."
+      },
+      "article2": {
+        "title": "Article 2 – Offers",
+        "content": "Our offers are purely indicative and non-binding and expire if they are not accepted by the Customer within 30 calendar days. Offers only become legally valid as an agreement through signing of the offer by the Customer and by us. We also reserve the right to refuse certain assignments without giving reasons."
+      },
+      "article3": {
+        "title": "Article 3 – Price and payment",
+        "content": "The price for our goods/services is that stated on the quotation.\n\nAll our invoices are payable within 14 days of receipt, unless the quotation specifies a different due date. If we request an advance payment, we will only commence our activities after receipt of the advance payment.\n\nFor any delay in payment, the Customer is automatically and without prior notice of default liable for default interest of 1% per month started, whereby each month started counts as a full month, and this without prejudice to any compensation and costs. Also automatically and without prior notice of default, a fixed compensation is due amounting to 10% of the invoice amount with a minimum of 250 euros as a penalty clause, this without prior notice of default and in addition to the principal sum, the default interest, collection, reminder, prosecution costs and expenses due to loss of time and judicial or legal costs. This penalty clause does not affect the obligation to pay the agreed default interest.\n\nDisputes must be notified to us by registered mail within five working days after sending the invoice on pain of inadmissibility."
+      },
+      "article4": {
+        "title": "Article 4 - Duration of the agreement and termination",
+        "content": "Our agreements can be entered into as described in our quotations. The agreement can be terminated unilaterally by us at any time and without judicial intervention if the Customer is in a state of bankruptcy or judicial agreement or if the customer does not pay his invoices."
+      },
+      "article5": {
+        "title": "Article 5 – Intellectual property rights",
+        "content": "Our website, logos, texts, photos, names and in general all our communication are protected by intellectual property rights which lie either with us, or with our suppliers or other right holders.\n\nIntellectual property rights are understood to mean patent, copyright, trademark, design and model rights and/or other (intellectual property) rights, including patentable and/or non-patentable technical and/or commercial know-how, methods and concepts.\n\nIt is forbidden to use and/or make changes to the intellectual property rights as described in this article. For example, the customer may not copy or reproduce our drawings, photos, names, texts, logos, color combinations, etc. without our prior and express written permission."
+      },
+      "article6": {
+        "title": "Article 6 – Confidentiality and Privacy",
+        "content": "We are responsible for the processing of your personal data and process it in accordance with the General Data Protection Regulation;\n\nFor more information about the processing of personal data, we refer to our Privacy & Cookie Policy."
+      },
+      "article7": {
+        "title": "Article 7 – Liability",
+        "content": "We are not liable except in case of intent or gross fault. Moreover, we are not liable for any direct or indirect damage (such as consequential damage, lost profit, missed savings or damage due to business stagnation) for which we have not expressly determined our liability in these terms. Our liability will in all cases be limited to the amount of the price agreed for that order (excl. VAT).\n\nWe do everything in our power to provide access to the website 24 hours a day and 7 days a week. Given the technical characteristics of the internet and of the computer resources and given the need to carry out periodic maintenance, update or upgrade work, we cannot, however, guarantee uninterrupted access and service. In case of normally acceptable interruption or disruption of access or service, we do everything in our power to remedy this within as short a period as possible. Such normally acceptable interruptions or disruptions are inherent to service provision via the internet and cannot be considered as shortcomings."
+      },
+      "article8": {
+        "title": "Article 8 - Force majeure",
+        "content": "In case of force majeure, we are not obliged to fulfill our obligations. In that case, we can either suspend our obligations for the duration of the force majeure, or definitively dissolve the agreement.\n\nForce majeure is any circumstance outside our will and control that prevents the fulfillment of our obligations in whole or in part. This includes but is not limited to: strikes, unexpected traffic jams, accidents on European roads, fire, business disruptions, power outages, disruptions in a (telecommunications) network or connection or used communication systems and/or the unavailability of the website at any time, non-delivery or untimely delivery by suppliers or other engaged third parties,…"
+      },
+      "article9": {
+        "title": "Article 9 – Nullity and completeness",
+        "content": "These Terms & Conditions constitute the complete agreement between the customer and us, with regard to the matter contained therein.\n\nIf one or more provisions of these Terms & Conditions would at any time be wholly or partly unlawful, null or unenforceable for any other reason, then this clause will be deemed to be separable from these Terms & Conditions and will not affect the validity and enforceability of the remaining provisions."
+      },
+      "article10": {
+        "title": "Article 10 - Jurisdiction and applicable law",
+        "content": "Belgian law applies to all disputes related to or arising from our offers and/or agreements. In case of disputes or disputes, only the courts of the judicial district of our registered office have jurisdiction."
+      }
+    },
+    "webshop": {
+      "title": "Webshop Terms & Conditions beroepsbelg",
+      "article1": {
+        "title": "Article 1 Seller identity",
+        "content": "We are: beroepsbelg\nAddress: Vrijdagmarkt 12 - 2000 Antwerpen\nEmail address: info@BeroepsBelg.be\nPhone number: +32(0)3 430 23 30\nCompany number: BE0599 930 251\nBank account number:"
+      },
+      "article2": {
+        "title": "Article 2 Applicability & Conditions",
+        "content": "Our general terms and conditions apply to every offer from us as a Web shopkeeper to you as a Consumer (any natural person who, exclusively for non-professional purposes, acquires or uses products or services placed on the market).\n\nWe only deliver in . If you provide a delivery address in another country, we may refuse your order.\n\nTo be able to place an order, you must be at least 18 years old. If you are not 18, we ask you to have the order placed by your parents or legal guardian. If we notice that an order has been placed by a minor, we may refuse this order.\n\nPlacing an order on the website constitutes express acceptance of our general terms and conditions of sale which are always available via the website.\n\nIf you order online, we will also provide you together with the order confirmation or at the latest upon delivery a copy of these general terms and conditions in a format that you can save or print. We recommend that you always do this.\n\nIf in addition to these general terms and conditions, additional special conditions also apply, the above also applies to those special conditions. If our general terms and conditions would conflict with those special conditions, you as a consumer can always invoke the most favorable text in your favor."
+      },
+      "article3": {
+        "title": "Article 3 Our Offer and your order",
+        "content": "If an offer has only a limited validity period or is subject to certain conditions, we expressly state this in our offer.\n\nWe always describe as completely and accurately as possible what we sell to you and how the ordering process will proceed. The description is in any case sufficiently detailed to allow you to make a good assessment. If we use images, these are a truthful representation of the goods and/or services offered. However, mistakes happen and if we have clearly made a mistake, we are not obliged to deliver to you anyway.\n\nYour order is complete and the agreement between us is final as soon as we confirm your order by email and as soon as we have received approval from the card issuer for your payment transaction with credit or debit cards. We accept . If the issuer of your card refuses to agree to your payment to us, we cannot be held responsible for delays in delivery and/or non-delivery of your order. Orders without valid payment in the name of the registered cardholder are not accepted or processed.\n\nTo purchase a product, you add the product to your shopping cart. Then you enter your contact details and billing details. Then you choose your delivery method: . In the final step, you get an overview page, accept our general terms and conditions and confirm your payment by pressing the order button with the caption \"order with payment obligation\". Once you have completed these steps, your purchase is final."
+      },
+      "article4": {
+        "title": "Article 4 Right of withdrawal",
+        "content": "If you buy goods or services from us, you have the right to inform us of your decision to withdraw from the agreement within 14 days from delivery or conclusion of the agreement. After that, you must return the goods within 14 calendar days (you pay the shipping costs for this yourself). Upon receipt, we will refund you the full purchase price with the same payment method you used to pay.\n\nThe direct costs of returning the goods are therefore at your expense. We will indicate what the cost price is or make an estimate, if this cannot reasonably be calculated in advance. If the goods cannot be returned by post, we will come to pick them up from you and you will not be charged for this.\n\nWe may wait with refund until we have received the goods back or until you have shown that you have returned the goods, whichever comes first.\n\nDuring the first 14 days after delivery, we expect you to handle the order and packaging carefully. If you still want to be able to return the goods as described above, you may only unpack or use them to the extent necessary to assess whether you wish to keep the item. Returned goods may be tested, but may not be used. If you return the goods, this must if possible be done together with the original packaging, with all delivered accessories and in the original state and packaging and taking into account our instructions below.\n\nYou can return your return package via post or a courier.\n\nTo properly exercise your right of withdrawal, you can let us know by email that you wish to return your order. We will send you an acknowledgment of receipt of your withdrawal by email. A model form is available here."
+      },
+      "article5": {
+        "title": "Article 5 The price",
+        "content": "During the period we mention in our offer, our prices do not change, except for price changes as a result of changes in VAT rates.\n\nOur prices include all taxes, VAT, duties and services unless otherwise stated. So you will never be surprised. We can decide to charge shipping costs on top of the purchase price. In that case, we always mention this before you finalize your purchase."
+      },
+      "article6": {
+        "title": "Article 6 Payment",
+        "content": "We can only accept payment via the payment modules on our website.\n\nTo ensure secure online payment and the security of your personal data, transaction data is encrypted with SSL technology and sent over the internet. To pay with SSL, you do not need special software. You recognize a secure SSL connection by the \"lock\" in the bottom status bar of your browser."
+      },
+      "article7": {
+        "title": "Article 7 Conformity and Warranty",
+        "content": "We guarantee that our goods conform to your order and meet the normal expectations you may have of them taking into account the product specifications. We also guarantee you that our goods comply with all laws existing at the time of your order.\n\nIn addition, with regard to the delivery of goods, we apply the legal minimum warranty period of two years if the good is not in conformity with the order placed. This means that in case of defects or defects in the good up to 2 years after delivery, this good will be repaired or replaced free of charge. As far as this is possible and reasonable, you have the choice between repair or replacement. Only if the repair or replacement is excessive or impossible or cannot be carried out within a reasonable period, you have the right to demand a price reduction or the dissolution of the sales agreement."
+      },
+      "article8": {
+        "title": "Article 8 Delivery and execution",
+        "content": "All goods and services are delivered to the address you specified when placing your order.\n\nWhen an item is in stock, it is offered to your delivery address in . When an item is not in webshop stock, it is offered to your delivery address in .\n\nIf we cannot deliver on time, we will always notify you before the scheduled delivery period expires. If we do not do this, you can cancel your order free of charge. In that case, we will refund you no later than 30 days after dissolution.\n\nOur shipments always take place at our risk. So you don't have to worry about goods that get lost in the mail. However, if you return goods to us within 14 days of purchase because you prefer not to keep them, you are responsible for the transport.\n\nIf the goods delivered by us were damaged during transport, do not correspond to the items listed on the delivery note or do not correspond to the items you ordered, you must report this as soon as possible and certainly within 3 days and return the items to us within 14 calendar days of receipt. We cannot be held responsible for any consequential damage due to late delivery or non-delivery by the carrier appointed by the company. Our liability remains limited in such cases to the value of the items that are shown not to have been received by the customer."
+      },
+      "article9": {
+        "title": "Article 9 Duration",
+        "content": "The Consumer can terminate an agreement entered into for an indefinite period at any time in compliance with the agreed termination rules and a notice period of at most one month.\n\nAn agreement entered into for a definite period has a term of a maximum of two years.\n\nIf it has been agreed in a goods agreement of definite duration that the Agreement will be extended remotely upon silence of the Consumer, the agreement will be continued as an agreement for an indefinite period and the notice period after continuation of the agreement will be a maximum of one month.\n\nWhen a service agreement of definite duration concluded between the Company and the Consumer contains a clause for tacit extension, this clause is placed in bold letters and in a frame separate from the text, on the front of the first page.\n\nThis clause states the consequences of the tacit extension including the provision of the following paragraph regarding termination, as well as the latest date on which the Consumer can object to the tacit extension of the agreement and the manner in which he gives notice of this objection. The Consumer can, after the tacit extension of a service agreement of definite duration, terminate the agreement at any time without compensation in compliance with the notice period of a maximum of two months."
+      },
+      "article10": {
+        "title": "Article 10 Force majeure",
+        "content": "In case of force majeure, we are not obliged to fulfill our obligations. In that case, we can either suspend our obligations for the duration of the force majeure, or definitively dissolve the agreement.\n\nForce majeure is any circumstance outside our will and control that prevents the fulfillment of our obligations in whole or in part. This includes, among other things, strikes, fire, business disruptions, power outages, disruptions in a (telecommunications) network or connection or used communication systems and/or the unavailability of our website at any time, non-delivery or untimely delivery by suppliers or other engaged third parties,..."
+      },
+      "article11": {
+        "title": "Article 11 Intellectual property",
+        "content": "Our website, logos, texts, photos, names and in general all our communication are protected by intellectual property rights which lie either with us, or with our suppliers or other right holders.\n\nIt is forbidden to use and/or make changes to the intellectual property rights as described in this article. For example, you may not copy or reproduce drawings, photos, names, texts, logos, color combinations, etc. without our prior and express written permission."
+      },
+      "article12": {
+        "title": "Article 12 Complaint handling and disputes",
+        "content": "We naturally always hope that all our customers are 100% satisfied. If you do have complaints about our services, you can contact us via email address: info@BeroepsBelg.be. We do everything we can to handle your complaint within 7 days.\n\nFor out-of-court settlement of the dispute, the Consumer Ombudsman Service of the Federal Government is competent to receive any request for out-of-court settlement of consumer disputes. This will in turn either handle the request itself or forward it to a qualified entity. You can reach the Consumer Ombudsman Service via this link: http://www.consumentenombudsdienst.be//nl\n\nFor disputes with a cross-border character, you can also appeal to the Online Dispute Resolution platform of the European Union via this link: http://ec.europa.eu/odr.\n\nAll agreements we enter into with our customers, regardless of their place of residence, are exclusively subject to Belgian law and in case of disputes, only the competent Belgian courts have jurisdiction. If for reasons of international law another law is nevertheless applicable, when interpreting the current general terms and conditions, reference will first be made to the Code of Economic Law."
+      }
+    }
   },
   "bookingSuccess": {
     "loading": "Loading booking details...",

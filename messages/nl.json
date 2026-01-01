@@ -140,7 +140,19 @@
     "searchPlaceholder": "Zoek tours, producten...",
     "copyright": "© 2024 Beroepsbelg. Alle rechten voorbehouden.",
     "allRightsReserved": "Alle rechten voorbehouden",
-    "terms": "Voorwaarden"
+    "terms": "Voorwaarden",
+    "newsletter": {
+      "firstName": "Voornaam",
+      "lastName": "Achternaam",
+      "consentText": "Ik ga akkoord met het",
+      "privacyPolicy": "privacybeleid",
+      "invalidEmail": "Voer een geldig e-mailadres in",
+      "nameRequired": "Voer uw voor- en achternaam in",
+      "consentRequired": "U moet akkoord gaan met het privacybeleid",
+      "success": "Succesvol ingeschreven voor de nieuwsbrief!",
+      "error": "Inschrijving mislukt. Probeer het opnieuw.",
+      "submitting": "..."
+    }
   },
   "cookie": {
     "message": "We gebruiken cookies om uw ervaring te verbeteren.",
@@ -305,7 +317,90 @@
     "teamleaderBackToDashboard": "Terug naar Dashboard",
     "teamleaderRedirecting": "Doorverwijzen naar dashboard...",
     "home": "Home",
-    "loading": "Laden..."
+    "loading": "Laden...",
+    "guideBehaviour": {
+      "title": "Gids Gedrag",
+      "subtitle": "Gedragssignalen van tours, fotogewoonten en client info verzoeken",
+      "totalTours": "Totaal Tours",
+      "totalPhotos": "Totaal Foto's",
+      "totalPhotoMoments": "Totaal Fotomomenten",
+      "totalClientInfoRequests": "Totaal Client Info Verzoeken",
+      "allGuidesDataset": "Alle gidsen, huidige dataset",
+      "behaviourLeaderboard": "Gedrag Ranglijst",
+      "topPerformers": "Top presteerders per geselecteerde metriek",
+      "engagementScore": "Betrokkenheid Score",
+      "mostTours": "Meeste Tours",
+      "mostPhotosPerTour": "Meeste Foto's per Tour",
+      "mostClientInfoRequestsPerTour": "Meeste Client Info Verzoeken per Tour",
+      "viewAllGuides": "Bekijk alle gidsen",
+      "watchlist": "Waarschuwingslijst",
+      "guidesNeedAttention": "Gidsen die mogelijk aandacht nodig hebben",
+      "noGuidesNeedAttention": "Geen gidsen hebben op dit moment aandacht nodig",
+      "allGuides": "Alle Gidsen",
+      "completeOverview": "Volledig gedragsoverzicht",
+      "searchPlaceholder": "Zoek op gidsnaam...",
+      "onlyFavourites": "Alleen favorieten",
+      "guide": "Gids",
+      "toursDone": "Tours gedaan",
+      "photosTaken": "Foto's genomen",
+      "photoMoments": "Fotomomenten",
+      "clientInfoRequests": "Client info verzoeken",
+      "photosPerTour": "Foto's per tour",
+      "status": "Status",
+      "inactive": "Inactief",
+      "new": "Nieuw",
+      "emerging": "Opkomend",
+      "consistent": "Consistent",
+      "highPerformer": "Hoge presteerder",
+      "needsAttention": "Heeft aandacht nodig",
+      "strong": "Sterk",
+      "contentFocused": "Content gericht",
+      "lowPhotoActivity": "Lage foto activiteit",
+      "highClientInfoRequests": "Vraagt vaak client info",
+      "newOrInactive": "Nieuw of inactief",
+      "noGuidesFound": "Geen gidsen gevonden die overeenkomen met uw filters",
+      "failedToLoad": "Kon gids gedragsdata niet laden",
+      "lessThanOnePhotoPerTour": "minder dan 1 foto/tour",
+      "lessPhotosThanAverage": "minder foto's dan gemiddeld",
+      "oftenRequestsClientInfo": "vraagt vaak client info",
+      "dashboard": "Dashboard",
+      "logout": "Uitloggen",
+      "tours": "tours",
+      "photosPerTourShort": "foto's/tour",
+      "tableView": "Tabel",
+      "chartsView": "Grafieken",
+      "charts": {
+        "toursDone": "Tours Gedaan",
+        "toursDoneDesc": "Vergelijking van tours gedaan per gids",
+        "photosPerTour": "Foto's per Tour",
+        "photosPerTourDesc": "Vergelijking van foto's per tour per gids",
+        "toursVsPhotos": "Tours vs Foto's",
+        "toursVsPhotosDesc": "Correlatie tussen tours gedaan en foto activiteit",
+        "statusDistribution": "Status Verdeling",
+        "statusDistributionDesc": "Aantal gidsen per status categorie",
+        "keyMetricsByStatus": "Belangrijkste Metrieken per Status",
+        "keyMetricsByStatusDesc": "Gemiddelde metrieken per status categorie",
+        "avgTours": "Gem. Tours",
+        "avgPhotosPerTour": "Gem. Foto's/Tour",
+        "avgClientInfo": "Gem. Client Info"
+      },
+      "categoryOverview": {
+        "title": "Status Categorieën Overzicht",
+        "description": "Uitleg van de logica achter elke status badge",
+        "tourCountCategories": "Tour Aantal Categorieën",
+        "issueFlags": "Probleem Vlaggen",
+        "positiveIndicators": "Positieve Indicatoren",
+        "inactiveDesc": "0 tours gedaan",
+        "newDesc": "1-2 tours gedaan",
+        "emergingDesc": "3-5 tours gedaan",
+        "consistentDesc": "6+ tours gedaan, gemiddelde prestaties",
+        "lowPhotoActivityDesc": "Minder dan 1 foto/tour OF minder dan 50% van de mediaan foto's per tour",
+        "highClientInfoRequestsDesc": "Meer dan 3 client info verzoeken EN meer dan 2x de mediaan",
+        "needsAttentionDesc": "Heeft zowel lage foto activiteit ALS hoge client info verzoeken",
+        "contentFocusedDesc": "Foto's per tour is gelijk aan of hoger dan de mediaan",
+        "highPerformerDesc": "Tours gedaan in top 50%, lage verzoeken (≤ mediaan), heeft activiteit, geen problemen"
+      }
+    }
   },
   "b2b": {
     "title": "Offerte Aanvragen",
@@ -655,20 +750,223 @@
     "copyrightContent": "Alle content op onze website, inclusief teksten, afbeeldingen en logo's, is beschermd door auteursrecht en mag niet zonder voorafgaande schriftelijke toestemming worden gebruikt."
   },
   "privacy": {
-    "title": "Privacy Policy",
-    "intro": "BeroepsBelg respecteert uw privacy en gaat zorgvuldig om met uw persoonlijke gegevens. Deze privacy policy legt uit welke gegevens we verzamelen, waarom we ze verzamelen en hoe we ze gebruiken.",
-    "dataCollection": "Gegevensverzameling",
-    "dataCollectionContent": "We verzamelen persoonlijke gegevens die u aan ons verstrekt bij het boeken van een tour, het inschrijven op onze nieuwsbrief of het contact opnemen met ons. Dit omvat uw naam, e-mailadres, telefoonnummer en andere informatie die u met ons deelt.",
-    "dataUsage": "Gegevensgebruik",
-    "dataUsageContent": "We gebruiken uw persoonlijke gegevens om uw boeking te verwerken, u bevestigingen en relevante informatie over uw tour te sturen, en om onze diensten te verbeteren. We delen uw gegevens nooit met derden zonder uw uitdrukkelijke toestemming, tenzij wettelijk verplicht.",
-    "dataRetention": "Gegevensbewaring",
-    "dataRetentionContent": "We bewaren uw persoonlijke gegevens zo lang als nodig is voor de doeleinden beschreven in deze privacy policy, of zoals wettelijk vereist.",
-    "yourRights": "Uw rechten",
-    "yourRightsContent": "U heeft het recht om uw persoonlijke gegevens op elk moment in te zien, te corrigeren of te verwijderen. U kunt ook bezwaar maken tegen de verwerking van uw gegevens of gegevensoverdraagbaarheid aanvragen. Neem contact met ons op als u deze rechten wilt uitoefenen.",
-    "cookies": "Cookies",
-    "cookiesContent": "Onze website gebruikt cookies om uw gebruikerservaring te verbeteren. U kunt uw cookievoorkeuren beheren via de cookiebanner op onze website.",
-    "contact": "Contact",
-    "contactContent": "Als u vragen heeft over deze privacy policy of de verwerking van uw persoonlijke gegevens, neem dan contact met ons op per e-mail of telefoon."
+    "title": "Privacy- & Cookieverklaring",
+    "disclaimer": "De originele versie van deze privacy- & cookieverklaring is in het Nederlands. Beroepsbelg is niet verantwoordelijk voor eventuele verkeerde interpretaties van de vertaalde versies. U kunt te allen tijde contact opnemen met info@beroepsbelg.be indien u vragen heeft.",
+    "intro": "Deze \"Privacy Policy\" regelt de verwerking van uw persoonsgegevens door de verantwoordelijke voor de verwerking: Beroepsbelg, met maatschappelijke zetel te Vrijdagmarkt 12 - 2000 Antwerpen en ingeschreven in de K.B.O. onder nummer BE0599 930 251 (hierna: \"Beroepsbelg\"). Lees deze Privacy Policy aandachtig door, want het bevat essentiële informatie over hoe uw persoonsgegevens worden verwerkt en welke cookies worden gebruikt. Door het verstrekken van uw persoonsgegevens op de website en door het op deze website vermelde e-mailadressen verschaffen van Persoonsgegevens, verklaart u kennis te hebben genomen van deze Privacy Policy en gaat u er eveneens uitdrukkelijk mee akkoord, alsook met de verwerking zelf.",
+    "article1": {
+      "title": "Artikel 1 – Algemeen",
+      "content": "Beroepsbelg leeft de anti-spambepalingen uit Boek XII van het Wetboek Economisch Recht omtrent het \"recht van de elektronische economie\".\n\nBeroepsbelg stelt zich middels huidige Privacy Policy tevens in regel met de Europese Verordening 2016/679 van 27 april 2016 betreffende de bescherming van persoonsgegevens.\n\nDe verantwoordelijke voor de verwerking van uw persoonsgegevens is Beroepsbelg. Een verklaring werd afgelegd bij de Commissie voor de Bescherming van de Persoonlijke Levenssfeer wat betreft de verwerking van uw persoonsgegevens"
+    },
+    "article2": {
+      "title": "Artikel 2 – Persoonsgegevens",
+      "section21": {
+        "title": "2.1. Persoonsgegevens die u ons meedeelt:",
+        "content": "Categorie 1: zonder registratie: uw IP-adres;\n\nCategorie 2: formulieren invullen of bestelling plaatsen zonder registratie: alle velden in het formulier, alsook uw IP-adres;\n\nCategorie 3: bij registratie: alle velden in het formulier, alsook uw IP-adres en wachtwoord;\n\nCategorie 4: via cookies."
+      },
+      "section22": {
+        "title": "2.2. Beroepsbelg kan gegevens van u (Persoonsgegevens) op verschillende manieren vergaren:",
+        "content": "a. door gebruik van cookies (zie onderstaand);\n\nb. tijdens uw registratie en gebruik van de Website;"
+      },
+      "section23": {
+        "title": "2.3.",
+        "content": "De Website maakt ook gebruik van cookies die een aantal persoonsgegevens verzamelen. Voor de bepalingen omtrent het gebruik van cookies, zie artikel 8."
+      }
+    },
+    "article3": {
+      "title": "Artikel 3 – Doeleinden van de verwerking",
+      "section31": {
+        "title": "3.1. Algemene doeleinden:",
+        "content": "Beroepsbelg zal de bij u vergaarde Persoonsgegevens uitsluitend voor de volgende doeleinden gebruiken:\n\nCategorie 1: het verzorgen en verbeteren van deze Website en het opnemen van Persoonsgegevens in anonieme statistieken, waaruit de identiteit van specifieke personen of bedrijven niet kunnen achterhaald worden, met als rechtsgrond de legitieme belangen van Beroepsbelg om haar Website en dienstverlening voortdurend te verbeteren;\n\nCategorie 2: het beheer van uw account op deze Website met het oog op het gebruik van onze Beroepsbelg en website, met als rechtsgrond de uitvoering van een overeenkomst die door u werd gevraagd, en, indien aangegeven door u, eveneens het toezenden van direct marketing, met als rechtsgrond uw expliciete, voorafgaande toestemming;\n\nCategorie 3: het u toezenden van direct marketing, nieuwsbrieven, acties en promoties, met als rechtsgrond uw expliciete, voorafgaande toestemming;\n\nCategorie 4: het verbeteren van de gebruikerservaring en statistische doeleinden (zie verder) met als rechtsgrond uw expliciete, voorafgaande toestemming;\n\nU bent niet verplicht om Uw Persoonsgegevens vrij te geven, maar begrijpt dat het verlenen van bepaalde diensten onmogelijk wordt wanneer U de verwerking weigert."
+      },
+      "section32": {
+        "title": "3.2. Direct marketing:",
+        "content": "De persoonsgegevens zullen eveneens worden gebruikt voor direct marketing, mits U hiervoor een bijkomende uitdrukkelijke toestemming heeft gegeven (\"opt-in\").\n\nIndien u reeds bent opgenomen in onze verzendlijst voor het ontvangen van marketingmateriaal in papieren en/of elektronische vorm, kan Beroepsbelg uw gegevens gebruiken voor het verzenden van marketing en ander materiaal met betrekking tot Beroepsbelg, haar producten en/of diensten. Beroepsbelg kan de door u verschafte gegevens gebruiken voor het bijwerken van door Beroepsbelg bewaarde documenten.\n\nDeze toestemming kan op elk moment worden ingetrokken, zonder motivering en gratis door bijvoorbeeld op de daartoe voorziene uitschrijflink te klikken, onderaan ieder promotioneel e-mailbericht."
+      },
+      "section33": {
+        "title": "3.3. Doorgifte aan derden:",
+        "content": "Bij gehele of gedeeltelijk reorganisatie of overdracht van activiteiten van Beroepsbelg, waarbij zij haar bedrijfsactiviteiten reorganiseert, overdraagt, staakt of indien Beroepsbelg failliet gaat, kan zulks betekenen dat uw gegevens aan nieuwe entiteiten of derden middels welke de bedrijfsactiviteiten van Beroepsbelg geheel of gedeeltelijk worden uitgevoerd, worden overgedragen.\n\nBeroepsbelg zal in redelijkheid pogen u van tevoren op de hoogte te stellen van het feit dat Beroepsbelg uw gegevens aan genoemde derde bekendmaakt, maar u erkent tevens dat dit niet onder alle omstandigheden technisch of commercieel haalbaar is.\n\nBeroepsbelg zal uw Persoonsgegevens niet verkopen, noch verhuren, verdelen of anderszins commercieel ter beschikking stellen aan derden, behalve zoals bovenstaand beschreven of tenzij met uw voorafgaande toestemming."
+      },
+      "section34": {
+        "title": "3.4. Wettelijke vereisten:",
+        "content": "In zeldzame gevallen kan het voorkomen dat Beroepsbelg uw Persoonsgegevens ingevolge een gerechtelijk bevel of om te voldoen aan andere dwingende wet- of regelgeving moet onthullen. Beroepsbelg zal in redelijkheid pogen u van tevoren dienaangaande te informeren, tenzij een en ander aan wettelijke beperkingen onderhevig is."
+      }
+    },
+    "article4": {
+      "title": "Artikel 4 – Duur van de verwerking",
+      "content": "De persoonsgegevens worden door ons bewaard en verwerkt voor een periode die noodzakelijk is in functie van de doeleinden van de verwerking en in functie van de contractuele relatie tussen Beroepsbelg en U."
+    },
+    "article5": {
+      "title": "Artikel 5 – Uw rechten",
+      "section51": {
+        "title": "5.1. Recht van toegang en inzage:",
+        "content": "U heeft het recht om op elk moment gratis kennis te nemen van Uw persoonsgegevens, alsook van het gebruik dat Wij van Uw persoonsgegevens maken."
+      },
+      "section52": {
+        "title": "5.2. Recht van verbetering, verwijdering en beperking:",
+        "content": "U bent vrij om Uw persoonsgegevens al dan niet mee te delen aan Beroepsbelg. Daarnaast heeft U steeds het recht om Ons te verzoeken Uw persoonsgegevens te verbeteren, aan te vullen of te verwijderen. U erkent dat bij weigering van mededeling of verzoek tot verwijdering van persoonsgegevens, bepaalde diensten en producten niet leverbaar zijn.\n\nU mag eveneens vragen om de verwerking van uw Persoonsgegevens te beperken."
+      },
+      "section53": {
+        "title": "5.3. Recht van verzet:",
+        "content": "U beschikt eveneens over een recht van verzet tegen de verwerking van Uw persoonsgegevens om ernstige en legitieme redenen.\n\nDaarnaast heeft U steeds het recht om U te verzetten tegen het gebruik van persoonsgegevens voor doeleinden van direct marketing; in dergelijk geval hoeft u geen redenen op te geven."
+      },
+      "section54": {
+        "title": "5.4. Recht van vrije gegevensoverdracht:",
+        "content": "U beschikt over het recht om Uw Persoonsgegevens die door Ons verwerkt worden in gestructureerde, gangbare en machineleesbare vorm te verkrijgen en/of aan andere verantwoordelijken over te dragen."
+      },
+      "section55": {
+        "title": "5.5. Recht van intrekking van de toestemming:",
+        "content": "Voor zover de verwerking gebaseerd is op uw voorafgaande toestemming, beschikt U over het recht om die toestemming in te trekken."
+      },
+      "section56": {
+        "title": "5.6. Uitoefening van uw rechten:",
+        "content": "U kunt uw rechten uitoefenen door ons daartoe te contacteren, hetzij per e-mail naar info@BeroepsBelg.be, per post naar Beroepsbelg Vrijdagmarkt 12 - 2000 Antwerpen"
+      },
+      "section57": {
+        "title": "5.7. Automatische beslissingen en profiling:",
+        "content": "De verwerking van Uw Persoonsgegevens omvat geen profiling en U zult door ons evenmin aan geautomatiseerde beslissingen worden onderworpen."
+      },
+      "section58": {
+        "title": "5.8. Recht om klacht in te dienen:",
+        "content": "U beschikt over het recht om een klacht in te dienen bij de Belgische Privacycommissie: Commissie voor de Bescherming van de Persoonlijke Levenssfeer, Drukpersstraat 35, 1000 Brussel, Tel +32 (0)2 274 48 00, Fax +32 (0)2 274 48 35, e-mail: contact@apd-gba.be.\n\nDit laat een voorziening voor een burgerlijke rechtbank onverlet.\n\nIndien U schade zou lijden als gevolg van de verwerking van Uw persoonsgegevens, kunt U een vordering tot schadevergoeding instellen."
+      }
+    },
+    "article6": {
+      "title": "Artikel 6 – Veiligheid en vertrouwelijkheid",
+      "section61": {
+        "title": "6.1.",
+        "content": "Wij hebben veiligheidsmaatregelen ontwikkeld die aangepast zijn op technisch en organisatorisch vlak, om de vernietiging, het verlies, de vervalsing, de wijziging, de niet-toegestane toegang of de kennisgeving per vergissing aan derden van persoonsgegevens verzameld te vermijden alsook elke andere niet toegestane verwerking van deze gegevens."
+      },
+      "section62": {
+        "title": "6.2.",
+        "content": "In geen geval kan Beroepsbelg aansprakelijk worden geacht voor enige directe of indirecte schade die voortvloeit uit een foutief of onrechtmatig gebruik door een derde van de persoonsgegevens."
+      },
+      "section63": {
+        "title": "6.3.",
+        "content": "U dient te allen tijde de veiligheidsvoorschriften na te leven, onder andere door elke niet toegestane toegang tot Uw login en code te voorkomen. U bent dus als enige verantwoordelijk voor het gebruik dat wordt gemaakt vanaf de Website van Uw computer, IP-adres en van Uw identificatiegegevens, alsook voor de vertrouwelijkheid ervan."
+      }
+    },
+    "article7": {
+      "title": "Artikel 7 – Toegang door derden",
+      "content": "Teneinde Uw persoonsgegevens te kunnen verwerken, verlenen Wij toegang tot Uw persoonsgegevens aan onze werknemers.\n\nWij garanderen een gelijkaardig niveau van bescherming door contractuele verplichtingen tegenstelbaar te maken aan deze werknemers en aangestelden, die gelijkaardig zijn aan deze Privacy Policy."
+    },
+    "article8": {
+      "title": "Artikel 8 – Cookies",
+      "section81": {
+        "title": "8.1. Wat zijn cookies?",
+        "content": "Een \"cookie\" is een klein bestand uitgezonden door de server van Beroepsbelg en geplaatst op de harde schijf van Uw computer. De inlichtingen opgeslagen op deze cookies kunnen enkel door Ons gelezen worden en enkel gedurende de duur van het bezoek aan de Website."
+      },
+      "section82": {
+        "title": "8.2. Waarom gebruiken we cookies?",
+        "content": "Onze Website gebruikt cookies en gelijkaardige technologieën om jouw gebruiksvoorkeuren te onderscheiden van die van andere gebruikers van onze Website. Dit helpt ons om je een betere gebruikerservaring te bieden wanneer je onze Website bezoekt en laat ons ook toe onze Website te optimaliseren.\n\nTen gevolge van recente wetswijzigingen worden alle Websites die gericht zijn op bepaalde delen van de Europese Unie verplicht om jouw toestemming te vragen voor het gebruik of opslaan van cookies en gelijkaardige technologieën op jouw computers of mobiele apparaten. Deze cookie policy geeft je duidelijke en volledige informatie over de cookies die wij gebruiken en hun doel."
+      },
+      "section83": {
+        "title": "8.3. Soorten cookies:",
+        "content": "Hoewel er verschillende soorten cookies bestaan, onderscheiden qua functionaliteit, herkomst of bewaartermijn, maakt de wetgeving hoofdzakelijk een onderscheid tussen functionele of technisch noodzakelijke cookies enerzijds en alle andere cookies anderzijds.\n\nDe Website gebruikt uitsluitend volgende cookies:\n\nFunctionele cookies (noodzakelijk)\n\nNaam\tHerkomst\tFunctie\tBewaartijd\nwebhero_session\tHuidige domein\tLinken van de actieve server sessie aan de bezoeker (gebruikt voor taalinstellingen, inloggen)\tTot na de sessie\nXSRF-TOKEN\tHuidige domein\tEen token om formulieren te beschermen tegen spam\tTot na de sessie\n\nAndere cookies\n\nNaam\tHerkomst\tFunctie\tBewaartijd\n_ga_B3NK8C92ZR\tgoogle.com\tDirect\t2 jaar\n_ga\tgoogle.com\tDirect\t2 jaar\n_gid\tgoogle.com\tDirect\t1 dag\n\nVoor cookies geplaatst door derde partijen (o.a. Google Analytics) verwijzen wij je graag naar de verklaringen die deze partijen op hun respectieve websites daarover geven. Let op: wij oefenen geen enkele invloed uit op de inhoud van die verklaringen, noch op de inhoud van de cookies van deze derde partijen: Google Analytics cookies"
+      },
+      "section84": {
+        "title": "8.4. Uw toestemming:",
+        "content": "U kunt steeds cookies weigeren of blokkeren door de configuratieparameters van Uw navigatiesysteem te wijzigen. Het uitschakelen van cookies kan betekenen dat U van bepaalde functionaliteiten van de Website geen gebruik kunt maken.\n\nMocht u verder nog vragen of opmerkingen hebben met betrekking tot de verwerking van Uw persoonsgegevens, neem gerust contact met ons op.\n\nMeer informatie over cookies vindt u tevens op: http://www.allaboutcookies.org/\n\nMeer informatie over online behavioural advertising en online privacy vindt u hier: http://www.youronlinechoices.eu/"
+      }
+    }
+  },
+  "terms": {
+    "title": "Algemene Voorwaarden",
+    "disclaimer": "De originele versie van deze algemene voorwaarden is in het Nederlands. Beroepsbelg is niet verantwoordelijk voor eventuele verkeerde interpretaties van de vertaalde versies. U kunt te allen tijde contact opnemen met info@beroepsbelg.be indien u vragen heeft.",
+    "intro": "Dit zijn de algemene voorwaarden (hierna: \"Algemene Voorwaarden\") van Beroepsbelg met maatschappelijke zetel te Vrijdagmarkt 12 - 2000 Antwerpen en ingeschreven in de K.B.O onder nummer BE0599 930 251. (Hierna: \"Beroepsbelg\").",
+    "general": {
+      "title": "Algemene Voorwaarden",
+      "article1": {
+        "title": "Artikel 1 – Toepassingsgebied",
+        "content": "Deze Algemene Voorwaarden zijn van toepassing op elk aanbod, elke offerte en elke tot stand gekomen overeenkomst met betrekking tot producten en/of diensten door ons aangeboden.\n\nDeze Algemene Voorwaarden zijn van toepassing met uitsluiting van de algemene voorwaarden van de Klant."
+      },
+      "article2": {
+        "title": "Artikel 2 – Offertes",
+        "content": "Onze offertes zijn louter indicatief en vrijblijvend en vervallen indien zij niet binnen 30 kalenderdagen werden aanvaard door de Klant. Offertes krijgen pas rechtsgeldigheid als overeenkomst door ondertekening van de offerte door de Klant én door ons. Wij behouden ons bovendien het recht voor om bepaalde opdrachten zonder opgave van reden te weigeren."
+      },
+      "article3": {
+        "title": "Artikel 3 – Prijs en betaling",
+        "content": "De prijs voor onze goederen/diensten is deze vermeld op de offerte.\n\nAl onze facturen zijn betaalbaar binnen 14 dagen na ontvangst ervan, behoudens indien de offerte een andere vervaldatum bepaalt. Indien wij een voorschot vragen zullen wij onze activiteiten pas aanvatten na ontvangst van het voorschot.\n\nVoor iedere vertraging in de betaling is de Klant vanaf de vervaldag van de factuur van rechtswege en zonder voorafgaande ingebrekestelling een verwijlintrest verschuldigd van 1% per begonnen maand waarbij elke begonnen maand geldt als een volledige maand en zulks onverminderd eventuele schadevergoeding en kosten. Eveneens is van rechtswege en zonder voorafgaande ingebrekestelling een forfaitaire vergoeding verschuldigd ten belope van 10% van het factuurbedrag met een minimum van 250 euro als schadebeding, dit zonder voorafgaande ingebrekestelling en bovenop de hoofdsom, de verwijlinteresten, innings-, aanmanings-, vervolgingskosten en onkosten ten gevolge van tijdverlies en gerechtelijke of juridische kosten. Dit schadebeding doet geen afbreuk aan de verplichting de bedongen verwijlintresten te betalen.\n\nBetwistingen dienen binnen de vijf werkdagen na verzending van de factuur per aangetekend schrijven aan ons kenbaar gemaakt te worden op straffe van onontvankelijkheid."
+      },
+      "article4": {
+        "title": "Artikel 4 - Duur van de overeenkomst en beëindiging",
+        "content": "Onze overeenkomsten kunnen worden aangegaan zoals beschreven in onze offertes. De overeenkomst kan ten alle tijde door ons eenzijdig en zonder rechterlijke tussenkomst worden beëindigd ingeval de Klant zich in staat van faillissement of gerechtelijk akkoord bevindt of in geval de klant zijn facturen niet voldoet."
+      },
+      "article5": {
+        "title": "Artikel 5 – Intellectuele eigendomsrechten",
+        "content": "Onze website, logo's, teksten, foto's, namen en in het algemeen al onze communicatie zijn beschermd door intellectuele eigendomsrechten die hetzij bij ons, hetzij bij onze toeleveranciers of andere rechthebbenden liggen.\n\nOnder intellectuele eigendomsrechten worden verstaan octrooi-, auteurs-, merk-, tekeningen- en modellenrechten en/of andere (intellectuele eigendoms)rechten, waaronder al dan niet octrooieerbare technische en/of commerciële know how, methoden en concepten.\n\nHet is verboden gebruik te maken van en/of wijzigingen aan te brengen in de intellectuele eigendomsrechten zoals beschreven in dit artikel. Zo de klant bijvoorbeeld onze tekeningen, foto's namen, teksten, logo's kleurencombinatie, etc … niet kopiëren of reproduceren zonder onze voorafgaande en uitdrukkelijke schriftelijke toestemming."
+      },
+      "article6": {
+        "title": "Artikel 6 – Vertrouwelijkheid en Privacy",
+        "content": "Wij zijn de verantwoordelijke voor de verwerking van uw persoonsgegevens en verwerken deze conform de Algemene Verordening Gegevensbescherming;\n\nVoor meer informatie over de verwerking van persoonsgegevens verwijzen we naar onze Privacy & Cookie Policy."
+      },
+      "article7": {
+        "title": "Artikel 7 – Aansprakelijkheid",
+        "content": "Wij zijn niet aansprakelijk behoudens in geval van opzet of grove fout. Bovendien zijn wij niet aansprakelijk voor enige directe of indirecte schade (zoals bv. gevolgschade, gederfde winst, gemiste besparingen of schade door bedrijfsstagnatie) waarvan wij in deze voorwaarden onze aansprakelijkheid niet uitdrukkelijk hebben bepaald. Onze aansprakelijkheid van zal in alle gevallen beperkt zijn tot het bedrag van de voor die bestelling bedongen prijs (excl. BTW).\n\nWij stellen alles in het werk om toegang te verlenen tot de website 24 uur op 24 en 7 dagen op 7. Gelet op de technische kenmerken van het internet en van de informaticamiddelen en gelet op de noodzaak om periodieke onderhouds-, update- of upgradewerkzaamheden uit te voeren, kunnen wij echter geen ononderbroken toegang en dienstverlening garanderen. In geval van normaal aanvaardbare onderbreking of verstoring van de toegang of de dienstverlening, stellen wij alles in werking om dit binnen een zo kort mogelijke termijn te verhelpen. Dergelijke normaal aanvaardbare onderbrekingen of verstoringen zijn eigen aan de dienstverlening via internet en kunnen niet beschouwd worden als tekortkomingen."
+      },
+      "article8": {
+        "title": "Artikel 8 - Overmacht",
+        "content": "In geval van overmacht zijn wij niet gehouden haar verplichtingen na te komen. In dat geval kunnen wij ofwel onze verplichtingen opschorten voor de duur van de overmacht, ofwel de overeenkomst definitief ontbinden.\n\nOvermacht is elke omstandigheid buiten onze wil en controle die de nakoming van haar verplichtingen geheel of gedeeltelijk verhindert. Hieronder begrijpen wij ondermeer maar niet beperkt tot: stakingen, onverwachte files, ongevallen op de Europese wegen, brand, bedrijfsstoringen, energiestoringen, storingen in een (telecommunicatie-) netwerk of verbinding of gebruikte communicatiesystemen en/of het op enig moment niet beschikbaar zijn van de website, niet of niet-tijdige levering van toeleveranciers of andere ingeschakelde derden,…"
+      },
+      "article9": {
+        "title": "Artikel 9 – Nietigheid en volledigheid",
+        "content": "Deze Algemene Voorwaarden vormen de volledige overeenkomst tussen de klant en ons, met betrekking tot de erin opgenomen materie.\n\nIndien één of meerdere bepalingen van deze Algemene Voorwaarden op enig moment geheel of gedeeltelijk onwettig, nietig of voor enige andere reden niet afdwingbaar zou(den) zijn, dan zal deze clausule geacht worden te kunnen afgescheiden worden van deze Algemene Voorwaarden en niet de geldigheid en afdwingbaarheid van de overige bepalingen beïnvloeden."
+      },
+      "article10": {
+        "title": "Artikel 10 - Bevoegdheid en toepasselijk recht",
+        "content": "Het Belgische recht is van toepassing op alle geschillen die verband houden met of die voortvloeien uit onze aanbiedingen en/of overeenkomsten. In geval van geschillen of betwisting zijn enkel de rechtbanken van het gerechtelijk arrondissement van onze maatschappelijke zetel bevoegd."
+      }
+    },
+    "webshop": {
+      "title": "Algemene Voorwaarden webshop beroepsbelg",
+      "article1": {
+        "title": "Artikel 1 Identiteit van de verkoper",
+        "content": "Wij zijn: beroepsbelg\nAdres: Vrijdagmarkt 12 - 2000 Antwerpen\nE-mailadres: info@BeroepsBelg.be\nTelefoonnummer: +32(0)3 430 23 30\nOndernemingsnummer: BE0599 930 251\nBankrekeningnummer:"
+      },
+      "article2": {
+        "title": "Artikel 2 Toepasselijkheid & Voorwaarden",
+        "content": "Onze algemene voorwaarden zijn van toepassing op elk aanbod van ons als Webwinkelier aan jou als Consument (iedere natuurlijke persoon die, uitsluitend voor niet-beroepsmatige doeleinden, op de markt gebracht producten of diensten verwerft of gebruikt).\n\nWij leveren enkel in . Als je een leveringsadres in een ander land opgeeft, kunnen we je bestelling weigeren.\n\nOm een bestelling te kunnen plaatsen, moet je minstens 18 jaar oud zijn. Als je geen 18 bent, vragen we je om de bestelling door je ouders of wettelijke voogd te laten plaatsen. Als we merken dat en bestelling geplaatst is door een minderjarige, kunnen we deze bestelling weigeren.\n\nHet plaatsen van een bestelling op de website geldt als uitdrukkelijke aanvaarding van onze algemene verkoopsvoorwaarden die steeds beschikbaar zijn via de website.\n\nAls je online bestelt, bezorgen we je bovendien samen met de bestellingsbevestiging of ten laatste bij de levering een kopie van deze algemene voorwaarden in een formaat dat je kan opslaan of afdrukken. We raden je overigens aan om dit altijd te doen.\n\nAls naast deze algemene voorwaarden ook bijkomende bijzondere voorwaarden van toepassing zijn, geldt bovenstaande ook voor die bijzondere voorwaarden. Als onze algemene voorwaarden strijdig zouden zijn met die bijzondere voorwaarden kan jij als consument altijd de meest voordelige tekst in jouw voordeel inroepen."
+      },
+      "article3": {
+        "title": "Artikel 3 Ons Aanbod en jouw bestelling",
+        "content": "Als een aanbod slechts een beperkte geldigheidsduur heeft of onderworpen is aan bepaalde voorwaarden, vermelden we dit uitdrukkelijk in ons aanbod.\n\nWe beschrijven altijd zo volledig en nauwkeurig mogelijk wat we je verkopen en hoe het bestelproces zal verlopen. De beschrijving is in elk geval voldoende gedetailleerd om je een goede beoordeling te laten maken. Als we gebruik maken van afbeeldingen, zijn deze een waarheidsgetrouwe weergave van de aangeboden goederen en/of diensten. Vergissen is echter menselijk en als we ons overduidelijk vergist hebben, zijn we niet verplicht om je alsnog te leveren.\n\nJe bestelling is compleet en de overeenkomst tussen ons is definitief zodra we je bestelling bevestigen per mail en zodra we voor je betalingstransactie met krediet- of debetkaarten de goedkeuring door de uitgever van de kaart ontvangen hebben. We aanvaarden . Indien de uitgever van je kaart weigert om in te stemmen met je betaling aan ons, kunnen wij niet verantwoordelijk worden gesteld voor vertragingen bij de levering en/of niet-levering van uw bestelling. Bestellingen zonder geldige betaling op naam van de geregistreerde kaarthouder worden niet aanvaard of verwerkt.\n\nOm een product aan te kopen, voeg je het product toe aan je winkelmandje. Nadien geef je je contactgegevens en facturatiegegevens in. Vervolgens kies je je wijze van levering: . In de laatste stap krijg je een overzichtspagina, aanvaard je onze algemene voorwaarden en bevestig je je betaling door het indrukken van de bestelknop met als bijschrift \"bestelling met betalingsverplichting\". Als je deze stappen hebt doorlopen, is je aankoop definitief."
+      },
+      "article4": {
+        "title": "Artikel 4 Herroepingsrecht",
+        "content": "Als je goederen of diensten bij ons koopt, heb je gedurende 14 dagen vanaf de levering of het sluiten van de overeenkomst het recht om ons op de hoogte te brengen van jouw beslissing om de overeenkomst te herroepen. Hierna dien je de goederen binnen 14 kalenderdagen terug te sturen (de verzendkosten hiervoor betaal je zelf). Na ontvangst betalen we je de volledige aankoopprijs terug met hetzelfde betaalmiddel waarmee je hebt betaald.\n\nDe directe kosten van het terugzenden van de goederen komen dus voor jouw rekening. Wij zullen aangeven wat hiervan de kostprijs is of een raming maken, indien dit niet redelijkerwijze op voorhand kan worden berekend. Indien de goederen onmogelijk per post kunnen worden teruggezonden zullen wij deze bij jou komen afhalen en zullen jou hiervoor geen kosten worden aangerekend.\n\nWij mogen wachten met terugbetaling tot wij de goederen hebben teruggekregen of tot je hebt aangetoond dat je de goederen hebt teruggezonden, al naar gelang welk tijdstip eerst valt.\n\nTijdens de eerste 14 dagen na de levering verwachten we dat je zorgvuldig omgaat met de bestelling en de verpakking. Als je de goederen nog wil kunnen terugsturen zoals hierboven omschreven, mag je ze enkel in die mate uitpakken of gebruiken als nodig is om te kunnen beoordelen of je het goed wenst te behouden. Teruggestuurde goederen mogen getest zijn, maar mogen niet gebruikt zijn. Als je de goederen terugstuurt, moet dit indien mogelijk gebeuren samen met de originele verpakking, met alle geleverde toebehoren en in de originele staat en verpakking en rekening houdende met onze instructies hieronder.\n\nJe kan je retourpakket retourneren via de post of een koerier.\n\nOm je herroepingsrecht correct uit te oefenen, kan je ons per e-mail laten weten dat je je bestelling wenst terug te sturen. Wij zullen je per e-mail een ontvangstbevestiging van jouw herroeping sturen. Een modelformulier is hier beschikbaar."
+      },
+      "article5": {
+        "title": "Artikel 5 De prijs",
+        "content": "Tijdens de periode die we in ons aanbod vermelden, wijzigen onze prijzen niet, behoudens prijswijzigingen als gevolg van veranderingen in BTW-tarieven.\n\nOnze prijzen zijn inclusief alle belastingen, BTW, taksen en diensten tenzij anders vermeld. Je komt dus nooit voor verrassingen te staan. We kunnen wel beslissen om bovenop de aankoopprijs ook de verzendkosten aan te rekenen. In dat geval melden we dat altijd voordat je je aankoop definitief plaatst."
+      },
+      "article6": {
+        "title": "Artikel 6 Betaling",
+        "content": "Wij kunnen enkel betaling via de betaalmodules op onze website aanvaarden.\n\nOm een veilige online betaling en de veiligheid van je persoonsgegevens te waarborgen, worden de transactiegegevens versleuteld met SSL technologie over internet verstuurd. Om met SSL te betalen heb je geen speciale software nodig. Je herkent een veilige SSL-verbinding aan het \"slotje\" in de onderste statusbalk van je browser."
+      },
+      "article7": {
+        "title": "Artikel 7 Conformiteit en Garantie",
+        "content": "Wij garanderen dat onze goederen conform zijn aan je bestelling en voldoen aan de normale verwachtingen die je ervan mag hebben rekening houdende met de specificaties van het product. Wij garanderen je natuurlijk ook dat onze goederen voldoen aan alle op het ogenblik van je bestelling bestaande wetten.\n\nBovendien hanteren wij wat betreft het leveren van goederen de wettelijke minimumgarantietermijn van twee jaar indien het goed niet conform is aan de geplaatste bestelling. Dit betekent dat bij gebreken of defecten aan het goed tot 2 jaar na de levering dit goed kosteloos wordt hersteld, dan wel vervangen. Voor zover dit mogelijk en redelijk is, hebt u de keuze tussen herstelling of vervanging. Enkel ingeval de herstelling of de vervanging buitensporig of onmogelijk is of niet binnen een redelijke termijn kan worden uitgevoerd, heeft u het recht om een prijsverlaging of de ontbinding van de verkoopsovereenkomst te eisen."
+      },
+      "article8": {
+        "title": "Artikel 8 Levering en uitvoering",
+        "content": "Alle goederen en diensten worden geleverd op het door jou bij je bestelling aangegeven adres.\n\nWanneer een artikel in voorraad is wordt het aangeboden op uw leveringsadres in . Wanneer een artikel niet in webshop voorraad is, wordt het aangeboden op jouw leveringsadres in .\n\nAls wij niet tijdig kunnen leveren, verwittigen wij je altijd voor het verstrijken van de voorziene leveringstermijn. Als wij dat niet doen, kan je kosteloos afzien van je bestelling. In dat geval betalen wij je uiterlijk binnen 30 dagen na ontbinding terug.\n\nOnze verzendingen gebeuren steeds op ons risico. Je hoeft je dus geen zorgen te maken om goederen die verloren gaan in de post. Als je ons echter goederen terugzendt binnen de 14 dagen na aankoop omdat je ze liever niet wil houden, ben jij verantwoordelijk voor het transport.\n\nIndien de door ons geleverde goederen tijdens het transport werden beschadigd, niet overeenstemmen met de artikelen die op de leveringsbon vermeld staan of niet overeenkomen met de artikelen die je had besteld, moet je dit zo snel mogelijk en zeker binnen de 3 dagen melden en de artikelen naar ons terug sturen binnen de 14 kalenderdagen na ontvangst. We kunnen niet verantwoordelijk worden gesteld voor enige gevolgschade wegens laattijdige levering of niet-levering door de transporteur die de onderneming heeft aangesteld. Onze aansprakelijkheid blijft in dergelijke gevallen beperkt tot de waarde van de artikelen waarvan wordt aangetoond dat ze niet door de klant werden ontvangen."
+      },
+      "article9": {
+        "title": "Artikel 9 Duur",
+        "content": "De Consument kan een overeenkomst die voor onbepaalde duur is aangegaan te allen tijde opzeggen met inachtneming van daartoe overeengekomen opzeggingsregels en een opzegtermijn van ten hoogste één maand.\n\nEen overeenkomst die voor bepaalde duur is aangegaan heeft een looptijd van maximaal twee jaar.\n\nIndien in een goederenovereenkomst van bepaalde duur is overeengekomen dat bij stilzwijgen van de Consument de Overeenkomst op afstand zal worden verlengd, zal de overeenkomst worden voortgezet als een overeenkomst voor onbepaalde duur en zal de opzegtermijn na voortzetting van de overeenkomst maximaal één maand bedragen.\n\nWanneer een dienstenovereenkomst van bepaalde duur afgesloten tussen de Onderneming en de Consument een beding tot stilzwijgende verlenging bevat, wordt dit beding geplaatst in vetgedrukte letters en in een kader los van de tekst, op de voorzijde van de eerste bladzijde.\n\nDit beding vermeldt de gevolgen van de stilzwijgende verlenging waaronder de bepaling van de hiernavolgende paragraaf m.b.t. de opzegging, evenals de uiterste datum waarop de Consument zich kan verzetten tegen de stilzwijgende verlenging van de overeenkomst en de wijze waarop hij kennis geeft van dit verzet. De Consument kan, na de stilzwijgende verlenging van een dienstenovereenkomst van bepaalde duur, op elk ogenblik zonder vergoeding de overeenkomst opzeggen met inachtneming van de opzeggingstermijn van maximaal twee maanden."
+      },
+      "article10": {
+        "title": "Artikel 10 Overmacht",
+        "content": "In geval van overmacht zijn wij niet gehouden onze verplichtingen na te komen. In dat geval kunnen wij ofwel onze verplichtingen opschorten voor de duur van de overmacht, ofwel de overeenkomst definitief ontbinden.\n\nOvermacht is elke omstandigheid buiten onze wil en controle die de nakoming van onze verplichtingen geheel of gedeeltelijk verhindert. Hieronder begrijpen wij onder meer, stakingen, brand, bedrijfsstoringen, energiestoringen, storingen in een (telecommunicatie-)netwerk of verbinding of gebruikte communicatiesystemen en/of het op enig moment niet beschikbaar zijn van onze website, niet of niet-tijdige levering van toeleveranciers of andere ingeschakelde derden,..."
+      },
+      "article11": {
+        "title": "Artikel 11 Intellectuele eigendom",
+        "content": "Onze website, logo's, teksten, foto's, namen en in het algemeen al onze communicatie zijn beschermd door intellectuele eigendomsrechten die hetzij bij ons, hetzij bij onze toeleveranciers of andere rechthebbenden liggen.\n\nHet is verboden gebruik te maken van en/of wijzigingen aan te brengen in de intellectuele eigendomsrechten zoals beschreven in dit artikel. Zo mag je bijvoorbeeld tekeningen, foto's namen, teksten, logo's kleurencombinatie, etc … niet kopiëren of reproduceren zonder onze voorafgaande en uitdrukkelijke schriftelijke toestemming."
+      },
+      "article12": {
+        "title": "Artikel 12 Klachtenregeling en geschillen",
+        "content": "We hopen natuurlijk steeds dat al onze klanten 100% tevreden zijn. Als je toch klachten zou hebben over onze diensten, kan je ons contacteren via e-mailadres: info@BeroepsBelg.be. We doen er alles aan om je klacht binnen de 7 dagen te behandelen.\n\nBij buitengerechtelijke regeling van het geschil is de Consumentenombudsdienst van de Federale Overheid bevoegd om elke aanvraag tot buitengerechtelijke regeling van consumentengeschillen te ontvangen. Deze zal op haar beurt de aanvraag ofwel zelf behandelen ofwel doorsturen naar een gekwalificeerde entiteit. U kan de Consumentenombudsdienst bereiken via deze link: http://www.consumentenombudsdienst.be//nl\n\nBij geschillen met een grensoverschrijdend karakter kan u bovendien beroep doen op het Online Dispute Resolution platform van de Europese Unie via deze link: http://ec.europa.eu/odr.\n\nOp alle overeenkomsten die we afsluiten met onze klanten, ongeacht hun woonplaats, is uitsluitend het Belgische recht van toepassing en bij geschillen zijn enkel de bevoegde Belgische rechtbanken bevoegd. Indien om redenen van internationaal recht toch een ander recht van toepassing is, zal bij de interpretatie van huidige algemene voorwaarden in de eerste plaats teruggegrepen worden naar het Wetboek Economisch Recht."
+      }
+    }
   },
   "bookingSuccess": {
     "loading": "Boekingsgegevens laden...",
