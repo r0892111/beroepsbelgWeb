@@ -1,66 +1,157 @@
-export default function DisclaimerPage() {
+import { getTranslations } from 'next-intl/server';
+import { type Locale } from '@/i18n';
+
+interface DisclaimerPageProps {
+  params: Promise<{ locale: Locale }>;
+}
+
+export default async function DisclaimerPage({ params }: DisclaimerPageProps) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'terms' });
+
+  // Helper function to render article content with proper line breaks
+  const renderContent = (content: string) => {
+    return content.split('\n\n').map((paragraph, index) => (
+      <p key={index} className="mb-4 leading-relaxed text-muted-foreground">
+        {paragraph}
+      </p>
+    ));
+  };
+
   return (
     <div className="container mx-auto px-4 py-20">
       <div className="prose prose-lg mx-auto max-w-4xl">
-        <h1 className="mb-8 text-4xl font-bold">Algemene Voorwaarden</h1>
-
-        <section className="mb-8">
-          <h2 className="mb-4 text-2xl font-semibold">1. Toepassingsgebied</h2>
-          <p className="leading-relaxed text-muted-foreground">
-            Deze algemene voorwaarden zijn van toepassing op alle diensten die worden aangeboden door
-            BeroepsBelg, geregistreerd onder BE 0123.456.789.
+        <h1 className="mb-8 text-4xl font-bold">{t('title')}</h1>
+        
+        {/* Disclaimer about original language */}
+        <div className="mb-8 rounded-lg border-2 border-amber-500/50 bg-amber-50/50 p-4">
+          <p className="text-sm font-medium leading-relaxed text-amber-900">
+            {t('disclaimer')}
           </p>
+        </div>
+        
+        <p className="mb-8 leading-relaxed text-muted-foreground">{t('intro')}</p>
+
+        {/* General Terms & Conditions Section */}
+        <section className="mb-12">
+          <h2 className="mb-6 text-3xl font-semibold">{t('general.title')}</h2>
+          
+          <article className="mb-8">
+            <h3 className="mb-4 text-xl font-semibold">{t('general.article1.title')}</h3>
+            <div>{renderContent(t('general.article1.content'))}</div>
+          </article>
+
+          <article className="mb-8">
+            <h3 className="mb-4 text-xl font-semibold">{t('general.article2.title')}</h3>
+            <div>{renderContent(t('general.article2.content'))}</div>
+          </article>
+
+          <article className="mb-8">
+            <h3 className="mb-4 text-xl font-semibold">{t('general.article3.title')}</h3>
+            <div>{renderContent(t('general.article3.content'))}</div>
+          </article>
+
+          <article className="mb-8">
+            <h3 className="mb-4 text-xl font-semibold">{t('general.article4.title')}</h3>
+            <div>{renderContent(t('general.article4.content'))}</div>
+          </article>
+
+          <article className="mb-8">
+            <h3 className="mb-4 text-xl font-semibold">{t('general.article5.title')}</h3>
+            <div>{renderContent(t('general.article5.content'))}</div>
+          </article>
+
+          <article className="mb-8">
+            <h3 className="mb-4 text-xl font-semibold">{t('general.article6.title')}</h3>
+            <div>{renderContent(t('general.article6.content'))}</div>
+          </article>
+
+          <article className="mb-8">
+            <h3 className="mb-4 text-xl font-semibold">{t('general.article7.title')}</h3>
+            <div>{renderContent(t('general.article7.content'))}</div>
+          </article>
+
+          <article className="mb-8">
+            <h3 className="mb-4 text-xl font-semibold">{t('general.article8.title')}</h3>
+            <div>{renderContent(t('general.article8.content'))}</div>
+          </article>
+
+          <article className="mb-8">
+            <h3 className="mb-4 text-xl font-semibold">{t('general.article9.title')}</h3>
+            <div>{renderContent(t('general.article9.content'))}</div>
+          </article>
+
+          <article className="mb-8">
+            <h3 className="mb-4 text-xl font-semibold">{t('general.article10.title')}</h3>
+            <div>{renderContent(t('general.article10.content'))}</div>
+          </article>
         </section>
 
-        <section className="mb-8">
-          <h2 className="mb-4 text-2xl font-semibold">2. Boekingen</h2>
-          <p className="leading-relaxed text-muted-foreground">
-            Boekingen worden definitief na bevestiging en betaling. U ontvangt een bevestigingsmail met
-            alle details van uw tour.
-          </p>
-        </section>
+        {/* Webshop Terms & Conditions Section */}
+        <section className="mb-12">
+          <h2 className="mb-6 text-3xl font-semibold">{t('webshop.title')}</h2>
+          
+          <article className="mb-8">
+            <h3 className="mb-4 text-xl font-semibold">{t('webshop.article1.title')}</h3>
+            <div className="whitespace-pre-line leading-relaxed text-muted-foreground">
+              {t('webshop.article1.content')}
+            </div>
+          </article>
 
-        <section className="mb-8">
-          <h2 className="mb-4 text-2xl font-semibold">3. Annulering</h2>
-          <p className="leading-relaxed text-muted-foreground">
-            U kunt tot 48 uur voor aanvang van de tour kosteloos annuleren. Bij annulering binnen 48 uur
-            worden er annuleringskosten van 50% gerekend. Bij no-show wordt het volledige bedrag in
-            rekening gebracht.
-          </p>
-        </section>
+          <article className="mb-8">
+            <h3 className="mb-4 text-xl font-semibold">{t('webshop.article2.title')}</h3>
+            <div>{renderContent(t('webshop.article2.content'))}</div>
+          </article>
 
-        <section className="mb-8">
-          <h2 className="mb-4 text-2xl font-semibold">4. Aansprakelijkheid</h2>
-          <p className="leading-relaxed text-muted-foreground">
-            BeroepsBelg kan niet aansprakelijk worden gesteld voor onvoorziene omstandigheden die leiden
-            tot annulering of wijziging van de tour. In dergelijke gevallen zullen we ons best doen om een
-            alternatief aan te bieden.
-          </p>
-        </section>
+          <article className="mb-8">
+            <h3 className="mb-4 text-xl font-semibold">{t('webshop.article3.title')}</h3>
+            <div>{renderContent(t('webshop.article3.content'))}</div>
+          </article>
 
-        <section className="mb-8">
-          <h2 className="mb-4 text-2xl font-semibold">5. Gedrag</h2>
-          <p className="leading-relaxed text-muted-foreground">
-            Deelnemers worden geacht zich respectvol te gedragen tegenover de gids en andere deelnemers.
-            BeroepsBelg behoudt zich het recht voor om deelnemers bij ongepast gedrag te verwijderen
-            zonder restitutie.
-          </p>
-        </section>
+          <article className="mb-8">
+            <h3 className="mb-4 text-xl font-semibold">{t('webshop.article4.title')}</h3>
+            <div>{renderContent(t('webshop.article4.content'))}</div>
+          </article>
 
-        <section className="mb-8">
-          <h2 className="mb-4 text-2xl font-semibold">6. Intellectueel eigendom</h2>
-          <p className="leading-relaxed text-muted-foreground">
-            Alle content op deze website, inclusief teksten, afbeeldingen en logo's, is eigendom van
-            BeroepsBelg en wordt beschermd door auteursrecht.
-          </p>
-        </section>
+          <article className="mb-8">
+            <h3 className="mb-4 text-xl font-semibold">{t('webshop.article5.title')}</h3>
+            <div>{renderContent(t('webshop.article5.content'))}</div>
+          </article>
 
-        <section>
-          <h2 className="mb-4 text-2xl font-semibold">7. Toepasselijk recht</h2>
-          <p className="leading-relaxed text-muted-foreground">
-            Op deze algemene voorwaarden is Belgisch recht van toepassing. Geschillen worden voorgelegd aan
-            de bevoegde rechtbank van Antwerpen.
-          </p>
+          <article className="mb-8">
+            <h3 className="mb-4 text-xl font-semibold">{t('webshop.article6.title')}</h3>
+            <div>{renderContent(t('webshop.article6.content'))}</div>
+          </article>
+
+          <article className="mb-8">
+            <h3 className="mb-4 text-xl font-semibold">{t('webshop.article7.title')}</h3>
+            <div>{renderContent(t('webshop.article7.content'))}</div>
+          </article>
+
+          <article className="mb-8">
+            <h3 className="mb-4 text-xl font-semibold">{t('webshop.article8.title')}</h3>
+            <div>{renderContent(t('webshop.article8.content'))}</div>
+          </article>
+
+          <article className="mb-8">
+            <h3 className="mb-4 text-xl font-semibold">{t('webshop.article9.title')}</h3>
+            <div>{renderContent(t('webshop.article9.content'))}</div>
+          </article>
+
+          <article className="mb-8">
+            <h3 className="mb-4 text-xl font-semibold">{t('webshop.article10.title')}</h3>
+            <div>{renderContent(t('webshop.article10.content'))}</div>
+          </article>
+
+          <article className="mb-8">
+            <h3 className="mb-4 text-xl font-semibold">{t('webshop.article11.title')}</h3>
+            <div>{renderContent(t('webshop.article11.content'))}</div>
+          </article>
+
+          <article className="mb-8">
+            <h3 className="mb-4 text-xl font-semibold">{t('webshop.article12.title')}</h3>
+            <div>{renderContent(t('webshop.article12.content'))}</div>
+          </article>
         </section>
       </div>
     </div>
