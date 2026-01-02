@@ -123,6 +123,17 @@
     "submit": "Inschrijven",
     "success": "Bedankt voor je inschrijving!"
   },
+  "chatbot": {
+    "title": "Chat met ons",
+    "subtitle": "We zijn hier om te helpen",
+    "placeholder": "Typ je bericht...",
+    "send": "Verzenden",
+    "reasoning": "Redeneren...",
+    "thinking": "Denken...",
+    "typing": "Typen...",
+    "error": "Er is iets misgegaan. Probeer het opnieuw.",
+    "close": "Chat sluiten"
+  },
   "footer": {
     "address": "Adres",
     "contact": "Contact",

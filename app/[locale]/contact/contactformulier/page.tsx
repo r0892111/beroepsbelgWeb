@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Mail, Phone, MapPin } from 'lucide-react';
+import { sendContactFormWebhook } from '@/lib/utils/webhooks';
 
 const contactSchema = z.object({
   name: z.string().min(1),
@@ -46,6 +47,16 @@ export default function ContactPage() {
     setIsSubmitting(true);
     await new Promise((resolve) => setTimeout(resolve, 1000));
     console.log('Contact form:', data);
+    
+    // Send to n8n webhook (non-blocking)
+    sendContactFormWebhook({
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      message: data.message,
+      consent: data.consent,
+    });
+    
     toast.success(t('successMessage'));
     reset();
     setIsSubmitting(false);
