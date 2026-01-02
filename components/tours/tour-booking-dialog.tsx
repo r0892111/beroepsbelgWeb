@@ -530,15 +530,17 @@ export function TourBookingDialog({
                   </span>
                 </div>
               ) : (
-                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                <Popover open={calendarOpen} onOpenChange={setCalendarOpen} modal={false}>
                   <PopoverTrigger asChild>
                     <Button
+                      type="button"
                       variant="outline"
                       className={cn(
                         'w-full h-10 justify-start text-left font-normal',
                         !formData.bookingDate && 'text-muted-foreground',
                         showValidation && !isDateValid && 'border-red-500 ring-1 ring-red-500'
                       )}
+                      onClick={() => setCalendarOpen(!calendarOpen)}
                     >
                       {formData.bookingDate ? format(formData.bookingDate, 'PP') : t('selectDate')}
                     </Button>
@@ -547,25 +549,26 @@ export function TourBookingDialog({
                     className="w-auto p-0 z-[100]" 
                     align="start" 
                     onOpenAutoFocus={(e) => e.preventDefault()}
-                    onInteractOutside={(e) => {
-                      // Prevent dialog from closing when clicking outside popover
-                      e.preventDefault();
-                    }}
+                    side="bottom"
+                    sideOffset={4}
+                    onEscapeKeyDown={() => setCalendarOpen(false)}
                   >
                     <Calendar
                       mode="single"
                       selected={formData.bookingDate}
-                      onSelect={(date) => {
+                      onSelect={(date: Date | undefined) => {
                         if (date) {
-                          setFormData({ ...formData, bookingDate: date });
+                          setFormData((prev) => ({ ...prev, bookingDate: date }));
                           setSelectedTimeSlot(''); // Reset time slot when date changes
                           setCalendarOpen(false); // Close popover after date selection
                         }
                       }}
-                      disabled={(date) => {
+                      disabled={(date: Date) => {
                         const today = new Date();
                         today.setHours(0, 0, 0, 0);
-                        return date < today;
+                        const dateToCheck = new Date(date);
+                        dateToCheck.setHours(0, 0, 0, 0);
+                        return dateToCheck < today;
                       }}
                       initialFocus
                     />
