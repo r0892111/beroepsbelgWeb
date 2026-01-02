@@ -230,7 +230,7 @@ export default function AdminGuidesPage() {
     setUploading(true);
 
     try {
-      let profilePictureUrl = formData.profile_picture;
+      let profilePictureUrl: string | null = formData.profile_picture || null;
 
       // Upload profile picture if a new file is selected
       if (profilePictureFile) {
@@ -298,12 +298,14 @@ export default function AdminGuidesPage() {
           profilePictureUrl = await uploadProfilePicture(profilePictureFile, newGuide.id);
           
           // Update the guide with the profile picture URL
-          const { error: updateError } = await supabase
-            .from('guides_temp')
-            .update({ profile_picture: profilePictureUrl })
-            .eq('id', newGuide.id);
+          if (profilePictureUrl) {
+            const { error: updateError } = await supabase
+              .from('guides_temp')
+              .update({ profile_picture: profilePictureUrl })
+              .eq('id', newGuide.id);
 
-          if (updateError) throw updateError;
+            if (updateError) throw updateError;
+          }
         }
 
         toast.success('Guide created successfully');
