@@ -227,10 +227,10 @@ export default function AdminGuideBehaviourPage() {
   // Calculate KPI totals
   const kpiTotals = useMemo(() => {
     return {
-      totalTours: guidesWithMetrics.reduce((sum, g) => sum + g.tours_done, 0),
-      totalPhotos: guidesWithMetrics.reduce((sum, g) => sum + g.photos_taken_amount, 0),
-      totalPhotoMoments: guidesWithMetrics.reduce((sum, g) => sum + g.photos_taken_frequency, 0),
-      totalClientInfoRequests: guidesWithMetrics.reduce((sum, g) => sum + g.requested_client_info, 0),
+      totalTours: guidesWithMetrics.reduce((sum, g) => sum + (g.tours_done ?? 0), 0),
+      totalPhotos: guidesWithMetrics.reduce((sum, g) => sum + (g.photos_taken_amount ?? 0), 0),
+      totalPhotoMoments: guidesWithMetrics.reduce((sum, g) => sum + (g.photos_taken_frequency ?? 0), 0),
+      totalClientInfoRequests: guidesWithMetrics.reduce((sum, g) => sum + (g.requested_client_info ?? 0), 0),
     };
   }, [guidesWithMetrics]);
 

@@ -161,7 +161,7 @@ export function LectureBookingForm({ open, onOpenChange, lectureId, lectureTitle
                     if (errors.contact) setErrors({ ...errors, contact: '' });
                   }}
                   className="mt-1"
-                  placeholder="+32 123 456 789"
+                  placeholder="+32 494 25 41 59"
                 />
               </div>
               <div>

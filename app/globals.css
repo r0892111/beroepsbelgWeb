@@ -497,4 +497,32 @@
     transform: translateY(-4px);
     box-shadow: var(--shadow-hover-medium);
   }
+
+  /* MDX Editor fixes */
+  .mdx-editor-wrapper [data-radix-portal] {
+    z-index: 9999 !important;
+  }
+  
+  .mdx-editor-wrapper [role="menu"],
+  .mdx-editor-wrapper [role="listbox"],
+  .mdx-editor-wrapper [data-radix-popper-content-wrapper] {
+    z-index: 9999 !important;
+  }
+
+  .mdx-editor-wrapper [data-radix-dialog-content] {
+    z-index: 10000 !important;
+  }
+
+  .mdx-editor-wrapper [data-radix-select-content] {
+    z-index: 9999 !important;
+  }
+
+  /* Ensure MDX Editor dialogs are accessible */
+  body [data-radix-dialog-overlay] {
+    z-index: 9998 !important;
+  }
+
+  body [data-radix-dialog-content] {
+    z-index: 9999 !important;
+  }
 }
