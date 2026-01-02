@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from 'next-intl';
-import { ExternalLink, LogOut, Link as LinkIcon, Home, RefreshCw, CheckCircle2, Unlink, Calendar, Users as UsersIcon, HelpCircle, MapPin, Image, Package, FileText, Building2, BookOpen, BarChart3, Newspaper, Mail } from 'lucide-react';
+import { ExternalLink, LogOut, Link as LinkIcon, Home, RefreshCw, CheckCircle2, Unlink, Calendar, Users as UsersIcon, HelpCircle, MapPin, Image, Package, FileText, Building2, BookOpen, BarChart3, Newspaper, Mail, FileEdit } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 
@@ -399,6 +399,12 @@ export default function AdminDashboardPage() {
                 <Button className="w-full justify-start btn-primary" size="lg">
                   <BookOpen className="h-5 w-5 mr-2" />
                   Manage Lectures
+                </Button>
+              </Link>
+              <Link href={`/${locale}/admin/blogs`}>
+                <Button className="w-full justify-start btn-primary" size="lg">
+                  <FileEdit className="h-5 w-5 mr-2" />
+                  Manage Blogs
                 </Button>
               </Link>
               <Link href={`/${locale}/admin/press`}>

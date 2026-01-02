@@ -1,5 +1,5 @@
 import { supabaseServer } from '@/lib/supabase/server';
-import type { Locale, City, Tour, Product, FaqItem, BlogPost, PressLink, ProductImage, TourImage, Lecture, LectureImage, LectureBooking, Press, NewsletterSubscription } from '@/lib/data/types';
+import type { Locale, City, Tour, Product, FaqItem, PressLink, ProductImage, TourImage, Lecture, LectureImage, LectureBooking, Press, NewsletterSubscription, Blog, BlogImage } from '@/lib/data/types';
 
 export type LocalTourBooking = {
   id: string;
@@ -447,35 +447,37 @@ export async function getProducts(): Promise<Product[]> {
   return products;
 }
 
-export async function getBlogPosts(): Promise<BlogPost[]> {
-  const { data, error } = await supabaseServer
-    .from('blog_posts')
-    .select('*')
-    .order('date', { ascending: false });
-
-  if (error) {
-    throw error;
-  }
-
-  const posts = (data || []).map((row: any) => ({
-    slug: row.slug,
-    title: {
-      nl: row.title_nl,
-      en: row.title_en,
-      fr: row.title_fr,
-      de: row.title_de,
-    },
-    excerpt: {
-      nl: row.excerpt_nl,
-      en: row.excerpt_en,
-      fr: row.excerpt_fr,
-      de: row.excerpt_de,
-    },
-    date: row.date,
-  }));
-
-  return posts;
-}
+// Legacy function - kept for backward compatibility but not used
+// Use getBlogs() instead for the new blogs table
+// export async function getBlogPosts(): Promise<BlogPost[]> {
+//   const { data, error } = await supabaseServer
+//     .from('blog_posts')
+//     .select('*')
+//     .order('date', { ascending: false });
+//
+//   if (error) {
+//     throw error;
+//   }
+//
+//   const posts = (data || []).map((row: any) => ({
+//     slug: row.slug,
+//     title: {
+//       nl: row.title_nl,
+//       en: row.title_en,
+//       fr: row.title_fr,
+//       de: row.title_de,
+//     },
+//     excerpt: {
+//       nl: row.excerpt_nl,
+//       en: row.excerpt_en,
+//       fr: row.excerpt_fr,
+//       de: row.excerpt_de,
+//     },
+//     date: row.date,
+//   }));
+//
+//   return posts;
+// }
 
 export async function getPressLinks(): Promise<PressLink[]> {
   try {
@@ -1167,5 +1169,428 @@ export async function getAirBNBListings() {
   } catch (err) {
     console.error('Exception fetching AirBNB listings:', err);
     return [];
+  }
+}
+
+/**
+ * Auto-generate SEO fields for a blog post
+ */
+function generateSEOFields(blog: Partial<Blog>): { meta_title: string; meta_description: string; og_image_url?: string } {
+  const meta_title = blog.meta_title || (blog.title ? `${blog.title} | Beroepsbelg` : '');
+  
+  let meta_description = blog.meta_description || '';
+  if (!meta_description) {
+    if (blog.excerpt) {
+      meta_description = blog.excerpt.length > 160 ? blog.excerpt.substring(0, 157) + '...' : blog.excerpt;
+    } else if (blog.content) {
+      // Remove markdown syntax and get first 160 chars
+      const plainText = blog.content.replace(/[#*`\[\]()]/g, '').replace(/\n/g, ' ').trim();
+      meta_description = plainText.length > 160 ? plainText.substring(0, 157) + '...' : plainText;
+    }
+  }
+  
+  const og_image_url = blog.og_image_url || blog.thumbnail_url || undefined;
+  
+  return { meta_title, meta_description, og_image_url };
+}
+
+/**
+ * Generate slug from title
+ */
+function generateSlug(title: string): string {
+  return slugify(title);
+}
+
+/**
+ * Get all published blogs (public)
+ */
+export async function getBlogs(locale: Locale = 'nl', limit?: number): Promise<Blog[]> {
+  try {
+    let query = supabaseServer
+      .from('blogs')
+      .select('*')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+      .order('display_order', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: false });
+
+    if (limit) {
+      query = query.limit(limit);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      if (error.message?.includes('does not exist') || error.code === '42P01') {
+        console.warn('blogs table does not exist. Please run migration.');
+        return [];
+      }
+      console.error('Error fetching blogs:', error);
+      return [];
+    }
+
+    const blogs: Blog[] = (data || []).map((row: any) => ({
+      id: row.id,
+      title: row.title || '',
+      slug: row.slug || '',
+      excerpt: row.excerpt || undefined,
+      content: row.content || '',
+      thumbnail_url: row.thumbnail_url || undefined,
+      title_en: row.title_en || undefined,
+      excerpt_en: row.excerpt_en || undefined,
+      content_en: row.content_en || undefined,
+      title_fr: row.title_fr || undefined,
+      excerpt_fr: row.excerpt_fr || undefined,
+      content_fr: row.content_fr || undefined,
+      title_de: row.title_de || undefined,
+      excerpt_de: row.excerpt_de || undefined,
+      content_de: row.content_de || undefined,
+      author: row.author || undefined,
+      published_at: row.published_at || undefined,
+      status: (row.status as 'draft' | 'published') || 'draft',
+      featured: row.featured || false,
+      category: row.category || undefined,
+      meta_title: row.meta_title || undefined,
+      meta_description: row.meta_description || undefined,
+      og_image_url: row.og_image_url || undefined,
+      display_order: row.display_order !== null && row.display_order !== undefined ? Number(row.display_order) : undefined,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    }));
+
+    return blogs;
+  } catch (err) {
+    console.error('Exception fetching blogs:', err);
+    return [];
+  }
+}
+
+/**
+ * Get a single blog by slug with locale fallback
+ */
+export async function getBlogBySlug(slug: string, locale: Locale = 'nl'): Promise<Blog | null> {
+  try {
+    const { data, error } = await supabaseServer
+      .from('blogs')
+      .select('*')
+      .eq('slug', slug)
+      .eq('status', 'published')
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null; // Not found
+      }
+      console.error('Error fetching blog:', error);
+      return null;
+    }
+
+    if (!data) return null;
+
+    // Fetch blog images
+    const { data: imagesData } = await supabaseServer
+      .from('blog_images')
+      .select('*')
+      .eq('blog_id', data.id)
+      .order('position_in_content', { ascending: true, nullsFirst: true });
+
+    const blog: Blog = {
+      id: data.id,
+      title: data.title || '',
+      slug: data.slug || '',
+      excerpt: data.excerpt || undefined,
+      content: data.content || '',
+      thumbnail_url: data.thumbnail_url || undefined,
+      title_en: data.title_en || undefined,
+      excerpt_en: data.excerpt_en || undefined,
+      content_en: data.content_en || undefined,
+      title_fr: data.title_fr || undefined,
+      excerpt_fr: data.excerpt_fr || undefined,
+      content_fr: data.content_fr || undefined,
+      title_de: data.title_de || undefined,
+      excerpt_de: data.excerpt_de || undefined,
+      content_de: data.content_de || undefined,
+      author: data.author || undefined,
+      published_at: data.published_at || undefined,
+      status: (data.status as 'draft' | 'published') || 'draft',
+      featured: data.featured || false,
+      category: data.category || undefined,
+      meta_title: data.meta_title || undefined,
+      meta_description: data.meta_description || undefined,
+      og_image_url: data.og_image_url || undefined,
+      display_order: data.display_order !== null && data.display_order !== undefined ? Number(data.display_order) : undefined,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      blogImages: (imagesData || []).map((img: any) => ({
+        id: img.id,
+        blog_id: img.blog_id,
+        image_url: img.image_url,
+        storage_path: img.storage_path,
+        alt_text: img.alt_text || undefined,
+        width_percentage: img.width_percentage || 100,
+        position_in_content: img.position_in_content || undefined,
+        created_at: img.created_at,
+      })),
+    };
+
+    return blog;
+  } catch (err) {
+    console.error('Exception fetching blog:', err);
+    return null;
+  }
+}
+
+/**
+ * Get all blogs (admin - including drafts)
+ */
+export async function getAllBlogs(): Promise<Blog[]> {
+  try {
+    const { data, error } = await supabaseServer
+      .from('blogs')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      if (error.message?.includes('does not exist') || error.code === '42P01') {
+        console.warn('blogs table does not exist. Please run migration.');
+        return [];
+      }
+      console.error('Error fetching all blogs:', error);
+      return [];
+    }
+
+    const blogs: Blog[] = (data || []).map((row: any) => ({
+      id: row.id,
+      title: row.title || '',
+      slug: row.slug || '',
+      excerpt: row.excerpt || undefined,
+      content: row.content || '',
+      thumbnail_url: row.thumbnail_url || undefined,
+      title_en: row.title_en || undefined,
+      excerpt_en: row.excerpt_en || undefined,
+      content_en: row.content_en || undefined,
+      title_fr: row.title_fr || undefined,
+      excerpt_fr: row.excerpt_fr || undefined,
+      content_fr: row.content_fr || undefined,
+      title_de: row.title_de || undefined,
+      excerpt_de: row.excerpt_de || undefined,
+      content_de: row.content_de || undefined,
+      author: row.author || undefined,
+      published_at: row.published_at || undefined,
+      status: (row.status as 'draft' | 'published') || 'draft',
+      featured: row.featured || false,
+      category: row.category || undefined,
+      meta_title: row.meta_title || undefined,
+      meta_description: row.meta_description || undefined,
+      og_image_url: row.og_image_url || undefined,
+      display_order: row.display_order !== null && row.display_order !== undefined ? Number(row.display_order) : undefined,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    }));
+
+    return blogs;
+  } catch (err) {
+    console.error('Exception fetching all blogs:', err);
+    return [];
+  }
+}
+
+/**
+ * Create a new blog post (admin)
+ */
+export async function createBlog(blogData: Omit<Blog, 'id' | 'created_at' | 'updated_at' | 'blogImages'>): Promise<Blog | null> {
+  try {
+    // Generate slug if not provided
+    const slug = blogData.slug || generateSlug(blogData.title);
+    
+    // Generate SEO fields
+    const seoFields = generateSEOFields(blogData);
+    
+    const { data, error } = await supabaseServer
+      .from('blogs')
+      .insert([{
+        title: blogData.title,
+        slug,
+        excerpt: blogData.excerpt || null,
+        content: blogData.content,
+        thumbnail_url: blogData.thumbnail_url || null,
+        title_en: blogData.title_en || null,
+        excerpt_en: blogData.excerpt_en || null,
+        content_en: blogData.content_en || null,
+        title_fr: blogData.title_fr || null,
+        excerpt_fr: blogData.excerpt_fr || null,
+        content_fr: blogData.content_fr || null,
+        title_de: blogData.title_de || null,
+        excerpt_de: blogData.excerpt_de || null,
+        content_de: blogData.content_de || null,
+        author: blogData.author || null,
+        published_at: blogData.published_at || null,
+        status: blogData.status || 'draft',
+        featured: blogData.featured || false,
+        category: blogData.category || null,
+        meta_title: blogData.meta_title || seoFields.meta_title,
+        meta_description: blogData.meta_description || seoFields.meta_description,
+        og_image_url: blogData.og_image_url || seoFields.og_image_url || null,
+        display_order: blogData.display_order || null,
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating blog:', error);
+      throw error;
+    }
+
+    return data as Blog;
+  } catch (err) {
+    console.error('Exception creating blog:', err);
+    throw err;
+  }
+}
+
+/**
+ * Update a blog post (admin)
+ */
+export async function updateBlog(id: string, blogData: Partial<Omit<Blog, 'id' | 'created_at' | 'updated_at' | 'blogImages'>>): Promise<Blog | null> {
+  try {
+    // Generate slug if title changed and slug not provided
+    let slug = blogData.slug;
+    if (blogData.title && !slug) {
+      slug = generateSlug(blogData.title);
+    }
+    
+    // Generate SEO fields if needed
+    const seoFields = generateSEOFields(blogData);
+    
+    const updateData: any = {
+      updated_at: new Date().toISOString(),
+    };
+    
+    if (blogData.title !== undefined) updateData.title = blogData.title;
+    if (slug !== undefined) updateData.slug = slug;
+    if (blogData.excerpt !== undefined) updateData.excerpt = blogData.excerpt || null;
+    if (blogData.content !== undefined) updateData.content = blogData.content;
+    if (blogData.thumbnail_url !== undefined) updateData.thumbnail_url = blogData.thumbnail_url || null;
+    if (blogData.title_en !== undefined) updateData.title_en = blogData.title_en || null;
+    if (blogData.excerpt_en !== undefined) updateData.excerpt_en = blogData.excerpt_en || null;
+    if (blogData.content_en !== undefined) updateData.content_en = blogData.content_en || null;
+    if (blogData.title_fr !== undefined) updateData.title_fr = blogData.title_fr || null;
+    if (blogData.excerpt_fr !== undefined) updateData.excerpt_fr = blogData.excerpt_fr || null;
+    if (blogData.content_fr !== undefined) updateData.content_fr = blogData.content_fr || null;
+    if (blogData.title_de !== undefined) updateData.title_de = blogData.title_de || null;
+    if (blogData.excerpt_de !== undefined) updateData.excerpt_de = blogData.excerpt_de || null;
+    if (blogData.content_de !== undefined) updateData.content_de = blogData.content_de || null;
+    if (blogData.author !== undefined) updateData.author = blogData.author || null;
+    if (blogData.published_at !== undefined) updateData.published_at = blogData.published_at || null;
+    if (blogData.status !== undefined) updateData.status = blogData.status;
+    if (blogData.featured !== undefined) updateData.featured = blogData.featured;
+    if (blogData.category !== undefined) updateData.category = blogData.category || null;
+    if (blogData.display_order !== undefined) updateData.display_order = blogData.display_order || null;
+    
+    // Auto-fill SEO fields if empty
+    if (blogData.meta_title === undefined || !blogData.meta_title) {
+      updateData.meta_title = seoFields.meta_title;
+    } else {
+      updateData.meta_title = blogData.meta_title;
+    }
+    
+    if (blogData.meta_description === undefined || !blogData.meta_description) {
+      updateData.meta_description = seoFields.meta_description;
+    } else {
+      updateData.meta_description = blogData.meta_description;
+    }
+    
+    if (blogData.og_image_url === undefined || !blogData.og_image_url) {
+      updateData.og_image_url = seoFields.og_image_url || null;
+    } else {
+      updateData.og_image_url = blogData.og_image_url;
+    }
+
+    const { data, error } = await supabaseServer
+      .from('blogs')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating blog:', error);
+      throw error;
+    }
+
+    return data as Blog;
+  } catch (err) {
+    console.error('Exception updating blog:', err);
+    throw err;
+  }
+}
+
+/**
+ * Delete a blog post (admin)
+ */
+export async function deleteBlog(id: string): Promise<boolean> {
+  try {
+    // Delete associated images first
+    await supabaseServer
+      .from('blog_images')
+      .delete()
+      .eq('blog_id', id);
+
+    const { error } = await supabaseServer
+      .from('blogs')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting blog:', error);
+      throw error;
+    }
+
+    return true;
+  } catch (err) {
+    console.error('Exception deleting blog:', err);
+    throw err;
+  }
+}
+
+/**
+ * Upload blog image to Supabase storage
+ */
+export async function uploadBlogImage(file: File, blogId: string): Promise<string> {
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${blogId}/${Date.now()}.${fileExt}`;
+    const filePath = `blog-images/${fileName}`;
+
+    const { error: uploadError } = await supabaseServer.storage
+      .from('airbnb-images')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error('Error uploading blog image:', uploadError);
+      throw uploadError;
+    }
+
+    const { data: { publicUrl } } = supabaseServer.storage
+      .from('airbnb-images')
+      .getPublicUrl(filePath);
+
+    // Store image metadata in blog_images table
+    await supabaseServer
+      .from('blog_images')
+      .insert([{
+        blog_id: blogId,
+        image_url: publicUrl,
+        storage_path: filePath,
+        width_percentage: 100,
+      }]);
+
+    return publicUrl;
+  } catch (err) {
+    console.error('Exception uploading blog image:', err);
+    throw err;
   }
 }
