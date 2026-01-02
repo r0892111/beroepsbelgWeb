@@ -197,9 +197,9 @@ export default function BecomeAGuidePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F9F9F7]">
+    <div className="min-h-screen bg-[#1BDD95]">
       {/* Hero Section */}
-      <div className="bg-[#1BDD95] py-20 md:py-32">
+      <div className="py-20 md:py-32">
         <div className="container mx-auto px-4 text-center">
           <h1 className="font-oswald text-5xl md:text-7xl text-white uppercase tracking-tight mb-4">
             {t('becomeGuide')}
@@ -230,51 +230,59 @@ export default function BecomeAGuidePage() {
 
             {/* Benefits List */}
             <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-[#1BDD95] rounded-full flex items-center justify-center flex-shrink-0">
-                  <Heart className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-oswald font-bold text-lg text-neutral-900 mb-1">{t('sharePassion.title')}</h3>
-                  <p className="font-inter text-neutral-600">
-                    {t('sharePassion.description')}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-[#1BDD95] rounded-full flex items-center justify-center flex-shrink-0">
-                  <Users className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-oswald font-bold text-lg text-neutral-900 mb-1">{t('dynamicTeam.title')}</h3>
-                  <p className="font-inter text-neutral-600">
-                    {t('dynamicTeam.description')}
-                  </p>
+              <div className="bg-white rounded-xl p-6 shadow-lg">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-[#1BDD95] rounded-full flex items-center justify-center flex-shrink-0">
+                    <Heart className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-oswald font-bold text-lg text-neutral-900 mb-1">{t('sharePassion.title')}</h3>
+                    <p className="font-inter text-neutral-600">
+                      {t('sharePassion.description')}
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-[#1BDD95] rounded-full flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-oswald font-bold text-lg text-neutral-900 mb-1">{t('flexibleLocations.title')}</h3>
-                  <p className="font-inter text-neutral-600">
-                    {t('flexibleLocations.description')}
-                  </p>
+              <div className="bg-white rounded-xl p-6 shadow-lg">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-[#1BDD95] rounded-full flex items-center justify-center flex-shrink-0">
+                    <Users className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-oswald font-bold text-lg text-neutral-900 mb-1">{t('dynamicTeam.title')}</h3>
+                    <p className="font-inter text-neutral-600">
+                      {t('dynamicTeam.description')}
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-[#1BDD95] rounded-full flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="w-6 h-6 text-white" />
+              <div className="bg-white rounded-xl p-6 shadow-lg">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-[#1BDD95] rounded-full flex items-center justify-center flex-shrink-0">
+                    <MapPin className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-oswald font-bold text-lg text-neutral-900 mb-1">{t('flexibleLocations.title')}</h3>
+                    <p className="font-inter text-neutral-600">
+                      {t('flexibleLocations.description')}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-oswald font-bold text-lg text-neutral-900 mb-1">{t('unforgettableMoments.title')}</h3>
-                  <p className="font-inter text-neutral-600">
-                    {t('unforgettableMoments.description')}
-                  </p>
+              </div>
+
+              <div className="bg-white rounded-xl p-6 shadow-lg">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-[#1BDD95] rounded-full flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-oswald font-bold text-lg text-neutral-900 mb-1">{t('unforgettableMoments.title')}</h3>
+                    <p className="font-inter text-neutral-600">
+                      {t('unforgettableMoments.description')}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

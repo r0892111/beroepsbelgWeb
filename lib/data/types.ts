@@ -100,6 +100,15 @@ export type PressLink = {
   logo?: string;
 };
 
+export type Press = {
+  id: string;
+  image_url: string;
+  article_url: string;
+  display_order?: number;
+  created_at?: string;
+  updated_at?: string;
+};
+
 export type LectureImage = {
   id: string;
   lecture_id: string;
@@ -145,6 +154,16 @@ export type LectureBooking = {
   location_description?: string;
   needs_room_provided: boolean;
   status?: 'pending' | 'confirmed' | 'cancelled';
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type NewsletterSubscription = {
+  id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  consent_given: boolean;
   created_at?: string;
   updated_at?: string;
 };
