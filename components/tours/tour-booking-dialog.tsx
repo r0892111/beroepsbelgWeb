@@ -91,6 +91,8 @@ export function TourBookingDialog({
     extraHour: false, // For opMaat tours: add extra hour (3 hours instead of 2)
   });
 
+  const [calendarOpen, setCalendarOpen] = useState(false);
+
   // Tanguy availability state
   const [tanguyAvailable, setTanguyAvailable] = useState<boolean | null>(null);
   const [checkingTanguyAvailability, setCheckingTanguyAvailability] = useState(false);
@@ -528,7 +530,7 @@ export function TourBookingDialog({
                   </span>
                 </div>
               ) : (
-                <Popover>
+                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
@@ -541,15 +543,30 @@ export function TourBookingDialog({
                       {formData.bookingDate ? format(formData.bookingDate, 'PP') : t('selectDate')}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
+                  <PopoverContent 
+                    className="w-auto p-0 z-[100]" 
+                    align="start" 
+                    onOpenAutoFocus={(e) => e.preventDefault()}
+                    onInteractOutside={(e) => {
+                      // Prevent dialog from closing when clicking outside popover
+                      e.preventDefault();
+                    }}
+                  >
                     <Calendar
                       mode="single"
                       selected={formData.bookingDate}
                       onSelect={(date) => {
-                        setFormData({ ...formData, bookingDate: date });
-                        setSelectedTimeSlot(''); // Reset time slot when date changes
+                        if (date) {
+                          setFormData({ ...formData, bookingDate: date });
+                          setSelectedTimeSlot(''); // Reset time slot when date changes
+                          setCalendarOpen(false); // Close popover after date selection
+                        }
                       }}
-                      disabled={(date) => date < new Date()}
+                      disabled={(date) => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        return date < today;
+                      }}
                       initialFocus
                     />
                   </PopoverContent>

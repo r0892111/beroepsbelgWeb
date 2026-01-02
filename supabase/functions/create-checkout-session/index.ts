@@ -72,27 +72,32 @@ serve(async (req: Request) => {
     }
 
     const finalNumberOfPeople = numberOfPeople; // Use actual number of people for all tour types
-    // Apply 10% discount for online bookings
+    // Calculate discount for online bookings (10% discount, applies to tours only, not upsell products)
     const discountRate = 0.9; // 10% discount = 90% of original price
     const discountedPrice = tour.price * discountRate;
-    const amount = Math.round(discountedPrice * finalNumberOfPeople * 100)
     const tourTitle = tour.title_nl || tour.title_en || 'Tour'
     // For op_maat tours, bookingDate is empty, so don't include it in description
     const description = opMaat 
       ? 'Op Maat Tour' 
       : `${finalNumberOfPeople} person(s) - ${bookingDate && bookingDate.trim() ? bookingDate : 'Date to be determined'}`;
 
-    // Build line items: tour + upsell products
-    // Tour line item: unit_amount is the total price (price * numberOfPeople), quantity is 1
+    // Calculate tour amounts
+    const tourFullPrice = tour.price * finalNumberOfPeople;
+    const discountAmount = tourFullPrice * 0.1; // 10% discount on tour only
+    const tourFinalAmount = tourFullPrice - discountAmount;
+    const amount = Math.round(tourFinalAmount * 100); // Use discounted price
+    
+    // Build line items: tour (with discount applied) + upsell products
+    // Tour line item: use discounted price, discount info will be in description and metadata
     const lineItems: any[] = [
       {
         price_data: {
           currency: 'eur',
           product_data: {
             name: tourTitle,
-            description: description,
+            description: `${description} (10% online discount applied)`,
           },
-          unit_amount: amount, // Total amount for all people (already calculated as tour.price * numberOfPeople * 100)
+          unit_amount: amount, // Discounted price for all people
         },
         quantity: 1, // Quantity is 1 because unit_amount already includes the total for all people
       },
@@ -108,9 +113,9 @@ serve(async (req: Request) => {
       originalPrice: tour.price,
       discountedPrice: discountedPrice,
       discountApplied: '10%',
-      calculated_total: discountedPrice * finalNumberOfPeople,
-      original_total: tour.price * finalNumberOfPeople,
-      savings: (tour.price * finalNumberOfPeople) - (discountedPrice * finalNumberOfPeople),
+      calculated_total: tourFinalAmount,
+      original_total: tourFullPrice,
+      savings: discountAmount,
     });
 
     // Add upsell products as line items
@@ -213,6 +218,9 @@ serve(async (req: Request) => {
     console.log('Total checkout amount:', {
       cents: totalAmount,
       euros: (totalAmount / 100).toFixed(2),
+      tourAmount: amount,
+      tourAmountEuros: (amount / 100).toFixed(2),
+      discountAmount: discountAmount.toFixed(2),
       expected_amount: amount + (upsellProducts.reduce((sum: number, p: any) => {
         const qty = p.quantity || 1;
         const price = p.price || 0;
@@ -242,6 +250,10 @@ serve(async (req: Request) => {
         userId: userId || '',
         opMaat: opMaat.toString(),
         upsellProducts: JSON.stringify(upsellProducts), // Store upsell products in metadata
+        // Discount information for tracking (10% discount applies to tours only)
+        tourOriginalPrice: tourFullPrice.toFixed(2),
+        tourDiscountAmount: discountAmount.toFixed(2),
+        tourDiscountPercent: '10%',
       },
     })
 
