@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createNewsletterSubscription } from '@/lib/api/content';
 import type { NewsletterSubscription } from '@/lib/data/types';
+import { sendNewsletterWebhook } from '@/lib/utils/webhooks';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,6 +16,15 @@ export async function POST(request: NextRequest) {
     }
 
     const newSubscription = await createNewsletterSubscription(subscriptionData);
+    
+    // Send to n8n webhook (non-blocking)
+    sendNewsletterWebhook({
+      email: subscriptionData.email,
+      first_name: subscriptionData.first_name,
+      last_name: subscriptionData.last_name,
+      consent_given: subscriptionData.consent_given,
+    });
+    
     return NextResponse.json(newSubscription, { status: 201 });
   } catch (error: any) {
     console.error('API Error creating newsletter subscription:', error);

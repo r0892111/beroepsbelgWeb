@@ -83,6 +83,17 @@
     "submit": "Subscribe",
     "success": "Thank you for subscribing!"
   },
+  "chatbot": {
+    "title": "Chat with us",
+    "subtitle": "We're here to help",
+    "placeholder": "Type your message...",
+    "send": "Send",
+    "reasoning": "Reasoning...",
+    "thinking": "Thinking...",
+    "typing": "Typing...",
+    "error": "Something went wrong. Please try again.",
+    "close": "Close chat"
+  },
   "footer": {
     "address": "Address",
     "contact": "Contact",

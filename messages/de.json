@@ -82,6 +82,17 @@
     "submit": "Anmelden",
     "success": "Vielen Dank für Ihre Anmeldung!"
   },
+  "chatbot": {
+    "title": "Chatten Sie mit uns",
+    "subtitle": "Wir sind hier, um zu helfen",
+    "placeholder": "Geben Sie Ihre Nachricht ein...",
+    "send": "Senden",
+    "reasoning": "Überlegen...",
+    "thinking": "Denken...",
+    "typing": "Tippen...",
+    "error": "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut.",
+    "close": "Chat schließen"
+  },
   "footer": {
     "address": "Adresse",
     "contact": "Kontakt",

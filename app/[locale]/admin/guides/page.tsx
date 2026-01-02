@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, Users, X, Search, Filter, Calendar, Mail, Phone, MapPin, Globe, Clock, Award, Upload, Image as ImageIcon, Cake } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
@@ -612,7 +613,25 @@ export default function AdminGuidesPage() {
                     {filteredGuides.map((guide) => (
                       <TableRow key={guide.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openProfileDialog(guide)}>
                         <TableCell className="font-medium">#{guide.id}</TableCell>
-                        <TableCell className="font-medium hover:text-primary transition-colors">{guide.name || 'N/A'}</TableCell>
+                        <TableCell className="font-medium hover:text-primary transition-colors">
+                          <div className="flex items-center gap-2">
+                            {guide.profile_picture ? (
+                              <div className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                                <Image
+                                  src={guide.profile_picture}
+                                  alt={guide.name || 'Guide'}
+                                  fill
+                                  className="object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                                <Users className="h-4 w-4 text-gray-500" />
+                              </div>
+                            )}
+                            <span>{guide.name || 'N/A'}</span>
+                          </div>
+                        </TableCell>
                         <TableCell className="text-sm">{guide.Email || 'N/A'}</TableCell>
                         <TableCell className="text-sm">{guide.phonenumber || 'N/A'}</TableCell>
                         <TableCell>
