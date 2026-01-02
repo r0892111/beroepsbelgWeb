@@ -146,7 +146,12 @@ export default function AdminGuideBehaviourPage() {
 
     // Calculate engagement scores
     return baseMetrics.map(guide => {
-      const normTours = normalize(guide.tours_done, minTours, maxTours);
+      const toursDone = guide.tours_done ?? 0;
+      const requestedClientInfo = guide.requested_client_info ?? 0;
+      const photosTakenAmount = guide.photos_taken_amount ?? 0;
+      const photosTakenFrequency = guide.photos_taken_frequency ?? 0;
+
+      const normTours = normalize(toursDone, minTours, maxTours);
       const normPhotosPerTour = normalize(guide.photos_per_tour, minPhotosPerTour, maxPhotosPerTour);
       const normRequestsPerTour = normalize(guide.requests_per_tour, minRequestsPerTour, maxRequestsPerTour);
 
@@ -167,8 +172,8 @@ export default function AdminGuideBehaviourPage() {
         : 0;
 
       // Check for high client info requests (matches watchlist)
-      const hasHighClientInfoRequests = guide.requested_client_info > WATCHLIST_THRESHOLDS.MIN_CLIENT_INFO_REQUESTS &&
-                                        guide.requested_client_info > medianRequestsPerTour * WATCHLIST_THRESHOLDS.OUTLIER_MULTIPLIER &&
+      const hasHighClientInfoRequests = requestedClientInfo > WATCHLIST_THRESHOLDS.MIN_CLIENT_INFO_REQUESTS &&
+                                        requestedClientInfo > medianRequestsPerTour * WATCHLIST_THRESHOLDS.OUTLIER_MULTIPLIER &&
                                         medianRequestsPerTour > 0;
 
       // Check for low photo activity (matches watchlist)
@@ -177,11 +182,11 @@ export default function AdminGuideBehaviourPage() {
                                    guide.photos_per_tour < medianPhotosPerTour * WATCHLIST_THRESHOLDS.BELOW_AVERAGE_THRESHOLD);
 
       // Mutually exclusive: tour count categories
-      if (guide.tours_done === 0) {
+      if (toursDone === 0) {
         statuses.push('inactive');
-      } else if (guide.tours_done <= 2) {
+      } else if (toursDone <= 2) {
         statuses.push('new');
-      } else if (guide.tours_done <= 5) {
+      } else if (toursDone <= 5) {
         statuses.push('emerging');
       } else {
         statuses.push('consistent');
@@ -205,11 +210,11 @@ export default function AdminGuideBehaviourPage() {
       }
 
       // High performer: exceptional overall (only if no issues)
-      if (!hasLowPhotoActivity && !hasHighClientInfoRequests && guide.tours_done >= 3) {
+      if (!hasLowPhotoActivity && !hasHighClientInfoRequests && toursDone >= 3) {
         const sortedTours = [...toursDoneValues].sort((a, b) => b - a);
         const top50ToursThreshold = sortedTours[Math.floor(sortedTours.length * 0.5)];
-        const hasActivity = guide.photos_taken_amount > 0 || guide.photos_taken_frequency > 0;
-        if (guide.tours_done >= top50ToursThreshold && 
+        const hasActivity = photosTakenAmount > 0 || photosTakenFrequency > 0;
+        if (toursDone >= top50ToursThreshold && 
             guide.requests_per_tour <= medianRequestsPerTour &&
             hasActivity) {
           statuses.push('high_performer');
@@ -227,10 +232,10 @@ export default function AdminGuideBehaviourPage() {
   // Calculate KPI totals
   const kpiTotals = useMemo(() => {
     return {
-      totalTours: guidesWithMetrics.reduce((sum, g) => sum + g.tours_done, 0),
-      totalPhotos: guidesWithMetrics.reduce((sum, g) => sum + g.photos_taken_amount, 0),
-      totalPhotoMoments: guidesWithMetrics.reduce((sum, g) => sum + g.photos_taken_frequency, 0),
-      totalClientInfoRequests: guidesWithMetrics.reduce((sum, g) => sum + g.requested_client_info, 0),
+      totalTours: guidesWithMetrics.reduce((sum, g) => sum + (g.tours_done ?? 0), 0),
+      totalPhotos: guidesWithMetrics.reduce((sum, g) => sum + (g.photos_taken_amount ?? 0), 0),
+      totalPhotoMoments: guidesWithMetrics.reduce((sum, g) => sum + (g.photos_taken_frequency ?? 0), 0),
+      totalClientInfoRequests: guidesWithMetrics.reduce((sum, g) => sum + (g.requested_client_info ?? 0), 0),
     };
   }, [guidesWithMetrics]);
 
@@ -241,7 +246,7 @@ export default function AdminGuideBehaviourPage() {
         case 'engagement':
           return b.engagement_score - a.engagement_score;
         case 'tours':
-          return b.tours_done - a.tours_done;
+          return (b.tours_done ?? 0) - (a.tours_done ?? 0);
         case 'photos_per_tour':
           return b.photos_per_tour - a.photos_per_tour;
         case 'requests_per_tour':
@@ -285,8 +290,9 @@ export default function AdminGuideBehaviourPage() {
       }
 
       // Often requests client info
-      if (guide.requested_client_info > WATCHLIST_THRESHOLDS.MIN_CLIENT_INFO_REQUESTS &&
-          guide.requested_client_info > medianRequests * WATCHLIST_THRESHOLDS.OUTLIER_MULTIPLIER && 
+      const requestedClientInfo = guide.requested_client_info ?? 0;
+      if (requestedClientInfo > WATCHLIST_THRESHOLDS.MIN_CLIENT_INFO_REQUESTS &&
+          requestedClientInfo > medianRequests * WATCHLIST_THRESHOLDS.OUTLIER_MULTIPLIER && 
           medianRequests > 0) {
         reasons.push('oftenRequestsClientInfo');
       }
@@ -319,20 +325,20 @@ export default function AdminGuideBehaviourPage() {
           bValue = b.name || '';
           break;
         case 'tours_done':
-          aValue = a.tours_done;
-          bValue = b.tours_done;
+          aValue = a.tours_done ?? 0;
+          bValue = b.tours_done ?? 0;
           break;
         case 'photos_taken_amount':
-          aValue = a.photos_taken_amount;
-          bValue = b.photos_taken_amount;
+          aValue = a.photos_taken_amount ?? 0;
+          bValue = b.photos_taken_amount ?? 0;
           break;
         case 'photos_taken_frequency':
-          aValue = a.photos_taken_frequency;
-          bValue = b.photos_taken_frequency;
+          aValue = a.photos_taken_frequency ?? 0;
+          bValue = b.photos_taken_frequency ?? 0;
           break;
         case 'requested_client_info':
-          aValue = a.requested_client_info;
-          bValue = b.requested_client_info;
+          aValue = a.requested_client_info ?? 0;
+          bValue = b.requested_client_info ?? 0;
           break;
         case 'photos_per_tour':
           aValue = a.photos_per_tour;
@@ -410,10 +416,10 @@ export default function AdminGuideBehaviourPage() {
     }
 
     return {
-      tours_done: Math.max(...filteredAndSortedGuides.map(g => g.tours_done), 1),
-      photos_taken_amount: Math.max(...filteredAndSortedGuides.map(g => g.photos_taken_amount), 1),
-      photos_taken_frequency: Math.max(...filteredAndSortedGuides.map(g => g.photos_taken_frequency), 1),
-      requested_client_info: Math.max(...filteredAndSortedGuides.map(g => g.requested_client_info), 1),
+      tours_done: Math.max(...filteredAndSortedGuides.map(g => g.tours_done ?? 0), 1),
+      photos_taken_amount: Math.max(...filteredAndSortedGuides.map(g => g.photos_taken_amount ?? 0), 1),
+      photos_taken_frequency: Math.max(...filteredAndSortedGuides.map(g => g.photos_taken_frequency ?? 0), 1),
+      requested_client_info: Math.max(...filteredAndSortedGuides.map(g => g.requested_client_info ?? 0), 1),
       photos_per_tour: Math.max(...filteredAndSortedGuides.map(g => g.photos_per_tour), 1),
       requests_per_tour: Math.max(...filteredAndSortedGuides.map(g => g.requests_per_tour), 1),
     };
@@ -422,11 +428,11 @@ export default function AdminGuideBehaviourPage() {
   // Chart data preparation
   const toursDoneChartData = useMemo(() => {
     return [...filteredAndSortedGuides]
-      .sort((a, b) => b.tours_done - a.tours_done)
+      .sort((a, b) => (b.tours_done ?? 0) - (a.tours_done ?? 0))
       .slice(0, 20)
       .map(guide => ({
         name: guide.name || 'Unnamed Guide',
-        tours: guide.tours_done,
+        tours: guide.tours_done ?? 0,
         status: getPrimaryStatus(guide.status),
         color: getStatusColor(getPrimaryStatus(guide.status)),
       }));
@@ -498,9 +504,9 @@ export default function AdminGuideBehaviourPage() {
 
     filteredAndSortedGuides.forEach(guide => {
       const primaryStatus = getPrimaryStatus(guide.status);
-      statusGroups[primaryStatus].tours.push(guide.tours_done);
+      statusGroups[primaryStatus].tours.push(guide.tours_done ?? 0);
       statusGroups[primaryStatus].photosPerTour.push(guide.photos_per_tour);
-      statusGroups[primaryStatus].clientInfo.push(guide.requested_client_info);
+      statusGroups[primaryStatus].clientInfo.push(guide.requested_client_info ?? 0);
     });
 
     return Object.entries(statusGroups)
@@ -925,16 +931,16 @@ export default function AdminGuideBehaviourPage() {
                               </div>
                             </TableCell>
                             <TableCell>
-                              <InlineBar value={guide.tours_done} max={maxValues.tours_done} isInteger />
+                              <InlineBar value={guide.tours_done ?? 0} max={maxValues.tours_done} isInteger />
                             </TableCell>
                             <TableCell>
-                              <InlineBar value={guide.photos_taken_amount} max={maxValues.photos_taken_amount} isInteger />
+                              <InlineBar value={guide.photos_taken_amount ?? 0} max={maxValues.photos_taken_amount} isInteger />
                             </TableCell>
                             <TableCell>
-                              <InlineBar value={guide.photos_taken_frequency} max={maxValues.photos_taken_frequency} isInteger />
+                              <InlineBar value={guide.photos_taken_frequency ?? 0} max={maxValues.photos_taken_frequency} isInteger />
                             </TableCell>
                             <TableCell>
-                              <InlineBar value={guide.requested_client_info} max={maxValues.requested_client_info} isInteger />
+                              <InlineBar value={guide.requested_client_info ?? 0} max={maxValues.requested_client_info} isInteger />
                             </TableCell>
                             <TableCell>
                               <InlineBar value={guide.photos_per_tour} max={maxValues.photos_per_tour} />

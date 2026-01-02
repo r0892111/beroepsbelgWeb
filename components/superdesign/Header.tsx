@@ -40,6 +40,7 @@ export function Header({ locale }: HeaderProps) {
   const navItems = [
     { label: 'Tours', href: `/${locale}/tours`, hasDropdown: false },
     { label: 'Lezing', href: `/${locale}/lezing`, hasDropdown: false },
+    { label: 'Blog', href: `/${locale}/blog`, hasDropdown: false },
     { label: 'Webshop', href: `/${locale}/webshop`, hasDropdown: false },
     { label: 'Press', href: `/${locale}/pers`, hasDropdown: false },
     { label: 'FAQ', href: `/${locale}/faq`, hasDropdown: false },
