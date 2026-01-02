@@ -87,11 +87,56 @@ export type FaqItem = {
   answer: Record<Locale, string>;
 };
 
-export type BlogPost = {
+export type BlogImage = {
+  id: string;
+  blog_id: string;
+  image_url: string;
+  storage_path: string;
+  alt_text?: string;
+  width_percentage: number; // 25, 50, 75, 100 or custom
+  position_in_content?: number;
+  created_at?: string;
+};
+
+export type Blog = {
+  id: string;
+  // Core content (Dutch - primary language)
+  title: string;
   slug: string;
-  title: Record<Locale, string>;
-  excerpt: Record<Locale, string>;
-  date: string;
+  excerpt?: string;
+  content: string; // Markdown content
+  thumbnail_url?: string;
+  
+  // Optional multi-language content
+  title_en?: string;
+  excerpt_en?: string;
+  content_en?: string;
+  title_fr?: string;
+  excerpt_fr?: string;
+  content_fr?: string;
+  title_de?: string;
+  excerpt_de?: string;
+  content_de?: string;
+  
+  // Metadata
+  author?: string;
+  published_at?: string;
+  status: 'draft' | 'published';
+  featured: boolean;
+  category?: string;
+  
+  // SEO fields
+  meta_title?: string;
+  meta_description?: string;
+  og_image_url?: string;
+  
+  // Ordering and timestamps
+  display_order?: number;
+  created_at?: string;
+  updated_at?: string;
+  
+  // Related data
+  blogImages?: BlogImage[];
 };
 
 export type PressLink = {

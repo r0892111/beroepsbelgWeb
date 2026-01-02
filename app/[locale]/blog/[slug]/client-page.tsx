@@ -1,0 +1,106 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
+import Link from 'next/link';
+import Image from 'next/image';
+import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import type { Blog } from '@/lib/data/types';
+import type { Locale } from '@/i18n';
+import MarkdownRenderer from '@/components/blog/markdown-renderer';
+
+interface BlogDetailClientPageProps {
+  blog: Blog;
+  locale: Locale;
+}
+
+// Helper to get localized content
+const getLocalizedContent = (blog: Blog, locale: Locale) => {
+  let title = blog.title;
+  let excerpt = blog.excerpt || '';
+  let content = blog.content;
+
+  if (locale === 'en' && blog.title_en) {
+    title = blog.title_en;
+    excerpt = blog.excerpt_en || excerpt;
+    content = blog.content_en || content;
+  } else if (locale === 'fr' && blog.title_fr) {
+    title = blog.title_fr;
+    excerpt = blog.excerpt_fr || excerpt;
+    content = blog.content_fr || content;
+  } else if (locale === 'de' && blog.title_de) {
+    title = blog.title_de;
+    excerpt = blog.excerpt_de || excerpt;
+    content = blog.content_de || content;
+  }
+
+  return { title, excerpt, content };
+};
+
+export default function BlogDetailClientPage({ blog, locale }: BlogDetailClientPageProps) {
+  const t = useTranslations('blog');
+  const { title, excerpt, content } = getLocalizedContent(blog, locale);
+
+  return (
+    <div className="min-h-screen bg-[#F9F9F7] py-16 md:py-24 px-4 md:px-8">
+      <div className="mx-auto max-w-4xl">
+        {/* Breadcrumbs */}
+        <div className="mb-6">
+          <Link href={`/${locale}/blog`} className="text-[#1BDD95] hover:underline">
+            {t('backToBlog')}
+          </Link>
+        </div>
+
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            {blog.category && (
+              <Badge variant="outline">{blog.category}</Badge>
+            )}
+            {blog.featured && (
+              <Badge variant="default" className="bg-yellow-500">Featured</Badge>
+            )}
+          </div>
+          <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy mb-4">{title}</h1>
+          {excerpt && (
+            <p className="text-xl text-gray-600 mb-4">{excerpt}</p>
+          )}
+          <div className="flex items-center gap-4 text-sm text-gray-500">
+            {blog.author && (
+              <span>{t('author')}: {blog.author}</span>
+            )}
+            {blog.published_at && (
+              <span>{t('publishedOn')} {format(new Date(blog.published_at), 'PPP')}</span>
+            )}
+          </div>
+        </div>
+
+        {/* Thumbnail */}
+        {blog.thumbnail_url && (
+          <div className="relative w-full h-64 md:h-96 mb-8 rounded-lg overflow-hidden">
+            <Image
+              src={blog.thumbnail_url}
+              alt={title}
+              fill
+              className="object-cover"
+            />
+          </div>
+        )}
+
+        {/* Content */}
+        <div className="prose prose-lg max-w-none">
+          <MarkdownRenderer content={content} />
+        </div>
+
+        {/* Back to Blog */}
+        <div className="mt-12 pt-8 border-t">
+          <Link href={`/${locale}/blog`}>
+            <Button variant="outline">{t('backToBlog')}</Button>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+

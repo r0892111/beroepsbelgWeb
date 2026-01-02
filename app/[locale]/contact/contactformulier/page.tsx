@@ -101,10 +101,10 @@ export default function ContactPage() {
               </div>
               <h3 className="font-oswald font-bold text-lg mb-2 text-neutral-900">{t('phoneLabel')}</h3>
               <a
-                href="tel:+32123456789"
+                href="tel:+32494254159"
                 className="font-inter text-neutral-600 hover:text-[#1BDD95] transition-colors"
               >
-                +32 123 456 789
+                +32 494 25 41 59
               </a>
             </div>
           </div>

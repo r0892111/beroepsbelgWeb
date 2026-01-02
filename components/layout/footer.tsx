@@ -65,8 +65,8 @@ export function Footer({ locale }: FooterProps) {
                 </a>
               </p>
               <p>
-                <a href="tel:+32123456789" className="transition-colors duration-300 hover:underline" style={{ color: 'var(--green-accent)' }}>
-                  +32 123 456 789
+                <a href="tel:+32 494 25 41 59" className="transition-colors duration-300 hover:underline" style={{ color: 'var(--green-accent)' }}>
+                +32 494 25 41 59
                 </a>
               </p>
               <p>
@@ -80,7 +80,7 @@ export function Footer({ locale }: FooterProps) {
                   WhatsApp
                 </a>
               </p>
-              <p className="pt-2" style={{ color: 'var(--text-secondary)' }}>BE 0123.456.789</p>
+              <p className="pt-2" style={{ color: 'var(--text-secondary)' }}>BE0599930251</p>
             </div>
           </div>
 

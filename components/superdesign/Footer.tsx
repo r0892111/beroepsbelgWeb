@@ -278,6 +278,7 @@ export function Footer({ locale }: FooterProps) {
               <FooterLink href={`/${locale}/tours`}>Tours</FooterLink>
               <FooterLink href={`/${locale}/webshop`}>Webshop</FooterLink>
               <FooterLink href={`/${locale}/lezing`}>Lezing</FooterLink>
+              <FooterLink href={`/${locale}/blog`}>Blog</FooterLink>
               <FooterLink href={`/${locale}/faq`}>FAQs</FooterLink>
               <FooterLink href={`/${locale}/contact/contactformulier`}>Contact</FooterLink>
             </nav>
