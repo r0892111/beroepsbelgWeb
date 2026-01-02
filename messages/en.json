@@ -39,7 +39,8 @@
     "addToCart": "Add to Cart",
     "curated": "Curated",
     "collection": "Collection",
-    "exclusiveItems": "Exclusive books, prints & objects"
+    "exclusiveItems": "Exclusive books, prints & objects",
+    "viewAllProducts": "View All Products"
   },
   "header": {
     "account": "Account",
@@ -416,6 +417,8 @@
     "specialRequestsPlaceholder": "Any special requirements or requests...",
     "requestTanguy": "Request Tanguy Ottomer",
     "requestTanguyDescription": "Would you like Tanguy Ottomer, founder of Beroepsbelg, to personally join your tour?",
+    "tanguyLanguageDisclaimer": "Note: Tanguy only gives tours in Dutch or English.",
+    "addExtraHour": "Add extra hour (3 hours instead of 2 hours)",
     "total": "Total",
     "processing": "Processing...",
     "proceedToPayment": "Proceed to Payment",
@@ -486,7 +489,7 @@
     "getInTouch": "Get In Touch",
     "subtitle": "We'd love to hear from you",
     "address": "Address",
-    "addressLabel": "Address",
+    "addressLabel": "Location",
     "email": "Email",
     "emailLabel": "Email",
     "phone": "Phone",
@@ -554,7 +557,7 @@
     "required": "This field is required"
   },
   "lecture": {
-    "title": "Lecture: The Boerentoren",
+    "title": "Lecture",
     "date": "Date",
     "onRequest": "On request",
     "location": "Location",
@@ -565,7 +568,28 @@
     "bookLecture": "Book this lecture",
     "moreInfo": "More information",
     "description1": "The Boerentoren, also known as the KBC Tower, is an iconic building in Antwerp's cityscape. This lecture takes you through the fascinating history of what was once Europe's tallest building.",
-    "description2": "From the ambitious building plans in the 1920s to the modern transformation, you'll discover the architectural highlights, the stories of the people who worked there, and the role the building played in developing Antwerp as a modern metropolis."
+    "description2": "From the ambitious building plans in the 1920s to the modern transformation, you'll discover the architectural highlights, the stories of the people who worked there, and the role the building played in developing Antwerp as a modern metropolis.",
+    "disclaimer": "Note: Lectures are only given in Dutch or English, but anyone is welcome!",
+    "booking": {
+      "title": "Book Lecture",
+      "description": "Please fill in the form below to request a lecture. We will contact you to confirm the details.",
+      "name": "Name",
+      "nameRequired": "Name is required",
+      "nameMinLength": "Name must be at least 2 characters",
+      "phone": "Phone",
+      "email": "Email",
+      "contactRequired": "Please provide either a phone number or email address",
+      "emailInvalid": "Please enter a valid email address",
+      "preferredDate": "Preferred Date",
+      "numberOfPeople": "Number of People",
+      "numberOfPeopleInvalid": "Please enter a valid number of people",
+      "locationDescription": "Location Description",
+      "needsRoom": "We need BeroepsBelg to provide a room/auditorium",
+      "submit": "Submit Booking Request",
+      "cancel": "Cancel",
+      "submitting": "Submitting...",
+      "success": "Booking request submitted successfully! We will contact you soon."
+    }
   },
   "disclaimer": {
     "title": "Terms & Conditions",
