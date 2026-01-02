@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Home, LogOut, RefreshCw, Search, Star, BarChart3, TrendingUp, AlertTriangle, CheckCircle2, Image as ImageIcon, Users, ArrowUpDown, ArrowUp, ArrowDown, Table2 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabase/client';
 import { useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -718,6 +719,20 @@ export default function AdminGuideBehaviourPage() {
                           <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-semibold">
                             {index + 1}
                           </div>
+                          {guide.profile_picture ? (
+                            <div className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                              <Image
+                                src={guide.profile_picture}
+                                alt={guide.name || 'Guide'}
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                              <Users className="h-4 w-4 text-gray-500" />
+                            </div>
+                          )}
                           <div className="flex-1 min-w-0">
                             <div className="font-medium truncate">{guide.name || 'Unnamed Guide'}</div>
                             <div className="text-xs text-muted-foreground">
@@ -758,6 +773,20 @@ export default function AdminGuideBehaviourPage() {
                     <div className="space-y-3">
                       {watchlistFlags.map(({ guide, reasons }) => (
                         <div key={guide.id} className="flex items-center gap-3 p-3 rounded-lg border border-yellow-200 bg-yellow-50">
+                          {guide.profile_picture ? (
+                            <div className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                              <Image
+                                src={guide.profile_picture}
+                                alt={guide.name || 'Guide'}
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                              <Users className="h-4 w-4 text-gray-500" />
+                            </div>
+                          )}
                           <div className="flex-1 min-w-0">
                             <div className="font-medium">{guide.name || 'Unnamed Guide'}</div>
                             <div className="flex flex-wrap gap-1 mt-1">
@@ -924,6 +953,20 @@ export default function AdminGuideBehaviourPage() {
                           >
                             <TableCell>
                               <div className="flex items-center gap-2">
+                                {guide.profile_picture ? (
+                                  <div className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                                    <Image
+                                      src={guide.profile_picture}
+                                      alt={guide.name || 'Guide'}
+                                      fill
+                                      className="object-cover"
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                                    <Users className="h-4 w-4 text-gray-500" />
+                                  </div>
+                                )}
                                 <span className="font-medium">{guide.name || 'Unnamed Guide'}</span>
                                 {guide.is_favourite && (
                                   <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
