@@ -7,6 +7,7 @@ import { CookieBanner } from '@/components/layout/cookie-banner';
 import { MainNav } from '@/components/layout/main-nav';
 import { Footer } from '@/components/superdesign/Footer';
 import { Toaster } from '@/components/ui/sonner';
+import { ChatbotWidget } from '@/components/chatbot/chatbot-widget';
 import { AuthProvider } from '@/lib/contexts/auth-context';
 import { AdminProvider } from '@/lib/contexts/admin-context';
 import { CartProvider } from '@/lib/contexts/cart-context';
@@ -49,6 +50,7 @@ export default async function LocaleLayout({
               </div>
               <CookieBanner />
               <Toaster />
+              <ChatbotWidget locale={locale} />
             </FavoritesProvider>
           </CartProvider>
         </AdminProvider>

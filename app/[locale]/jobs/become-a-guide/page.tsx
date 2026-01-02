@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { CheckCircle, Users, MapPin, Heart, Sparkles, Upload, X, FileText, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import Image from 'next/image';
+import { sendJobApplicationWebhook } from '@/lib/utils/webhooks';
 
 const jobApplicationSchema = z.object({
   name: z.string().min(1),
@@ -181,6 +182,18 @@ export default function BecomeAGuidePage() {
         setIsSubmitting(false);
         return;
       }
+
+      // Send to n8n webhook (non-blocking)
+      sendJobApplicationWebhook({
+        name: data.name,
+        email: data.email,
+        phone: data.phone || undefined,
+        city: data.city || undefined,
+        motivation: data.motivation,
+        cv_url: cvUrl || undefined,
+        photo_url: photoUrl || undefined,
+        consent: data.consent,
+      });
 
       toast.success(t('successMessage'));
       reset();

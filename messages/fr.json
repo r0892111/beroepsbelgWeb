@@ -83,6 +83,17 @@
     "submit": "S'inscrire",
     "success": "Merci pour votre inscription!"
   },
+  "chatbot": {
+    "title": "Discutez avec nous",
+    "subtitle": "Nous sommes là pour vous aider",
+    "placeholder": "Tapez votre message...",
+    "send": "Envoyer",
+    "reasoning": "Réflexion...",
+    "thinking": "Réflexion...",
+    "typing": "En train de taper...",
+    "error": "Une erreur s'est produite. Veuillez réessayer.",
+    "close": "Fermer le chat"
+  },
   "footer": {
     "address": "Adresse",
     "contact": "Contact",
