@@ -4,31 +4,42 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ExternalLink } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { getPressLinks } from '@/lib/api/content';
+import { supabase } from '@/lib/supabase/client';
+import Image from 'next/image';
+import type { Press } from '@/lib/data/types';
 
 // Press Card Component with Framer Motion animations
 const PressCard = ({
-  name,
-  url,
+  pressItem,
   delay
 }: {
-  name: string;
-  url: string;
+  pressItem: Press;
   delay: number;
 }) => (
   <motion.a
-    href={url}
+    href={pressItem.article_url}
     target="_blank"
     rel="noopener noreferrer"
     initial={{ opacity: 0, scale: 0.95, y: 10 }}
     whileInView={{ opacity: 1, scale: 1, y: 0 }}
     viewport={{ once: true }}
     transition={{ delay, duration: 0.5, ease: "easeOut" }}
-    className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-center justify-center w-full sm:w-[45%] md:w-[180px] h-[80px] md:h-[110px] p-4 md:p-6 group shrink-0 border border-transparent hover:border-gray-50 relative"
+    className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-center justify-center w-full sm:w-[45%] md:w-[180px] h-[80px] md:h-[110px] p-4 md:p-6 group shrink-0 border border-transparent hover:border-gray-50 relative overflow-hidden"
   >
-    <div className="text-gray-400 font-oswald font-bold text-sm md:text-lg group-hover:text-[#1BDD95] transition-colors duration-300 text-center leading-tight uppercase tracking-tight">
-      {name}
-    </div>
+    {pressItem.image_url ? (
+      <div className="relative w-full h-full">
+        <Image
+          src={pressItem.image_url}
+          alt="Press logo"
+          fill
+          className="object-contain group-hover:scale-110 transition-transform duration-300"
+        />
+      </div>
+    ) : (
+      <div className="text-gray-400 font-oswald font-bold text-sm md:text-lg group-hover:text-[#1BDD95] transition-colors duration-300 text-center leading-tight uppercase tracking-tight">
+        Press
+      </div>
+    )}
     <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-neutral-100 group-hover:bg-[#1BDD95] flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
       <ExternalLink className="h-3 w-3 text-neutral-700 group-hover:text-white transition-colors" />
     </div>
@@ -37,27 +48,47 @@ const PressCard = ({
 
 export default function PersPage() {
   const t = useTranslations('press');
-  const [pressLinks, setPressLinks] = useState<Array<{ name: string; url: string }>>([]);
+  const [pressItems, setPressItems] = useState<Press[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchPressLinks() {
+    const fetchPressItems = async () => {
       try {
-        const links = await getPressLinks();
-        setPressLinks(links);
-      } catch (error) {
-        console.error('Failed to fetch press links:', error);
+        const { data, error } = await supabase
+          .from('press')
+          .select('*')
+          .order('display_order', { ascending: true, nullsFirst: false })
+          .order('created_at', { ascending: true });
+
+        if (error) {
+          console.error('Failed to fetch press items:', error);
+          return;
+        }
+
+        const items: Press[] = (data || []).map((row: any) => ({
+          id: row.id,
+          image_url: row.image_url || '',
+          article_url: row.article_url || '',
+          display_order: row.display_order !== null && row.display_order !== undefined ? Number(row.display_order) : undefined,
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+        }));
+
+        setPressItems(items);
+      } catch (err) {
+        console.error('Failed to fetch press items:', err);
       } finally {
         setLoading(false);
       }
-    }
-    fetchPressLinks();
+    };
+
+    void fetchPressItems();
   }, []);
 
-  // Organize press links into rows for brick layout
+  // Organize press items into rows for brick layout
   // Alternating pattern: 5, 4, 5, 4... for visual interest
-  const organizeIntoRows = (items: typeof pressLinks) => {
-    const rows: typeof pressLinks[] = [];
+  const organizeIntoRows = (items: Press[]) => {
+    const rows: Press[][] = [];
     let index = 0;
     const pattern = [5, 4, 5, 4, 5]; // Brick pattern
 
@@ -75,7 +106,7 @@ export default function PersPage() {
     return rows;
   };
 
-  const rows = organizeIntoRows(pressLinks);
+  const rows = organizeIntoRows(pressItems);
 
   if (loading) {
     return (
@@ -127,11 +158,10 @@ export default function PersPage() {
                 key={rowIndex}
                 className="flex flex-wrap justify-center gap-3 md:gap-5 w-full"
               >
-                {row.map((link, itemIndex) => (
+                {row.map((pressItem, itemIndex) => (
                   <PressCard
-                    key={link.name}
-                    name={link.name}
-                    url={link.url}
+                    key={pressItem.id}
+                    pressItem={pressItem}
                     delay={(startDelay + itemIndex) * 0.05}
                   />
                 ))}
@@ -141,7 +171,7 @@ export default function PersPage() {
         </div>
 
         {/* Empty State */}
-        {pressLinks.length === 0 && !loading && (
+        {pressItems.length === 0 && !loading && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

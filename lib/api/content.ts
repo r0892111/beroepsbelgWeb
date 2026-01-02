@@ -1,5 +1,5 @@
 import { supabaseServer } from '@/lib/supabase/server';
-import type { Locale, City, Tour, Product, FaqItem, BlogPost, PressLink, ProductImage, TourImage, Lecture, LectureImage, LectureBooking } from '@/lib/data/types';
+import type { Locale, City, Tour, Product, FaqItem, BlogPost, PressLink, ProductImage, TourImage, Lecture, LectureImage, LectureBooking, Press, NewsletterSubscription } from '@/lib/data/types';
 
 export type LocalTourBooking = {
   id: string;
@@ -664,6 +664,106 @@ export async function getLectures(): Promise<Lecture[]> {
   } catch (err) {
     console.error('Exception fetching lectures:', err);
     return [];
+  }
+}
+
+export async function getPressItems(): Promise<Press[]> {
+  try {
+    const { data, error } = await supabaseServer
+      .from('press')
+      .select('*')
+      .order('display_order', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      // If table doesn't exist, return empty array (graceful degradation)
+      if (error.message?.includes('does not exist') || 
+          error.message?.includes('column') ||
+          error.code === '42703' || error.code === '42P01') {
+        console.warn('press table does not exist. Please run migration to create press table.');
+        return [];
+      }
+      console.error('Error fetching press items:', error);
+      return [];
+    }
+
+    if (!data || data.length === 0) {
+      return [];
+    }
+
+    const pressItems: Press[] = (data || []).map((row: any) => ({
+      id: row.id,
+      image_url: row.image_url || '',
+      article_url: row.article_url || '',
+      display_order: row.display_order !== null && row.display_order !== undefined ? Number(row.display_order) : undefined,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    }));
+
+    return pressItems;
+  } catch (err) {
+    console.error('Exception fetching press items:', err);
+    return [];
+  }
+}
+
+export async function createNewsletterSubscription(
+  subscription: Omit<NewsletterSubscription, 'id' | 'created_at' | 'updated_at'>
+): Promise<NewsletterSubscription> {
+  try {
+    // Validate email format
+    if (!subscription.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(subscription.email)) {
+      throw new Error('Invalid email format');
+    }
+
+    // Validate consent is given
+    if (!subscription.consent_given) {
+      throw new Error('Consent must be given to subscribe');
+    }
+
+    // Check if email already exists
+    const { data: existing } = await supabaseServer
+      .from('newsletter_subscriptions')
+      .select('id')
+      .eq('email', subscription.email.toLowerCase().trim())
+      .single();
+
+    if (existing) {
+      throw new Error('This email is already subscribed');
+    }
+
+    const { data, error } = await supabaseServer
+      .from('newsletter_subscriptions')
+      .insert([{
+        email: subscription.email.toLowerCase().trim(),
+        first_name: subscription.first_name || null,
+        last_name: subscription.last_name || null,
+        consent_given: subscription.consent_given,
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating newsletter subscription:', error);
+      // Handle unique constraint violation
+      if (error.code === '23505') {
+        throw new Error('This email is already subscribed');
+      }
+      throw error;
+    }
+
+    return {
+      id: data.id,
+      email: data.email,
+      first_name: data.first_name || undefined,
+      last_name: data.last_name || undefined,
+      consent_given: data.consent_given,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+    };
+  } catch (err) {
+    console.error('Exception creating newsletter subscription:', err);
+    throw err;
   }
 }
 

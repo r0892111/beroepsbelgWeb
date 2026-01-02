@@ -100,7 +100,19 @@
     "searchPlaceholder": "Rechercher des tours, produits...",
     "copyright": "© 2024 Beroepsbelg. Tous droits réservés.",
     "allRightsReserved": "Tous droits réservés",
-    "terms": "Conditions"
+    "terms": "Conditions",
+    "newsletter": {
+      "firstName": "Prénom",
+      "lastName": "Nom de famille",
+      "consentText": "J'accepte la",
+      "privacyPolicy": "politique de confidentialité",
+      "invalidEmail": "Veuillez entrer une adresse e-mail valide",
+      "nameRequired": "Veuillez entrer votre prénom et nom de famille",
+      "consentRequired": "Vous devez accepter la politique de confidentialité",
+      "success": "Inscription à la newsletter réussie !",
+      "error": "L'inscription a échoué. Veuillez réessayer.",
+      "submitting": "..."
+    }
   },
   "cookie": {
     "message": "Nous utilisons des cookies pour améliorer votre expérience.",
@@ -609,20 +621,223 @@
     "copyrightContent": "Tout le contenu de notre site web, y compris les textes, images et logos, est protégé par le droit d'auteur et ne peut être utilisé sans autorisation écrite préalable."
   },
   "privacy": {
-    "title": "Politique de Confidentialité",
-    "intro": "BeroepsBelg respecte votre vie privée et traite vos données personnelles avec soin. Cette politique de confidentialité explique quelles données nous collectons, pourquoi nous les collectons et comment nous les utilisons.",
-    "dataCollection": "Collecte de données",
-    "dataCollectionContent": "Nous collectons les données personnelles que vous nous fournissez lors de la réservation d'un tour, de l'abonnement à notre newsletter ou du contact avec nous. Cela inclut votre nom, adresse e-mail, numéro de téléphone et toute autre information que vous partagez avec nous.",
-    "dataUsage": "Utilisation des données",
-    "dataUsageContent": "Nous utilisons vos données personnelles pour traiter votre réservation, vous envoyer des confirmations et des informations pertinentes sur votre tour, et pour améliorer nos services. Nous ne partagerons jamais vos données avec des tiers sans votre consentement explicite, sauf si la loi l'exige.",
-    "dataRetention": "Conservation des données",
-    "dataRetentionContent": "Nous conservons vos données personnelles aussi longtemps que nécessaire aux fins décrites dans cette politique de confidentialité, ou comme requis par la loi.",
-    "yourRights": "Vos droits",
-    "yourRightsContent": "Vous avez le droit de consulter, corriger ou supprimer vos données personnelles à tout moment. Vous pouvez également vous opposer au traitement de vos données ou demander la portabilité des données. Contactez-nous si vous souhaitez exercer ces droits.",
-    "cookies": "Cookies",
-    "cookiesContent": "Notre site web utilise des cookies pour améliorer votre expérience utilisateur. Vous pouvez gérer vos préférences de cookies via la bannière de cookies sur notre site web.",
-    "contact": "Contact",
-    "contactContent": "Si vous avez des questions sur cette politique de confidentialité ou sur le traitement de vos données personnelles, veuillez nous contacter par e-mail ou par téléphone."
+    "title": "Déclaration de confidentialité et déclaration relative aux cookies",
+    "disclaimer": "La version originale de cette déclaration de confidentialité et déclaration relative aux cookies est en néerlandais. Beroepsbelg n'est pas responsable de toute mauvaise interprétation des versions traduites. Vous pouvez contacter info@beroepsbelg.be à tout moment si vous avez des questions.",
+    "intro": "La présente \"Politique de confidentialité\" régit le traitement de vos données à caractère personnel par le responsable du traitement : Beroepsbelg, dont le siège social est établi à Vrijdagmarkt 12 - 2000 Anvers et inscrite à la B.C.E. sous le numéro BE0599 930 251 (ci-après : \"Beroepsbelg\"). Lisez attentivement cette Politique de confidentialité, car elle contient des informations essentielles concernant la manière dont vos données à caractère personnel sont traitées, mais également concernant le type de cookies utilisés. En communiquant vos données à caractère personnel sur le site internet et en fournissant des données à caractère personnel aux adresses électroniques mentionnées sur ce site, vous déclarez avoir pris connaissance de la présente Politique de confidentialité et vous marquez explicitement votre accord quant à celle-ci et au traitement des données proprement dit.",
+    "article1": {
+      "title": "Article 1 - Généralités",
+      "content": "Beroepsbelg respecte les dispositions anti-spam du Livre XII du Code de droit économique concernant le \"droit de l'économie électronique\".\n\nPar le biais de la présente Politique de confidentialité, Beroepsbelg se met également en règle par rapport au Règlement Européen 2016/679 du 27 avril 2016 relatif à la protection des données à caractère personnel.\n\nLe responsable du traitement de vos données à caractère personnel est Beroepsbelg. Une déclaration a été faite auprès de la Commission de la Protection de la Vie Privée quant au traitement de vos données à caractère personnel."
+    },
+    "article2": {
+      "title": "Article 2 - Données à caractère personnel",
+      "section21": {
+        "title": "2.1. Les données à caractère personnel que vous nous communiquez :",
+        "content": "Catégorie 1 : sans inscription : votre adresse IP ;\n\nCatégorie 2 : compléter des formulaires ou passer des commandes sans inscription ; tous les champs du formulaire, ainsi que votre adresse IP ;\n\nCatégorie 3 : en cas d'inscription : tous les champs du formulaire, ainsi que votre adresse IP et votre mot de passe ;\n\nCatégorie 4 : par l'intermédiaire de cookies."
+      },
+      "section22": {
+        "title": "2.2. Beroepsbelg peut collecter des données vous concernant (Données à caractère personnel) de différentes manières :",
+        "content": "a. par l'utilisation de cookies (voir ci-dessous) ;\n\nb. pendant que vous vous inscrivez sur le site internet et utilisez celui-ci ;"
+      },
+      "section23": {
+        "title": "2.3.",
+        "content": "Le site utilise également des cookies qui collectent un certain nombre de données à caractère personnel. Voir article 8 en ce qui concerne les dispositions concernant l'usage des cookies."
+      }
+    },
+    "article3": {
+      "title": "Article 3 - Finalités du traitement",
+      "section31": {
+        "title": "3.1. Finalités générales :",
+        "content": "Beroepsbelg utilisera uniquement les données à caractère personnel recueillies auprès de vous aux fins suivantes :\n\nCatégorie 1 : l'entretien et l'amélioration de ce site internet et l'intégration de Données à caractère personnel dans des statistiques anonymes qui ne permettront en aucun cas de déduire l'identité de personnes ou d'entreprises spécifiques. Les intérêts légitimes de Beroepsbelg, à savoir le souci d'amélioration permanente de son site et de ses services en constituent la base juridique.\n\nCatégorie 2 : la gestion de votre compte sur ce site internet en vue de l'utilisation de notre Beroepsbelg et de notre site avec comme fondement légal l'exécution d'un contrat demandé par vos soins et, si vous l'avez indiqué, l'envoi de marketing direct dont lle fondement légal est votre consentement explicite et préalable.\n\nCatégorie 3 : l'envoi de marketing direct, de lettres d'information, d'actions et de promotions dont la base juridique est votre consentement explicite et préalable.\n\nCatégorie 4 : l'amélioration de l'expérience de l'utilisateur et à des fins statistiques (voir ci-après) dont le fondement légal est votre consentement explicite et préalable\n\nVous n'êtes pas obligé de communiquer vos Données à caractère personnel, mais vous devez savoir que la prestation de certains services sera impossible si vous refusez ce traitement."
+      },
+      "section32": {
+        "title": "3.2. Marketing direct :",
+        "content": "Les données à caractère personnel seront également utilisées dans le cadre du marketing direct, et ce à condition que vous ayez marqué votre accord explicite à cet égard (« opt-in »).\n\nSi vous figurez déjà dans notre liste d'envoi pour la réception de matériel de marketing sous forme papier et/ou électronique, Beroepsbelg peut utiliser vos données pour l'envoi de communications marketing et d'autre matériel concernant Beroepsbelg, ses produits et/ou ses services. Beroepsbelg peut utiliser les données communiquées par vos soins pour la mise à jour des documents conservés par Beroepsbelg.\n\nCe consentement peut être retiré à tout moment, sans motivation et gratuitement en cliquant par exemple sur le lien de désinscription prévu à cet effet qui figure sous chaque courriel promotionnel."
+      },
+      "section33": {
+        "title": "3.3. Transmission à des tiers :",
+        "content": "Une éventuelle réorganisation totale ou partielle ou une cession des activités de Beroepsbelg, opérations impliquant une réorganisation, une cession ou une cessation de ses activités commerciales, ou la faillite éventuelle de Beroepsbelg peuvent entraîner le transfert de vos données à de nouvelles entités ou à des tiers par le biais desquels les activités commerciales de Beroepsbelg sont partiellement ou totalement exercées.\n\nBeroepsbelg tentera raisonnablement de vous informer au préalable du fait que Beroepsbelg communique vos données au tiers cité, mais vous reconnaissez également que cela n'est pas techniquement ou commercialement réalisable dans tous les cas de figure.\n\nBeroepsbelg ne vendra pas, ne louera pas, ne partagera pas ou ne mettra pas vos données à caractère personnel autrement à la disposition commerciale de tiers, sauf dans les circonstances décrites ci-dessus et moyennant votre consentement préalable."
+      },
+      "section34": {
+        "title": "3.4. Exigences légales :",
+        "content": "Il peut arriver, dans de rares cas, que Beroepsbelg doive communiquer vos Données à caractère personnel à la suite d'une ordonnance judiciaire ou afin de satisfaire à une autre législation ou réglementation contraignantes. Beroepsbelg tentera raisonnablement de vous en informer au préalable sauf si certains points sont soumis à des restrictions légales."
+      }
+    },
+    "article4": {
+      "title": "Article 4 – Durée du traitement",
+      "content": "Nous conservons et traitons les données à caractère personnel durant la période nécessaire en fonction des finalités du traitement et de la relation contractuelle qui vous lie à Beroepsbelg."
+    },
+    "article5": {
+      "title": "Article 5 - Vos droits",
+      "section51": {
+        "title": "5.1. Droit d'accès et de consultation :",
+        "content": "Vous avez à tout moment le droit de prendre connaissance gratuitement de vos Données à caractère personnel, mais également de l'usage que nous en faisons."
+      },
+      "section52": {
+        "title": "5.2. Droit de rectification, de suppression et de limitation :",
+        "content": "Vous êtes libre de communiquer ou non vos données à caractère personnel à Beroepsbelg. Vous avez en outre le droit de nous demander à tout moment de rectifier, de compléter ou de supprimer vos données à caractère personnel. Vous reconnaissez que si vous refusez de communiquer des données à caractère personnel ou demandez la suppression de celles-ci, vous ne pourrez pas bénéficier de certains services ou produits.\n\nVous pouvez également demander la limitation du traitement de vos Données à caractère personnel."
+      },
+      "section53": {
+        "title": "5.3. Droit d'opposition :",
+        "content": "Vous bénéficiez également d'un droit d'opposition au traitement de vos Données à caractère personnel pour des motifs graves et légitimes.\n\nVous avez également le droit de vous opposer à tout moment à l'utilisation de données à caractère personnel dans un but de marketing direct ; dans ce cas, vous n'avez pas besoin de motiver votre refus."
+      },
+      "section54": {
+        "title": "5.4. Droit de transmission gratuite des données :",
+        "content": "Vous avez le droit d'obtenir vos Données à caractère personnel qui sont traitées par nos soins sous forme structurée, usuelle et lisible par une machine et/ou de les transférer à d'autres responsables."
+      },
+      "section55": {
+        "title": "5.5. Droit de retrait du consentement :",
+        "content": "Dans la mesure où le traitement est basé sur votre consentement préalable, vous bénéficiez du droit de retirer ce consentement."
+      },
+      "section56": {
+        "title": "5.6. Exercice de vos droits :",
+        "content": "Vous pouvez exercer vos droits en nous contactant à cet effet, soit par courriel à l'adresse info@BeroepsBelg.be, ou par courrier à Beroepsbelg Vrijdagmarkt 12 - 2000 Anvers"
+      },
+      "section57": {
+        "title": "5.7. Décisions automatiques et profilage :",
+        "content": "Le traitement de vos Données à caractère personnel ne comprend pas de profilage et nous ne vous soumettrons pas non plus à des décisions automatisées."
+      },
+      "section58": {
+        "title": "5.8. Droit de déposer plainte :",
+        "content": "Vous avez le droit de déposer plainte auprès de la Commission belge de la vie privée ; Commission de la protection de la vie privée, rue de la Presse 35, 1000 Bruxelles, Tél. +32 (0)2 274 48 00, Fax +32 (0)2 274 48 35, courriel : commission@privacycommission.be.\n\nCeci ne porte en rien préjudice à un éventuel recours devant un tribunal civil.\n\nSi vous subissez un dommage à la suite du traitement de vos données à caractère personnel, vous pouvez introduire une action en dédommagement."
+      }
+    },
+    "article6": {
+      "title": "Article 6 - Sécurité et confidentialité",
+      "section61": {
+        "title": "6.1.",
+        "content": "Nous avons développé des mesures de sécurité appropriées au niveau technique ou organisationnel afin d'éviter la destruction, la perte, la falsification, la modification, l'accès non autorisé ou la communication par erreur de données personnelles à des tiers, ainsi que tout autre traitement non autorisé de ces données."
+      },
+      "section62": {
+        "title": "6.2.",
+        "content": "Beroepsbelg ne peut en aucun cas être tenue responsable d'un dommage direct ou indirect découlant d'un mauvais usage ou d'un usage illégitime des données à caractère personnel par un tiers."
+      },
+      "section63": {
+        "title": "6.3.",
+        "content": "Vous devez respecter en permanence les consignes de sécurité, notamment pour éviter tout accès non autorisé à vos données de connexion et à votre code. Vous êtes donc seul responsable de l'usage qui est fait de votre ordinateur, de votre adresse IP et de vos données d'identification à partir du site internet, mais également de leur confidentialité."
+      }
+    },
+    "article7": {
+      "title": "Article 7 - Accès par des tiers",
+      "content": "Afin de pouvoir traiter vos données à caractère personnel, nous permettons à nos travailleurs d'accéder à celles-ci.\n\nNous garantissons un niveau de protection équivalent en rendant opposables à ces travailleurs et préposés des obligations contractuelles qui sont similaires à la présente Politique de confidentialité."
+    },
+    "article8": {
+      "title": "Article 8 - Cookies",
+      "section81": {
+        "title": "8.1. Que sont les cookies ?",
+        "content": "Un \"cookie\" est un petit fichier envoyé par le serveur de Beroepsbelg et installé sur le disque dur de votre ordinateur. Les informations stockées sur ces cookies ne peuvent être lues que par nous, et ce uniquement pendant la durée de votre visite sur le site."
+      },
+      "section82": {
+        "title": "8.2. Pourquoi utilisons-nous des cookies ?",
+        "content": "Notre site internet utilise des cookies et des technologies similaires pour distinguer vos préférences d'utilisation de celles des autres utilisateurs de notre site. Ceci nous aide à vous proposer une meilleure expérience d'utilisation lorsque vous visitez notre site et à optimaliser celui-ci.\n\nÀ la suite des récentes modifications légales, tous les sites internet qui s'adressent à des parties déterminées de l'Union européenne sont obligés de demander votre autorisation pour l'utilisation ou le stockage de cookies et de technologies similaires sur vos ordinateurs ou appareils mobiles. Cette politique en matière de cookies vous donne des informations précises et complètes concernant les cookies que nous utilisons et leur objectif."
+      },
+      "section83": {
+        "title": "8.3. Types de cookies :",
+        "content": "Bien qu'il existe plusieurs types de cookies que l'on distingue sur la base de leur fonctionnalité, de leur origine ou de leur durée de conservation, la législation opère principalement une distinction entre les cookies fonctionnels ou techniquement indispensables, d'une part, tous les autres cookies, d'autre part.\n\nLe site internet utilise exclusivement les cookies suivants :\n\nLes cookies fonctionnels\n\nNom\tOrigine\tFonction\tDurée de conservation\nwebhero_session\tDomaine actuel\tLiens de la session serveur active au visiteur (utilisé pour le paramétrage des langues, la connexion)\tJusqu'au terme de la session\nTOKEN XSRF\tDomaine actuel\tUn token pour protéger les formulaires contre les spams.\tJusqu'au terme de la session\n\nLes cookies non fonctionnels\n\nNaam\tHerkomst\tFunctie\tBewaartijd\n_ga_B3NK8C92ZR\tgoogle.com\tDirect\t2 jaar\n_ga\tgoogle.com\tDirect\t2 jaar\n_gid\tgoogle.com\tDirect\t1 dag\n\nEn ce qui concerne les cookies installés par des tierces parties (notamment Google Analytics), veuillez consulter les déclarations faites par ces parties sur leur sites internet respectifs. Attention : nous n'exerçons aucune influence sur le contenu de ces déclarations, ni sur le contenu des cookies de ces tierces parties : Google Analytics cookies"
+      },
+      "section84": {
+        "title": "8.4. Votre consentement :",
+        "content": "Vous pouvez à tout moment refuser ou bloquer les cookies en modifiant les paramètres de configuration de votre système de navigation. La désactivation des cookies peut vous empêcher d'utiliser certaines fonctionnalités du site internet.\n\nSi vous avez des questions ou des remarques concernant le traitement de vos données à caractère personnel, n'hésitez pas à nous contacter, soit par courriel à (...), par courrier à Beroepsbelg (adresse), ou via la rubrique « Contactez-nous » de notre site internet.\n\nVous trouverez également de plus amples informations concernant les cookies sur : http://www.allaboutcookies.org/\n\nVous trouverez ici des informations complémentaires concernant la publicité comportementale en ligne et la confidentialité en ligne : http://www.youronlinechoices.eu/"
+      }
+    }
+  },
+  "terms": {
+    "title": "Conditions Générales",
+    "disclaimer": "La version originale de ces conditions générales est en néerlandais. Beroepsbelg n'est pas responsable de toute mauvaise interprétation des versions traduites. Vous pouvez contacter info@beroepsbelg.be à tout moment si vous avez des questions.",
+    "intro": "Ce sont les conditions générales (ci-après: \"Conditions Générales\") de Beroepsbelg avec siège social au Vrijdagmarkt 12 - 2000 Anvers et inscrit au K.B.O. sous le numéro BE0599 930 251. (Ci-après: \"Beroepsbelg\").",
+    "general": {
+      "title": "Conditions Générales",
+      "article1": {
+        "title": "Article 1 – Champ d'application",
+        "content": "Ces Conditions Générales s'appliquent à toute offre, tout devis et tout accord conclu concernant les produits et/ou services offerts par nous.\n\nCes Conditions Générales s'appliquent à l'exclusion des conditions générales du Client."
+      },
+      "article2": {
+        "title": "Article 2 – Offres",
+        "content": "Nos offres sont purement indicatives et non contraignantes et expirent si elles ne sont pas acceptées par le Client dans les 30 jours calendaires. Les offres ne deviennent légalement valables en tant qu'accord que par la signature de l'offre par le Client et par nous. Nous nous réservons également le droit de refuser certaines missions sans donner de raison."
+      },
+      "article3": {
+        "title": "Article 3 – Prix et paiement",
+        "content": "Le prix de nos biens/services est celui indiqué sur le devis.\n\nToutes nos factures sont payables dans les 14 jours suivant leur réception, sauf si le devis spécifie une autre date d'échéance. Si nous demandons un acompte, nous ne commencerons nos activités qu'après réception de l'acompte.\n\nPour tout retard de paiement, le Client est automatiquement et sans mise en demeure préalable redevable d'intérêts de retard de 1% par mois commencé, chaque mois commencé comptant comme un mois complet, et ce sans préjudice de toute indemnisation et frais. Également automatiquement et sans mise en demeure préalable, une indemnité forfaitaire est due s'élevant à 10% du montant de la facture avec un minimum de 250 euros à titre de clause pénale, ceci sans mise en demeure préalable et en plus du capital, des intérêts de retard, des frais de recouvrement, de rappel, de poursuite et des dépenses dues à la perte de temps et aux frais judiciaires ou juridiques. Cette clause pénale ne porte pas atteinte à l'obligation de payer les intérêts de retard convenus.\n\nLes contestations doivent nous être notifiées par courrier recommandé dans les cinq jours ouvrables suivant l'envoi de la facture sous peine d'irrecevabilité."
+      },
+      "article4": {
+        "title": "Article 4 - Durée de l'accord et résiliation",
+        "content": "Nos accords peuvent être conclus comme décrit dans nos devis. L'accord peut être résilié unilatéralement par nous à tout moment et sans intervention judiciaire si le Client est en état de faillite ou d'accord judiciaire ou si le client ne paie pas ses factures."
+      },
+      "article5": {
+        "title": "Article 5 – Droits de propriété intellectuelle",
+        "content": "Notre site web, logos, textes, photos, noms et en général toute notre communication sont protégés par des droits de propriété intellectuelle qui appartiennent soit à nous, soit à nos fournisseurs ou autres titulaires de droits.\n\nLes droits de propriété intellectuelle sont entendus comme les droits de brevet, d'auteur, de marque, de dessin et de modèle et/ou autres droits de (propriété intellectuelle), y compris le savoir-faire technique et/ou commercial brevetable et/ou non brevetable, les méthodes et concepts.\n\nIl est interdit d'utiliser et/ou de modifier les droits de propriété intellectuelle tels que décrits dans cet article. Par exemple, le client ne peut pas copier ou reproduire nos dessins, photos, noms, textes, logos, combinaisons de couleurs, etc. sans notre autorisation écrite préalable et expresse."
+      },
+      "article6": {
+        "title": "Article 6 – Confidentialité et Vie privée",
+        "content": "Nous sommes responsables du traitement de vos données personnelles et les traitons conformément au Règlement Général sur la Protection des Données;\n\nPour plus d'informations sur le traitement des données personnelles, nous renvoyons à notre Politique de Confidentialité & Cookies."
+      },
+      "article7": {
+        "title": "Article 7 – Responsabilité",
+        "content": "Nous ne sommes pas responsables sauf en cas de dol ou de faute lourde. De plus, nous ne sommes pas responsables de tout dommage direct ou indirect (tels que les dommages consécutifs, la perte de profit, les économies manquées ou les dommages dus à la stagnation des affaires) pour lesquels nous n'avons pas expressément déterminé notre responsabilité dans ces conditions. Notre responsabilité sera dans tous les cas limitée au montant du prix convenu pour cette commande (hors TVA).\n\nNous faisons tout en notre pouvoir pour fournir un accès au site web 24 heures sur 24 et 7 jours sur 7. Compte tenu des caractéristiques techniques d'Internet et des ressources informatiques et compte tenu de la nécessité d'effectuer des travaux de maintenance, de mise à jour ou de mise à niveau périodiques, nous ne pouvons cependant pas garantir un accès et un service ininterrompus. En cas d'interruption ou de perturbation normalement acceptable de l'accès ou du service, nous faisons tout en notre pouvoir pour y remédier dans les plus brefs délais. De telles interruptions ou perturbations normalement acceptables sont inhérentes à la fourniture de services via Internet et ne peuvent être considérées comme des manquements."
+      },
+      "article8": {
+        "title": "Article 8 - Force majeure",
+        "content": "En cas de force majeure, nous ne sommes pas tenus d'exécuter nos obligations. Dans ce cas, nous pouvons soit suspendre nos obligations pour la durée de la force majeure, soit dissoudre définitivement l'accord.\n\nLa force majeure est toute circonstance en dehors de notre volonté et de notre contrôle qui empêche l'exécution de nos obligations en tout ou en partie. Ceci comprend notamment mais sans s'y limiter: les grèves, les embouteillages inattendus, les accidents sur les routes européennes, les incendies, les perturbations commerciales, les pannes d'électricité, les perturbations dans un réseau (de télécommunications) ou une connexion ou les systèmes de communication utilisés et/ou l'indisponibilité du site web à tout moment, la non-livraison ou la livraison tardive par les fournisseurs ou autres tiers engagés,…"
+      },
+      "article9": {
+        "title": "Article 9 – Nullité et exhaustivité",
+        "content": "Ces Conditions Générales constituent l'accord complet entre le client et nous, en ce qui concerne la matière qui y est contenue.\n\nSi une ou plusieurs dispositions de ces Conditions Générales seraient à tout moment entièrement ou partiellement illégales, nulles ou inapplicables pour toute autre raison, alors cette clause sera considérée comme pouvant être séparée de ces Conditions Générales et n'affectera pas la validité et l'applicabilité des dispositions restantes."
+      },
+      "article10": {
+        "title": "Article 10 - Compétence et droit applicable",
+        "content": "Le droit belge s'applique à tous les litiges liés à ou découlant de nos offres et/ou accords. En cas de litiges ou de contestations, seuls les tribunaux de l'arrondissement judiciaire de notre siège social ont compétence."
+      }
+    },
+    "webshop": {
+      "title": "Conditions Générales webshop beroepsbelg",
+      "article1": {
+        "title": "Article 1 Identité du vendeur",
+        "content": "Nous sommes: beroepsbelg\nAdresse: Vrijdagmarkt 12 - 2000 Anvers\nAdresse e-mail: info@BeroepsBelg.be\nNuméro de téléphone: +32(0)3 430 23 30\nNuméro d'entreprise: BE0599 930 251\nNuméro de compte bancaire:"
+      },
+      "article2": {
+        "title": "Article 2 Applicabilité & Conditions",
+        "content": "Nos conditions générales s'appliquent à toute offre de notre part en tant que Web marchand à vous en tant que Consommateur (toute personne physique qui, exclusivement à des fins non professionnelles, acquiert ou utilise des produits ou services mis sur le marché).\n\nNous livrons uniquement en . Si vous fournissez une adresse de livraison dans un autre pays, nous pouvons refuser votre commande.\n\nPour pouvoir passer une commande, vous devez avoir au moins 18 ans. Si vous n'avez pas 18 ans, nous vous demandons de faire passer la commande par vos parents ou tuteur légal. Si nous remarquons qu'une commande a été passée par un mineur, nous pouvons refuser cette commande.\n\nLe placement d'une commande sur le site web vaut acceptation expresse de nos conditions générales de vente qui sont toujours disponibles via le site web.\n\nSi vous commandez en ligne, nous vous fournirons également, avec la confirmation de commande ou au plus tard lors de la livraison, une copie de ces conditions générales dans un format que vous pouvez enregistrer ou imprimer. Nous vous recommandons de toujours le faire.\n\nSi, en plus de ces conditions générales, des conditions particulières supplémentaires s'appliquent également, ce qui précède s'applique également à ces conditions particulières. Si nos conditions générales entreraient en conflit avec ces conditions particulières, vous en tant que consommateur pouvez toujours invoquer le texte le plus favorable en votre faveur."
+      },
+      "article3": {
+        "title": "Article 3 Notre Offre et votre commande",
+        "content": "Si une offre n'a qu'une durée de validité limitée ou est soumise à certaines conditions, nous le mentionnons expressément dans notre offre.\n\nNous décrivons toujours aussi complètement et précisément que possible ce que nous vous vendons et comment le processus de commande se déroulera. La description est en tout cas suffisamment détaillée pour vous permettre de faire une bonne évaluation. Si nous utilisons des images, celles-ci sont une représentation fidèle des biens et/ou services offerts. Cependant, les erreurs arrivent et si nous avons clairement fait une erreur, nous ne sommes pas obligés de vous livrer quand même.\n\nVotre commande est complète et l'accord entre nous est définitif dès que nous confirmons votre commande par e-mail et dès que nous avons reçu l'approbation de l'émetteur de la carte pour votre transaction de paiement par cartes de crédit ou de débit. Nous acceptons . Si l'émetteur de votre carte refuse d'accepter votre paiement à nous, nous ne pouvons pas être tenus responsables des retards de livraison et/ou de non-livraison de votre commande. Les commandes sans paiement valide au nom du titulaire de carte enregistré ne sont pas acceptées ou traitées.\n\nPour acheter un produit, vous ajoutez le produit à votre panier. Ensuite, vous entrez vos coordonnées et vos données de facturation. Ensuite, vous choisissez votre mode de livraison: . Dans l'étape finale, vous obtenez une page de récapitulatif, acceptez nos conditions générales et confirmez votre paiement en appuyant sur le bouton de commande avec la légende \"commande avec obligation de paiement\". Une fois que vous avez terminé ces étapes, votre achat est définitif."
+      },
+      "article4": {
+        "title": "Article 4 Droit de rétractation",
+        "content": "Si vous achetez des biens ou services chez nous, vous avez le droit de nous informer de votre décision de vous rétracter de l'accord dans les 14 jours suivant la livraison ou la conclusion de l'accord. Après cela, vous devez renvoyer les biens dans les 14 jours calendaires (vous payez vous-même les frais d'expédition). À réception, nous vous rembourserons le prix d'achat complet avec le même moyen de paiement que vous avez utilisé pour payer.\n\nLes coûts directs de renvoi des biens sont donc à votre charge. Nous indiquerons quel est le prix de revient ou ferons une estimation, si cela ne peut pas être raisonnablement calculé à l'avance. Si les biens ne peuvent pas être renvoyés par la poste, nous viendrons les récupérer chez vous et aucun frais ne vous sera facturé pour cela.\n\nNous pouvons attendre le remboursement jusqu'à ce que nous ayons récupéré les biens ou jusqu'à ce que vous ayez montré que vous avez renvoyé les biens, selon ce qui se produit en premier.\n\nPendant les 14 premiers jours après la livraison, nous nous attendons à ce que vous manipuliez la commande et l'emballage avec soin. Si vous souhaitez toujours pouvoir renvoyer les biens comme décrit ci-dessus, vous ne pouvez les déballer ou les utiliser que dans la mesure nécessaire pour évaluer si vous souhaitez conserver l'article. Les biens renvoyés peuvent être testés, mais ne doivent pas être utilisés. Si vous renvoyez les biens, cela doit si possible être fait avec l'emballage d'origine, avec tous les accessoires livrés et dans l'état et l'emballage d'origine et en tenant compte de nos instructions ci-dessous.\n\nVous pouvez renvoyer votre colis de retour par la poste ou un coursier.\n\nPour exercer correctement votre droit de rétractation, vous pouvez nous faire savoir par e-mail que vous souhaitez renvoyer votre commande. Nous vous enverrons un accusé de réception de votre rétractation par e-mail. Un formulaire modèle est disponible ici."
+      },
+      "article5": {
+        "title": "Article 5 Le prix",
+        "content": "Pendant la période que nous mentionnons dans notre offre, nos prix ne changent pas, sauf pour les changements de prix résultant de changements dans les taux de TVA.\n\nNos prix incluent toutes les taxes, la TVA, les droits et les services sauf indication contraire. Vous ne serez donc jamais surpris. Nous pouvons décider de facturer également les frais d'expédition en plus du prix d'achat. Dans ce cas, nous le mentionnons toujours avant que vous ne finalisiez votre achat."
+      },
+      "article6": {
+        "title": "Article 6 Paiement",
+        "content": "Nous ne pouvons accepter le paiement que via les modules de paiement sur notre site web.\n\nPour garantir un paiement en ligne sécurisé et la sécurité de vos données personnelles, les données de transaction sont cryptées avec la technologie SSL et envoyées sur Internet. Pour payer avec SSL, vous n'avez pas besoin de logiciel spécial. Vous reconnaissez une connexion SSL sécurisée par le \"cadenas\" dans la barre d'état en bas de votre navigateur."
+      },
+      "article7": {
+        "title": "Article 7 Conformité et Garantie",
+        "content": "Nous garantissons que nos biens sont conformes à votre commande et répondent aux attentes normales que vous pouvez en avoir compte tenu des spécifications du produit. Nous vous garantissons également que nos biens sont conformes à toutes les lois existantes au moment de votre commande.\n\nDe plus, en ce qui concerne la livraison de biens, nous appliquons la période de garantie légale minimale de deux ans si le bien n'est pas conforme à la commande passée. Cela signifie qu'en cas de défauts ou de défauts dans le bien jusqu'à 2 ans après la livraison, ce bien sera réparé ou remplacé gratuitement. Dans la mesure où cela est possible et raisonnable, vous avez le choix entre la réparation ou le remplacement. Seulement si la réparation ou le remplacement est excessif ou impossible ou ne peut pas être effectué dans un délai raisonnable, vous avez le droit d'exiger une réduction de prix ou la dissolution de l'accord de vente."
+      },
+      "article8": {
+        "title": "Article 8 Livraison et exécution",
+        "content": "Tous les biens et services sont livrés à l'adresse que vous avez spécifiée lors de votre commande.\n\nLorsqu'un article est en stock, il est offert à votre adresse de livraison en . Lorsqu'un article n'est pas en stock dans la boutique en ligne, il est offert à votre adresse de livraison en .\n\nSi nous ne pouvons pas livrer à temps, nous vous avertirons toujours avant l'expiration de la période de livraison prévue. Si nous ne le faisons pas, vous pouvez annuler votre commande gratuitement. Dans ce cas, nous vous rembourserons au plus tard 30 jours après la dissolution.\n\nNos envois se font toujours à nos risques. Vous n'avez donc pas à vous soucier des biens qui se perdent dans la poste. Cependant, si vous nous renvoyez des biens dans les 14 jours suivant l'achat parce que vous préférez ne pas les garder, vous êtes responsable du transport.\n\nSi les biens livrés par nous ont été endommagés pendant le transport, ne correspondent pas aux articles listés sur le bon de livraison ou ne correspondent pas aux articles que vous aviez commandés, vous devez le signaler dès que possible et certainement dans les 3 jours et renvoyer les articles à nous dans les 14 jours calendaires suivant la réception. Nous ne pouvons pas être tenus responsables de tout dommage consécutif dû à une livraison tardive ou à une non-livraison par le transporteur nommé par l'entreprise. Notre responsabilité reste limitée dans de tels cas à la valeur des articles dont il est démontré qu'ils n'ont pas été reçus par le client."
+      },
+      "article9": {
+        "title": "Article 9 Durée",
+        "content": "Le Consommateur peut résilier un accord conclu pour une durée indéterminée à tout moment en respectant les règles de résiliation convenues et un délai de préavis d'au plus un mois.\n\nUn accord conclu pour une durée déterminée a une durée maximale de deux ans.\n\nS'il a été convenu dans un accord de biens de durée déterminée que l'Accord sera prolongé à distance en cas de silence du Consommateur, l'accord sera poursuivi comme un accord pour une durée indéterminée et le délai de préavis après la poursuite de l'accord sera d'au plus un mois.\n\nLorsqu'un accord de services de durée déterminée conclu entre l'Entreprise et le Consommateur contient une clause de prolongation tacite, cette clause est placée en lettres grasses et dans un cadre séparé du texte, sur le devant de la première page.\n\nCette clause indique les conséquences de la prolongation tacite, y compris la disposition du paragraphe suivant concernant la résiliation, ainsi que la date limite à laquelle le Consommateur peut s'opposer à la prolongation tacite de l'accord et la manière dont il donne avis de cette opposition. Le Consommateur peut, après la prolongation tacite d'un accord de services de durée déterminée, résilier l'accord à tout moment sans indemnité en respectant le délai de préavis d'au plus deux mois."
+      },
+      "article10": {
+        "title": "Article 10 Force majeure",
+        "content": "En cas de force majeure, nous ne sommes pas tenus d'exécuter nos obligations. Dans ce cas, nous pouvons soit suspendre nos obligations pour la durée de la force majeure, soit dissoudre définitivement l'accord.\n\nLa force majeure est toute circonstance en dehors de notre volonté et de notre contrôle qui empêche l'exécution de nos obligations en tout ou en partie. Ceci comprend, entre autres, les grèves, les incendies, les perturbations commerciales, les pannes d'électricité, les perturbations dans un réseau (de télécommunications) ou une connexion ou les systèmes de communication utilisés et/ou l'indisponibilité de notre site web à tout moment, la non-livraison ou la livraison tardive par les fournisseurs ou autres tiers engagés,..."
+      },
+      "article11": {
+        "title": "Article 11 Propriété intellectuelle",
+        "content": "Notre site web, logos, textes, photos, noms et en général toute notre communication sont protégés par des droits de propriété intellectuelle qui appartiennent soit à nous, soit à nos fournisseurs ou autres titulaires de droits.\n\nIl est interdit d'utiliser et/ou de modifier les droits de propriété intellectuelle tels que décrits dans cet article. Par exemple, vous ne pouvez pas copier ou reproduire des dessins, photos, noms, textes, logos, combinaisons de couleurs, etc. sans notre autorisation écrite préalable et expresse."
+      },
+      "article12": {
+        "title": "Article 12 Traitement des réclamations et litiges",
+        "content": "Nous espérons naturellement toujours que tous nos clients soient satisfaits à 100%. Si vous avez des réclamations concernant nos services, vous pouvez nous contacter via l'adresse e-mail: info@BeroepsBelg.be. Nous faisons tout notre possible pour traiter votre réclamation dans les 7 jours.\n\nPour le règlement extrajudiciaire du litige, le Service du Médiateur des Consommateurs du Gouvernement fédéral est compétent pour recevoir toute demande de règlement extrajudiciaire des litiges de consommation. Celui-ci traitera à son tour la demande lui-même ou la transmettra à une entité qualifiée. Vous pouvez contacter le Service du Médiateur des Consommateurs via ce lien: http://www.consumentenombudsdienst.be//nl\n\nPour les litiges à caractère transfrontalier, vous pouvez également faire appel à la plateforme de résolution en ligne des litiges de l'Union européenne via ce lien: http://ec.europa.eu/odr.\n\nTous les accords que nous concluons avec nos clients, quel que soit leur lieu de résidence, sont exclusivement soumis au droit belge et en cas de litiges, seuls les tribunaux belges compétents ont compétence. Si pour des raisons de droit international un autre droit est néanmoins applicable, lors de l'interprétation des conditions générales actuelles, référence sera d'abord faite au Code de droit économique."
+      }
+    }
   },
   "bookingSuccess": {
     "loading": "Chargement des détails de la réservation...",

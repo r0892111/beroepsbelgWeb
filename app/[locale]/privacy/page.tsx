@@ -1,61 +1,290 @@
-export default function PrivacyPage() {
+import { getTranslations } from 'next-intl/server';
+import { type Locale } from '@/i18n';
+
+interface PrivacyPageProps {
+  params: Promise<{ locale: Locale }>;
+}
+
+export default async function PrivacyPage({ params }: PrivacyPageProps) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'privacy' });
+
+  // Helper function to render article content with proper line breaks
+  const renderContent = (content: string) => {
+    return content.split('\n\n').map((paragraph, index) => (
+      <p key={index} className="mb-4 leading-relaxed text-muted-foreground">
+        {paragraph}
+      </p>
+    ));
+  };
+
   return (
     <div className="container mx-auto px-4 py-20">
       <div className="prose prose-lg mx-auto max-w-4xl">
-        <h1 className="mb-8 text-4xl font-bold">Privacy & Cookie Policy</h1>
+        <h1 className="mb-8 text-4xl font-bold">{t('title')}</h1>
+        
+        {/* Disclaimer about original language */}
+        <div className="mb-8 rounded-lg border-2 border-amber-500/50 bg-amber-50/50 p-4">
+          <p className="text-sm font-medium leading-relaxed text-amber-900">
+            {t('disclaimer')}
+          </p>
+        </div>
+        
+        <p className="mb-8 leading-relaxed text-muted-foreground">{t('intro')}</p>
 
-        <section className="mb-8">
-          <h2 className="mb-4 text-2xl font-semibold">Privacyverklaring</h2>
-          <p className="leading-relaxed text-muted-foreground">
-            BeroepsBelg respecteert uw privacy en gaat zorgvuldig om met uw persoonlijke gegevens. In deze
-            privacyverklaring leggen we uit welke gegevens we verzamelen, waarom we dat doen en wat uw
-            rechten zijn.
-          </p>
-        </section>
+        {/* Article 1 */}
+        <article className="mb-8">
+          <h2 className="mb-4 text-2xl font-semibold">{t('article1.title')}</h2>
+          <div>{renderContent(t('article1.content'))}</div>
+        </article>
 
-        <section className="mb-8">
-          <h2 className="mb-4 text-2xl font-semibold">Welke gegevens verzamelen we?</h2>
-          <p className="leading-relaxed text-muted-foreground">
-            We verzamelen alleen gegevens die u zelf aan ons verstrekt, zoals:
-          </p>
-          <ul className="list-disc pl-6 text-muted-foreground">
-            <li>Naam en contactgegevens bij boekingen</li>
-            <li>E-mailadres voor nieuwsbriefinschrijving</li>
-            <li>Betalingsgegevens voor transacties</li>
-            <li>Communicatie via contactformulieren</li>
-          </ul>
-        </section>
+        {/* Article 2 */}
+        <article className="mb-8">
+          <h2 className="mb-4 text-2xl font-semibold">{t('article2.title')}</h2>
+          <div className="mb-4">
+            <h3 className="mb-2 text-xl font-medium">{t('article2.section21.title')}</h3>
+            <div>{renderContent(t('article2.section21.content'))}</div>
+          </div>
+          <div className="mb-4">
+            <h3 className="mb-2 text-xl font-medium">{t('article2.section22.title')}</h3>
+            <div>{renderContent(t('article2.section22.content'))}</div>
+          </div>
+          <div className="mb-4">
+            <h3 className="mb-2 text-xl font-medium">{t('article2.section23.title')}</h3>
+            <div>{renderContent(t('article2.section23.content'))}</div>
+          </div>
+        </article>
 
-        <section className="mb-8">
-          <h2 className="mb-4 text-2xl font-semibold">Cookies</h2>
-          <p className="leading-relaxed text-muted-foreground">
-            Onze website gebruikt cookies om uw gebruikservaring te verbeteren. We gebruiken:
-          </p>
-          <ul className="list-disc pl-6 text-muted-foreground">
-            <li>Functionele cookies voor het functioneren van de website</li>
-            <li>Analytische cookies om bezoekersstatistieken te verzamelen</li>
-            <li>Marketing cookies voor gepersonaliseerde advertenties (alleen met toestemming)</li>
-          </ul>
-        </section>
+        {/* Article 3 */}
+        <article className="mb-8">
+          <h2 className="mb-4 text-2xl font-semibold">{t('article3.title')}</h2>
+          <div className="mb-4">
+            <h3 className="mb-2 text-xl font-medium">{t('article3.section31.title')}</h3>
+            <div>{renderContent(t('article3.section31.content'))}</div>
+          </div>
+          <div className="mb-4">
+            <h3 className="mb-2 text-xl font-medium">{t('article3.section32.title')}</h3>
+            <div>{renderContent(t('article3.section32.content'))}</div>
+          </div>
+          <div className="mb-4">
+            <h3 className="mb-2 text-xl font-medium">{t('article3.section33.title')}</h3>
+            <div>{renderContent(t('article3.section33.content'))}</div>
+          </div>
+          <div className="mb-4">
+            <h3 className="mb-2 text-xl font-medium">{t('article3.section34.title')}</h3>
+            <div>{renderContent(t('article3.section34.content'))}</div>
+          </div>
+        </article>
 
-        <section className="mb-8">
-          <h2 className="mb-4 text-2xl font-semibold">Uw rechten</h2>
-          <p className="leading-relaxed text-muted-foreground">
-            U heeft het recht om uw persoonlijke gegevens in te zien, te corrigeren of te verwijderen.
-            Neem contact met ons op via info@beroepsbelg.be voor vragen over uw privacy.
-          </p>
-        </section>
+        {/* Article 4 */}
+        <article className="mb-8">
+          <h2 className="mb-4 text-2xl font-semibold">{t('article4.title')}</h2>
+          <div>{renderContent(t('article4.content'))}</div>
+        </article>
 
-        <section>
-          <h2 className="mb-4 text-2xl font-semibold">Contact</h2>
-          <p className="leading-relaxed text-muted-foreground">
-            Voor vragen over deze privacyverklaring kunt u contact opnemen via:
-          </p>
-          <p className="leading-relaxed text-muted-foreground">
-            E-mail: info@beroepsbelg.be<br />
-            Telefoon: +32 123 456 789
-          </p>
-        </section>
+        {/* Article 5 */}
+        <article className="mb-8">
+          <h2 className="mb-4 text-2xl font-semibold">{t('article5.title')}</h2>
+          <div className="mb-4">
+            <h3 className="mb-2 text-xl font-medium">{t('article5.section51.title')}</h3>
+            <div>{renderContent(t('article5.section51.content'))}</div>
+          </div>
+          <div className="mb-4">
+            <h3 className="mb-2 text-xl font-medium">{t('article5.section52.title')}</h3>
+            <div>{renderContent(t('article5.section52.content'))}</div>
+          </div>
+          <div className="mb-4">
+            <h3 className="mb-2 text-xl font-medium">{t('article5.section53.title')}</h3>
+            <div>{renderContent(t('article5.section53.content'))}</div>
+          </div>
+          <div className="mb-4">
+            <h3 className="mb-2 text-xl font-medium">{t('article5.section54.title')}</h3>
+            <div>{renderContent(t('article5.section54.content'))}</div>
+          </div>
+          <div className="mb-4">
+            <h3 className="mb-2 text-xl font-medium">{t('article5.section55.title')}</h3>
+            <div>{renderContent(t('article5.section55.content'))}</div>
+          </div>
+          <div className="mb-4">
+            <h3 className="mb-2 text-xl font-medium">{t('article5.section56.title')}</h3>
+            <div>{renderContent(t('article5.section56.content'))}</div>
+          </div>
+          <div className="mb-4">
+            <h3 className="mb-2 text-xl font-medium">{t('article5.section57.title')}</h3>
+            <div>{renderContent(t('article5.section57.content'))}</div>
+          </div>
+          <div className="mb-4">
+            <h3 className="mb-2 text-xl font-medium">{t('article5.section58.title')}</h3>
+            <div>{renderContent(t('article5.section58.content'))}</div>
+          </div>
+        </article>
+
+        {/* Article 6 */}
+        <article className="mb-8">
+          <h2 className="mb-4 text-2xl font-semibold">{t('article6.title')}</h2>
+          <div className="mb-4">
+            <h3 className="mb-2 text-xl font-medium">{t('article6.section61.title')}</h3>
+            <div>{renderContent(t('article6.section61.content'))}</div>
+          </div>
+          <div className="mb-4">
+            <h3 className="mb-2 text-xl font-medium">{t('article6.section62.title')}</h3>
+            <div>{renderContent(t('article6.section62.content'))}</div>
+          </div>
+          <div className="mb-4">
+            <h3 className="mb-2 text-xl font-medium">{t('article6.section63.title')}</h3>
+            <div>{renderContent(t('article6.section63.content'))}</div>
+          </div>
+        </article>
+
+        {/* Article 7 */}
+        <article className="mb-8">
+          <h2 className="mb-4 text-2xl font-semibold">{t('article7.title')}</h2>
+          <div>{renderContent(t('article7.content'))}</div>
+        </article>
+
+        {/* Article 8 */}
+        <article className="mb-8">
+          <h2 className="mb-4 text-2xl font-semibold">{t('article8.title')}</h2>
+          <div className="mb-4">
+            <h3 className="mb-2 text-xl font-medium">{t('article8.section81.title')}</h3>
+            <div>{renderContent(t('article8.section81.content'))}</div>
+          </div>
+          <div className="mb-4">
+            <h3 className="mb-2 text-xl font-medium">{t('article8.section82.title')}</h3>
+            <div>{renderContent(t('article8.section82.content'))}</div>
+          </div>
+          <div className="mb-4">
+            <h3 className="mb-2 text-xl font-medium">{t('article8.section83.title')}</h3>
+            <div className="leading-relaxed text-muted-foreground">
+              {(() => {
+                const content = t('article8.section83.content');
+                const lines = content.split('\n');
+                
+                // Find intro (everything before first table)
+                let introEnd = 0;
+                for (let i = 0; i < lines.length; i++) {
+                  if (lines[i].includes('Functionele') || lines[i].includes('Functional') || lines[i].includes('fonctionnels') || lines[i].includes('Funktionale')) {
+                    introEnd = i;
+                    break;
+                  }
+                }
+                const intro = lines.slice(0, introEnd).join('\n');
+                
+                // Find functional cookies section
+                const functionalStart = lines.findIndex(l => l.includes('Functionele') || l.includes('Functional') || l.includes('fonctionnels') || l.includes('Funktionale'));
+                const functionalHeader = functionalStart >= 0 ? lines[functionalStart] : '';
+                const functionalHeaderRow = functionalStart + 1 >= 0 && functionalStart + 1 < lines.length ? lines[functionalStart + 1] : '';
+                const functionalRows: string[] = [];
+                let i = functionalStart + 2;
+                while (i < lines.length && lines[i].includes('\t') && !lines[i].includes('Andere') && !lines[i].includes('Non-functional') && !lines[i].includes('non fonctionnels') && !lines[i].includes('Nicht-funktionale')) {
+                  functionalRows.push(lines[i]);
+                  i++;
+                }
+                
+                // Find other cookies section
+                const otherStart = lines.findIndex(l => l.includes('Andere') || l.includes('Non-functional') || l.includes('non fonctionnels') || l.includes('Nicht-funktionale'));
+                const otherHeader = otherStart >= 0 ? lines[otherStart] : '';
+                const otherHeaderRow = otherStart + 1 >= 0 && otherStart + 1 < lines.length ? lines[otherStart + 1] : '';
+                const otherRows: string[] = [];
+                i = otherStart + 2;
+                while (i < lines.length && lines[i].includes('\t')) {
+                  otherRows.push(lines[i]);
+                  i++;
+                }
+                
+                // Find closing text (everything after last table)
+                const closingStart = otherStart >= 0 ? otherStart + otherRows.length + 2 : functionalStart + functionalRows.length + 2;
+                const closingText = lines.slice(closingStart).join('\n');
+                
+                // Get column headers from the first header row
+                const getHeaders = (headerRow: string) => {
+                  if (headerRow.includes('Naam') || headerRow.includes('Name') || headerRow.includes('Nom')) {
+                    return ['Naam / Name / Nom / Name', 'Herkomst / Origin / Origine / Herkunft', 'Functie / Function / Fonction / Funktion', 'Bewaartijd / Storage time / Durée de conservation / Speicherzeit'];
+                  }
+                  return headerRow.split('\t').filter(h => h.trim());
+                };
+                
+                const headers = getHeaders(functionalHeaderRow || otherHeaderRow);
+                
+                return (
+                  <>
+                    <p className="mb-4">{intro}</p>
+                    
+                    {functionalHeader && functionalRows.length > 0 && (
+                      <>
+                        <h4 className="mb-3 mt-6 text-lg font-semibold">{functionalHeader}</h4>
+                        <div className="mb-6 overflow-x-auto">
+                          <table className="w-full border-collapse border border-gray-300">
+                            <thead>
+                              <tr className="bg-gray-100">
+                                {headers.map((header, idx) => (
+                                  <th key={idx} className="border border-gray-300 px-4 py-2 text-left font-semibold">{header}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {functionalRows.map((row, idx) => {
+                                const cells = row.split('\t');
+                                if (cells.length >= 4) {
+                                  return (
+                                    <tr key={idx} className="hover:bg-gray-50">
+                                      {cells.slice(0, 4).map((cell, cellIdx) => (
+                                        <td key={cellIdx} className="border border-gray-300 px-4 py-2">{cell.trim()}</td>
+                                      ))}
+                                    </tr>
+                                  );
+                                }
+                                return null;
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </>
+                    )}
+                    
+                    {otherHeader && otherRows.length > 0 && (
+                      <>
+                        <h4 className="mb-3 mt-6 text-lg font-semibold">{otherHeader}</h4>
+                        <div className="mb-6 overflow-x-auto">
+                          <table className="w-full border-collapse border border-gray-300">
+                            <thead>
+                              <tr className="bg-gray-100">
+                                {headers.map((header, idx) => (
+                                  <th key={idx} className="border border-gray-300 px-4 py-2 text-left font-semibold">{header}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {otherRows.map((row, idx) => {
+                                const cells = row.split('\t');
+                                if (cells.length >= 4) {
+                                  return (
+                                    <tr key={idx} className="hover:bg-gray-50">
+                                      {cells.slice(0, 4).map((cell, cellIdx) => (
+                                        <td key={cellIdx} className="border border-gray-300 px-4 py-2">{cell.trim()}</td>
+                                      ))}
+                                    </tr>
+                                  );
+                                }
+                                return null;
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </>
+                    )}
+                    
+                    {closingText && <p className="mt-4">{closingText}</p>}
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+          <div className="mb-4">
+            <h3 className="mb-2 text-xl font-medium">{t('article8.section84.title')}</h3>
+            <div>{renderContent(t('article8.section84.content'))}</div>
+          </div>
+        </article>
       </div>
     </div>
   );
