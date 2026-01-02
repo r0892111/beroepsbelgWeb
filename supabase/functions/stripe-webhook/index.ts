@@ -15,12 +15,19 @@ const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPAB
 
 Deno.serve(async (req) => {
   try {
+    console.info('[Webhook] Received request:', {
+      method: req.method,
+      url: req.url,
+      hasSignature: !!req.headers.get('stripe-signature'),
+    });
+
     // Handle OPTIONS request for CORS preflight
     if (req.method === 'OPTIONS') {
       return new Response(null, { status: 204 });
     }
 
     if (req.method !== 'POST') {
+      console.warn('[Webhook] Invalid method:', req.method);
       return new Response('Method not allowed', { status: 405 });
     }
 
@@ -28,36 +35,51 @@ Deno.serve(async (req) => {
     const signature = req.headers.get('stripe-signature');
 
     if (!signature) {
+      console.error('[Webhook] No signature found in headers');
       return new Response('No signature found', { status: 400 });
     }
 
     // get the raw body
     const body = await req.text();
+    console.info('[Webhook] Body received, length:', body.length);
 
     // verify the webhook signature
     let event: Stripe.Event;
 
     try {
       event = await stripe.webhooks.constructEventAsync(body, signature, stripeWebhookSecret);
+      console.info('[Webhook] Signature verified, event type:', event.type, 'event id:', event.id);
     } catch (error: any) {
-      console.error(`Webhook signature verification failed: ${error.message}`);
+      console.error(`[Webhook] Signature verification failed: ${error.message}`);
       return new Response(`Webhook signature verification failed: ${error.message}`, { status: 400 });
     }
 
-    EdgeRuntime.waitUntil(handleEvent(event));
+    // Process event asynchronously (don't block response to Stripe)
+    // Use waitUntil to ensure it completes even after response is sent
+    EdgeRuntime.waitUntil(
+      handleEvent(event).catch((error) => {
+        console.error('[Webhook] Error in handleEvent:', error);
+      })
+    );
 
     return Response.json({ received: true });
   } catch (error: any) {
-    console.error('Error processing webhook:', error);
+    console.error('[Webhook] Error processing webhook:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
 
 async function handleEvent(event: Stripe.Event) {
+  console.info('[handleEvent] Processing event:', {
+    type: event.type,
+    id: event.id,
+    livemode: event.livemode,
+  });
+
   const stripeData = event?.data?.object ?? {};
 
   if (!stripeData) {
-    console.error('No stripe data in event');
+    console.error('[handleEvent] No stripe data in event');
     return;
   }
 
@@ -112,10 +134,10 @@ async function handleEvent(event: Stripe.Event) {
         console.info(`Processing local stories booking for session ${sessionId} - tourbooking status: ${existingBooking?.status || 'none'}, local_tours_bookings status: ${localBooking?.status || 'none'}`);
       } else {
         // For non-local-stories bookings, use the original idempotency check
-        // If booking exists and is already processed, skip webhook call (idempotency)
-        if (existingBooking && existingBooking.status === newStatus) {
-          console.info(`Tour booking for session ${sessionId} already processed with status ${newStatus}, skipping webhook call`);
-          return;
+      // If booking exists and is already processed, skip webhook call (idempotency)
+      if (existingBooking && existingBooking.status === newStatus) {
+        console.info(`Tour booking for session ${sessionId} already processed with status ${newStatus}, skipping webhook call`);
+        return;
         }
       }
 
