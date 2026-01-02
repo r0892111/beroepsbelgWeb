@@ -526,8 +526,19 @@ export default function B2BQuotePage() {
         contactEmail: data.contactEmail,
         contactPhone: data.contactPhone,
         additionalInfo: data.additionalInfo || null,
-        // Upsell - already in standardized format {n, p, q}
-        upsellProducts: upsellProducts,
+        // Upsell - ensure standardized format {n, p, q}
+        upsellProducts: upsellProducts.map((p: any) => {
+          // If already in standardized format, return as-is
+          if (p.n !== undefined && p.p !== undefined && p.q !== undefined) {
+            return { n: p.n, p: p.p, q: p.q };
+          }
+          // Convert from legacy format {id, title, quantity, price} to standardized format
+          return {
+            n: p.title || p.name || 'Product',
+            p: p.price || p.p || 0,
+            q: p.quantity || p.q || 1,
+          };
+        }),
         // Booking type
         bookingType,
         // Meta
