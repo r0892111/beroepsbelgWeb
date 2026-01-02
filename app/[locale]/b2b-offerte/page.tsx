@@ -412,12 +412,16 @@ export default function B2BQuotePage() {
     try {
       const selectedCityData = cities.find((city) => city.slug === data.city);
       const selectedTourData = tours.find((tour) => tour.id === data.tourId);
-      // Convert selectedUpsell object to array with quantities
+      // Convert selectedUpsell object to standardized format: {n: name, p: price, q: quantity}
       const upsellProducts = Object.entries(selectedUpsell)
         .filter(([_, quantity]) => quantity > 0)
         .map(([productId, quantity]) => {
           const product = products.find(p => p.uuid === productId);
-          return product ? { ...product, quantity } : null;
+          return product ? {
+            n: product.title.nl, // name
+            p: product.price, // price
+            q: quantity, // quantity
+          } : null;
         })
         .filter((p): p is NonNullable<typeof p> => p !== null);
 
@@ -454,12 +458,7 @@ export default function B2BQuotePage() {
             billingCity: data.billingCity || null,
             country: data.country || null,
             additionalInfo: data.additionalInfo || null,
-            upsellProducts: upsellProducts.map(p => ({
-              id: p.uuid,
-              title: p.title.nl,
-              quantity: p.quantity || 1,
-              price: p.price || 0,
-            })),
+            upsellProducts: upsellProducts, // Already in standardized format {n, p, q}
             // Op maat specific answers (only for op maat tours)
             opMaatAnswers: tourIsOpMaat ? {
               startEnd: opMaatAnswers.startEnd,
@@ -527,13 +526,8 @@ export default function B2BQuotePage() {
         contactEmail: data.contactEmail,
         contactPhone: data.contactPhone,
         additionalInfo: data.additionalInfo || null,
-        // Upsell
-        upsellProducts: upsellProducts.map(p => ({
-          id: p.uuid,
-          title: p.title.nl,
-          quantity: p.quantity || 1,
-          price: p.price || 0,
-        })),
+        // Upsell - already in standardized format {n, p, q}
+        upsellProducts: upsellProducts,
         // Booking type
         bookingType,
         // Meta

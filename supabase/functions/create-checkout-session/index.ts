@@ -42,7 +42,7 @@ serve(async (req: Request) => {
       userId,
       citySlug,
       opMaat = false,
-      upsellProducts = [], // Array of { id, title, quantity, price }
+      upsellProducts = [], // Array of { n: name, p: price, q: quantity } (standardized format)
       opMaatAnswers = null, // Op maat specific answers
       existingTourBookingId = null, // Existing tourbooking ID (for local stories - passed from frontend)
     } = await req.json()
@@ -118,84 +118,49 @@ serve(async (req: Request) => {
       savings: discountAmount,
     });
 
-    // Add upsell products as line items
+    // Add upsell products as line items (standardized format: {n: name, p: price, q: quantity})
     if (upsellProducts && Array.isArray(upsellProducts) && upsellProducts.length > 0) {
       console.log('Processing upsell products:', {
         count: upsellProducts.length,
-        products: upsellProducts.map((p: any) => ({ id: p.id, title: p.title, quantity: p.quantity, price: p.price }))
+        products: upsellProducts.map((p: any) => ({ 
+          name: p.n || p.title || 'Product', 
+          price: p.p || p.price || 0, 
+          quantity: p.q || p.quantity || 1 
+        }))
       });
 
-      // Fetch product details from database to ensure prices are correct
-      const productIds = upsellProducts.map((p: any) => p.id);
-      const { data: productData, error: productError } = await supabaseClient
-        .from('webshop_data')
-        .select('uuid, Name, Price (EUR)')
-        .in('uuid', productIds);
+      // Use standardized format: {n: name, p: price, q: quantity}
+      // Support both new format (n, p, q) and legacy format (title, price, quantity) for backward compatibility
+      for (const upsell of upsellProducts) {
+        // Extract values from standardized format or legacy format
+        const name = upsell.n || upsell.title || 'Product';
+        const price = upsell.p !== undefined ? upsell.p : (upsell.price || 0);
+        const quantity = upsell.q !== undefined ? upsell.q : (upsell.quantity || 1);
 
-      if (!productError && productData && productData.length > 0) {
-        console.log('Fetched product data from database:', productData.length, 'products');
-        // Create a map of product UUIDs to database prices
-        const productPriceMap = new Map(
-          productData.map((p: any) => [p.uuid, parseFloat(p['Price (EUR)'] || '0')])
-        );
-
-        // Add each upsell product as a line item
-        for (const upsell of upsellProducts) {
-          const dbPrice = productPriceMap.get(upsell.id);
-          const finalPrice = dbPrice !== undefined ? dbPrice : (upsell.price || 0);
-          const quantity = upsell.quantity || 1;
-
-          if (finalPrice > 0 && quantity > 0) {
-            const lineItem = {
-              price_data: {
-                currency: 'eur',
-                product_data: {
-                  name: upsell.title || 'Product',
-                },
-                unit_amount: Math.round(finalPrice * 100), // Convert to cents
+        if (price > 0 && quantity > 0) {
+          const lineItem = {
+            price_data: {
+              currency: 'eur',
+              product_data: {
+                name: name,
               },
-              quantity: quantity,
-            };
-            lineItems.push(lineItem);
-            console.log('Added upsell product to line items:', {
-              title: upsell.title,
-              price: finalPrice,
-              quantity: quantity,
-              unit_amount: lineItem.price_data.unit_amount
-            });
-          } else {
-            console.warn('Skipping upsell product due to invalid price or quantity:', {
-              id: upsell.id,
-              title: upsell.title,
-              finalPrice,
-              quantity
-            });
-          }
-        }
-      } else {
-        console.warn('Could not fetch product details for upsells, using provided prices:', productError);
-        // Fallback: use provided prices
-        for (const upsell of upsellProducts) {
-          const price = upsell.price || 0;
-          const quantity = upsell.quantity || 1;
-          if (price > 0 && quantity > 0) {
-            const lineItem = {
-              price_data: {
-                currency: 'eur',
-                product_data: {
-                  name: upsell.title || 'Product',
-                },
-                unit_amount: Math.round(price * 100),
-              },
-              quantity: quantity,
-            };
-            lineItems.push(lineItem);
-            console.log('Added upsell product to line items (fallback):', {
-              title: upsell.title,
-              price: price,
-              quantity: quantity
-            });
-          }
+              unit_amount: Math.round(price * 100), // Convert to cents
+            },
+            quantity: quantity,
+          };
+          lineItems.push(lineItem);
+          console.log('Added upsell product to line items:', {
+            name: name,
+            price: price,
+            quantity: quantity,
+            unit_amount: lineItem.price_data.unit_amount
+          });
+        } else {
+          console.warn('Skipping upsell product due to invalid price or quantity:', {
+            name: name,
+            price: price,
+            quantity: quantity
+          });
         }
       }
     } else {
@@ -249,7 +214,18 @@ serve(async (req: Request) => {
         requestTanguy: requestTanguy.toString(),
         userId: userId || '',
         opMaat: opMaat.toString(),
-        upsellProducts: JSON.stringify(upsellProducts), // Store upsell products in metadata
+        // Store compact JSON format (standardized: {n, p, q}) to avoid exceeding 500 character limit
+        // Full product details are stored in tourbooking.invitees[].upsellProducts JSONB column
+        upsellProducts: upsellProducts.length > 0 
+          ? JSON.stringify(
+              upsellProducts.map((p: any) => ({
+                n: ((p.n || p.title || '').substring(0, 40)), // name (truncated to 40 chars)
+                p: (p.p !== undefined ? p.p : (p.price || 0)), // price
+                q: (p.q !== undefined ? p.q : (p.quantity || 1)), // quantity
+              }))
+            )
+          : '',
+        upsellCount: upsellProducts.length.toString(),
         // Discount information for tracking (10% discount applies to tours only)
         tourOriginalPrice: tourFullPrice.toFixed(2),
         tourDiscountAmount: discountAmount.toFixed(2),

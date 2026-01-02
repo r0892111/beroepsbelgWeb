@@ -342,14 +342,14 @@ export function TourBookingDialog({
         }
       }
 
-      // Prepare upsell products - always send as array (even if empty)
+      // Prepare upsell products in standardized format: {n: name, p: price, q: quantity}
+      // Always send as array (even if empty)
       const upsellProducts = products
         .filter(p => selectedUpsell[p.uuid] && selectedUpsell[p.uuid] > 0)
         .map(p => ({
-          id: p.uuid,
-          title: p.title.nl,
-          quantity: selectedUpsell[p.uuid] || 1,
-          price: p.price,
+          n: p.title.nl, // name
+          p: p.price, // price
+          q: selectedUpsell[p.uuid] || 1, // quantity
         }));
 
       console.log('Sending upsell products to checkout:', {
