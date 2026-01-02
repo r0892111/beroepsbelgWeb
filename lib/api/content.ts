@@ -1,5 +1,5 @@
 import { supabaseServer } from '@/lib/supabase/server';
-import type { Locale, City, Tour, Product, FaqItem, BlogPost, PressLink, ProductImage, TourImage } from '@/lib/data/types';
+import type { Locale, City, Tour, Product, FaqItem, BlogPost, PressLink, ProductImage, TourImage, Lecture, LectureImage, LectureBooking } from '@/lib/data/types';
 
 export type LocalTourBooking = {
   id: string;
@@ -214,6 +214,8 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
       ? (tourImages.find((img) => img.is_primary) || tourImages[0])
       : null;
     const imageUrl = primaryImage?.image_url || undefined;
+    // Detect primary media type - default to 'image' if not specified
+    const primaryMediaType = primaryImage?.media_type || 'image';
 
     return {
       id: row.id,
@@ -234,6 +236,7 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       image: imageUrl, // Use primary image from database if available
+      primaryMediaType: primaryMediaType, // Type of primary media (image or video)
       tourImages: tourImages.length > 0 ? tourImages : undefined,
       displayOrder: row.display_order ? Number(row.display_order) : undefined,
       themes: Array.isArray(row.themes) ? row.themes : undefined,
@@ -316,6 +319,8 @@ export async function getTourBySlug(citySlug: string, slug: string): Promise<Tou
     ? (tourImages.find((img) => img.is_primary) || tourImages[0])
     : null;
   const imageUrl = primaryImage?.image_url || undefined;
+  // Detect primary media type - default to 'image' if not specified
+  const primaryMediaType = primaryImage?.media_type || 'image';
 
   const localStoriesValue = matchingTour.local_stories === true || matchingTour.local_stories === 'true' || matchingTour.local_stories === 1;
   
@@ -352,6 +357,7 @@ export async function getTourBySlug(citySlug: string, slug: string): Promise<Tou
     createdAt: matchingTour.created_at,
     updatedAt: matchingTour.updated_at,
     image: imageUrl, // Use primary image from database if available
+    primaryMediaType: primaryMediaType, // Type of primary media (image or video)
     tourImages: tourImages.length > 0 ? tourImages : undefined,
     themes: Array.isArray(matchingTour.themes) ? matchingTour.themes : undefined,
     options: matchingTour.options,
@@ -572,6 +578,7 @@ export async function getTourImages(): Promise<Record<string, TourImage[]>> {
           image_url: img.url || img.image_url,
           is_primary: img.is_primary || false,
           sort_order: img.sort_order !== undefined ? img.sort_order : index,
+          media_type: img.media_type || 'image', // Default to 'image' for backward compatibility
           storage_folder_name: img.storage_folder_name || undefined,
           created_at: img.created_at,
           updated_at: img.updated_at,
@@ -588,6 +595,130 @@ export async function getTourImages(): Promise<Record<string, TourImage[]>> {
   }
 }
 
+
+export async function getLectures(): Promise<Lecture[]> {
+  try {
+    const { data, error } = await supabaseServer
+      .from('lectures')
+      .select('*')
+      .order('display_order', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      // If table doesn't exist, return empty array (graceful degradation)
+      if (error.message?.includes('does not exist') || 
+          error.message?.includes('column') ||
+          error.code === '42703' || error.code === '42P01') {
+        console.warn('lectures table does not exist. Please run migration to create lectures table.');
+        return [];
+      }
+      console.error('Error fetching lectures:', error);
+      return [];
+    }
+
+    if (!data || data.length === 0) {
+      return [];
+    }
+
+    const lectures: Lecture[] = (data || []).map((row: any) => {
+      // Parse lecture_images JSONB column
+      let lectureImages: LectureImage[] = [];
+      if (row.lecture_images && Array.isArray(row.lecture_images)) {
+        lectureImages = row.lecture_images.map((img: any, index: number) => ({
+          id: img.id || `${row.id}-${index}`,
+          lecture_id: row.id,
+          image_url: img.image_url || img.url || '',
+          is_primary: img.is_primary || false,
+          sort_order: img.sort_order !== undefined ? img.sort_order : index,
+          storage_folder_name: img.storage_folder_name || undefined,
+          created_at: img.created_at,
+          updated_at: img.updated_at,
+        })).sort((a: LectureImage, b: LectureImage) => a.sort_order - b.sort_order);
+      }
+
+      return {
+        id: row.id,
+        title: row.title || '',
+        title_en: row.title_en || undefined,
+        date: row.date || undefined,
+        date_en: row.date_en || undefined,
+        location: row.location || undefined,
+        location_en: row.location_en || undefined,
+        group_size: row.group_size || undefined,
+        group_size_en: row.group_size_en || undefined,
+        description1: row.description1 || undefined,
+        description1_en: row.description1_en || undefined,
+        description2: row.description2 || undefined,
+        description2_en: row.description2_en || undefined,
+        description: row.description || undefined,
+        description_en: row.description_en || undefined,
+        image: row.image_url || undefined, // Primary image URL from image_url column
+        lectureImages: lectureImages.length > 0 ? lectureImages : undefined,
+        display_order: row.display_order !== null && row.display_order !== undefined ? Number(row.display_order) : undefined,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+      };
+    });
+
+    return lectures;
+  } catch (err) {
+    console.error('Exception fetching lectures:', err);
+    return [];
+  }
+}
+
+export async function createLectureBooking(booking: Omit<LectureBooking, 'id' | 'created_at' | 'updated_at' | 'status'>): Promise<LectureBooking> {
+  try {
+    // Validate that at least one of phone or email is provided
+    if (!booking.phone && !booking.email) {
+      throw new Error('At least one of phone or email must be provided');
+    }
+
+    // Validate email format if provided
+    if (booking.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(booking.email)) {
+      throw new Error('Invalid email format');
+    }
+
+    const { data, error } = await supabaseServer
+      .from('lecture_bookings')
+      .insert([{
+        lecture_id: booking.lecture_id || null,
+        name: booking.name,
+        phone: booking.phone || null,
+        email: booking.email || null,
+        preferred_date: booking.preferred_date || null,
+        number_of_people: booking.number_of_people || null,
+        location_description: booking.location_description || null,
+        needs_room_provided: booking.needs_room_provided || false,
+        status: 'pending',
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating lecture booking:', error);
+      throw error;
+    }
+
+    return {
+      id: data.id,
+      lecture_id: data.lecture_id || undefined,
+      name: data.name,
+      phone: data.phone || undefined,
+      email: data.email || undefined,
+      preferred_date: data.preferred_date || undefined,
+      number_of_people: data.number_of_people || undefined,
+      location_description: data.location_description || undefined,
+      needs_room_provided: data.needs_room_provided,
+      status: data.status as 'pending' | 'confirmed' | 'cancelled',
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+    };
+  } catch (err) {
+    console.error('Exception creating lecture booking:', err);
+    throw err;
+  }
+}
 
 export async function getFaqItems(): Promise<FaqItem[]> {
   try {

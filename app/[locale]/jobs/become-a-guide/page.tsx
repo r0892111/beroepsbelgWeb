@@ -382,13 +382,13 @@ export default function BecomeAGuidePage() {
                   {t('cvLabel') || 'CV (PDF)'}
                 </label>
                 {!cvFile ? (
-                  <div className="relative">
+                  <div className="relative min-h-[60px]">
                     <Input
                       id="cv"
                       type="file"
                       accept="application/pdf"
                       onChange={handleCvFileSelect}
-                      className="w-full px-4 py-4 border-2 border-neutral-200 rounded-lg font-inter focus:border-[#1BDD95] focus:ring-0 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#1BDD95] file:text-white hover:file:bg-[#14BE82]"
+                      className="w-full px-4 py-5 border-2 border-neutral-200 rounded-lg font-inter focus:border-[#1BDD95] focus:ring-0 transition-colors file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#1BDD95] file:text-white hover:file:bg-[#14BE82] h-auto"
                     />
                   </div>
                 ) : (
@@ -418,13 +418,13 @@ export default function BecomeAGuidePage() {
                   {t('photoLabel') || 'Photo'}
                 </label>
                 {!photoFile ? (
-                  <div className="relative">
+                  <div className="relative min-h-[60px]">
                     <Input
                       id="photo"
                       type="file"
                       accept="image/*"
                       onChange={handlePhotoFileSelect}
-                      className="w-full px-4 py-4 border-2 border-neutral-200 rounded-lg font-inter focus:border-[#1BDD95] focus:ring-0 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#1BDD95] file:text-white hover:file:bg-[#14BE82]"
+                      className="w-full px-4 py-5 border-2 border-neutral-200 rounded-lg font-inter focus:border-[#1BDD95] focus:ring-0 transition-colors file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#1BDD95] file:text-white hover:file:bg-[#14BE82] h-auto"
                     />
                   </div>
                 ) : (

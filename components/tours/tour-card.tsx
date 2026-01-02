@@ -29,6 +29,11 @@ export function TourCard({ tour, locale }: TourCardProps) {
 
   // Get image URL - use primary image if available, otherwise use placeholder
   const imageUrl = tour.image || getTourPlaceholder(tour.type, tour.city);
+  
+  // Determine if primary media is a video
+  // Check primaryMediaType first, then fallback to URL extension detection
+  const isVideo = tour.primaryMediaType === 'video' || 
+    (imageUrl && /\.(mp4|webm|mov)$/i.test(imageUrl));
 
   // Format duration
   const formatDuration = (minutes: number) => {
@@ -58,12 +63,25 @@ export function TourCard({ tour, locale }: TourCardProps) {
       }}
     >
       <Link href={`/${locale}/tours/${tour.city}/${tour.slug}`} className="relative h-48 w-full overflow-hidden block cursor-pointer">
+        {isVideo ? (
+          <video
+            src={imageUrl}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            aria-label={tour.title}
+          />
+        ) : (
           <Image
-          src={imageUrl}
+            src={imageUrl}
             alt={tour.title}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
+        )}
         {tour.type === 'Bike' && (
             <div
               className="absolute top-3 right-3 rounded-full p-2"

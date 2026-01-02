@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,6 +18,8 @@ import { Calendar, Users, MapPin, Languages, Building2, Sparkles, CheckCircle2, 
 // Removed direct imports - will fetch from API instead
 import type { City, Tour, Product } from '@/lib/data/types';
 import Image from 'next/image';
+import { format } from 'date-fns';
+import { useTranslations as useBookingTranslations } from 'next-intl';
 
 const quoteSchema = z.object({
   dateTime: z.string().min(1),
@@ -48,6 +50,7 @@ export default function B2BQuotePage() {
   const t = useTranslations('b2b');
   const tForms = useTranslations('forms');
   const tCheckout = useTranslations('checkout');
+  const tBooking = useBookingTranslations('booking');
   const params = useParams();
   const router = useRouter();
   const locale = params.locale as string;
@@ -69,6 +72,12 @@ export default function B2BQuotePage() {
     subjects: '',
     specialWishes: '',
   });
+  const [requestTanguy, setRequestTanguy] = useState(false);
+  const [extraHour, setExtraHour] = useState(false); // For opMaat tours: add extra hour (3 hours instead of 2)
+  
+  // Tanguy availability state
+  const [tanguyAvailable, setTanguyAvailable] = useState<boolean | null>(null);
+  const [checkingTanguyAvailability, setCheckingTanguyAvailability] = useState(false);
 
   const {
     register,
@@ -101,9 +110,17 @@ export default function B2BQuotePage() {
     return `${mins} min`;
   };
 
+  // Calculate actual duration (accounting for extra hour for opMaat tours)
+  const actualDuration = useMemo(() => {
+    if (isOpMaat && extraHour) {
+      return 180; // 3 hours
+    }
+    return selectedTour?.durationMinutes ?? 120; // Default 2 hours
+  }, [isOpMaat, extraHour, selectedTour?.durationMinutes]);
+
   // Generate time slots between 10:00 and 18:00 based on tour duration
-  const generateTimeSlots = () => {
-    const durationMinutes = selectedTour?.durationMinutes ?? 120; // Default 2 hours
+  const timeSlots = useMemo(() => {
+    const durationMinutes = actualDuration;
 
     // Check if this is a "Local Stories" tour - restrict to 14:00-16:00 only
     if (selectedTour?.local_stories === true) {
@@ -137,9 +154,70 @@ export default function B2BQuotePage() {
     }
 
     return slots;
-  };
+  }, [actualDuration, selectedTour?.local_stories]);
 
-  const timeSlots = generateTimeSlots();
+  // Check Tanguy's availability when date/time changes
+  useEffect(() => {
+    const checkTanguyAvailability = async () => {
+      // Only check for eligible cities and when date/time is selected
+      if (
+        !selectedCity ||
+        !['antwerpen', 'knokke-heist', 'spa'].includes(selectedCity.toLowerCase()) ||
+        !selectedDate ||
+        !selectedTimeSlot
+      ) {
+        setTanguyAvailable(null);
+        // Reset requestTanguy if date/time is not selected
+        if (requestTanguy) {
+          setRequestTanguy(false);
+        }
+        return;
+      }
+
+      setCheckingTanguyAvailability(true);
+      try {
+        const dateStr = format(new Date(selectedDate), 'yyyy-MM-dd');
+        const response = await fetch('/api/check-tanguy-availability', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            date: dateStr,
+            time: selectedTimeSlot,
+            durationMinutes: actualDuration,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setTanguyAvailable(data.available);
+          // Reset requestTanguy if he's not available
+          if (!data.available && requestTanguy) {
+            setRequestTanguy(false);
+          }
+        } else {
+          console.error('Failed to check Tanguy availability');
+          setTanguyAvailable(false);
+          // Reset requestTanguy on error
+          if (requestTanguy) {
+            setRequestTanguy(false);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking Tanguy availability:', error);
+        setTanguyAvailable(false);
+        // Reset requestTanguy on error
+        if (requestTanguy) {
+          setRequestTanguy(false);
+        }
+      } finally {
+        setCheckingTanguyAvailability(false);
+      }
+    };
+
+    void checkTanguyAvailability();
+  }, [selectedDate, selectedTimeSlot, selectedCity, actualDuration, requestTanguy]);
 
   useEffect(() => {
     let isMounted = true;
@@ -282,8 +360,8 @@ export default function B2BQuotePage() {
       toast.error(t('selectDateAndTime'));
       return;
     }
-    if (!numberOfPeople || parseInt(numberOfPeople) < 1) {
-      toast.error(t('fillNumberOfPeople'));
+    if (!numberOfPeople || parseInt(numberOfPeople) < 15) {
+      toast.error(t('fillNumberOfPeople') || 'Minimum aantal personen is 15');
       return;
     }
     // Set op maat state when moving to contact step
@@ -388,7 +466,10 @@ export default function B2BQuotePage() {
               cityPart: opMaatAnswers.cityPart,
               subjects: opMaatAnswers.subjects,
               specialWishes: opMaatAnswers.specialWishes,
+              extraHour: extraHour,
             } : null,
+            requestTanguy: requestTanguy,
+            durationMinutes: actualDuration, // Include actual duration in booking
           }),
         });
 
@@ -607,14 +688,22 @@ export default function B2BQuotePage() {
           </div>
 
           {/* Progress steps */}
-          <div className="mb-8 flex justify-center gap-2">
-            {[1, 2, 3, 4].map((s) => (
-              <div
-                key={s}
-                className="h-2 w-20 rounded-full transition-all"
-                style={{ backgroundColor: stepNumber >= s ? 'var(--brass)' : '#e5e7eb' }}
-              />
-            ))}
+          <div className="mb-8 flex items-center justify-center">
+            <div className="flex items-center gap-2 w-full max-w-md">
+              {[1, 2, 3, 4].map((s) => {
+                let bgColor = '#e5e7eb'; // Default gray for future steps
+                if (stepNumber >= s) {
+                  bgColor = '#1BDD95'; // Mint green for current and completed steps
+                }
+                return (
+                  <div
+                    key={s}
+                    className="h-2 flex-1 rounded-full transition-all"
+                    style={{ backgroundColor: bgColor }}
+                  />
+                );
+              })}
+            </div>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 rounded-2xl p-8 brass-corner shadow-lg" style={{ backgroundColor: '#faf8f5' }}>
@@ -769,7 +858,7 @@ export default function B2BQuotePage() {
                       <p className="mt-1 text-xs text-muted-foreground">
                         {selectedTour.local_stories
                           ? t('localStoriesTime')
-                          : t('tourDuration', { duration: formatDuration(selectedTour.durationMinutes) })
+                          : t('tourDuration', { duration: formatDuration(actualDuration) })
                         }
                       </p>
                     )}
@@ -782,7 +871,7 @@ export default function B2BQuotePage() {
                     <Input
                       id="numberOfPeople"
                       type="number"
-                      min="1"
+                      min="15"
                       placeholder={t('peoplePlaceholder')}
                       {...register('numberOfPeople')}
                       className="mt-2"
@@ -790,7 +879,115 @@ export default function B2BQuotePage() {
                   </div>
                 </div>
 
-                <Button type="button" onClick={goToContact} className="w-full btn-primary" disabled={!selectedTour || !selectedDate || !selectedTimeSlot || numPeople < 1}>
+                {/* Request Tanguy Ottomer Section - Only shown when available and date/time is selected */}
+                {selectedCity && 
+                 ['antwerpen', 'knokke-heist', 'spa'].includes(selectedCity.toLowerCase()) &&
+                 selectedDate &&
+                 selectedTimeSlot &&
+                 (checkingTanguyAvailability ? (
+                   <div className="rounded-lg border-2 p-4 border-gray-200">
+                     <div className="flex items-center gap-4">
+                       <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded">
+                         <Image
+                           src="/headshot_tanguy.jpg"
+                           alt="Tanguy Ottomer"
+                           fill
+                           className="object-cover opacity-50"
+                         />
+                       </div>
+                       <div className="flex-1">
+                         <div className="flex items-center gap-2">
+                           <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                           <span className="text-sm text-gray-500">Checking availability...</span>
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+                 ) : tanguyAvailable === true ? (
+                   <div className="rounded-lg border-2 p-4 transition-all hover:border-brass" style={{ borderColor: requestTanguy ? 'var(--brass)' : '#e5e7eb' }}>
+                     <div className="flex items-center gap-4">
+                       <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded">
+                         <Image
+                           src="/headshot_tanguy.jpg"
+                           alt="Tanguy Ottomer"
+                           fill
+                           className="object-cover"
+                         />
+                       </div>
+                       <div className="flex-1">
+                         <div className="flex items-start gap-3">
+                           <Checkbox
+                             id="requestTanguy"
+                             checked={requestTanguy}
+                             onCheckedChange={(checked) =>
+                               setRequestTanguy(checked === true)
+                             }
+                             className="mt-1"
+                           />
+                           <div className="flex-1">
+                             <Label
+                               htmlFor="requestTanguy"
+                               className="cursor-pointer text-base font-semibold text-navy"
+                             >
+                               {tBooking('requestTanguy')}
+                             </Label>
+                             <p className="mt-1 text-sm text-slate-blue">
+                               {tBooking('requestTanguyDescription')}
+                             </p>
+                             <p className="mt-2 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200">
+                               {tBooking('tanguyLanguageDisclaimer')}
+                             </p>
+                           </div>
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+                 ) : tanguyAvailable === false ? (
+                   <div className="rounded-lg border-2 p-4 border-gray-200 opacity-60">
+                     <div className="flex items-center gap-4">
+                       <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded">
+                         <Image
+                           src="/headshot_tanguy.jpg"
+                           alt="Tanguy Ottomer"
+                           fill
+                           className="object-cover opacity-50"
+                         />
+                       </div>
+                       <div className="flex-1">
+                         <p className="text-sm text-gray-500">
+                           Tanguy is not available at the selected time.
+                         </p>
+                       </div>
+                     </div>
+                   </div>
+                 ) : null
+                )}
+
+                {/* Extra Hour Checkbox - Only for opMaat tours */}
+                {isOpMaat && (
+                  <div className="rounded-lg border-2 p-4 border-gray-200">
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        id="extraHour"
+                        checked={extraHour}
+                        onCheckedChange={(checked) =>
+                          setExtraHour(checked === true)
+                        }
+                        className="mt-1"
+                      />
+                      <div className="flex-1">
+                        <Label
+                          htmlFor="extraHour"
+                          className="cursor-pointer text-base font-semibold text-navy"
+                        >
+                          {tBooking('addExtraHour')}
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <Button type="button" onClick={goToContact} className="w-full btn-primary" disabled={!selectedTour || !selectedDate || !selectedTimeSlot || numPeople < 15}>
                   {t('continueButton')}
                 </Button>
               </div>

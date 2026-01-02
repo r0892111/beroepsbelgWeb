@@ -52,9 +52,9 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F9F9F7]">
+    <div className="min-h-screen bg-[#1BDD95]">
       {/* Hero Section */}
-      <section className="bg-[#1BDD95] py-16 md:py-24">
+      <section className="py-16 md:py-24">
         <div className="container mx-auto px-4 text-center">
           <h1 className="font-oswald text-5xl md:text-7xl text-white uppercase tracking-tight mb-4">
             {t('getInTouch')}
@@ -76,7 +76,6 @@ export default function ContactPage() {
                 <MapPin className="w-6 h-6 text-white" />
               </div>
               <h3 className="font-oswald font-bold text-lg mb-2 text-neutral-900">{t('addressLabel')}</h3>
-              <p className="font-inter text-neutral-600">Groenplaats 1</p>
               <p className="font-inter text-neutral-600">2000 Antwerpen</p>
               <p className="font-inter text-neutral-600">België</p>
             </div>

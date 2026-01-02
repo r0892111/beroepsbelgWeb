@@ -9,14 +9,20 @@
  */
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Heart } from 'lucide-react';
+import Image from 'next/image';
+import { ShoppingCart, Heart, Book, Gamepad2, Package } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { useCartContext } from '@/lib/contexts/cart-context';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useFavoritesContext } from '@/lib/contexts/favorites-context';
 import { toast } from 'sonner';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ProductDetailDialog } from '@/components/webshop/product-detail-dialog';
+import { Product, Locale } from '@/lib/data/types';
 
 // --- Types ---
 interface ProductImage {
@@ -45,6 +51,8 @@ interface DisplayProduct {
   category: string;
   price: string;
   image: string;
+  description?: string;
+  additionalInfo?: string;
 }
 
 // Helper function to generate slug from product name
@@ -83,14 +91,16 @@ const ProductCard = ({
   showSubtitle = true,
   className = "",
   imageClassName = "",
-  buttonClassName = "text-xs md:text-sm"
+  buttonClassName = "text-xs md:text-sm",
+  onClick
 }: { 
   product: DisplayProduct, 
   aspect?: string, 
   showSubtitle?: boolean,
   className?: string,
   imageClassName?: string,
-  buttonClassName?: string
+  buttonClassName?: string,
+  onClick?: () => void
 }) => {
   const t = useTranslations('shop');
   const tAuth = useTranslations('auth');
@@ -166,73 +176,162 @@ const ProductCard = ({
       setIsTogglingFavorite(false);
     }
   };
+
+  const getCategoryIcon = () => {
+    const categoryUpper = product.category?.toUpperCase() || '';
+    if (categoryUpper.includes('BOOK')) {
+      return <Book className="h-4 w-4" />;
+    } else if (categoryUpper.includes('GAME')) {
+      return <Gamepad2 className="h-4 w-4" />;
+    } else if (categoryUpper.includes('MERCH') || categoryUpper.includes('MERCHANDISE')) {
+      return <Package className="h-4 w-4" />;
+    }
+    return null;
+  };
+
+  // Parse price to number for display
+  const priceNumber = parseFloat(product.price.replace('€', '').replace(',', '.')) || 0;
+
   return (
-    <div className={`h-full bg-transparent ${className}`}>
-      {/* Bordered Container - Wraps Image AND Text */}
-      <div className="flex flex-col h-full border border-[#1a3628] bg-[#F0F0EB] p-4 group transition-all duration-300 hover:shadow-lg">
-        {/* Image Container */}
-        <div className={`relative w-full ${aspect} mb-4 overflow-hidden border border-[#1a3628]/10 ${imageClassName} bg-[#1a3628]/5`}>
+    <Card
+      className={`flex flex-col group overflow-hidden cursor-pointer h-full ${className}`}
+      style={{
+        transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+        border: '1px solid var(--border-subtle)',
+      }}
+      onClick={onClick}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-6px)';
+        e.currentTarget.style.boxShadow = 'var(--shadow-hover-glow)';
+        e.currentTarget.style.borderColor = 'var(--border-light)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = 'var(--shadow-medium)';
+        e.currentTarget.style.borderColor = 'var(--border-subtle)';
+      }}
+    >
+      <CardHeader
+        style={{
+          backgroundColor: 'var(--card-header-bg)',
+          borderBottom: '1px solid var(--border-light)'
+        }}
+      >
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <span style={{ color: 'var(--primary-base)' }}>{getCategoryIcon()}</span>
+              <span
+                className="text-xs uppercase tracking-wide font-semibold"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                {product.category || 'Product'}
+              </span>
+            </div>
+            <CardTitle
+              className="text-lg leading-tight"
+              style={{
+                fontFamily: 'Montserrat, sans-serif',
+                color: 'var(--text-primary)'
+              }}
+            >
+              {product.title}
+            </CardTitle>
+            {showSubtitle && product.subtitle && (
+              <CardDescription className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
+                {product.subtitle}
+              </CardDescription>
+            )}
+            <CardDescription
+              className="mt-2 font-bold text-lg"
+              style={{ color: 'var(--primary-base)' }}
+            >
+              {product.price}
+            </CardDescription>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleToggleFavorite(e);
+            }}
+            className={`transition-all duration-300 ${isFavorite(product.uuid) ? 'text-red-500' : 'hover:bg-transparent'}`}
+          >
+            <Heart className={`h-5 w-5 ${isFavorite(product.uuid) ? 'fill-current' : ''}`} />
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent
+        className="flex-1 flex flex-col"
+        style={{ backgroundColor: 'var(--card-content-bg)', paddingTop: '1.75rem', paddingBottom: '1.75rem' }}
+      >
+        <div className="relative w-full min-h-[200px] rounded-lg border border-[#1a3628]/10 mb-4 overflow-hidden flex items-center justify-center bg-gray-50">
           {product.image ? (
-            <img
+            <Image
               src={product.image}
               alt={product.title}
-              className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
-              onError={(e) => {
-                // Fallback to placeholder if image fails to load
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-              }}
+              width={800}
+              height={600}
+              className="w-full h-auto max-h-[400px] object-contain group-hover:scale-105 transition-transform duration-300"
+              unoptimized
+              style={{ maxWidth: '100%' }}
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-[#1a3628]/30">
+            <div className="w-full h-full flex items-center justify-center text-gray-400">
               <span className="text-xs uppercase tracking-wider">No Image</span>
             </div>
           )}
         </div>
-
-        {/* Info Area - Now Inside */}
-        <div className="mt-auto flex flex-col gap-2">
-          {/* Product Name */}
-          <div className="text-sm font-sans font-medium text-[#1a3628] uppercase tracking-wide truncate">
-            {product.title}
-          </div>
-          {/* Category */}
-          {product.category && (
-            <div className="text-xs font-sans font-normal text-[#1a3628]/70 uppercase tracking-wide truncate">
-              {product.category}
-            </div>
-          )}
-          {/* Subtitle if exists */}
-          {showSubtitle && product.subtitle && (
-            <div className="text-xs font-sans font-normal text-[#1a3628]/60 uppercase tracking-wide truncate">
-              {product.subtitle}
-            </div>
-          )}
-          
-          <div className="flex justify-between items-end mt-2">
-            <span className="font-sans font-bold text-[#1a3628] text-lg">{product.price}</span>
-            <div className="flex gap-2">
-              <button
-                onClick={handleToggleFavorite}
-                disabled={isTogglingFavorite}
-                className={`${buttonClassName} bg-[#1BDD95] text-white p-2 hover:bg-[#14BE82] transition-colors rounded-full flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed ${isFavorite(product.uuid) ? 'bg-red-500 hover:bg-red-600' : ''}`}
-                aria-label={isFavorite(product.uuid) ? 'Remove from favorites' : 'Add to favorites'}
-              >
-                <Heart size={18} strokeWidth={2.5} className={isFavorite(product.uuid) ? 'fill-current' : ''} />
-              </button>
-              <button
-                onClick={handleAddToCart}
-                disabled={isAddingToCart}
-                className={`${buttonClassName} bg-[#1BDD95] text-white p-2 hover:bg-[#14BE82] transition-colors rounded-full flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed`}
-                aria-label="Add to cart"
-              >
-                <ShoppingCart size={18} strokeWidth={2.5} />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+        {product.description && (
+          <p
+            className="text-sm line-clamp-3 leading-relaxed"
+            style={{ color: 'var(--text-tertiary)' }}
+          >
+            {product.description}
+          </p>
+        )}
+      </CardContent>
+      <CardFooter
+        className="flex flex-col gap-2 px-6 pb-6 pt-4"
+        style={{
+          backgroundColor: 'var(--card-footer-bg)',
+          borderTop: '1px solid var(--border-light)'
+        }}
+      >
+        <Button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onClick) onClick();
+          }}
+          variant="outline"
+          className="w-full transition-all duration-300"
+          style={{
+            borderColor: 'var(--primary-base)',
+            color: 'var(--primary-base)',
+            backgroundColor: 'transparent'
+          }}
+        >
+          Details
+        </Button>
+        <Button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAddToCart(e);
+          }}
+          disabled={isAddingToCart}
+          className="w-full gap-2 transition-all duration-300"
+          style={{
+            backgroundColor: 'var(--primary-base)',
+            color: 'white',
+            boxShadow: 'var(--shadow-small)'
+          }}
+        >
+          <ShoppingCart className="h-4 w-4" />
+          {tAuth('addToCart')}
+        </Button>
+      </CardFooter>
+    </Card>
   );
 };
 
@@ -281,10 +380,12 @@ function SeparatorWave() {
 
 export function ShopSection() {
   const t = useTranslations('shop');
-  const locale = useLocale();
+  const locale = useLocale() as Locale;
   const [products, setProducts] = useState<DisplayProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     async function fetchProducts() {
@@ -292,12 +393,13 @@ export function ShopSection() {
         setLoading(true);
         setError(null);
 
-        // Fetch products from webshop_data table
+        // Fetch featured products from webshop_data table
         const { data, error: fetchError } = await supabase
           .from('webshop_data')
           .select('uuid, Name, Category, "Price (EUR)", Description, "Additional Info", product_images')
-          .order('Name', { ascending: true })
-          .limit(8); // Limit to 8 products for the grid
+          .eq('featured_on_homepage', true)
+          .order('homepage_featured_order', { ascending: true, nullsFirst: false })
+          .order('Name', { ascending: true });
 
         if (fetchError) {
           console.error('Error fetching products:', fetchError);
@@ -338,6 +440,8 @@ export function ShopSection() {
             category: product.Category || '',
             price: formattedPrice,
             image: imageUrl,
+            description: product.Description || '',
+            additionalInfo: product['Additional Info'] || '',
           };
         });
 
@@ -352,6 +456,72 @@ export function ShopSection() {
 
     void fetchProducts();
   }, [locale]);
+
+  // Transform DisplayProduct to Product for ProductDetailDialog
+  const transformToProduct = (displayProduct: DisplayProduct): Product => {
+    const categoryOptions: Product['category'][] = ['Book', 'Merchandise', 'Game'];
+    const categoryValue = displayProduct.category?.trim() || '';
+    const category = (categoryOptions.includes(categoryValue as Product['category'])
+      ? categoryValue
+      : 'Book') as Product['category'];
+
+    // Parse price from formatted string (€21,94 -> 21.94)
+    const priceStr = displayProduct.price.replace('€', '').replace(',', '.');
+    const price = parseFloat(priceStr) || 0;
+
+    // Get description and additional info from displayProduct
+    const description = displayProduct.description || '';
+    const additionalInfo = displayProduct.additionalInfo || '';
+
+    const titleRecord = {
+      nl: displayProduct.title,
+      en: displayProduct.title,
+      fr: displayProduct.title,
+      de: displayProduct.title,
+    };
+
+    const descriptionRecord = description
+      ? {
+          nl: description,
+          en: description,
+          fr: description,
+          de: description,
+        }
+      : {
+          nl: '',
+          en: '',
+          fr: '',
+          de: '',
+        };
+
+    const additionalInfoRecord = additionalInfo
+      ? {
+          nl: additionalInfo,
+          en: additionalInfo,
+          fr: additionalInfo,
+          de: additionalInfo,
+        }
+      : undefined;
+
+    return {
+      slug: displayProduct.slug,
+      uuid: displayProduct.uuid,
+      title: titleRecord,
+      category,
+      price,
+      description: descriptionRecord,
+      additionalInfo: additionalInfoRecord,
+      label: undefined,
+      image: displayProduct.image || undefined,
+    };
+  };
+
+  const handleProductClick = (displayProduct: DisplayProduct) => {
+    // Transform using data already available in DisplayProduct
+    const product = transformToProduct(displayProduct);
+    setSelectedProduct(product);
+    setDialogOpen(true);
+  };
 
   return (
     <section className="relative w-full bg-[#F9F9F5]">
@@ -369,9 +539,16 @@ export function ShopSection() {
           {t('curated')} <br/>
           <span className="italic font-light">{t('collection')}</span>
         </h2>
-        <p className="font-sans text-[rgb(23,23,23)] uppercase tracking-widest text-sm md:text-base max-w-md mx-auto">
+        <p className="font-sans text-[rgb(23,23,23)] uppercase tracking-widest text-sm md:text-base max-w-md mx-auto mb-6">
           {t('exclusiveItems')}
         </p>
+        <Link href={`/${locale}/webshop`}>
+          <Button
+            className="inline-flex items-center justify-center px-8 py-4 bg-[#1BDD95] hover:bg-[#14BE82] rounded-full text-white font-oswald font-bold text-sm uppercase tracking-widest transition-all hover:scale-105 shadow-lg hover:shadow-xl"
+          >
+            {t('viewAllProducts') || 'View All Products'}
+          </Button>
+        </Link>
       </motion.div>
 
       {/* Product Grid - 2x4 Layout (4 cols on desktop) */}
@@ -395,7 +572,8 @@ export function ShopSection() {
             {products.map((product) => (
               <ProductCard 
                 key={product.id} 
-                product={product} 
+                product={product}
+                onClick={() => handleProductClick(product)}
               />
             ))}
           </div>
@@ -404,6 +582,15 @@ export function ShopSection() {
 
       {/* Marquee Banner */}
       <Marquee />
+
+      {/* Product Detail Dialog */}
+      {selectedProduct && (
+        <ProductDetailDialog
+          product={selectedProduct}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+        />
+      )}
     </section>
   );
 }
