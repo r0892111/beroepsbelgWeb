@@ -14,8 +14,13 @@ import { CartProvider } from '@/lib/contexts/cart-context';
 import { FavoritesProvider } from '@/lib/contexts/favorites-context';
 
 export const metadata: Metadata = {
-  title: 'BeroepsBelg — Uw gids in België',
+  title: 'BeroepsBelg',
   description: 'Ontdek België met professionele stadswandelingen in Antwerpen, Brussel, Brugge, Gent en meer.',
+  icons: {
+    icon: '/favicon.png',
+    shortcut: '/favicon.png',
+    apple: '/apple-touch-icon.png',
+  },
 };
 
 export function generateStaticParams() {
