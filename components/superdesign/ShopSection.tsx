@@ -21,7 +21,6 @@ import { useFavoritesContext } from '@/lib/contexts/favorites-context';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ProductDetailDialog } from '@/components/webshop/product-detail-dialog';
 import { Product, Locale } from '@/lib/data/types';
 
 // --- Types ---
@@ -457,70 +456,8 @@ export function ShopSection() {
     void fetchProducts();
   }, [locale]);
 
-  // Transform DisplayProduct to Product for ProductDetailDialog
-  const transformToProduct = (displayProduct: DisplayProduct): Product => {
-    const categoryOptions: Product['category'][] = ['Book', 'Merchandise', 'Game'];
-    const categoryValue = displayProduct.category?.trim() || '';
-    const category = (categoryOptions.includes(categoryValue as Product['category'])
-      ? categoryValue
-      : 'Book') as Product['category'];
-
-    // Parse price from formatted string (€21,94 -> 21.94)
-    const priceStr = displayProduct.price.replace('€', '').replace(',', '.');
-    const price = parseFloat(priceStr) || 0;
-
-    // Get description and additional info from displayProduct
-    const description = displayProduct.description || '';
-    const additionalInfo = displayProduct.additionalInfo || '';
-
-    const titleRecord = {
-      nl: displayProduct.title,
-      en: displayProduct.title,
-      fr: displayProduct.title,
-      de: displayProduct.title,
-    };
-
-    const descriptionRecord = description
-      ? {
-          nl: description,
-          en: description,
-          fr: description,
-          de: description,
-        }
-      : {
-          nl: '',
-          en: '',
-          fr: '',
-          de: '',
-        };
-
-    const additionalInfoRecord = additionalInfo
-      ? {
-          nl: additionalInfo,
-          en: additionalInfo,
-          fr: additionalInfo,
-          de: additionalInfo,
-        }
-      : undefined;
-
-    return {
-      slug: displayProduct.slug,
-      uuid: displayProduct.uuid,
-      title: titleRecord,
-      category,
-      price,
-      description: descriptionRecord,
-      additionalInfo: additionalInfoRecord,
-      label: undefined,
-      image: displayProduct.image || undefined,
-    };
-  };
-
   const handleProductClick = (displayProduct: DisplayProduct) => {
-    // Transform using data already available in DisplayProduct
-    const product = transformToProduct(displayProduct);
-    setSelectedProduct(product);
-    setDialogOpen(true);
+    router.push(`/${locale}/webshop/${displayProduct.id}`);
   };
 
   return (
@@ -582,15 +519,6 @@ export function ShopSection() {
 
       {/* Marquee Banner */}
       <Marquee />
-
-      {/* Product Detail Dialog */}
-      {selectedProduct && (
-        <ProductDetailDialog
-          product={selectedProduct}
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-        />
-      )}
     </section>
   );
 }

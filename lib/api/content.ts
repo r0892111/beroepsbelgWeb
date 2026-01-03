@@ -447,6 +447,94 @@ export async function getProducts(): Promise<Product[]> {
   return products;
 }
 
+export async function getProductById(uuid: string): Promise<Product | null> {
+  const { data, error } = await supabaseServer
+    .from('webshop_data')
+    .select('*')
+    .eq('uuid', uuid)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return null; // Not found
+    }
+    console.error('[getProductById] Database error:', error);
+    return null;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  // Fetch product images to get primary images
+  const productImagesMap = await getProductImages();
+
+  const categoryOptions: Product['category'][] = ['Book', 'Merchandise', 'Game'];
+
+  const row = data;
+  const rawName = typeof row.Name === 'string' ? row.Name.trim() : '';
+  const productSlug = rawName ? slugify(rawName) : row.uuid;
+  const price = parseNumber(row['Price (EUR)']) ?? 0;
+  const categoryValue = typeof row.Category === 'string' ? row.Category.trim() : '';
+  const category = (categoryOptions.includes(categoryValue as Product['category'])
+    ? categoryValue
+    : 'Book') as Product['category'];
+  const description = typeof row.Description === 'string' ? row.Description.trim() : '';
+  const additionalInfo = typeof row['Additional Info'] === 'string' ? row['Additional Info'].trim() : '';
+
+  const titleRecord = {
+    nl: rawName,
+    en: rawName,
+    fr: rawName,
+    de: rawName,
+  };
+
+  const descriptionRecord = description
+    ? {
+        nl: description,
+        en: description,
+        fr: description,
+        de: description,
+      }
+    : {
+        nl: '',
+        en: '',
+        fr: '',
+        de: '',
+      };
+
+  const additionalInfoRecord = additionalInfo
+    ? {
+        nl: additionalInfo,
+        en: additionalInfo,
+        fr: additionalInfo,
+        de: additionalInfo,
+      }
+    : undefined;
+
+  // Get primary image from product_images if available
+  const productImages = productImagesMap[row.uuid] || [];
+  // Find primary image first, then fall back to first image, then undefined
+  const primaryImage = productImages.length > 0 
+    ? (productImages.find((img) => img.is_primary) || productImages[0])
+    : null;
+  const imageUrl = primaryImage?.image_url || undefined;
+
+  return {
+    slug: productSlug,
+    uuid: row.uuid,
+    title: titleRecord,
+    category,
+    price,
+    description: descriptionRecord,
+    additionalInfo: additionalInfoRecord,
+    label: undefined,
+    image: imageUrl,
+    displayOrder: typeof row.display_order === 'number' ? row.display_order : undefined,
+    categoryDisplayOrder: typeof row.category_display_order === 'number' ? row.category_display_order : undefined,
+  } satisfies Product;
+}
+
 // Legacy function - kept for backward compatibility but not used
 // Use getBlogs() instead for the new blogs table
 // export async function getBlogPosts(): Promise<BlogPost[]> {
