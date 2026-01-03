@@ -380,11 +380,10 @@ function SeparatorWave() {
 export function ShopSection() {
   const t = useTranslations('shop');
   const locale = useLocale() as Locale;
+  const router = useRouter();
   const [products, setProducts] = useState<DisplayProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     async function fetchProducts() {
