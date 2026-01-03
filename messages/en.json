@@ -1019,6 +1019,10 @@
       "tagline": "The Fashion Capital",
       "description": "A pocket-sized metropolis known for diamonds, avant-garde fashion, and the cathedral's soaring spire."
     },
+    "antwerpen": {
+      "tagline": "The Fashion Capital",
+      "description": "A pocket-sized metropolis known for diamonds, avant-garde fashion, and the cathedral's soaring spire."
+    },
     "gent": {
       "tagline": "The Quirky Rebel",
       "description": "History with a rock 'n roll edge. A vibrant student city centered around the imposing Gravensteen castle."
@@ -1027,7 +1031,15 @@
       "tagline": "Venice of the North",
       "description": "A medieval fairytale preserved in time. Cobblestone streets, swans on the canals, and romantic mystery."
     },
+    "brugge": {
+      "tagline": "Venice of the North",
+      "description": "A medieval fairytale preserved in time. Cobblestone streets, swans on the canals, and romantic mystery."
+    },
     "brussels": {
+      "tagline": "The Heart of Europe",
+      "description": "Surrealism meets bureaucracy. Grand Place splendor, Art Nouveau gems, and the best chocolate in the world."
+    },
+    "brussel": {
       "tagline": "The Heart of Europe",
       "description": "Surrealism meets bureaucracy. Grand Place splendor, Art Nouveau gems, and the best chocolate in the world."
     },
@@ -1050,6 +1062,18 @@
     "spa": {
       "tagline": "The Pearl of the Ardennes",
       "description": "The original spa town. Famous for its healing thermal waters, the casino, and lush green surroundings."
+    },
+    "Spa": {
+      "tagline": "The Pearl of the Ardennes",
+      "description": "The original spa town. Famous for its healing thermal waters, the casino, and lush green surroundings."
+    },
+    "luik": {
+      "tagline": "The Fiery City",
+      "description": "An industrial city with a rich history, known for its steel industry, vibrant culture, and Liège waffles."
+    },
+    "liege": {
+      "tagline": "The Fiery City",
+      "description": "An industrial city with a rich history, known for its steel industry, vibrant culture, and Liège waffles."
     }
   },
   "blog": {

@@ -1019,6 +1019,10 @@
       "tagline": "La Capitale de la Mode",
       "description": "Une métropole de poche connue pour ses diamants, sa mode avant-gardiste et la flèche imposante de sa cathédrale."
     },
+    "antwerpen": {
+      "tagline": "La Capitale de la Mode",
+      "description": "Une métropole de poche connue pour ses diamants, sa mode avant-gardiste et la flèche imposante de sa cathédrale."
+    },
     "gent": {
       "tagline": "Le Rebelle Excentrique",
       "description": "L'histoire avec un côté rock 'n roll. Une ville étudiante animée centrée autour de l'imposant château de Gravensteen."
@@ -1027,7 +1031,15 @@
       "tagline": "La Venise du Nord",
       "description": "Un conte de fées médiéval préservé dans le temps. Rues pavées, cygnes sur les canaux et mystère romantique."
     },
+    "brugge": {
+      "tagline": "La Venise du Nord",
+      "description": "Un conte de fées médiéval préservé dans le temps. Rues pavées, cygnes sur les canaux et mystère romantique."
+    },
     "brussels": {
+      "tagline": "Le Cœur de l'Europe",
+      "description": "Le surréalisme rencontre la bureaucratie. Splendeur de la Grand-Place, joyaux Art Nouveau et le meilleur chocolat du monde."
+    },
+    "brussel": {
       "tagline": "Le Cœur de l'Europe",
       "description": "Le surréalisme rencontre la bureaucratie. Splendeur de la Grand-Place, joyaux Art Nouveau et le meilleur chocolat du monde."
     },
@@ -1050,6 +1062,18 @@
     "spa": {
       "tagline": "La Perle des Ardennes",
       "description": "La ville thermale originale. Célèbre pour ses eaux thermales curatives, le casino et son environnement verdoyant."
+    },
+    "Spa": {
+      "tagline": "La Perle des Ardennes",
+      "description": "La ville thermale originale. Célèbre pour ses eaux thermales curatives, le casino et son environnement verdoyant."
+    },
+    "luik": {
+      "tagline": "La Ville Ardente",
+      "description": "Une ville industrielle au riche passé, connue pour son industrie sidérurgique, sa culture vibrante et ses gaufres de Liège."
+    },
+    "liege": {
+      "tagline": "La Ville Ardente",
+      "description": "Une ville industrielle au riche passé, connue pour son industrie sidérurgique, sa culture vibrante et ses gaufres de Liège."
     }
   },
   "blog": {

@@ -9,6 +9,7 @@
     "blog": "Blog",
     "contact": "Kontakt",
     "b2b": "Angebot",
+    "airbnb": "AirBNB",
     "terms": "Allgemeine Geschäftsbedingungen",
     "account": "Konto",
     "favorites": "Favoriten",
@@ -1018,6 +1019,10 @@
       "tagline": "Die Modehauptstadt",
       "description": "Eine Metropole im Taschenformat, bekannt für Diamanten, avantgardistische Mode und den hoch aufragenden Kirchturm der Kathedrale."
     },
+    "antwerpen": {
+      "tagline": "Die Modehauptstadt",
+      "description": "Eine Metropole im Taschenformat, bekannt für Diamanten, avantgardistische Mode und den hoch aufragenden Kirchturm der Kathedrale."
+    },
     "gent": {
       "tagline": "Der Eigensinnige Rebell",
       "description": "Geschichte mit Rock 'n Roll. Eine lebendige Studentenstadt rund um die imposante Burg Gravensteen."
@@ -1026,7 +1031,15 @@
       "tagline": "Venedig des Nordens",
       "description": "Ein mittelalterliches Märchen, das in der Zeit bewahrt wurde. Kopfsteinpflasterstraßen, Schwäne auf den Kanälen und romantisches Mysterium."
     },
+    "brugge": {
+      "tagline": "Venedig des Nordens",
+      "description": "Ein mittelalterliches Märchen, das in der Zeit bewahrt wurde. Kopfsteinpflasterstraßen, Schwäne auf den Kanälen und romantisches Mysterium."
+    },
     "brussels": {
+      "tagline": "Das Herz Europas",
+      "description": "Surrealismus trifft Bürokratie. Pracht des Grand Place, Jugendstil-Juwelen und die beste Schokolade der Welt."
+    },
+    "brussel": {
       "tagline": "Das Herz Europas",
       "description": "Surrealismus trifft Bürokratie. Pracht des Grand Place, Jugendstil-Juwelen und die beste Schokolade der Welt."
     },
@@ -1049,6 +1062,18 @@
     "spa": {
       "tagline": "Die Perle der Ardennen",
       "description": "Die ursprüngliche Kurstadt. Berühmt für ihre heilenden Thermalwasser, das Casino und die üppige grüne Umgebung."
+    },
+    "Spa": {
+      "tagline": "Die Perle der Ardennen",
+      "description": "Die ursprüngliche Kurstadt. Berühmt für ihre heilenden Thermalwasser, das Casino und die üppige grüne Umgebung."
+    },
+    "luik": {
+      "tagline": "Die Feurige Stadt",
+      "description": "Eine Industriestadt mit reicher Geschichte, bekannt für ihre Stahlindustrie, lebendige Kultur und Lütticher Waffeln."
+    },
+    "liege": {
+      "tagline": "Die Feurige Stadt",
+      "description": "Eine Industriestadt mit reicher Geschichte, bekannt für ihre Stahlindustrie, lebendige Kultur und Lütticher Waffeln."
     }
   },
   "blog": {

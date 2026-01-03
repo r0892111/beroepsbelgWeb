@@ -67,6 +67,10 @@
       "tagline": "De Modehoofstad",
       "description": "Een metropool in zakformaat bekend om diamanten, avant-garde mode en de torenhoge spits van de kathedraal."
     },
+    "antwerpen": {
+      "tagline": "De Modehoofdstad",
+      "description": "Een metropool in zakformaat bekend om diamanten, avant-garde mode en de torenhoge spits van de kathedraal."
+    },
     "gent": {
       "tagline": "De Eigenzinnige Rebel",
       "description": "Geschiedenis met een rock 'n roll randje. Een bruisende studentenstad gecentreerd rond het imposante Gravensteen."
@@ -75,7 +79,15 @@
       "tagline": "Venetië van het Noorden",
       "description": "Een middeleeuws sprookje bewaard in de tijd. Kinderkopjes, zwanen op de grachten en romantisch mysterie."
     },
+    "brugge": {
+      "tagline": "Venetië van het Noorden",
+      "description": "Een middeleeuws sprookje bewaard in de tijd. Kinderkopjes, zwanen op de grachten en romantisch mysterie."
+    },
     "brussels": {
+      "tagline": "Het Hart van Europa",
+      "description": "Surrealisme ontmoet bureaucratie. Pracht van de Grote Markt, Art Nouveau-juwelen en de beste chocolade ter wereld."
+    },
+    "brussel": {
       "tagline": "Het Hart van Europa",
       "description": "Surrealisme ontmoet bureaucratie. Pracht van de Grote Markt, Art Nouveau-juwelen en de beste chocolade ter wereld."
     },
@@ -98,6 +110,18 @@
     "spa": {
       "tagline": "De Parel van de Ardennen",
       "description": "Het originele kuuroord. Beroemd om zijn genezende thermale waters, het casino en weelderige groene omgeving."
+    },
+    "Spa": {
+      "tagline": "De Parel van de Ardennen",
+      "description": "Het originele kuuroord. Beroemd om zijn genezende thermale waters, het casino en weelderige groene omgeving."
+    },
+    "luik": {
+      "tagline": "De Vurige Stad",
+      "description": "Een industriële stad met een rijke geschiedenis, bekend om zijn staalindustrie, levendige cultuur en de Luikse wafels."
+    },
+    "liege": {
+      "tagline": "De Vurige Stad",
+      "description": "Een industriële stad met een rijke geschiedenis, bekend om zijn staalindustrie, levendige cultuur en de Luikse wafels."
     }
   },
   "common": {
@@ -300,6 +324,7 @@
     "logout": "Uitloggen",
     "invalidCredentials": "Ongeldige gebruikersnaam of wachtwoord",
     "dashboard": "Admin Dashboard",
+    "home": "Home",
     "totalBookings": "Totaal Boekingen",
     "totalCustomers": "Totaal Klanten",
     "totalOrders": "Totaal Bestellingen",
@@ -307,6 +332,8 @@
     "integrations": "Integraties",
     "integrationsDescription": "Verbind externe platforms en diensten",
     "teamleaderDescription": "Beheer klanten en facturen",
+    "teamleaderRefresh": "Status Vernieuwen",
+    "teamleaderReconnect": "Opnieuw Verbinden",
     "connect": "Verbinden",
     "quickActions": "Snelle Acties",
     "quickActionsDescription": "Veelgebruikte beheertaken",
