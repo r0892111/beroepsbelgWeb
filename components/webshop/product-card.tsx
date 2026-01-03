@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { ProductDetailDialog } from './product-detail-dialog';
+import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +28,6 @@ export function ProductCard({ product }: ProductCardProps) {
   const { isFavorite, addFavorite, removeFavorite } = useFavoritesContext();
   const { addToCart } = useCartContext();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const [showDialog, setShowDialog] = useState(false);
 
   const handleToggleFavorite = async () => {
     if (!user) {
@@ -85,7 +84,7 @@ export function ProductCard({ product }: ProductCardProps) {
           transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
           border: '1px solid var(--border-subtle)',
         }}
-        onClick={() => setShowDialog(true)}
+        onClick={() => router.push(`/${locale}/webshop/${product.uuid}`)}
         onMouseEnter={(e) => {
           e.currentTarget.style.transform = 'translateY(-6px)';
           e.currentTarget.style.boxShadow = 'var(--shadow-hover-glow)';
@@ -185,10 +184,7 @@ export function ProductCard({ product }: ProductCardProps) {
           }}
         >
           <Button
-            onClick={(e) => {
-              e.stopPropagation(); // Prevent card click from triggering
-              setShowDialog(true);
-            }}
+            asChild
             variant="outline"
             className="w-full transition-all duration-300"
             style={{
@@ -196,8 +192,9 @@ export function ProductCard({ product }: ProductCardProps) {
               color: 'var(--primary-base)',
               backgroundColor: 'transparent'
             }}
+            onClick={(e) => e.stopPropagation()}
           >
-            Details
+            <Link href={`/${locale}/webshop/${product.uuid}`}>Details</Link>
           </Button>
           <Button
             onClick={(e) => {
@@ -217,12 +214,6 @@ export function ProductCard({ product }: ProductCardProps) {
           </Button>
         </CardFooter>
       </Card>
-
-      <ProductDetailDialog
-        product={product}
-        open={showDialog}
-        onOpenChange={setShowDialog}
-      />
     </>
   );
 }

@@ -131,7 +131,7 @@ export default function SearchPage() {
           id: product.uuid,
           title: product.Name || 'Untitled Product',
           description: product.Description,
-          url: `/${locale}/webshop`,
+          url: `/${locale}/webshop/${product.uuid}`,
           category: product.Category,
         });
       }

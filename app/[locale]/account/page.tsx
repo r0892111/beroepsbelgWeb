@@ -35,8 +35,6 @@ export default function AccountPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [productsError, setProductsError] = useState<string | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [showProductDialog, setShowProductDialog] = useState(false);
   const [orders, setOrders] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [tours, setTours] = useState<Map<string, any>>(new Map());
@@ -45,8 +43,7 @@ export default function AccountPage() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   const handleProductClick = (product: Product) => {
-    setSelectedProduct(product);
-    setShowProductDialog(true);
+    router.push(`/${locale}/webshop/${product.uuid}`);
   };
 
   useEffect(() => {
@@ -701,14 +698,6 @@ export default function AccountPage() {
           </Tabs>
         </div>
       </div>
-
-      {selectedProduct && (
-        <ProductDetailDialog
-          product={selectedProduct}
-          open={showProductDialog}
-          onOpenChange={setShowProductDialog}
-        />
-      )}
 
       <CheckoutDialog
         open={checkoutOpen}
