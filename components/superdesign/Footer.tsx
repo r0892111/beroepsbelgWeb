@@ -8,6 +8,7 @@
  */
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Facebook, Instagram, Linkedin, Search } from 'lucide-react';
 import { type Locale } from '@/i18n';
 import { useTranslations } from 'next-intl';
@@ -107,12 +108,23 @@ interface FooterProps {
 
 export function Footer({ locale }: FooterProps) {
   const t = useTranslations('footer');
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [consent, setConsent] = useState(false);
   const [showExtendedFields, setShowExtendedFields] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) {
+      return;
+    }
+    // Navigate to search results page with query parameter
+    router.push(`/${locale}/search?q=${encodeURIComponent(searchQuery.trim())}`);
+  };
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -287,14 +299,22 @@ export function Footer({ locale }: FooterProps) {
           {/* Column 3: SEARCH (Right) */}
           <div className="flex flex-col items-start md:items-start gap-6">
              <h3 className="font-serif text-2xl tracking-wide font-medium">{t('search')}</h3>
-             <div className="w-full relative">
+             <form onSubmit={handleSearch} className="w-full relative">
                <input
                  type="text"
+                 value={searchQuery}
+                 onChange={(e) => setSearchQuery(e.target.value)}
                  placeholder={t('searchPlaceholder')}
                  className="w-full bg-transparent border border-black/60 px-4 py-3 pr-10 text-black placeholder:text-black/70 outline-none focus:border-black transition-colors"
                />
-               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black/80" />
-             </div>
+               <button
+                 type="submit"
+                 className="absolute right-3 top-1/2 -translate-y-1/2 text-black/80 hover:text-black transition-colors"
+                 aria-label="Search"
+               >
+                 <Search className="w-5 h-5" />
+               </button>
+             </form>
           </div>
 
         </div>

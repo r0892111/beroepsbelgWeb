@@ -45,6 +45,7 @@ serve(async (req: Request) => {
       upsellProducts = [], // Array of { n: name, p: price, q: quantity } (standardized format)
       opMaatAnswers = null, // Op maat specific answers
       existingTourBookingId = null, // Existing tourbooking ID (for local stories - passed from frontend)
+      durationMinutes = null, // Tour duration in minutes (will be calculated from tour data + extra hour)
     } = await req.json()
 
     // Log received booking data for debugging
@@ -66,6 +67,22 @@ serve(async (req: Request) => {
     if (tourError || !tour) {
       throw new Error('Tour not found')
     }
+
+    // Calculate actual duration: use tour's duration_minutes, add 60 if extra hour is selected
+    const baseDuration = tour.duration_minutes || 120; // Default to 120 if not specified
+    const extraHour = opMaatAnswers?.extraHour === true;
+    const actualDuration = extraHour ? baseDuration + 60 : baseDuration;
+    
+    // Use provided durationMinutes if available (from frontend), otherwise use calculated duration
+    const finalDurationMinutes = durationMinutes || actualDuration;
+    
+    console.log('Tour duration calculation:', {
+      baseDuration,
+      extraHour,
+      actualDuration,
+      providedDurationMinutes: durationMinutes,
+      finalDurationMinutes,
+    });
 
     if (!tour.price) {
       throw new Error('Tour price not available')
@@ -314,6 +331,23 @@ serve(async (req: Request) => {
       console.error('✗ CRITICAL: Regular tour proceeding without tour_datetime - this should not happen!');
     }
 
+    // Calculate tour end datetime based on start time and duration
+    let tourEndDatetime: string | null = null;
+    if (tourDatetime) {
+      const startDate = new Date(tourDatetime);
+      if (!isNaN(startDate.getTime())) {
+        // Add duration in minutes to start time
+        const endDate = new Date(startDate.getTime() + finalDurationMinutes * 60 * 1000);
+        tourEndDatetime = endDate.toISOString();
+        console.log('Calculated tour end datetime:', {
+          start: tourDatetime,
+          durationMinutes: finalDurationMinutes,
+          end: tourEndDatetime,
+          extraHour: opMaatAnswers?.extraHour || false,
+        });
+      }
+    }
+
     const bookingData: any = {
       tour_id: tourId,
       stripe_session_id: session.id,
@@ -334,6 +368,10 @@ serve(async (req: Request) => {
         upsellProducts: upsellProducts.length > 0 ? upsellProducts : undefined, // Store upsell products in invitee
         // Op maat specific answers
         opMaatAnswers: opMaatAnswers || null,
+        // Tour timing information
+        tourStartDatetime: tourDatetime, // Start time
+        tourEndDatetime: tourEndDatetime, // End time (start + duration)
+        durationMinutes: finalDurationMinutes, // Duration in minutes (base duration + 60 if extra hour)
       }],
     };
     

@@ -412,12 +412,14 @@ export default function B2BQuotePage() {
     try {
       const selectedCityData = cities.find((city) => city.slug === data.city);
       const selectedTourData = tours.find((tour) => tour.id === data.tourId);
-      // Convert selectedUpsell object to standardized format: {n: name, p: price, q: quantity}
+      // Convert selectedUpsell object to standardized format: {id, n: name, p: price, q: quantity}
+      // ID is included for database lookups, but not sent to Stripe metadata (to save space)
       const upsellProducts = Object.entries(selectedUpsell)
         .filter(([_, quantity]) => quantity > 0)
         .map(([productId, quantity]) => {
           const product = products.find(p => p.uuid === productId);
           return product ? {
+            id: product.uuid, // Include ID for database lookups
             n: product.title.nl, // name
             p: product.price, // price
             q: quantity, // quantity
