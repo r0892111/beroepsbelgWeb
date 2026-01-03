@@ -36,9 +36,13 @@ export default function BookingSuccessPage() {
         const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
         // Get product UUIDs from upsell products
-        const productIds = upsellProducts.map((p: any) => p.id).filter(Boolean);
+        // Support both standardized format {id, n, p, q} and legacy format {id, title, quantity, price}
+        const productIds = upsellProducts
+          .map((p: any) => p.id)
+          .filter(Boolean);
         
         if (productIds.length === 0) {
+          console.log('No product IDs found in upsell products');
           return;
         }
 
@@ -57,8 +61,14 @@ export default function BookingSuccessPage() {
           const productsData = await productsRes.json();
           
           // Map products and include quantity from upsell
+          // Support both standardized format {id, n, p, q} and legacy format {id, title, quantity, price}
           const mappedProducts = productsData.map((row: any) => {
             const upsellProduct = upsellProducts.find((p: any) => p.id === row.uuid);
+            // Get quantity from standardized format (q) or legacy format (quantity)
+            const quantity = upsellProduct?.q !== undefined 
+              ? upsellProduct.q 
+              : (upsellProduct?.quantity || 1);
+            
             return {
               slug: row.Name ? row.Name.toLowerCase().replace(/\s+/g, '-') : row.uuid,
               uuid: row.uuid,
@@ -78,7 +88,7 @@ export default function BookingSuccessPage() {
                 fr: row.Description || '',
                 de: row.Description || '',
               },
-              quantity: upsellProduct?.quantity || 1,
+              quantity: quantity,
             };
           });
           

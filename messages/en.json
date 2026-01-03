@@ -1219,5 +1219,13 @@
         "highPerformerDesc": "Tours done in top 50%, low requests (≤ median), has activity, no issues"
       }
     }
+  },
+  "search": {
+    "title": "Search Results",
+    "resultsFor": "Results for",
+    "noQuery": "Enter a search term to find tours, products, lectures, FAQs, and blogs.",
+    "noResults": "No results found.",
+    "tryDifferent": "Try a different search term.",
+    "loading": "Loading..."
   }
 }

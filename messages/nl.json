@@ -148,7 +148,7 @@
     "subscribe": "Inschrijven",
     "explore": "ONTDEK",
     "search": "ZOEKEN",
-    "searchPlaceholder": "Zoek tours, producten...",
+    "searchPlaceholder": "Zoek tours, producten, lezingen, FAQ's, blogs...",
     "copyright": "© 2024 Beroepsbelg. Alle rechten voorbehouden.",
     "allRightsReserved": "Alle rechten voorbehouden",
     "terms": "Voorwaarden",
@@ -1225,5 +1225,13 @@
         "highPerformerDesc": "Tours gedaan in top 50%, lage verzoeken (≤ mediaan), heeft activiteit, geen problemen"
       }
     }
+  },
+  "search": {
+    "title": "Zoekresultaten",
+    "resultsFor": "Resultaten voor",
+    "noQuery": "Voer een zoekterm in om tours, producten, lezingen, FAQ's en blogs te vinden.",
+    "noResults": "Geen resultaten gevonden.",
+    "tryDifferent": "Probeer een andere zoekterm.",
+    "loading": "Laden..."
   }
 }

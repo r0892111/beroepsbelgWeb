@@ -108,7 +108,7 @@
     "subscribe": "S'inscrire",
     "explore": "EXPLORER",
     "search": "RECHERCHER",
-    "searchPlaceholder": "Rechercher des tours, produits...",
+    "searchPlaceholder": "Rechercher des tours, produits, conférences, FAQ, blogs...",
     "copyright": "© 2024 Beroepsbelg. Tous droits réservés.",
     "allRightsReserved": "Tous droits réservés",
     "terms": "Conditions",
@@ -1219,5 +1219,13 @@
         "highPerformerDesc": "Tours effectués dans le top 50%, faibles demandes (≤ médiane), a de l'activité, pas de problèmes"
       }
     }
+  },
+  "search": {
+    "title": "Résultats de recherche",
+    "resultsFor": "Résultats pour",
+    "noQuery": "Entrez un terme de recherche pour trouver des tours, produits, conférences, FAQ et blogs.",
+    "noResults": "Aucun résultat trouvé.",
+    "tryDifferent": "Essayez un autre terme de recherche.",
+    "loading": "Chargement..."
   }
 }

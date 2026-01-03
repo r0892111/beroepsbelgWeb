@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
       additionalInfo,
       upsellProducts = [],
       opMaatAnswers = null,
+      durationMinutes = null, // Tour duration in minutes (will be calculated from tour data + extra hour)
     } = body;
 
     // Validate required fields
@@ -46,6 +47,34 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Fetch tour data to get actual duration
+    const { data: tour, error: tourError } = await supabase
+      .from('tours_table_prod')
+      .select('duration_minutes')
+      .eq('id', tourId)
+      .single();
+
+    if (tourError || !tour) {
+      console.error('Error fetching tour data:', tourError);
+      // Continue with default if tour not found
+    }
+
+    // Calculate actual duration: use tour's duration_minutes, add 60 if extra hour is selected
+    const baseDuration = tour?.duration_minutes || 120; // Default to 120 if not specified
+    const extraHour = opMaatAnswers?.extraHour === true;
+    const actualDuration = extraHour ? baseDuration + 60 : baseDuration;
+    
+    // Use provided durationMinutes if available (from frontend), otherwise use calculated duration
+    const finalDurationMinutes = durationMinutes || actualDuration;
+    
+    console.log('Tour duration calculation for B2B booking:', {
+      baseDuration,
+      extraHour,
+      actualDuration,
+      providedDurationMinutes: durationMinutes,
+      finalDurationMinutes,
+    });
 
     // Format tour_datetime - convert dateTime to ISO string if provided
     let tourDatetime: string | null = null;
@@ -57,6 +86,23 @@ export async function POST(request: NextRequest) {
         }
       } catch (e) {
         console.error('Error parsing dateTime:', e);
+      }
+    }
+
+    // Calculate tour end datetime based on start time and duration
+    let tourEndDatetime: string | null = null;
+    if (tourDatetime) {
+      const startDate = new Date(tourDatetime);
+      if (!isNaN(startDate.getTime())) {
+        // Add duration in minutes to start time
+        const endDate = new Date(startDate.getTime() + finalDurationMinutes * 60 * 1000);
+        tourEndDatetime = endDate.toISOString();
+        console.log('Calculated tour end datetime for B2B booking:', {
+          start: tourDatetime,
+          durationMinutes: finalDurationMinutes,
+          end: tourEndDatetime,
+          extraHour: opMaatAnswers?.extraHour || false,
+        });
       }
     }
 
@@ -77,6 +123,10 @@ export async function POST(request: NextRequest) {
       billingAddress: billingAddress || null,
       // Op maat specific answers
       opMaatAnswers: opMaatAnswers || null,
+      // Tour timing information
+      tourStartDatetime: tourDatetime, // Start time
+      tourEndDatetime: tourEndDatetime, // End time (start + duration)
+      durationMinutes: finalDurationMinutes, // Duration in minutes (base duration + 60 if extra hour)
     }];
 
     // Create booking data

@@ -342,11 +342,13 @@ export function TourBookingDialog({
         }
       }
 
-      // Prepare upsell products in standardized format: {n: name, p: price, q: quantity}
+      // Prepare upsell products in standardized format: {id, n: name, p: price, q: quantity}
+      // ID is included for database lookups, but not sent to Stripe metadata (to save space)
       // Always send as array (even if empty)
       const upsellProducts = products
         .filter(p => selectedUpsell[p.uuid] && selectedUpsell[p.uuid] > 0)
         .map(p => ({
+          id: p.uuid, // Include ID for database lookups
           n: p.title.nl, // name
           p: p.price, // price
           q: selectedUpsell[p.uuid] || 1, // quantity
