@@ -118,8 +118,8 @@ serve(async (req: Request) => {
       }
     })
 
-    // Calculate total amount
-    const totalAmount = items.reduce((sum: number, item: any) => {
+    // Calculate product total
+    const productTotal = items.reduce((sum: number, item: any) => {
       const product = products.find((p: any) => p.uuid === item.productId)
       if (!product) return sum
       
@@ -127,6 +127,68 @@ serve(async (req: Request) => {
       const priceValue = parseFloat(priceStr.replace(',', '.')) || 0
       return sum + priceValue * item.quantity
     }, 0)
+
+    // Freight costs constants
+    const FREIGHT_COST_BE = 7.50;
+    const FREIGHT_COST_INTERNATIONAL = 14.99;
+    const FREE_SHIPPING_THRESHOLD = 150.00; // Free shipping for orders over €150
+
+    // Calculate shipping cost based on country and order total
+    let shippingCost = 0;
+    
+    // Free shipping if order total (without shipping) is €150 or more
+    if (productTotal >= FREE_SHIPPING_THRESHOLD) {
+      shippingCost = 0;
+      console.log('Free shipping applied - order total exceeds €150:', { productTotal });
+    } else {
+      // Calculate shipping based on country
+      if (shippingAddress && shippingAddress.country) {
+        const country = shippingAddress.country.toLowerCase();
+        if (country === 'belgië' || country === 'belgium' || country === 'belgique' || country === 'belgien') {
+          shippingCost = FREIGHT_COST_BE;
+        } else {
+          shippingCost = FREIGHT_COST_INTERNATIONAL;
+        }
+      } else {
+        // Default to international if no country provided
+        shippingCost = FREIGHT_COST_INTERNATIONAL;
+      }
+    }
+
+    // Add shipping as a line item (only if there's a cost, or show as free if over threshold)
+    if (productTotal >= FREE_SHIPPING_THRESHOLD) {
+      // Show free shipping as a line item for transparency
+      lineItems.push({
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: 'Verzendkosten (GRATIS - bestelling boven €150)',
+          },
+          unit_amount: 0, // Free shipping
+        },
+        quantity: 1,
+      });
+      console.log('Added free shipping to line items (order over €150)');
+    } else if (shippingCost > 0) {
+      lineItems.push({
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: shippingAddress?.country === 'België' || shippingAddress?.country === 'Belgium' 
+              ? 'Verzendkosten (België)' 
+              : 'Verzendkosten (Internationaal)',
+          },
+          unit_amount: Math.round(shippingCost * 100), // Convert to cents
+        },
+        quantity: 1,
+      });
+      console.log('Added shipping cost to line items:', { 
+        country: shippingAddress?.country, 
+        cost: shippingCost 
+      });
+    }
+
+    const totalAmount = productTotal + shippingCost;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card', 'bancontact', 'ideal'],
@@ -164,11 +226,12 @@ serve(async (req: Request) => {
       checkout_session_id: session.id,
       payment_intent_id: session.payment_intent as string || '',
       customer_id: customerEmail, // Use email as customer_id (existing column)
-      amount_subtotal: Math.round(totalAmount * 100), // Convert to cents (existing column)
-      amount_total: Math.round(totalAmount * 100), // Existing column
+      amount_subtotal: Math.round(productTotal * 100), // Product total without shipping (existing column)
+      amount_total: Math.round(totalAmount * 100), // Total with shipping (existing column)
       currency: 'eur',
       payment_status: 'pending', // Existing column
       status: 'pending', // Will be cast to stripe_order_status enum by database
+      shipping_cost: Math.round(shippingCost * 100), // Store shipping cost in cents
     };
 
     // Add new columns (will be added by migration)
