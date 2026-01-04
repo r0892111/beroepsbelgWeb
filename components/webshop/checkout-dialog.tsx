@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { useCartContext } from '@/lib/contexts/cart-context';
 import { useAuth } from '@/lib/contexts/auth-context';
@@ -32,7 +33,7 @@ export function CheckoutDialog({ open, onOpenChange, totalAmount }: CheckoutDial
     street: '',
     city: '',
     postalCode: '',
-    country: 'Belgium',
+    country: 'België',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -162,12 +163,29 @@ export function CheckoutDialog({ open, onOpenChange, totalAmount }: CheckoutDial
 
           <div className="space-y-2">
             <Label htmlFor="country">{t('country')} {t('required')}</Label>
-            <Input
-              id="country"
-              required
+            <Select
               value={formData.country}
-              onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-            />
+              onValueChange={(value: string) => setFormData({ ...formData, country: value })}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecteer een land" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="België">België</SelectItem>
+                <SelectItem value="Nederland">Nederland</SelectItem>
+                <SelectItem value="Frankrijk">Frankrijk</SelectItem>
+                <SelectItem value="Duitsland">Duitsland</SelectItem>
+                <SelectItem value="Luxemburg">Luxemburg</SelectItem>
+                <SelectItem value="Verenigd Koninkrijk">Verenigd Koninkrijk</SelectItem>
+                <SelectItem value="Spanje">Spanje</SelectItem>
+                <SelectItem value="Italië">Italië</SelectItem>
+                <SelectItem value="Portugal">Portugal</SelectItem>
+                <SelectItem value="Oostenrijk">Oostenrijk</SelectItem>
+                <SelectItem value="Zwitserland">Zwitserland</SelectItem>
+                <SelectItem value="Anders">Anders</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {error && (

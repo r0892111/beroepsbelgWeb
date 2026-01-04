@@ -43,10 +43,18 @@ serve(async (req: Request) => {
       citySlug,
       opMaat = false,
       upsellProducts = [], // Array of { n: name, p: price, q: quantity } (standardized format)
-      opMaatAnswers = null, // Op maat specific answers
-      existingTourBookingId = null, // Existing tourbooking ID (for local stories - passed from frontend)
-      durationMinutes = null, // Tour duration in minutes (will be calculated from tour data + extra hour)
+    opMaatAnswers = null, // Op maat specific answers
+    existingTourBookingId = null, // Existing tourbooking ID (for local stories - passed from frontend)
+    durationMinutes = null, // Tour duration in minutes (will be calculated from tour data + extra hour)
+    extraHour = false, // Extra hour option (150 EUR)
     } = await req.json()
+
+    // Freight costs constants
+    const FREIGHT_COST_BE = 7.50;
+    const FREIGHT_COST_INTERNATIONAL = 14.99;
+    const FREIGHT_COST_FREE = 0; // Free for tour bookings with upsell products
+    const TANGUY_COST = 125; // Tanguy button cost
+    const EXTRA_HOUR_COST = 150; // Extra hour cost
 
     // Log received booking data for debugging
     console.log('Received booking data:', {
@@ -70,15 +78,15 @@ serve(async (req: Request) => {
 
     // Calculate actual duration: use tour's duration_minutes, add 60 if extra hour is selected
     const baseDuration = tour.duration_minutes || 120; // Default to 120 if not specified
-    const extraHour = opMaatAnswers?.extraHour === true;
-    const actualDuration = extraHour ? baseDuration + 60 : baseDuration;
+    const hasExtraHour = opMaatAnswers?.extraHour === true || extraHour === true;
+    const actualDuration = hasExtraHour ? baseDuration + 60 : baseDuration;
     
     // Use provided durationMinutes if available (from frontend), otherwise use calculated duration
     const finalDurationMinutes = durationMinutes || actualDuration;
     
     console.log('Tour duration calculation:', {
       baseDuration,
-      extraHour,
+      hasExtraHour,
       actualDuration,
       providedDurationMinutes: durationMinutes,
       finalDurationMinutes,
@@ -182,6 +190,54 @@ serve(async (req: Request) => {
       }
     } else {
       console.log('No upsell products to add');
+    }
+
+    // Add Tanguy button cost (125 EUR) if requested
+    if (requestTanguy) {
+      lineItems.push({
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: 'Tanguy Button',
+          },
+          unit_amount: Math.round(TANGUY_COST * 100), // Convert to cents
+        },
+        quantity: 1,
+      });
+      console.log('Added Tanguy button to line items:', { cost: TANGUY_COST });
+    }
+
+    // Add extra hour cost (150 EUR) if selected
+    if (hasExtraHour) {
+      lineItems.push({
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: 'Extra Hour',
+          },
+          unit_amount: Math.round(EXTRA_HOUR_COST * 100), // Convert to cents
+        },
+        quantity: 1,
+      });
+      console.log('Added extra hour to line items:', { cost: EXTRA_HOUR_COST });
+    }
+
+    // Add shipping cost (FREE for tour bookings with upsell products)
+    const hasUpsellProducts = upsellProducts && Array.isArray(upsellProducts) && upsellProducts.length > 0;
+    
+    if (hasUpsellProducts) {
+      // Shipping is free, but we add it as a line item showing €0.00 for transparency
+      lineItems.push({
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: 'Verzendkosten (GRATIS bij tourboeking)',
+          },
+          unit_amount: 0, // Free shipping
+        },
+        quantity: 1,
+      });
+      console.log('Added free shipping to line items (tour booking)');
     }
 
     console.log('=== CHECKOUT SESSION LINE ITEMS SUMMARY ===');

@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CalendarIcon, Clock, Loader2, ShoppingBag, Gift, Plus, Minus, FileText } from 'lucide-react';
+import { CalendarIcon, Clock, Loader2, ShoppingBag, Gift, Plus, Minus, FileText, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
@@ -22,6 +22,11 @@ import { useAuth } from '@/lib/contexts/auth-context';
 import type { Product } from '@/lib/data/types';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
+
+// Freight costs constants
+const FREIGHT_COST_BE = 7.50;
+const FREIGHT_COST_INTERNATIONAL = 14.99;
+const FREIGHT_COST_FREE = 0; // Free for tour bookings with upsell products
 
 interface TourBookingDialogProps {
   tourId: string;
@@ -439,7 +444,16 @@ export function TourBookingDialog({
   // Calculate tour total based on number of people (for all tour types) - using discounted price
   const originalTourTotal = tourPrice * formData.numberOfPeople;
   const tourTotal = discountedTourPrice * formData.numberOfPeople;
-  const totalPrice = tourTotal + upsellTotal;
+  
+  // Calculate additional costs
+  const tanguyCost = formData.requestTanguy ? 125 : 0;
+  const extraHourCost = formData.extraHour ? 150 : 0;
+  
+  // Shipping is ALWAYS FREE for tour bookings with upsell products
+  const hasUpsellProducts = upsellTotal > 0;
+  const shippingCost = hasUpsellProducts ? FREIGHT_COST_FREE : 0;
+  
+  const totalPrice = tourTotal + upsellTotal + tanguyCost + extraHourCost + shippingCost;
   const savings = originalTourTotal - tourTotal;
   
   // Debug logging
@@ -627,7 +641,7 @@ export function TourBookingDialog({
               <Label htmlFor="people">{t('numberOfPeople')} *</Label>
               <Select
                 value={formData.numberOfPeople.toString()}
-                onValueChange={(value) => {
+                onValueChange={(value: string) => {
                   // Parse the value - it represents the maximum number in the range
                   // e.g., "15" means 1-15 people, "30" means 16-30 people, etc.
                   const numValue = parseInt(value, 10);
@@ -674,7 +688,7 @@ export function TourBookingDialog({
               <Label htmlFor="language">{t('language')} *</Label>
               <Select
                 value={formData.language}
-                onValueChange={(value) => setFormData({ ...formData, language: value })}
+                onValueChange={(value: string) => setFormData({ ...formData, language: value })}
               >
                 <SelectTrigger id="language">
                   <SelectValue />
@@ -886,6 +900,24 @@ export function TourBookingDialog({
             </DialogDescription>
           </DialogHeader>
 
+          {/* FREE SHIPPING BANNER - Very Prominent */}
+          <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-5 rounded-xl mb-4 border-4 border-green-700 shadow-2xl transform hover:scale-[1.02] transition-transform">
+            <div className="flex items-center gap-4">
+              <div className="bg-white/20 rounded-full p-3">
+                <CheckCircle2 className="h-10 w-10 flex-shrink-0" />
+              </div>
+              <div className="flex-1">
+                <div className="text-2xl font-bold mb-2 uppercase tracking-wide">🎉 GRATIS VERZENDING! 🎉</div>
+                <div className="text-base font-semibold opacity-95">
+                  Alle producten worden <span className="underline font-bold text-xl">100% GRATIS</span> verzonden bij je tourboeking!
+                </div>
+                <div className="text-sm mt-2 opacity-90">
+                  Geen verzendkosten - Bespaar €{FREIGHT_COST_INTERNATIONAL.toFixed(2)} op internationale verzending!
+                </div>
+              </div>
+            </div>
+          </div>
+
           {productsLoading ? (
             <div className="flex items-center justify-center py-12 flex-1">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -992,6 +1024,12 @@ export function TourBookingDialog({
                       </span>
                       <span className="text-lg font-bold" style={{ color: 'var(--primary-base)' }}>
                         €{upsellTotal.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <span className="text-base font-semibold">Verzendkosten:</span>
+                      <span className="text-base font-semibold text-green-600 font-bold">
+                        GRATIS
                       </span>
                     </div>
                     <div className="flex items-center justify-between pt-2 border-t">
@@ -1173,13 +1211,29 @@ export function TourBookingDialog({
               <Label htmlFor="country" className="text-sm font-semibold">
                 Land *
               </Label>
-              <Input
-                id="country"
+              <Select
                 value={addressData.country}
-                onChange={(e) => setAddressData({ ...addressData, country: e.target.value })}
+                onValueChange={(value: string) => setAddressData({ ...addressData, country: value })}
                 required
-                className="mt-1"
-              />
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Selecteer een land" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="België">België</SelectItem>
+                  <SelectItem value="Nederland">Nederland</SelectItem>
+                  <SelectItem value="Frankrijk">Frankrijk</SelectItem>
+                  <SelectItem value="Duitsland">Duitsland</SelectItem>
+                  <SelectItem value="Luxemburg">Luxemburg</SelectItem>
+                  <SelectItem value="Verenigd Koninkrijk">Verenigd Koninkrijk</SelectItem>
+                  <SelectItem value="Spanje">Spanje</SelectItem>
+                  <SelectItem value="Italië">Italië</SelectItem>
+                  <SelectItem value="Portugal">Portugal</SelectItem>
+                  <SelectItem value="Oostenrijk">Oostenrijk</SelectItem>
+                  <SelectItem value="Zwitserland">Zwitserland</SelectItem>
+                  <SelectItem value="Anders">Anders</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
