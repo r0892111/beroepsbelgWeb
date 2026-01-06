@@ -1,5 +1,61 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
 
+// Helper function to update guide metrics
+async function updateGuideMetrics(supabase: any, guideId: number | null): Promise<void> {
+  if (!guideId) {
+    return;
+  }
+
+  try {
+    // Fetch all bookings for this guide
+    const { data: bookings, error: bookingsError } = await supabase
+      .from('tourbooking')
+      .select('picturesUploaded, pictureCount, isCustomerDetailsRequested')
+      .eq('guide_id', guideId);
+
+    if (bookingsError) {
+      console.error(`[updateGuideMetrics] Error fetching bookings for guide ${guideId}:`, bookingsError);
+      return;
+    }
+
+    // Calculate metrics from bookings
+    let tours_done = 0;
+    let photos_taken_frequency = 0;
+    let photos_taken_amount = 0;
+    let requested_client_info = 0;
+
+    bookings?.forEach((booking: any) => {
+      tours_done += 1;
+      if (booking.picturesUploaded === true) {
+        photos_taken_frequency += 1;
+        if (booking.pictureCount && typeof booking.pictureCount === 'number') {
+          photos_taken_amount += booking.pictureCount;
+        }
+      }
+      if (booking.isCustomerDetailsRequested === true) {
+        requested_client_info += 1;
+      }
+    });
+
+    // Update guide metrics
+    const { error: updateError } = await supabase
+      .from('guides_temp')
+      .update({
+        tours_done: tours_done,
+        photos_taken_frequency: photos_taken_frequency,
+        photos_taken_amount: photos_taken_amount,
+        requested_client_info: requested_client_info,
+      })
+      .eq('id', guideId);
+
+    if (updateError) {
+      console.error(`[updateGuideMetrics] Error updating guide ${guideId}:`, updateError);
+    }
+  } catch (error) {
+    console.error(`[updateGuideMetrics] Unexpected error updating guide ${guideId}:`, error);
+  }
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -62,6 +118,11 @@ Deno.serve(async (req: Request) => {
           
           // Mark as sent after successful webhook
           await supabase.from("tourbooking").update({isCustomerDetailsRequested: true}).eq("id", booking.id);
+          
+          // Update guide metrics when customer details are requested
+          if (booking.guide_id) {
+            await updateGuideMetrics(supabase, booking.guide_id);
+          }
         } catch (err) {
           console.error(`[aftercare] Webhook error for booking ${booking.id}:`, err);
         }
