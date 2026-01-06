@@ -56,7 +56,6 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (tourError || !tour) {
-      console.error('Error fetching tour data:', tourError);
       // Continue with default if tour not found
     }
 
@@ -68,13 +67,6 @@ export async function POST(request: NextRequest) {
     // Use provided durationMinutes if available (from frontend), otherwise use calculated duration
     const finalDurationMinutes = durationMinutes || actualDuration;
     
-    console.log('Tour duration calculation for B2B booking:', {
-      baseDuration,
-      extraHour,
-      actualDuration,
-      providedDurationMinutes: durationMinutes,
-      finalDurationMinutes,
-    });
 
     // Format tour_datetime - convert dateTime to ISO string if provided
     let tourDatetime: string | null = null;
@@ -85,7 +77,7 @@ export async function POST(request: NextRequest) {
           tourDatetime = dateObj.toISOString();
         }
       } catch (e) {
-        console.error('Error parsing dateTime:', e);
+        // Ignore parsing errors
       }
     }
 
@@ -97,12 +89,6 @@ export async function POST(request: NextRequest) {
         // Add duration in minutes to start time
         const endDate = new Date(startDate.getTime() + finalDurationMinutes * 60 * 1000);
         tourEndDatetime = endDate.toISOString();
-        console.log('Calculated tour end datetime for B2B booking:', {
-          start: tourDatetime,
-          durationMinutes: finalDurationMinutes,
-          end: tourEndDatetime,
-          extraHour: opMaatAnswers?.extraHour || false,
-        });
       }
     }
 
@@ -152,7 +138,6 @@ export async function POST(request: NextRequest) {
 
     // If error is due to missing booking_type column, retry without it
     if (bookingError && (bookingError.message?.includes('booking_type') || bookingError.message?.includes('column') || bookingError.code === '42703')) {
-      console.warn('booking_type column not found, retrying without it');
       const { booking_type, ...bookingDataWithoutType } = bookingData;
       const retryResult = await supabase
         .from('tourbooking')
@@ -165,9 +150,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (bookingError) {
-      console.error('Error creating B2B booking:', bookingError);
       return NextResponse.json(
-        { error: 'Failed to create booking', details: bookingError.message },
+        { error: 'Failed to create booking' },
         { status: 500 }
       );
     }
@@ -179,29 +163,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify opMaatAnswers were saved correctly
-    const savedInvitees = createdBooking?.invitees || [];
-    const savedOpMaatAnswers = savedInvitees[0]?.opMaatAnswers || null;
-
-    console.log('B2B booking created successfully:', {
-      bookingId: createdBooking.id,
-      tourId,
-      status: 'quote_pending',
-      hasOpMaatAnswers: !!opMaatAnswers,
-      opMaatAnswersSaved: !!savedOpMaatAnswers,
-      opMaatAnswers: opMaatAnswers ? {
-        startEnd: opMaatAnswers.startEnd ? '✓' : '✗',
-        cityPart: opMaatAnswers.cityPart ? '✓' : '✗',
-        subjects: opMaatAnswers.subjects ? '✓' : '✗',
-        specialWishes: opMaatAnswers.specialWishes ? '✓' : '✗',
-      } : null,
-      savedOpMaatAnswers: savedOpMaatAnswers ? {
-        startEnd: savedOpMaatAnswers.startEnd ? '✓' : '✗',
-        cityPart: savedOpMaatAnswers.cityPart ? '✓' : '✗',
-        subjects: savedOpMaatAnswers.subjects ? '✓' : '✗',
-        specialWishes: savedOpMaatAnswers.specialWishes ? '✓' : '✗',
-      } : null,
-    });
 
     return NextResponse.json({
       success: true,
@@ -209,9 +170,8 @@ export async function POST(request: NextRequest) {
       status: 'quote_pending',
     });
   } catch (error: any) {
-    console.error('Error in B2B booking creation:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

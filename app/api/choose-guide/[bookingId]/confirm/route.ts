@@ -51,7 +51,6 @@ async function checkAdminAccess(request: NextRequest): Promise<{ isAdmin: boolea
       const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(accessToken);
       
       if (authError || !user) {
-        console.error('Auth error with token:', authError);
         return { isAdmin: false, userId: null };
       }
 
@@ -64,12 +63,10 @@ async function checkAdminAccess(request: NextRequest): Promise<{ isAdmin: boolea
         .single();
 
       if (profileError || !profile) {
-        console.error('Profile error:', profileError);
         return { isAdmin: false, userId: user.id };
       }
 
       const isAdmin = profile.isAdmin === true;
-      console.log('Admin check (token):', { userId: user.id, isAdmin, isAdminField: profile.isAdmin });
       return { isAdmin, userId: user.id };
     }
 
@@ -92,7 +89,6 @@ async function checkAdminAccess(request: NextRequest): Promise<{ isAdmin: boolea
       const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(cookieToken);
 
     if (authError || !user) {
-        console.error('Auth error (cookie token):', authError);
       return { isAdmin: false, userId: null };
     }
 
@@ -105,18 +101,15 @@ async function checkAdminAccess(request: NextRequest): Promise<{ isAdmin: boolea
       .single();
 
     if (profileError || !profile) {
-      console.error('Profile error:', profileError);
       return { isAdmin: false, userId: user.id };
     }
 
     const isAdmin = profile.isAdmin === true;
-      console.log('Admin check (cookie token):', { userId: user.id, isAdmin, isAdminField: profile.isAdmin });
     return { isAdmin, userId: user.id };
     }
 
     return { isAdmin: false, userId: null };
   } catch (error) {
-    console.error('Error checking admin access:', error);
     return { isAdmin: false, userId: null };
   }
 }
@@ -136,7 +129,6 @@ async function triggerWebhook(bookingId: string, selectedGuideId: number) {
 
     return response.ok;
   } catch (error) {
-    console.error('Error triggering webhook:', error);
     return false;
   }
 }
@@ -239,7 +231,6 @@ export async function POST(
       .eq('id', bookingIdNum);
 
     if (updateError) {
-      console.error('Error updating booking with guide:', updateError);
       // Still return success if webhook worked
     }
 
@@ -248,7 +239,6 @@ export async function POST(
       message: 'Guide selected successfully',
     });
   } catch (error) {
-    console.error('Error confirming guide selection:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

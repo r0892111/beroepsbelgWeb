@@ -51,7 +51,6 @@ async function checkAdminAccess(request: NextRequest): Promise<{ isAdmin: boolea
       const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(accessToken);
       
       if (authError || !user) {
-        console.error('Auth error with token:', authError);
         return { isAdmin: false, userId: null };
       }
 
@@ -64,12 +63,10 @@ async function checkAdminAccess(request: NextRequest): Promise<{ isAdmin: boolea
         .single();
 
       if (profileError || !profile) {
-        console.error('Profile error:', profileError);
         return { isAdmin: false, userId: user.id };
       }
 
       const isAdmin = profile.isAdmin === true;
-      console.log('Admin check (token):', { userId: user.id, isAdmin, isAdminField: profile.isAdmin });
       return { isAdmin, userId: user.id };
     }
 
@@ -92,7 +89,6 @@ async function checkAdminAccess(request: NextRequest): Promise<{ isAdmin: boolea
       const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(cookieToken);
 
     if (authError || !user) {
-        console.error('Auth error (cookie token):', authError);
       return { isAdmin: false, userId: null };
     }
 
@@ -105,18 +101,15 @@ async function checkAdminAccess(request: NextRequest): Promise<{ isAdmin: boolea
       .single();
 
     if (profileError || !profile) {
-      console.error('Profile error:', profileError);
       return { isAdmin: false, userId: user.id };
     }
 
     const isAdmin = profile.isAdmin === true;
-      console.log('Admin check (cookie token):', { userId: user.id, isAdmin, isAdminField: profile.isAdmin });
     return { isAdmin, userId: user.id };
     }
 
     return { isAdmin: false, userId: null };
   } catch (error) {
-    console.error('Error checking admin access:', error);
     return { isAdmin: false, userId: null };
   }
 }
@@ -192,9 +185,7 @@ export async function GET(
         .select('id, name, cities, languages, tour_types, content, phonenumber, Email, tours_done')
         .in('id', guideIds);
 
-      if (guidesError) {
-        console.error('Error fetching guides:', guidesError);
-      } else {
+      if (!guidesError) {
         guides = guidesData || [];
       }
     }
@@ -209,7 +200,6 @@ export async function GET(
       guides,
     });
   } catch (error) {
-    console.error('Error in choose-guide API:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

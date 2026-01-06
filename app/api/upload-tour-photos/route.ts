@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { updateGuideMetrics } from '@/lib/utils/update-guide-metrics';
 
 // Extract folder ID from Google Drive URL or return the ID directly
 function extractFolderId(googleDriveLink: string | null): string | null {
@@ -58,7 +59,6 @@ async function getGoogleAccessToken(): Promise<string | null> {
     .single();
 
   if (profileError || !adminProfile) {
-    console.error('Error fetching admin profile:', profileError);
     return null;
   }
 
@@ -73,7 +73,6 @@ async function getGoogleAccessToken(): Promise<string | null> {
     const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-      console.error('Google OAuth credentials not configured');
       return null;
     }
 
@@ -92,7 +91,6 @@ async function getGoogleAccessToken(): Promise<string | null> {
       });
 
       if (!refreshResponse.ok) {
-        console.error('Failed to refresh Google token');
         return null;
       }
 
@@ -106,7 +104,6 @@ async function getGoogleAccessToken(): Promise<string | null> {
 
       return tokens.access_token;
     } catch (error) {
-      console.error('Error refreshing Google token:', error);
       return null;
     }
   }
@@ -142,8 +139,6 @@ async function uploadToGoogleDrive(
     );
 
     if (!uploadResponse.ok) {
-      const errorText = await uploadResponse.text();
-      console.error('Google Drive upload failed:', errorText);
       return null;
     }
 
@@ -153,7 +148,6 @@ async function uploadToGoogleDrive(
       name: result.name,
     };
   } catch (error) {
-    console.error('Error uploading to Google Drive:', error);
     return null;
   }
 }
@@ -173,10 +167,10 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseServer();
     
-    // Get the booking with google_drive_link and status
+    // Get the booking with google_drive_link, status, and guide_id
     const { data: booking, error: bookingError } = await supabase
       .from('tourbooking')
-      .select('id, google_drive_link, status')
+      .select('id, google_drive_link, status, guide_id, pictureCount')
       .eq('id', parseInt(bookingId, 10))
       .single();
 
@@ -231,15 +225,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update picturesUploaded flag
+    // Update picturesUploaded flag and pictureCount
+    const pictureCount = uploadResults.length;
     const { error: updateError } = await supabase
       .from('tourbooking')
-      .update({ picturesUploaded: true })
+      .update({ 
+        picturesUploaded: true,
+        pictureCount: pictureCount
+      })
       .eq('id', parseInt(bookingId, 10));
 
-    if (updateError) {
-      console.error('Error updating picturesUploaded flag:', updateError);
-      // Don't fail the request if update fails, just log it
+    if (!updateError) {
+      // Update guide metrics when photos are uploaded
+      if (booking.guide_id) {
+        await updateGuideMetrics(booking.guide_id);
+      }
     }
 
     return NextResponse.json({
@@ -249,7 +249,6 @@ export async function POST(request: NextRequest) {
       folderId: folderId,
     });
   } catch (error) {
-    console.error('Error in upload-tour-photos API:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

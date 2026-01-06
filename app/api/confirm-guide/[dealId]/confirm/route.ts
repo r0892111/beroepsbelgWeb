@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { updateGuideMetrics, incrementGuideDeniedAssignment } from '@/lib/utils/update-guide-metrics';
 
 function getSupabaseServer() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -32,7 +33,6 @@ async function triggerWebhook(dealId: string, guideId: number | null, action: 'a
 
     return response.ok;
   } catch (error) {
-    console.error('Error triggering webhook:', error);
     return false;
   }
 }
@@ -118,13 +118,16 @@ export async function POST(
     if (action === 'accept') {
       const { error: updateError } = await supabase
         .from('tourbooking')
-        .update({ status: 'confirmed' })
+        .update({ status: 'confirmed', guide_id: finalGuideId })
         .eq('deal_id', uuid);
 
-      if (updateError) {
-        console.error('Error updating booking status:', updateError);
-        // Still return success if webhook worked
+      if (!updateError) {
+        // Update guide metrics when guide accepts (tours_done will be recalculated)
+        await updateGuideMetrics(finalGuideId);
       }
+    } else if (action === 'decline') {
+      // Increment denied_assignment count when guide declines
+      await incrementGuideDeniedAssignment(finalGuideId);
     }
     // If declined, don't update status - keep current status so another guide can accept
 
@@ -134,7 +137,6 @@ export async function POST(
       action,
     });
   } catch (error) {
-    console.error('Error confirming guide assignment:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

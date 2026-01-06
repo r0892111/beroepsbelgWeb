@@ -63,7 +63,6 @@ async function triggerWebhook(bookingId: string) {
 
     return response.ok;
   } catch (error) {
-    console.error('Error triggering webhook:', error);
     return false;
   }
 }

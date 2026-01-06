@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { updateGuideMetrics } from '@/lib/utils/update-guide-metrics';
 
 function getSupabaseServer() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -28,7 +29,6 @@ async function triggerWebhook(bookingId: string) {
 
     return response.ok;
   } catch (error) {
-    console.error('Error triggering webhook:', error);
     return false;
   }
 }
@@ -50,10 +50,10 @@ export async function POST(
 
     const supabase = getSupabaseServer();
 
-    // Check if booking exists and get current status and picturesUploaded flag
+    // Check if booking exists and get current status, picturesUploaded flag, and guide_id
     const { data: booking, error: bookingError } = await supabase
       .from('tourbooking')
-      .select('id, status, picturesUploaded')
+      .select('id, status, picturesUploaded, guide_id')
       .eq('id', bookingIdNum)
       .single();
 
@@ -100,9 +100,11 @@ export async function POST(
       })
       .eq('id', bookingIdNum);
 
-    if (updateError) {
-      console.error('Error updating booking status:', updateError);
-      // Still return success if webhook worked
+    if (!updateError) {
+      // Update guide metrics when tour is completed
+      if (booking.guide_id) {
+        await updateGuideMetrics(booking.guide_id);
+      }
     }
 
     return NextResponse.json({
@@ -110,7 +112,6 @@ export async function POST(
       message: 'Tour completed successfully',
     });
   } catch (error) {
-    console.error('Error completing tour:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -38,9 +38,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, booking }, { status: 201 });
   } catch (error: any) {
-    console.error('Error creating lecture booking:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to create booking' },
+      { error: 'Failed to create booking' },
       { status: 500 }
     );
   }

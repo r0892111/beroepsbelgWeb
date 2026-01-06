@@ -34,7 +34,6 @@ async function getGoogleAccessToken(): Promise<string | null> {
     .single();
 
   if (profileError || !adminProfile) {
-    console.error('Failed to fetch admin profile:', profileError);
     return null;
   }
 
@@ -49,7 +48,6 @@ async function getGoogleAccessToken(): Promise<string | null> {
     const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-      console.error('Google OAuth credentials not configured');
       return null;
     }
 
@@ -68,7 +66,6 @@ async function getGoogleAccessToken(): Promise<string | null> {
       });
 
       if (!refreshResponse.ok) {
-        console.error('Failed to refresh Google token');
         return null;
       }
 
@@ -82,7 +79,6 @@ async function getGoogleAccessToken(): Promise<string | null> {
 
       return tokens.access_token;
     } catch (error) {
-      console.error('Error refreshing Google token:', error);
       return null;
     }
   }
@@ -137,13 +133,6 @@ export async function POST(request: NextRequest) {
     const timeMin = bookingDate.toISOString();
     const timeMax = endDate.toISOString();
     
-    // Debug logging
-    console.log('[Tanguy Availability]', {
-      input: { date, time, durationMinutes },
-      brusselsTime: `${hours}:${minutes} (UTC+${brusselsOffsetHours})`,
-      utcTimeRange: { timeMin, timeMax },
-      expectedBrusselsCheck: `${hours}:${minutes} - ${hours + Math.floor(durationMinutes / 60)}:${String((minutes + (durationMinutes % 60)) % 60).padStart(2, '0')}`,
-    });
 
     // Get Google access token
     const accessToken = await getGoogleAccessToken();
@@ -167,8 +156,6 @@ export async function POST(request: NextRequest) {
       ],
     };
     
-    console.log('[Tanguy Availability] freeBusy request:', JSON.stringify(requestBody, null, 2));
-    
     const freeBusyResponse = await fetch('https://www.googleapis.com/calendar/v3/freeBusy', {
       method: 'POST',
       headers: {
@@ -179,17 +166,13 @@ export async function POST(request: NextRequest) {
     });
 
     if (!freeBusyResponse.ok) {
-      const errorData = await freeBusyResponse.json().catch(() => ({}));
-      console.error('Google Calendar freeBusy API error:', errorData);
       return NextResponse.json(
-        { error: 'Failed to check calendar availability', details: errorData },
+        { error: 'Failed to check calendar availability' },
         { status: 500 }
       );
     }
 
     const freeBusyData = await freeBusyResponse.json();
-    
-    console.log('[Tanguy Availability] Full freeBusy response:', JSON.stringify(freeBusyData, null, 2));
     
     // Get calendar data - try multiple formats of the calendar ID
     // Google Calendar API might return the calendar ID in different formats
@@ -200,35 +183,16 @@ export async function POST(request: NextRequest) {
                          Object.values(freeBusyData.calendars || {})[0]; // Fallback to first calendar if ID doesn't match
 
     if (!calendarData) {
-      console.error('[Tanguy Availability] Calendar data not found:', {
-        calendarId: TANGUY_CALENDAR_ID,
-        encodedCalendarId,
-        availableCalendars: Object.keys(freeBusyData.calendars || {}),
-        fullResponse: freeBusyData,
-      });
       return NextResponse.json(
-        { 
-          error: 'Calendar not found', 
-          details: { 
-            calendarId: TANGUY_CALENDAR_ID, 
-            encodedCalendarId,
-            availableCalendars: Object.keys(freeBusyData.calendars || {}),
-            fullResponse: freeBusyData,
-          } 
-        },
+        { error: 'Calendar not found' },
         { status: 404 }
       );
     }
     
     // Check for errors in the calendar data
     if (calendarData.errors && calendarData.errors.length > 0) {
-      console.error('[Tanguy Availability] Calendar access errors:', calendarData.errors);
       return NextResponse.json(
-        { 
-          error: 'Calendar access error', 
-          details: calendarData.errors,
-          message: 'Unable to access calendar. Please check permissions and calendar sharing settings.'
-        },
+        { error: 'Calendar access error' },
         { status: 403 }
       );
     }
@@ -242,29 +206,6 @@ export async function POST(request: NextRequest) {
     // Tanguy is available ONLY if there are NO busy periods
     // If busyPeriods array has any items, Tanguy is busy/not available
     const isAvailable = busyPeriods.length === 0;
-    
-    // Log detailed information for debugging
-    console.log('[Tanguy Availability] Availability check result:', {
-      calendarId: TANGUY_CALENDAR_ID,
-      requestedRange: { 
-        timeMin, 
-        timeMax,
-        brusselsTime: `${hours}:${minutes} - ${hours + Math.floor(durationMinutes / 60)}:${String((minutes + (durationMinutes % 60)) % 60).padStart(2, '0')}`,
-      },
-      busyPeriodsCount: busyPeriods.length,
-      busyPeriods: busyPeriods.map((period: { start: string; end: string }) => ({
-        start: period.start,
-        end: period.end,
-        startBrussels: new Date(period.start).toLocaleString('en-US', { timeZone: 'Europe/Brussels' }),
-        endBrussels: new Date(period.end).toLocaleString('en-US', { timeZone: 'Europe/Brussels' }),
-      })),
-      isAvailable,
-      calendarDataKeys: Object.keys(calendarData),
-      calendarDataStructure: calendarData,
-      calendarDataBusyType: typeof calendarData.busy,
-      calendarDataBusyValue: calendarData.busy,
-      note: 'Only events marked as "Busy" (not "Free") will appear in busy periods',
-    });
 
     return NextResponse.json({
       available: isAvailable,
@@ -274,9 +215,8 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('Error checking Tanguy availability:', error);
     return NextResponse.json(
-      { error: 'Internal server error', message: error.message },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
