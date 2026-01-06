@@ -27,9 +27,8 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(newSubscription, { status: 201 });
   } catch (error: any) {
-    console.error('API Error creating newsletter subscription:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to create newsletter subscription.' },
+      { error: 'Failed to create newsletter subscription.' },
       { status: 500 }
     );
   }

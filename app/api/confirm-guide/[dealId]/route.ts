@@ -104,7 +104,6 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Error in confirm-guide API:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

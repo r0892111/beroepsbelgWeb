@@ -13,7 +13,6 @@ export async function GET(request: NextRequest) {
     const tours = await getTours(citySlug || undefined);
     return NextResponse.json(tours);
   } catch (error) {
-    console.error('Error fetching tours:', error);
     return NextResponse.json(
       { error: 'Failed to fetch tours' },
       { status: 500 }
