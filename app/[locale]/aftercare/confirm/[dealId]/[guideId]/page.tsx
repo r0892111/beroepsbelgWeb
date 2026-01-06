@@ -69,7 +69,7 @@ export default function AftercareConfirmPage() {
 
         setBooking(bookingData);
 
-        // Fetch guide by guide_id if provided
+        // Fetch guide - prioritize guideId from URL if provided
         if (guideId && guideId !== '') {
           const guideIdNum = parseInt(guideId, 10);
           if (!isNaN(guideIdNum)) {
@@ -79,14 +79,14 @@ export default function AftercareConfirmPage() {
               .eq('id', guideIdNum)
               .single();
 
-            if (guideError || !guideData) {
-              console.error('Guide not found:', guideError);
-            } else {
+            if (!guideError && guideData) {
               setGuide(guideData);
             }
+            // If guide from URL not found, don't fall back to booking's guide_id
+            // The URL parameter should always take precedence
           }
         } else if (bookingData.guide_id) {
-          // If guide_id not in URL but exists in booking, fetch it
+          // Only fetch booking's guide_id if guideId is NOT in URL
           const { data: guideData, error: guideError } = await supabase
             .from('guides_temp')
             .select('id, name')
@@ -98,7 +98,6 @@ export default function AftercareConfirmPage() {
           }
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
         toast.error('Failed to load booking information');
       }
     };
@@ -155,7 +154,6 @@ export default function AftercareConfirmPage() {
           : 'Customer absence reported'
       );
     } catch (error) {
-      console.error('Error submitting confirmation:', error);
       toast.error('Failed to submit confirmation. Please try again.');
       setSubmissionStatus(null);
     } finally {

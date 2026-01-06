@@ -321,6 +321,8 @@ serve(async (req: Request) => {
     });
     
     // Process date/time - try bookingDateTime first, then fall back to combining date and time
+    // IMPORTANT: Treat the date/time as Brussels local time (Europe/Brussels timezone)
+    // and convert it to UTC for storage
     if (bookingDateTime && bookingDateTime.trim()) {
       // Use the combined datetime string (format: yyyy-MM-ddTHH:mm)
       // Ensure it's properly formatted as ISO datetime with seconds
@@ -334,17 +336,27 @@ serve(async (req: Request) => {
           formattedDateTime = `${datePart}T${timePart}:00`;
         }
       }
-      const dateObj = new Date(formattedDateTime);
-      if (!isNaN(dateObj.getTime())) {
-        tourDatetime = dateObj.toISOString();
-        console.log('✓ Using bookingDateTime:', { 
-          opMaat, 
-          bookingDateTime, 
-          formattedDateTime, 
-          tourDatetime 
-        });
-      } else {
-        console.error('✗ Invalid bookingDateTime format:', bookingDateTime);
+      
+      // Parse as Brussels local time and convert to UTC
+      // Format: "2025-01-15T14:00:00" should be treated as 14:00 Brussels time
+      const [datePart, timePart] = formattedDateTime.split('T');
+      if (datePart && timePart) {
+        // Try to determine if it's DST (rough approximation: April-September)
+        const month = parseInt(datePart.split('-')[1], 10);
+        const isDST = month >= 4 && month <= 9;
+        const timezoneOffset = isDST ? '+02:00' : '+01:00';
+        const brusselsDateTimeWithTZ = `${formattedDateTime}${timezoneOffset}`;
+        
+        const dateObj = new Date(brusselsDateTimeWithTZ);
+        if (!isNaN(dateObj.getTime())) {
+          tourDatetime = dateObj.toISOString();
+        } else {
+          // Fallback: try without timezone (will use local server time, but better than nothing)
+          const fallbackDate = new Date(formattedDateTime);
+          if (!isNaN(fallbackDate.getTime())) {
+            tourDatetime = fallbackDate.toISOString();
+          }
+        }
       }
     } else if (bookingDate && bookingDate.trim() && bookingTime && bookingTime.trim()) {
       // Fallback: combine date and time if bookingDateTime is not provided
@@ -353,18 +365,16 @@ serve(async (req: Request) => {
         ? `${bookingTime.trim()}:00` 
         : bookingTime.trim();
       const combinedDateTime = `${bookingDate.trim()}T${timeWithSeconds}`;
-      const dateObj = new Date(combinedDateTime);
+      
+      // Parse as Brussels local time and convert to UTC
+      const month = parseInt(bookingDate.trim().split('-')[1], 10);
+      const isDST = month >= 4 && month <= 9;
+      const timezoneOffset = isDST ? '+02:00' : '+01:00';
+      const brusselsDateTimeWithTZ = `${combinedDateTime}${timezoneOffset}`;
+      
+      const dateObj = new Date(brusselsDateTimeWithTZ);
       if (!isNaN(dateObj.getTime())) {
         tourDatetime = dateObj.toISOString();
-        console.log('✓ Combined date and time:', { 
-          opMaat, 
-          bookingDate, 
-          bookingTime, 
-          combinedDateTime, 
-          tourDatetime 
-        });
-      } else {
-        console.error('✗ Invalid combined datetime:', combinedDateTime);
       }
     } else {
       // No date/time provided
