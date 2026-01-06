@@ -453,6 +453,7 @@
       "photosTaken": "Foto's genomen",
       "photoMoments": "Fotomomenten",
       "clientInfoRequests": "Client info verzoeken",
+      "deniedAssignments": "Geweigerde Opdrachten",
       "photosPerTour": "Foto's per tour",
       "status": "Status",
       "inactive": "Inactief",
@@ -671,11 +672,7 @@
     "total": "Totaal",
     "processing": "Verwerken...",
     "proceedToPayment": "Doorgaan naar betaling",
-    "bookNow": "Boek nu",
-    "onlineDiscount": "10% korting bij online boeken",
-    "originalPrice": "Originele prijs",
-    "discountedPrice": "Prijs met korting",
-    "youSave": "Je bespaart"
+    "bookNow": "Boek nu"
   },
   "product": {
     "description": "Beschrijving",
@@ -1154,16 +1151,6 @@
     "supportMessage": "Als u problemen heeft ondervonden tijdens het afrekenen of vragen heeft, neem dan contact op met ons support team.",
     "returnShop": "Terug naar shop",
     "contactSupport": "Contact support"
-  },
-  "blog": {
-    "title": "Blog",
-    "readMore": "Lees meer",
-    "publishedOn": "Gepubliceerd op",
-    "author": "Auteur",
-    "category": "Categorie",
-    "noPosts": "Geen blogposts gevonden.",
-    "backToBlog": "Terug naar blog",
-    "relatedPosts": "Gerelateerde posts"
   },
   "search": {
     "title": "Zoekresultaten",
