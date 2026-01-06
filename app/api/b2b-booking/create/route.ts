@@ -69,10 +69,38 @@ export async function POST(request: NextRequest) {
     
 
     // Format tour_datetime - convert dateTime to ISO string if provided
+    // IMPORTANT: Treat the date/time as Brussels local time (Europe/Brussels timezone)
+    // and convert it to UTC for storage
     let tourDatetime: string | null = null;
     if (dateTime) {
       try {
-        const dateObj = new Date(dateTime);
+        // If dateTime is already an ISO string with timezone, use it directly
+        // Otherwise, treat it as Brussels local time
+        let dateObj: Date;
+        if (typeof dateTime === 'string' && (dateTime.includes('+') || dateTime.includes('Z'))) {
+          // Already has timezone info
+          dateObj = new Date(dateTime);
+        } else {
+          // Treat as Brussels local time
+          const dateTimeStr = typeof dateTime === 'string' ? dateTime : dateTime.toString();
+          // Determine if it's DST (rough approximation: April-September)
+          const monthMatch = dateTimeStr.match(/(\d{4})-(\d{2})/);
+          const month = monthMatch ? parseInt(monthMatch[2], 10) : new Date().getMonth() + 1;
+          const isDST = month >= 4 && month <= 9;
+          const timezoneOffset = isDST ? '+02:00' : '+01:00';
+          
+          // Ensure format is yyyy-MM-ddTHH:mm:ss
+          let formattedDateTime = dateTimeStr;
+          if (formattedDateTime.includes('T')) {
+            const [datePart, timePart] = formattedDateTime.split('T');
+            if (timePart && timePart.split(':').length === 2) {
+              formattedDateTime = `${datePart}T${timePart}:00`;
+            }
+          }
+          
+          dateObj = new Date(`${formattedDateTime}${timezoneOffset}`);
+        }
+        
         if (!isNaN(dateObj.getTime())) {
           tourDatetime = dateObj.toISOString();
         }
