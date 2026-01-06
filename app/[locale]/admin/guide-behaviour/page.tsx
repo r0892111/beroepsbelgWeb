@@ -75,18 +75,102 @@ export default function AdminGuideBehaviourPage() {
     setLoading(true);
     setError(null);
     try {
-      const { data, error: fetchError } = await supabase
+      // Fetch guides
+      const { data: guidesData, error: guidesError } = await supabase
         .from('guides_temp')
-        .select('id, name, profile_picture, is_favourite, tours_done, photos_taken_frequency, photos_taken_amount, requested_client_info')
+        .select('id, name, profile_picture, is_favourite, tours_done')
         .order('id', { ascending: true });
 
-      if (fetchError) {
-        console.error('Failed to fetch guides:', fetchError);
+      if (guidesError) {
+        console.error('Failed to fetch guides:', guidesError);
         setError(t('failedToLoad'));
         return;
       }
 
-      setGuides((data as GuideBehaviour[]) || []);
+      // Fetch all bookings with guide_id
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from('tourbooking')
+        .select('guide_id, picturesUploaded, pictureCount, isCustomerDetailsRequested')
+        .not('guide_id', 'is', null);
+
+      if (bookingsError) {
+        console.error('Failed to fetch bookings:', bookingsError);
+        setError(t('failedToLoad'));
+        return;
+      }
+
+      // Calculate metrics per guide from booking data
+      const guideMetrics = new Map<number, {
+        photos_taken_amount: number;
+        photos_taken_frequency: number;
+        requested_client_info: number;
+        tours_done: number;
+      }>();
+
+      // Initialize all guides with zero metrics
+      guidesData?.forEach(guide => {
+        guideMetrics.set(guide.id, {
+          photos_taken_amount: 0,
+          photos_taken_frequency: 0,
+          requested_client_info: 0,
+          tours_done: 0,
+        });
+      });
+
+      // Calculate metrics from bookings
+      bookingsData?.forEach(booking => {
+        if (!booking.guide_id) return;
+        
+        const guideId = booking.guide_id;
+        const metrics = guideMetrics.get(guideId) || {
+          photos_taken_amount: 0,
+          photos_taken_frequency: 0,
+          requested_client_info: 0,
+          tours_done: 0,
+        };
+
+        // Count tours done
+        metrics.tours_done += 1;
+
+        // Count photos taken (when picturesUploaded is true)
+        if (booking.picturesUploaded === true) {
+          metrics.photos_taken_frequency += 1;
+          // Add picture count if available
+          if (booking.pictureCount && typeof booking.pictureCount === 'number') {
+            metrics.photos_taken_amount += booking.pictureCount;
+          }
+        }
+
+        // Count client info requests
+        if (booking.isCustomerDetailsRequested === true) {
+          metrics.requested_client_info += 1;
+        }
+
+        guideMetrics.set(guideId, metrics);
+      });
+
+      // Combine guide data with calculated metrics
+      const guidesWithMetrics: GuideBehaviour[] = (guidesData || []).map(guide => {
+        const metrics = guideMetrics.get(guide.id) || {
+          photos_taken_amount: 0,
+          photos_taken_frequency: 0,
+          requested_client_info: 0,
+          tours_done: 0,
+        };
+
+        return {
+          id: guide.id,
+          name: guide.name,
+          profile_picture: guide.profile_picture,
+          is_favourite: guide.is_favourite,
+          tours_done: metrics.tours_done, // Use calculated value from bookings
+          photos_taken_frequency: metrics.photos_taken_frequency,
+          photos_taken_amount: metrics.photos_taken_amount,
+          requested_client_info: metrics.requested_client_info,
+        };
+      });
+
+      setGuides(guidesWithMetrics);
     } catch (err) {
       console.error('Failed to fetch guides:', err);
       setError(t('failedToLoad'));
