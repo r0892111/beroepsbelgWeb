@@ -13,6 +13,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase/client';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer, ScatterChart, Scatter, PieChart, Pie, Cell } from 'recharts';
@@ -76,10 +77,10 @@ export default function AdminGuideBehaviourPage() {
     setLoading(true);
     setError(null);
     try {
-      // Fetch guides
+      // Fetch all guides to ensure we update all of them
       const { data: guidesData, error: guidesError } = await supabase
         .from('guides_temp')
-        .select('id, name, profile_picture, is_favourite, tours_done, denied_assignment')
+        .select('id, name, profile_picture, is_favourite, tours_done, denied_assignment, photos_taken_frequency, photos_taken_amount, requested_client_info')
         .order('id', { ascending: true });
 
       if (guidesError) {
@@ -88,10 +89,10 @@ export default function AdminGuideBehaviourPage() {
         return;
       }
 
-      // Fetch all bookings with guide_id
+      // Fetch all bookings with guide_id to calculate metrics
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('tourbooking')
-        .select('guide_id, picturesUploaded, pictureCount, isCustomerDetailsRequested')
+        .select('guide_id, picturesUploaded, pictureCount, isCustomerDetailsRequested, status')
         .not('guide_id', 'is', null);
 
       if (bookingsError) {
@@ -108,7 +109,7 @@ export default function AdminGuideBehaviourPage() {
         tours_done: number;
       }>();
 
-      // Initialize all guides with zero metrics
+      // Initialize all guides with zero metrics (ensures all guides are in the map)
       guidesData?.forEach(guide => {
         guideMetrics.set(guide.id, {
           photos_taken_amount: 0,
@@ -123,14 +124,15 @@ export default function AdminGuideBehaviourPage() {
         if (!booking.guide_id) return;
         
         const guideId = booking.guide_id;
-        const metrics = guideMetrics.get(guideId) || {
-          photos_taken_amount: 0,
-          photos_taken_frequency: 0,
-          requested_client_info: 0,
-          tours_done: 0,
-        };
+        const metrics = guideMetrics.get(guideId);
+        
+        if (!metrics) {
+          // Guide not found in our map, skip (shouldn't happen but safety check)
+          console.warn(`Guide ${guideId} not found in guides list`);
+          return;
+        }
 
-        // Count tours done
+        // Count tours done (any booking with this guide_id counts as a tour)
         metrics.tours_done += 1;
 
         // Count photos taken (when picturesUploaded is true)
@@ -146,18 +148,26 @@ export default function AdminGuideBehaviourPage() {
         if (booking.isCustomerDetailsRequested === true) {
           metrics.requested_client_info += 1;
         }
-
-        guideMetrics.set(guideId, metrics);
       });
 
       // Combine guide data with calculated metrics
       const guidesWithMetrics: GuideBehaviour[] = (guidesData || []).map(guide => {
-        const metrics = guideMetrics.get(guide.id) || {
-          photos_taken_amount: 0,
-          photos_taken_frequency: 0,
-          requested_client_info: 0,
-          tours_done: 0,
-        };
+        const metrics = guideMetrics.get(guide.id);
+        
+        if (!metrics) {
+          // Fallback if guide not in metrics (shouldn't happen)
+          return {
+            id: guide.id,
+            name: guide.name,
+            profile_picture: guide.profile_picture,
+            is_favourite: guide.is_favourite,
+            tours_done: 0,
+            photos_taken_frequency: 0,
+            photos_taken_amount: 0,
+            requested_client_info: 0,
+            denied_assignment: guide.denied_assignment ?? 0,
+          };
+        }
 
         return {
           id: guide.id,
@@ -168,11 +178,52 @@ export default function AdminGuideBehaviourPage() {
           photos_taken_frequency: metrics.photos_taken_frequency,
           photos_taken_amount: metrics.photos_taken_amount,
           requested_client_info: metrics.requested_client_info,
-          denied_assignment: guide.denied_assignment ?? 0,
+          denied_assignment: guide.denied_assignment ?? 0, // Preserve existing value (not calculated from bookings)
         };
       });
 
       setGuides(guidesWithMetrics);
+
+      // Update guides_temp table with calculated metrics
+      // This ensures all calculable fields are properly filled from booking data
+      // All guides are updated, even if they have no bookings (will be set to 0)
+      try {
+        const updatePromises = guidesWithMetrics.map(guide => {
+          // Ensure all numeric fields have proper values (no nulls)
+          const updateData: {
+            tours_done: number;
+            photos_taken_frequency: number;
+            photos_taken_amount: number;
+            requested_client_info: number;
+          } = {
+            // Update all calculable fields from booking data, defaulting to 0 if null
+            tours_done: guide.tours_done ?? 0,
+            photos_taken_frequency: guide.photos_taken_frequency ?? 0,
+            photos_taken_amount: guide.photos_taken_amount ?? 0,
+            requested_client_info: guide.requested_client_info ?? 0,
+          };
+
+          return supabase
+            .from('guides_temp')
+            .update(updateData)
+            .eq('id', guide.id);
+        });
+
+        const results = await Promise.all(updatePromises);
+        const successCount = results.filter(r => !r.error).length;
+        const totalCount = results.length;
+        
+        if (successCount === totalCount) {
+          toast.success(`Successfully synced ${totalCount} guide${totalCount !== 1 ? 's' : ''} with booking metrics`);
+        } else {
+          toast.warning(`Synced ${successCount} of ${totalCount} guides. Some updates may have failed.`);
+        }
+        console.log('Successfully updated guide metrics in guides_temp table');
+      } catch (updateError) {
+        console.error('Failed to update guide metrics:', updateError);
+        toast.error('Failed to sync guide metrics. Data displayed may be outdated.');
+        // Don't throw - we still want to show the data even if update fails
+      }
     } catch (err) {
       console.error('Failed to fetch guides:', err);
       setError(t('failedToLoad'));
@@ -690,6 +741,16 @@ export default function AdminGuideBehaviourPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void fetchGuides()}
+              disabled={loading}
+              title="Refresh and sync guide data with booking metrics"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              {t('refresh') || 'Refresh & Sync'}
+            </Button>
             <Link href={`/${locale}/admin/dashboard`}>
               <Button variant="ghost" size="sm">
                 <Home className="h-4 w-4 mr-2" />
