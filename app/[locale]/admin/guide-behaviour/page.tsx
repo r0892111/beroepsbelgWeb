@@ -33,10 +33,11 @@ interface GuideBehaviour {
   photos_taken_frequency: number | null;
   photos_taken_amount: number | null;
   requested_client_info: number | null;
+  denied_assignment: number | null;
 }
 
 type RankingMode = 'engagement' | 'tours' | 'photos_per_tour' | 'requests_per_tour';
-type SortField = 'name' | 'tours_done' | 'photos_taken_amount' | 'photos_taken_frequency' | 'requested_client_info' | 'photos_per_tour' | 'requests_per_tour' | 'status';
+type SortField = 'name' | 'tours_done' | 'photos_taken_amount' | 'photos_taken_frequency' | 'requested_client_info' | 'denied_assignment' | 'photos_per_tour' | 'requests_per_tour' | 'status';
 type SortDirection = 'asc' | 'desc';
 
 type StatusType = 'inactive' | 'new' | 'emerging' | 'consistent' | 'high_performer' | 'needs_attention' | 'content_focused' | 'low_photo_activity' | 'high_client_info_requests';
@@ -78,7 +79,7 @@ export default function AdminGuideBehaviourPage() {
       // Fetch guides
       const { data: guidesData, error: guidesError } = await supabase
         .from('guides_temp')
-        .select('id, name, profile_picture, is_favourite, tours_done')
+        .select('id, name, profile_picture, is_favourite, tours_done, denied_assignment')
         .order('id', { ascending: true });
 
       if (guidesError) {
@@ -167,6 +168,7 @@ export default function AdminGuideBehaviourPage() {
           photos_taken_frequency: metrics.photos_taken_frequency,
           photos_taken_amount: metrics.photos_taken_amount,
           requested_client_info: metrics.requested_client_info,
+          denied_assignment: guide.denied_assignment ?? 0,
         };
       });
 
@@ -201,6 +203,7 @@ export default function AdminGuideBehaviourPage() {
       const photosAmount = guide.photos_taken_amount ?? 0;
       const photosFrequency = guide.photos_taken_frequency ?? 0;
       const clientInfoRequests = guide.requested_client_info ?? 0;
+      const deniedAssignment = guide.denied_assignment ?? 0;
 
       const photosPerTour = toursDone > 0 ? photosAmount / toursDone : 0;
       const requestsPerTour = toursDone > 0 ? clientInfoRequests / toursDone : 0;
@@ -211,6 +214,7 @@ export default function AdminGuideBehaviourPage() {
         photos_taken_amount: photosAmount,
         photos_taken_frequency: photosFrequency,
         requested_client_info: clientInfoRequests,
+        denied_assignment: deniedAssignment,
         photos_per_tour: photosPerTour,
         requests_per_tour: requestsPerTour,
         engagement_score: 0, // Will calculate below
@@ -425,6 +429,10 @@ export default function AdminGuideBehaviourPage() {
           aValue = a.requested_client_info ?? 0;
           bValue = b.requested_client_info ?? 0;
           break;
+        case 'denied_assignment':
+          aValue = a.denied_assignment ?? 0;
+          bValue = b.denied_assignment ?? 0;
+          break;
         case 'photos_per_tour':
           aValue = a.photos_per_tour;
           bValue = b.photos_per_tour;
@@ -495,19 +503,21 @@ export default function AdminGuideBehaviourPage() {
         photos_taken_amount: 1,
         photos_taken_frequency: 1,
         requested_client_info: 1,
+        denied_assignment: 1,
         photos_per_tour: 1,
         requests_per_tour: 1,
       };
     }
 
-    return {
-      tours_done: Math.max(...filteredAndSortedGuides.map(g => g.tours_done ?? 0), 1),
-      photos_taken_amount: Math.max(...filteredAndSortedGuides.map(g => g.photos_taken_amount ?? 0), 1),
-      photos_taken_frequency: Math.max(...filteredAndSortedGuides.map(g => g.photos_taken_frequency ?? 0), 1),
-      requested_client_info: Math.max(...filteredAndSortedGuides.map(g => g.requested_client_info ?? 0), 1),
-      photos_per_tour: Math.max(...filteredAndSortedGuides.map(g => g.photos_per_tour), 1),
-      requests_per_tour: Math.max(...filteredAndSortedGuides.map(g => g.requests_per_tour), 1),
-    };
+      return {
+        tours_done: Math.max(...filteredAndSortedGuides.map(g => g.tours_done ?? 0), 1),
+        photos_taken_amount: Math.max(...filteredAndSortedGuides.map(g => g.photos_taken_amount ?? 0), 1),
+        photos_taken_frequency: Math.max(...filteredAndSortedGuides.map(g => g.photos_taken_frequency ?? 0), 1),
+        requested_client_info: Math.max(...filteredAndSortedGuides.map(g => g.requested_client_info ?? 0), 1),
+        denied_assignment: Math.max(...filteredAndSortedGuides.map(g => (g.denied_assignment ?? 0)), 1),
+        photos_per_tour: Math.max(...filteredAndSortedGuides.map(g => g.photos_per_tour), 1),
+        requests_per_tour: Math.max(...filteredAndSortedGuides.map(g => g.requests_per_tour), 1),
+      };
   }, [filteredAndSortedGuides]);
 
   // Chart data preparation
@@ -1003,6 +1013,17 @@ export default function AdminGuideBehaviourPage() {
                           </TableHead>
                           <TableHead>
                             <button
+                              onClick={() => handleSort('denied_assignment')}
+                              className="flex items-center gap-1 hover:text-foreground"
+                            >
+                              {t('deniedAssignments') || 'Denied Assignments'}
+                              {sortField === 'denied_assignment' && (
+                                sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                              )}
+                            </button>
+                          </TableHead>
+                          <TableHead>
+                            <button
                               onClick={() => handleSort('photos_per_tour')}
                               className="flex items-center gap-1 hover:text-foreground"
                             >
@@ -1068,6 +1089,9 @@ export default function AdminGuideBehaviourPage() {
                             </TableCell>
                             <TableCell>
                               <InlineBar value={guide.requested_client_info ?? 0} max={maxValues.requested_client_info} isInteger />
+                            </TableCell>
+                            <TableCell>
+                              <InlineBar value={guide.denied_assignment ?? 0} max={maxValues.denied_assignment} isInteger />
                             </TableCell>
                             <TableCell>
                               <InlineBar value={guide.photos_per_tour} max={maxValues.photos_per_tour} />
