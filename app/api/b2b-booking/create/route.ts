@@ -120,6 +120,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    console.log('Tour timing calculation:', {
+      tourDatetime,
+      tourEndDatetime,
+      finalDurationMinutes,
+      baseDuration,
+      extraHour,
+    });
+
     // Build invitees array similar to B2C flow
     const invitees = [{
       name: `${contactFirstName || ''} ${contactLastName || ''}`.trim() || contactEmail,
@@ -157,25 +165,43 @@ export async function POST(request: NextRequest) {
       invitees: invitees,
     };
 
+    console.log('Booking data to insert:', {
+      tour_id: bookingData.tour_id,
+      tour_datetime: bookingData.tour_datetime,
+      tour_end: bookingData.tour_end,
+      city: bookingData.city,
+      status: bookingData.status,
+      booking_type: bookingData.booking_type,
+    });
+
     // Insert booking into tourbooking table
     // Try with booking_type first, if it fails due to missing column, retry without it
     let { data: createdBooking, error: bookingError } = await supabase
       .from('tourbooking')
       .insert(bookingData)
-      .select('id, invitees')
+      .select('id, invitees, tour_datetime, tour_end')
       .single();
 
     // If error is due to missing booking_type column, retry without it
     if (bookingError && (bookingError.message?.includes('booking_type') || bookingError.message?.includes('column') || bookingError.code === '42703')) {
+      console.log('Retrying without booking_type column...');
       const { booking_type, ...bookingDataWithoutType } = bookingData;
       const retryResult = await supabase
         .from('tourbooking')
         .insert(bookingDataWithoutType)
-        .select('id, invitees')
+        .select('id, invitees, tour_datetime, tour_end')
         .single();
       
       createdBooking = retryResult.data;
       bookingError = retryResult.error;
+    }
+
+    if (createdBooking) {
+      console.log('Booking created successfully:', {
+        id: createdBooking.id,
+        tour_datetime: createdBooking.tour_datetime,
+        tour_end: createdBooking.tour_end,
+      });
     }
 
     if (bookingError) {
