@@ -88,7 +88,7 @@ export async function POST(
     const supabase = getSupabaseServer();
     const { data: booking, error: bookingError } = await supabase
       .from('tourbooking')
-      .select('id, deal_id, guide_id')
+      .select('id, deal_id, guide_id, selectedGuides')
       .eq('deal_id', uuid)
       .single();
 
@@ -116,9 +116,29 @@ export async function POST(
     // When guide declines, status remains unchanged (payment_completed for B2C, pending_guide_confirmation for B2B)
     // This allows another guide to accept the booking offer
     if (action === 'accept') {
+      // Update selectedGuides to mark this guide as accepted
+      let updatedSelectedGuides = booking.selectedGuides || [];
+      if (Array.isArray(updatedSelectedGuides)) {
+        updatedSelectedGuides = updatedSelectedGuides.map((g: any) => {
+          const gId = typeof g === 'object' && g !== null ? g.id : g;
+          if (gId === finalGuideId) {
+            return {
+              ...(typeof g === 'object' ? g : { id: finalGuideId }),
+              status: 'accepted',
+              respondedAt: new Date().toISOString(),
+            };
+          }
+          return g;
+        });
+      }
+
       const { error: updateError } = await supabase
         .from('tourbooking')
-        .update({ status: 'confirmed', guide_id: finalGuideId })
+        .update({ 
+          status: 'confirmed', 
+          guide_id: finalGuideId,
+          selectedGuides: updatedSelectedGuides,
+        })
         .eq('deal_id', uuid);
 
       if (!updateError) {
@@ -126,6 +146,28 @@ export async function POST(
         await updateGuideMetrics(finalGuideId);
       }
     } else if (action === 'decline') {
+      // Update selectedGuides to mark this guide as declined
+      let updatedSelectedGuides = booking.selectedGuides || [];
+      if (Array.isArray(updatedSelectedGuides)) {
+        updatedSelectedGuides = updatedSelectedGuides.map((g: any) => {
+          const gId = typeof g === 'object' && g !== null ? g.id : g;
+          if (gId === finalGuideId) {
+            return {
+              ...(typeof g === 'object' ? g : { id: finalGuideId }),
+              status: 'declined',
+              respondedAt: new Date().toISOString(),
+            };
+          }
+          return g;
+        });
+      }
+
+      // Update the selectedGuides in the database
+      await supabase
+        .from('tourbooking')
+        .update({ selectedGuides: updatedSelectedGuides })
+        .eq('deal_id', uuid);
+
       // Increment denied_assignment count when guide declines
       await incrementGuideDeniedAssignment(finalGuideId);
     }
