@@ -151,6 +151,7 @@ export async function POST(request: NextRequest) {
       stripe_session_id: null, // B2B bookings don't have Stripe session initially
       status: 'quote_pending', // Quote status flow: quote_pending → quote_sent → quote_accepted → quote_paid → confirmed
       tour_datetime: tourDatetime,
+      tour_end: tourEndDatetime, // End time (start + duration)
       city: citySlug || null,
       booking_type: 'B2B', // Mark as B2B booking (will be ignored if column doesn't exist)
       invitees: invitees,
