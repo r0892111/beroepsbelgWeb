@@ -445,11 +445,15 @@ serve(async (req: Request) => {
     console.log('Booking data to be saved:', {
       opMaat,
       tour_datetime: tourDatetime,
+      tour_end: tourEndDatetime,
       hasTourDatetime: !!tourDatetime,
+      hasTourEnd: !!tourEndDatetime,
       tour_datetime_formatted: tourDatetime ? new Date(tourDatetime).toISOString() : null,
+      tour_end_formatted: tourEndDatetime ? new Date(tourEndDatetime).toISOString() : null,
       bookingDateTime,
       bookingDate,
       bookingTime,
+      finalDurationMinutes,
       warning: !opMaat && !tourDatetime ? '⚠️ Regular tour without date/time!' : null,
       opMaatAnswers: opMaatAnswers ? {
         hasAnswers: true,

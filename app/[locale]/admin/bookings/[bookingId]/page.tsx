@@ -6,6 +6,8 @@ import { useAuth } from '@/lib/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Home, 
   ArrowLeft, 
@@ -28,7 +30,8 @@ import {
   Building2,
   MessageSquare,
   Package,
-  Send
+  Send,
+  UserPlus
 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
@@ -122,6 +125,9 @@ export default function BookingDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [triggeringGuideAssignment, setTriggeringGuideAssignment] = useState(false);
+  const [guideDialogOpen, setGuideDialogOpen] = useState(false);
+  const [selectedNewGuideId, setSelectedNewGuideId] = useState<number | null>(null);
+  const [submittingNewGuide, setSubmittingNewGuide] = useState(false);
 
   useEffect(() => {
     if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
@@ -222,6 +228,85 @@ export default function BookingDetailPage() {
       toast.error('Failed to trigger guide assignment');
     } finally {
       setTriggeringGuideAssignment(false);
+    }
+  };
+
+  // Check if all guides in selectedGuides have declined
+  const allGuidesDeclined = (): boolean => {
+    if (!booking?.selectedGuides || booking.selectedGuides.length === 0) {
+      return false;
+    }
+    
+    const normalizedGuides = booking.selectedGuides.map(normalizeGuide);
+    // All guides must have status 'declined' and none should be 'offered' or 'accepted'
+    const hasDeclinedGuides = normalizedGuides.some(g => g.status === 'declined');
+    const hasPendingOrAccepted = normalizedGuides.some(g => g.status === 'offered' || g.status === 'accepted' || !g.status);
+    
+    return hasDeclinedGuides && !hasPendingOrAccepted;
+  };
+
+  // Get guides that are not already in selectedGuides (haven't been offered yet)
+  const getAvailableGuides = (): Guide[] => {
+    if (!booking?.selectedGuides) {
+      return Array.from(allGuides.values());
+    }
+    
+    const usedGuideIds = new Set(
+      booking.selectedGuides.map(sg => normalizeGuide(sg).id)
+    );
+    
+    return Array.from(allGuides.values()).filter(g => !usedGuideIds.has(g.id));
+  };
+
+  // Submit new guide selection - updates selectedGuides and triggers webhook
+  const submitNewGuideSelection = async () => {
+    if (!booking || !selectedNewGuideId) return;
+    
+    setSubmittingNewGuide(true);
+    try {
+      // Add new guide to selectedGuides array with 'offered' status
+      const updatedSelectedGuides = [
+        ...(booking.selectedGuides || []).map(normalizeGuide),
+        {
+          id: selectedNewGuideId,
+          status: 'offered' as const,
+          offeredAt: new Date().toISOString(),
+        }
+      ];
+
+      // Update the booking in the database
+      const { error: updateError } = await supabase
+        .from('tourbooking')
+        .update({ selectedGuides: updatedSelectedGuides })
+        .eq('id', booking.id);
+
+      if (updateError) {
+        throw new Error('Failed to update booking');
+      }
+
+      // Trigger the webhook with the updated booking
+      const updatedBooking = { ...booking, selectedGuides: updatedSelectedGuides };
+      const response = await fetch('https://alexfinit.app.n8n.cloud/webhook/f22ab19e-bc75-475e-ac13-ca9b5c8f72fe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedBooking),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to trigger webhook');
+      }
+
+      toast.success('New guide selected and notified!');
+      setGuideDialogOpen(false);
+      setSelectedNewGuideId(null);
+      void fetchBookingDetails();
+    } catch (err) {
+      console.error('Error selecting new guide:', err);
+      toast.error('Failed to select new guide');
+    } finally {
+      setSubmittingNewGuide(false);
     }
   };
 
@@ -600,6 +685,25 @@ export default function BookingDetailPage() {
                   </div>
                 </div>
               )}
+
+              {/* Select New Guide Button - shown when all guides declined */}
+              {!booking.guide_id && allGuidesDeclined() && (
+                <div className="pt-3 border-t">
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-3 mb-3">
+                    <p className="text-sm text-red-800">
+                      All offered guides have declined. Select a new guide from the remaining list.
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => setGuideDialogOpen(true)}
+                    variant="outline"
+                    className="w-full gap-2"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    Select New Guide
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -753,6 +857,98 @@ export default function BookingDetailPage() {
           </Card>
         )}
       </div>
+
+      {/* Guide Selection Dialog */}
+      <Dialog open={guideDialogOpen} onOpenChange={setGuideDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Select New Guide
+            </DialogTitle>
+            <DialogDescription>
+              All previously offered guides have declined. Select a new guide from the list below.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Show declined guides */}
+            {booking.selectedGuides && booking.selectedGuides.length > 0 && (
+              <div className="rounded-lg border border-muted bg-muted/30 p-3">
+                <p className="text-xs font-medium text-muted-foreground mb-2">Previously declined:</p>
+                <div className="space-y-1">
+                  {booking.selectedGuides.map(normalizeGuide).filter(g => g.status === 'declined').map((g) => {
+                    const guideData = allGuides.get(g.id);
+                    return (
+                      <div key={g.id} className="text-sm flex items-center gap-2">
+                        <XCircle className="h-3 w-3 text-red-500" />
+                        <span>{guideData?.name || `Guide #${g.id}`}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Guide selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Select a guide:</label>
+              <Select 
+                value={selectedNewGuideId?.toString() || ''} 
+                onValueChange={(val) => setSelectedNewGuideId(parseInt(val, 10))}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Choose a guide..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {getAvailableGuides().length === 0 ? (
+                    <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                      No more guides available
+                    </div>
+                  ) : (
+                    getAvailableGuides().map((g) => (
+                      <SelectItem key={g.id} value={g.id.toString()}>
+                        <div className="flex items-center gap-2">
+                          <span>{g.name || `Guide #${g.id}`}</span>
+                          {g.tours_done !== null && (
+                            <span className="text-xs text-muted-foreground">
+                              ({g.tours_done} tours)
+                            </span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setGuideDialogOpen(false);
+                setSelectedNewGuideId(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={submitNewGuideSelection}
+              disabled={!selectedNewGuideId || submittingNewGuide}
+              className="gap-2"
+            >
+              {submittingNewGuide ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              {submittingNewGuide ? 'Sending...' : 'Send Offer'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
