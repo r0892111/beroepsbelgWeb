@@ -6,7 +6,8 @@ import { useAuth } from '@/lib/contexts/auth-context';
 import { supabase } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, CheckCircle2, XCircle, User, MapPin, Languages, Star } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, User, MapPin, Languages, Star, Clock, Ban } from 'lucide-react';
+import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 
 interface Guide {
@@ -19,6 +20,9 @@ interface Guide {
   phonenumber: string | null;
   Email: string | null;
   tours_done: number | null;
+  selectionStatus: 'offered' | 'declined' | 'accepted' | null;
+  offeredAt: string | null;
+  respondedAt: string | null;
 }
 
 interface Booking {
@@ -233,6 +237,11 @@ export default function ChooseGuideClientPage() {
     );
   }
 
+  // Check if there are any available guides to select
+  const availableGuides = guides.filter(g => !g.selectionStatus);
+  const declinedGuides = guides.filter(g => g.selectionStatus === 'declined');
+  const offeredGuides = guides.filter(g => g.selectionStatus === 'offered');
+
   if (confirmSuccess) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
@@ -261,81 +270,147 @@ export default function ChooseGuideClientPage() {
               )}
             </div>
           )}
+          
+          {/* Status summary */}
+          {guides.length > 0 && (
+            <div className="mt-4 flex justify-center gap-4 text-sm">
+              {availableGuides.length > 0 && (
+                <span className="text-blue-600">{availableGuides.length} available</span>
+              )}
+              {offeredGuides.length > 0 && (
+                <span className="text-yellow-600">{offeredGuides.length} waiting for response</span>
+              )}
+              {declinedGuides.length > 0 && (
+                <span className="text-red-600">{declinedGuides.length} declined</span>
+              )}
+            </div>
+          )}
+          
+          {/* Warning when no available guides */}
+          {availableGuides.length === 0 && guides.length > 0 && (
+            <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 p-4 max-w-md mx-auto">
+              <p className="text-sm text-amber-800">
+                {offeredGuides.length > 0 
+                  ? 'All guides have been offered. Waiting for responses.'
+                  : 'All suggested guides have declined or been offered. Use the Admin Dashboard → Tour Bookings to select a new guide.'}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
-          {guides.map((guide) => (
-            <Card
-              key={guide.id}
-              className={`cursor-pointer transition-all hover:shadow-lg ${
-                selectedGuideId === guide.id
-                  ? 'ring-2 ring-blue-500 ring-offset-2'
-                  : ''
-              }`}
-              onClick={() => setSelectedGuideId(guide.id)}
-            >
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
-                      <User className="h-5 w-5 text-blue-600" />
+          {guides.map((guide) => {
+            const isDeclined = guide.selectionStatus === 'declined';
+            const isOffered = guide.selectionStatus === 'offered';
+            const isAvailable = !guide.selectionStatus;
+            const isSelectable = isAvailable;
+            
+            return (
+              <Card
+                key={guide.id}
+                className={`transition-all ${
+                  isSelectable ? 'cursor-pointer hover:shadow-lg' : 'opacity-60'
+                } ${
+                  selectedGuideId === guide.id
+                    ? 'ring-2 ring-blue-500 ring-offset-2'
+                    : ''
+                } ${isDeclined ? 'bg-red-50 border-red-200' : ''} ${isOffered ? 'bg-yellow-50 border-yellow-200' : ''}`}
+                onClick={() => isSelectable && setSelectedGuideId(guide.id)}
+              >
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                        isDeclined ? 'bg-red-100' : isOffered ? 'bg-yellow-100' : 'bg-blue-100'
+                      }`}>
+                        {isDeclined ? (
+                          <Ban className="h-5 w-5 text-red-600" />
+                        ) : isOffered ? (
+                          <Clock className="h-5 w-5 text-yellow-600" />
+                        ) : (
+                          <User className="h-5 w-5 text-blue-600" />
+                        )}
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{guide.name || 'Unnamed Guide'}</CardTitle>
+                        {guide.tours_done !== null && guide.tours_done > 0 && (
+                          <div className="mt-1 flex items-center gap-1 text-sm text-gray-500">
+                            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                            <span>{guide.tours_done} tours</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <CardTitle className="text-lg">{guide.name || 'Unnamed Guide'}</CardTitle>
-                      {guide.tours_done !== null && guide.tours_done > 0 && (
-                        <div className="mt-1 flex items-center gap-1 text-sm text-gray-500">
-                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          <span>{guide.tours_done} tours</span>
-                        </div>
+                    <div className="flex flex-col items-end gap-1">
+                      {selectedGuideId === guide.id && (
+                        <CheckCircle2 className="h-6 w-6 text-blue-500" />
+                      )}
+                      {isDeclined && (
+                        <Badge variant="destructive" className="text-xs">
+                          Declined
+                        </Badge>
+                      )}
+                      {isOffered && (
+                        <Badge className="bg-yellow-500 text-xs">
+                          Waiting
+                        </Badge>
                       )}
                     </div>
                   </div>
-                  {selectedGuideId === guide.id && (
-                    <CheckCircle2 className="h-6 w-6 text-blue-500" />
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {guide.cities && guide.cities.length > 0 && (
-                    <div className="flex items-start gap-2">
-                      <MapPin className="mt-0.5 h-4 w-4 text-gray-400" />
-                      <div className="flex flex-wrap gap-1">
-                        {guide.cities.map((city, idx) => (
-                          <Badge key={idx} variant="secondary" className="text-xs">
-                            {city}
-                          </Badge>
-                        ))}
-                      </div>
+                  {/* Show timestamp for declined/offered */}
+                  {(isDeclined || isOffered) && (
+                    <div className="mt-2 text-xs text-gray-500">
+                      {isDeclined && guide.respondedAt && (
+                        <span>Declined: {format(new Date(guide.respondedAt), 'dd/MM/yyyy HH:mm')}</span>
+                      )}
+                      {isOffered && guide.offeredAt && (
+                        <span>Offered: {format(new Date(guide.offeredAt), 'dd/MM/yyyy HH:mm')}</span>
+                      )}
                     </div>
                   )}
-                  
-                  {guide.languages && guide.languages.length > 0 && (
-                    <div className="flex items-start gap-2">
-                      <Languages className="mt-0.5 h-4 w-4 text-gray-400" />
-                      <div className="flex flex-wrap gap-1">
-                        {guide.languages.map((lang, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            {lang}
-                          </Badge>
-                        ))}
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {guide.cities && guide.cities.length > 0 && (
+                      <div className="flex items-start gap-2">
+                        <MapPin className="mt-0.5 h-4 w-4 text-gray-400" />
+                        <div className="flex flex-wrap gap-1">
+                          {guide.cities.map((city, idx) => (
+                            <Badge key={idx} variant="secondary" className="text-xs">
+                              {city}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                    
+                    {guide.languages && guide.languages.length > 0 && (
+                      <div className="flex items-start gap-2">
+                        <Languages className="mt-0.5 h-4 w-4 text-gray-400" />
+                        <div className="flex flex-wrap gap-1">
+                          {guide.languages.map((lang, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {lang}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
-                  {guide.content && (
-                    <CardDescription className="line-clamp-3 text-sm">
-                      {guide.content}
-                    </CardDescription>
-                  )}
+                    {guide.content && (
+                      <CardDescription className="line-clamp-3 text-sm">
+                        {guide.content}
+                      </CardDescription>
+                    )}
 
-                  {guide.Email && (
-                    <p className="text-xs text-gray-500">Email: {guide.Email}</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                    {guide.Email && (
+                      <p className="text-xs text-gray-500">Email: {guide.Email}</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         <div className="mt-8 flex justify-center">

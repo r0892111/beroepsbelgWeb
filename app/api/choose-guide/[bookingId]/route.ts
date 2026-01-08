@@ -154,27 +154,42 @@ export async function GET(
       );
     }
 
-    // Extract guide IDs from selectedGuides array
-    // selectedGuides is jsonb[], so it could be an array of objects or IDs
+    // Extract guide IDs and status from selectedGuides array
+    // selectedGuides is jsonb[], format: [{id, status?, offeredAt?, respondedAt?}, ...]
+    interface GuideStatus {
+      id: number;
+      status?: 'offered' | 'declined' | 'accepted';
+      offeredAt?: string;
+      respondedAt?: string;
+    }
+    
+    let guideStatuses: GuideStatus[] = [];
     let guideIds: number[] = [];
     
     if (booking.selectedGuides && Array.isArray(booking.selectedGuides)) {
-      guideIds = booking.selectedGuides
+      guideStatuses = booking.selectedGuides
         .map((item: any) => {
-          // If it's an object with an id field, extract it
+          // If it's an object with an id field
           if (typeof item === 'object' && item !== null && 'id' in item) {
-            return parseInt(item.id, 10);
+            return {
+              id: parseInt(item.id, 10),
+              status: item.status,
+              offeredAt: item.offeredAt,
+              respondedAt: item.respondedAt,
+            };
           }
           // If it's already a number or string number
           if (typeof item === 'number') {
-            return item;
+            return { id: item };
           }
           if (typeof item === 'string') {
-            return parseInt(item, 10);
+            return { id: parseInt(item, 10) };
           }
           return null;
         })
-        .filter((id: any): id is number => id !== null && !isNaN(id));
+        .filter((item: any): item is GuideStatus => item !== null && !isNaN(item.id));
+      
+      guideIds = guideStatuses.map(g => g.id);
     }
 
     // Fetch guide details for each guide ID
@@ -185,8 +200,17 @@ export async function GET(
         .select('id, name, cities, languages, tour_types, content, phonenumber, Email, tours_done')
         .in('id', guideIds);
 
-      if (!guidesError) {
-        guides = guidesData || [];
+      if (!guidesError && guidesData) {
+        // Merge guide details with status info
+        guides = guidesData.map((guide: any) => {
+          const statusInfo = guideStatuses.find(gs => gs.id === guide.id);
+          return {
+            ...guide,
+            selectionStatus: statusInfo?.status || null, // null = available
+            offeredAt: statusInfo?.offeredAt || null,
+            respondedAt: statusInfo?.respondedAt || null,
+          };
+        });
       }
     }
 
