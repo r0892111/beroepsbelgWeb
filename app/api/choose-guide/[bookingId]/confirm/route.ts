@@ -190,24 +190,48 @@ export async function POST(
       );
     }
 
-    // Remove the selected guide from selectedGuides array
+    // Update selectedGuides: mark the offered guide with status 'offered'
+    // selectedGuides format: [{id, status?, offeredAt?, respondedAt?}, ...]
+    // status: undefined = available, 'offered' = waiting for response, 'declined', 'accepted'
     let updatedSelectedGuides = booking.selectedGuides || [];
+    let guideFoundInList = false;
+    
     if (Array.isArray(updatedSelectedGuides)) {
-      // Filter out the selected guide ID (handle both object and number formats)
-      updatedSelectedGuides = updatedSelectedGuides.filter((item: any) => {
-        // If it's an object with an id field
+      updatedSelectedGuides = updatedSelectedGuides.map((item: any) => {
+        // Extract guide ID from different formats
+        let itemId: number | null = null;
         if (typeof item === 'object' && item !== null && 'id' in item) {
-          return parseInt(item.id, 10) !== guideIdNum;
+          itemId = parseInt(item.id, 10);
+        } else if (typeof item === 'number') {
+          itemId = item;
+        } else if (typeof item === 'string') {
+          itemId = parseInt(item, 10);
         }
-        // If it's already a number
-        if (typeof item === 'number') {
-          return item !== guideIdNum;
+        
+        // If this is the guide being offered, update their status
+        if (itemId === guideIdNum) {
+          guideFoundInList = true;
+          return {
+            id: guideIdNum,
+            status: 'offered',
+            offeredAt: new Date().toISOString(),
+          };
         }
-        // If it's a string number
-        if (typeof item === 'string') {
-          return parseInt(item, 10) !== guideIdNum;
+        
+        // Keep other guides as objects with id (normalize format)
+        if (typeof item === 'object' && item !== null) {
+          return item;
         }
-        return true; // Keep other formats
+        return { id: itemId };
+      });
+    }
+    
+    // If guide wasn't in selectedGuides (e.g., manually selecting a new guide), add them
+    if (!guideFoundInList) {
+      updatedSelectedGuides.push({
+        id: guideIdNum,
+        status: 'offered',
+        offeredAt: new Date().toISOString(),
       });
     }
 
@@ -221,22 +245,24 @@ export async function POST(
       );
     }
 
-    // Update booking with selected guide and remove from selectedGuides
+    // Update booking with updated selectedGuides
+    // NOTE: guide_id is NOT set here - it will be set when the guide actually accepts
+    // via the /api/confirm-guide/[dealId]/confirm endpoint
     const { error: updateError } = await supabase
       .from('tourbooking')
       .update({ 
-        guide_id: guideIdNum,
-        selectedGuides: updatedSelectedGuides
+        selectedGuides: updatedSelectedGuides,
       })
       .eq('id', bookingIdNum);
 
     if (updateError) {
+      console.error('Error updating booking:', updateError);
       // Still return success if webhook worked
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Guide selected successfully',
+      message: 'Guide offer sent successfully. Waiting for guide confirmation.',
     });
   } catch (error) {
     return NextResponse.json(
