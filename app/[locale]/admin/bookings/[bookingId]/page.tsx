@@ -31,6 +31,7 @@ import {
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 interface SelectedGuide {
   id: number;
@@ -117,6 +118,7 @@ export default function BookingDetailPage() {
   const [allGuides, setAllGuides] = useState<Map<number, Guide>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [triggeringGuideAssignment, setTriggeringGuideAssignment] = useState(false);
 
   useEffect(() => {
     if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
@@ -191,6 +193,34 @@ export default function BookingDetailPage() {
       void fetchBookingDetails();
     }
   }, [user, profile, bookingId]);
+
+  const triggerGuideAssignment = async () => {
+    if (!booking) return;
+    
+    setTriggeringGuideAssignment(true);
+    try {
+      const response = await fetch('https://alexfinit.app.n8n.cloud/webhook/f22ab19e-bc75-475e-ac13-ca9b5c8f72fe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(booking),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to trigger guide assignment webhook');
+      }
+
+      toast.success('Guide assignment triggered successfully!');
+      // Optionally refresh booking data
+      void fetchBookingDetails();
+    } catch (err) {
+      console.error('Error triggering guide assignment:', err);
+      toast.error('Failed to trigger guide assignment');
+    } finally {
+      setTriggeringGuideAssignment(false);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -530,15 +560,21 @@ export default function BookingDetailPage() {
                 </div>
               )}
 
-              {/* Choose Guide Button */}
+              {/* Trigger Guide Assignment Button */}
               {!booking.guide_id && (
                 <div className="pt-4">
-                  <Link href={`/${locale}/choose-guide/${booking.id}`}>
-                    <Button className="w-full">
+                  <Button 
+                    className="w-full" 
+                    onClick={triggerGuideAssignment}
+                    disabled={triggeringGuideAssignment}
+                  >
+                    {triggeringGuideAssignment ? (
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
                       <Users className="h-4 w-4 mr-2" />
-                      Choose Guide
-                    </Button>
-                  </Link>
+                    )}
+                    {triggeringGuideAssignment ? 'Triggering...' : 'Trigger Guide Assignment'}
+                  </Button>
                 </div>
               )}
             </CardContent>
