@@ -26,7 +26,9 @@ import {
   AlertCircle,
   Globe,
   Building2,
-  MessageSquare
+  MessageSquare,
+  Package,
+  Send
 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
@@ -306,252 +308,286 @@ export default function BookingDetailPage() {
   return (
     <div className="min-h-screen bg-sand">
       {/* Header */}
-      <div className="border-b bg-white">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href={`/${locale}/admin/bookings`}>
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-serif font-bold text-navy">Booking #{booking.id}</h1>
-              <Badge className={`mt-1 ${getStatusColor(booking.status)}`}>
-                {booking.status}
-              </Badge>
+      <div className="border-b bg-white shadow-sm">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Link href={`/${locale}/admin/bookings`}>
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+              <div>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-xl font-semibold text-gray-900">Booking #{booking.id}</h1>
+                  <Badge className={getStatusColor(booking.status)}>
+                    {booking.status.replace(/_/g, ' ')}
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  {tour?.title_nl || tour?.title || 'Tour booking details'}
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void fetchBookingDetails()}
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-            <Link href={`/${locale}/admin/dashboard`}>
-              <Button variant="ghost" size="sm">
-                <Home className="h-4 w-4 mr-2" />
-                Dashboard
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void fetchBookingDetails()}
+                className="gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                <span className="hidden sm:inline">Refresh</span>
               </Button>
-            </Link>
+              <Link href={`/${locale}/admin/dashboard`}>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Home className="h-4 w-4" />
+                  <span className="hidden sm:inline">Dashboard</span>
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 space-y-6">
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        {/* Quick Actions Bar */}
+        {(!booking.guide_id || booking.deal_id || booking.google_calendar_link) && (
+          <Card className="border-dashed">
+            <CardContent className="py-4">
+              <div className="flex flex-wrap items-center gap-3">
+                {!booking.guide_id && (
+                  <Button 
+                    onClick={triggerGuideAssignment}
+                    disabled={triggeringGuideAssignment}
+                    size="sm"
+                    className="gap-2"
+                  >
+                    {triggeringGuideAssignment ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                    {triggeringGuideAssignment ? 'Sending...' : 'Send to Guide Assignment'}
+                  </Button>
+                )}
+                {booking.deal_id && (
+                  <Button variant="outline" size="sm" asChild className="gap-2">
+                    <a
+                      href={`https://focus.teamleader.eu/web/deals/${booking.deal_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Building2 className="h-4 w-4" />
+                      TeamLeader
+                    </a>
+                  </Button>
+                )}
+                {booking.google_calendar_link && (
+                  <Button variant="outline" size="sm" asChild className="gap-2">
+                    <a
+                      href={booking.google_calendar_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Calendar className="h-4 w-4" />
+                      Calendar
+                    </a>
+                  </Button>
+                )}
+                {booking.google_drive_link && (
+                  <Button variant="outline" size="sm" asChild className="gap-2">
+                    <a
+                      href={booking.google_drive_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Image className="h-4 w-4" />
+                      Photos
+                    </a>
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Tour Information */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Tour Information
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                Tour Details
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {tour ? (
                 <>
                   <div>
-                    <p className="text-sm text-muted-foreground">Tour Name</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Tour</p>
                     <p className="font-medium">{tour.title_nl || tour.title || 'Unnamed Tour'}</p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-muted-foreground">City</p>
-                      <p className="font-medium flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        {booking.city || tour.city || 'N/A'}
-                      </p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">City</p>
+                      <p className="font-medium">{booking.city || tour.city || 'N/A'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Type</p>
-                      <div className="flex gap-1">
-                        <Badge variant="outline">
-                          {booking.booking_type || 'B2C'}
-                        </Badge>
-                        {tour.op_maat && <Badge variant="secondary">Op Maat</Badge>}
-                        {tour.local_stories && <Badge variant="secondary">Local Stories</Badge>}
-                      </div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Date & Time</p>
+                      <p className="font-medium">{formatDateTime(booking.tour_datetime)}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-muted-foreground">Price</p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Price</p>
                       <p className="font-medium">€{tour.price || 'N/A'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Duration</p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Duration</p>
                       <p className="font-medium">{tour.duration_minutes ? `${tour.duration_minutes} min` : 'N/A'}</p>
                     </div>
                   </div>
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {booking.booking_type || 'B2C'}
+                    </Badge>
+                    {tour.op_maat && <Badge variant="outline" className="text-xs">Op Maat</Badge>}
+                    {tour.local_stories && <Badge variant="outline" className="text-xs">Local Stories</Badge>}
+                    {booking.request_tanguy && <Badge variant="outline" className="text-xs bg-amber-50">Tanguy Requested</Badge>}
+                  </div>
                 </>
               ) : (
-                <p className="text-muted-foreground">Tour information not available</p>
-              )}
-              
-              <div className="pt-4 border-t">
-                <p className="text-sm text-muted-foreground">Tour Date & Time</p>
-                <p className="font-medium flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  {formatDateTime(booking.tour_datetime)}
-                </p>
-              </div>
-
-              {booking.request_tanguy && (
-                <div className="pt-2">
-                  <Badge className="bg-amber-100 text-amber-800">
-                    Tanguy Requested (+€125)
-                  </Badge>
-                </div>
+                <p className="text-sm text-muted-foreground">Tour information not available</p>
               )}
             </CardContent>
           </Card>
 
           {/* Customer Information */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Customer Information
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <User className="h-4 w-4 text-muted-foreground" />
+                Customer
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {invitee ? (
                 <>
                   <div>
-                    <p className="text-sm text-muted-foreground">Name</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Name</p>
                     <p className="font-medium">{invitee.name || 'N/A'}</p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-muted-foreground">Email</p>
-                      <p className="font-medium flex items-center gap-1 text-sm">
-                        <Mail className="h-4 w-4" />
-                        {invitee.email || 'N/A'}
-                      </p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Email</p>
+                      <p className="text-sm truncate">{invitee.email || 'N/A'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Phone</p>
-                      <p className="font-medium flex items-center gap-1 text-sm">
-                        <Phone className="h-4 w-4" />
-                        {invitee.phone || 'N/A'}
-                      </p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Phone</p>
+                      <p className="text-sm">{invitee.phone || 'N/A'}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-muted-foreground">Number of People</p>
-                      <p className="font-medium flex items-center gap-1">
-                        <Users className="h-4 w-4" />
-                        {invitee.numberOfPeople || 1}
-                      </p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Group Size</p>
+                      <p className="font-medium">{invitee.numberOfPeople || 1} {(invitee.numberOfPeople || 1) === 1 ? 'person' : 'people'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Language</p>
-                      <p className="font-medium flex items-center gap-1">
-                        <Globe className="h-4 w-4" />
-                        {invitee.language?.toUpperCase() || 'NL'}
-                      </p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Language</p>
+                      <p className="font-medium">{invitee.language?.toUpperCase() || 'NL'}</p>
                     </div>
                   </div>
                   {invitee.specialRequests && (
                     <div>
-                      <p className="text-sm text-muted-foreground">Special Requests</p>
-                      <p className="font-medium flex items-start gap-1">
-                        <MessageSquare className="h-4 w-4 mt-0.5" />
-                        {invitee.specialRequests}
-                      </p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Special Requests</p>
+                      <p className="text-sm">{invitee.specialRequests}</p>
                     </div>
                   )}
                   {invitee.amount && (
-                    <div className="pt-4 border-t">
-                      <p className="text-sm text-muted-foreground">Amount Paid</p>
-                      <p className="font-medium text-lg">
-                        €{invitee.amount} {invitee.currency?.toUpperCase() || 'EUR'}
-                      </p>
+                    <div className="pt-2 border-t">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Amount Paid</p>
+                      <p className="text-lg font-semibold">€{invitee.amount}</p>
                     </div>
                   )}
                 </>
               ) : (
-                <p className="text-muted-foreground">Customer information not available</p>
+                <p className="text-sm text-muted-foreground">Customer information not available</p>
               )}
             </CardContent>
           </Card>
 
-          {/* Guide Information */}
+          {/* Guide Assignment */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Guide Assignment
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                Guide
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {guide ? (
                 <>
                   <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-                      <CheckCircle2 className="h-6 w-6 text-green-600" />
+                    <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                      <CheckCircle2 className="h-5 w-5 text-green-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-lg">{guide.name}</p>
-                      <p className="text-sm text-muted-foreground">Assigned Guide</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 pt-2">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Email</p>
-                      <p className="text-sm">{guide.Email || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Phone</p>
-                      <p className="text-sm">{guide.phonenumber || 'N/A'}</p>
+                      <p className="font-medium">{guide.name}</p>
+                      <p className="text-xs text-muted-foreground">Confirmed Guide</p>
                     </div>
                   </div>
-                  {guide.tours_done && (
+                  <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p className="text-sm text-muted-foreground">Experience</p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Email</p>
+                      <p className="truncate">{guide.Email || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Phone</p>
+                      <p>{guide.phonenumber || 'N/A'}</p>
+                    </div>
+                  </div>
+                  {guide.tours_done !== null && (
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Experience</p>
                       <p className="text-sm">{guide.tours_done} tours completed</p>
                     </div>
                   )}
                 </>
               ) : (
                 <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-full bg-yellow-100 flex items-center justify-center">
-                    <AlertCircle className="h-6 w-6 text-yellow-600" />
+                  <div className="h-10 w-10 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
+                    <AlertCircle className="h-5 w-5 text-amber-500" />
                   </div>
                   <div>
                     <p className="font-medium">No guide assigned</p>
-                    <p className="text-sm text-muted-foreground">Waiting for guide confirmation</p>
+                    <p className="text-xs text-muted-foreground">Awaiting assignment</p>
                   </div>
                 </div>
               )}
 
               {/* Selected Guides Status */}
               {booking.selectedGuides && booking.selectedGuides.length > 0 && (
-                <div className="pt-4 border-t">
-                  <p className="text-sm font-medium mb-2">Guide Offers</p>
-                  <div className="space-y-2">
+                <div className="pt-3 border-t">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Offer History</p>
+                  <div className="space-y-1.5">
                     {booking.selectedGuides.map((sg) => {
                       const guideInfo = normalizeGuide(sg);
                       const guideData = allGuides.get(guideInfo.id);
                       return (
-                        <div key={guideInfo.id} className="flex items-center justify-between text-sm p-2 rounded bg-gray-50">
-                          <span>{guideData?.name || `Guide #${guideInfo.id}`}</span>
+                        <div key={guideInfo.id} className="flex items-center justify-between text-sm py-1.5 px-2 rounded bg-muted/50">
+                          <span className="text-sm">{guideData?.name || `Guide #${guideInfo.id}`}</span>
                           {guideInfo.status === 'declined' && (
-                            <Badge variant="destructive" className="text-xs">Declined</Badge>
+                            <span className="text-xs text-red-600">Declined</span>
                           )}
                           {guideInfo.status === 'offered' && (
-                            <Badge className="bg-yellow-500 text-xs">Waiting</Badge>
+                            <span className="text-xs text-amber-600">Pending</span>
                           )}
                           {guideInfo.status === 'accepted' && (
-                            <Badge className="bg-green-500 text-xs">Accepted</Badge>
+                            <span className="text-xs text-green-600">Accepted</span>
                           )}
                           {!guideInfo.status && (
-                            <Badge variant="outline" className="text-xs">Available</Badge>
+                            <span className="text-xs text-muted-foreground">Available</span>
                           )}
                         </div>
                       );
@@ -559,108 +595,64 @@ export default function BookingDetailPage() {
                   </div>
                 </div>
               )}
-
-              {/* Trigger Guide Assignment Button */}
-              {!booking.guide_id && (
-                <div className="pt-4">
-                  <Button 
-                    className="w-full" 
-                    onClick={triggerGuideAssignment}
-                    disabled={triggeringGuideAssignment}
-                  >
-                    {triggeringGuideAssignment ? (
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Users className="h-4 w-4 mr-2" />
-                    )}
-                    {triggeringGuideAssignment ? 'Triggering...' : 'Trigger Guide Assignment'}
-                  </Button>
-                </div>
-              )}
             </CardContent>
           </Card>
 
-          {/* Links & Status */}
+          {/* Status & References */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ExternalLink className="h-5 w-5" />
-                Links & Status
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                References
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* External Links */}
-              <div className="space-y-2">
-                {booking.deal_id && (
-                  <a
-                    href={`https://focus.teamleader.eu/web/deals/${booking.deal_id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 p-2 rounded hover:bg-gray-100 text-sm"
-                  >
-                    <Building2 className="h-4 w-4" />
-                    <span>TeamLeader Deal</span>
-                    <ExternalLink className="h-3 w-3 ml-auto" />
-                  </a>
-                )}
-                {booking.google_calendar_link && (
-                  <a
-                    href={booking.google_calendar_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 p-2 rounded hover:bg-gray-100 text-sm"
-                  >
-                    <Calendar className="h-4 w-4" />
-                    <span>Google Calendar Event</span>
-                    <ExternalLink className="h-3 w-3 ml-auto" />
-                  </a>
-                )}
-                {booking.google_drive_link && (
-                  <a
-                    href={booking.google_drive_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 p-2 rounded hover:bg-gray-100 text-sm"
-                  >
-                    <Image className="h-4 w-4" />
-                    <span>Tour Photos (Google Drive)</span>
-                    <ExternalLink className="h-3 w-3 ml-auto" />
-                  </a>
-                )}
+              <div className="space-y-3 text-sm">
                 {booking.stripe_session_id && (
-                  <div className="flex items-center gap-2 p-2 text-sm text-muted-foreground">
-                    <CreditCard className="h-4 w-4" />
-                    <span className="truncate">Stripe: {booking.stripe_session_id.slice(0, 20)}...</span>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Stripe Session</p>
+                    <p className="font-mono text-xs truncate">{booking.stripe_session_id}</p>
                   </div>
                 )}
                 {booking.invoice_id && (
-                  <div className="flex items-center gap-2 p-2 text-sm text-muted-foreground">
-                    <FileText className="h-4 w-4" />
-                    <span>Invoice: {booking.invoice_id}</span>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Invoice ID</p>
+                    <p className="font-mono text-xs">{booking.invoice_id}</p>
+                  </div>
+                )}
+                {booking.deal_id && (
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">TeamLeader Deal</p>
+                    <p className="font-mono text-xs truncate">{booking.deal_id}</p>
                   </div>
                 )}
               </div>
 
-              {/* Status Indicators */}
-              <div className="pt-4 border-t space-y-2">
-                <p className="text-sm font-medium mb-2">Status Flags</p>
+              {/* Status Flags */}
+              <div className="pt-3 border-t">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Status</p>
                 <div className="flex flex-wrap gap-2">
-                  {booking.picturesUploaded && (
-                    <Badge variant="outline" className="bg-green-50">
-                      <Image className="h-3 w-3 mr-1" />
-                      Photos Uploaded {booking.pictureCount ? `(${booking.pictureCount})` : ''}
+                  {booking.picturesUploaded ? (
+                    <Badge variant="outline" className="text-xs gap-1">
+                      <CheckCircle2 className="h-3 w-3 text-green-500" />
+                      Photos {booking.pictureCount ? `(${booking.pictureCount})` : ''}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-xs gap-1 text-muted-foreground">
+                      <XCircle className="h-3 w-3" />
+                      No photos
                     </Badge>
                   )}
                   {booking.is_aftercare_started && (
-                    <Badge variant="outline" className="bg-blue-50">
-                      <CheckCircle2 className="h-3 w-3 mr-1" />
-                      Aftercare Started
+                    <Badge variant="outline" className="text-xs gap-1">
+                      <CheckCircle2 className="h-3 w-3 text-green-500" />
+                      Aftercare
                     </Badge>
                   )}
                   {booking.isCustomerDetailsRequested && (
-                    <Badge variant="outline" className="bg-purple-50">
-                      <Mail className="h-3 w-3 mr-1" />
-                      Details Requested
+                    <Badge variant="outline" className="text-xs gap-1">
+                      <Mail className="h-3 w-3" />
+                      Details requested
                     </Badge>
                   )}
                 </div>
@@ -672,44 +664,42 @@ export default function BookingDetailPage() {
         {/* Op Maat Answers */}
         {invitee?.opMaatAnswers && (
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Op Maat Tour Details
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                Custom Tour Preferences
               </CardTitle>
-              <CardDescription>Custom tour preferences provided by the customer</CardDescription>
+              <CardDescription>Details provided by the customer for their op maat tour</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
                 {invitee.opMaatAnswers.startEnd && (
                   <div>
-                    <p className="text-sm text-muted-foreground">Start/End Location</p>
-                    <p className="font-medium">{invitee.opMaatAnswers.startEnd}</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Start/End Location</p>
+                    <p className="text-sm">{invitee.opMaatAnswers.startEnd}</p>
                   </div>
                 )}
                 {invitee.opMaatAnswers.cityPart && (
                   <div>
-                    <p className="text-sm text-muted-foreground">City Area</p>
-                    <p className="font-medium">{invitee.opMaatAnswers.cityPart}</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">City Area</p>
+                    <p className="text-sm">{invitee.opMaatAnswers.cityPart}</p>
                   </div>
                 )}
                 {invitee.opMaatAnswers.subjects && (
                   <div>
-                    <p className="text-sm text-muted-foreground">Subjects of Interest</p>
-                    <p className="font-medium">{invitee.opMaatAnswers.subjects}</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Subjects of Interest</p>
+                    <p className="text-sm">{invitee.opMaatAnswers.subjects}</p>
                   </div>
                 )}
                 {invitee.opMaatAnswers.specialWishes && (
                   <div>
-                    <p className="text-sm text-muted-foreground">Special Wishes</p>
-                    <p className="font-medium">{invitee.opMaatAnswers.specialWishes}</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Special Wishes</p>
+                    <p className="text-sm">{invitee.opMaatAnswers.specialWishes}</p>
                   </div>
                 )}
                 {invitee.opMaatAnswers.extraHour && (
-                  <div>
-                    <Badge className="bg-amber-100 text-amber-800">
-                      Extra Hour Selected (+€150)
-                    </Badge>
+                  <div className="sm:col-span-2">
+                    <Badge variant="outline" className="text-xs">Extra Hour (+€150)</Badge>
                   </div>
                 )}
               </div>
@@ -717,29 +707,25 @@ export default function BookingDetailPage() {
           </Card>
         )}
 
-        {/* Upsell Products */}
+        {/* Additional Products */}
         {invitee?.upsellProducts && invitee.upsellProducts.length > 0 && (
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Upsell Products
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <Package className="h-4 w-4 text-muted-foreground" />
+                Additional Items
               </CardTitle>
-              <CardDescription>Additional products ordered with this booking</CardDescription>
+              <CardDescription>Products added to this booking</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
+              <div className="divide-y">
                 {invitee.upsellProducts.map((product: any, idx: number) => (
-                  <div key={idx} className="flex items-center justify-between p-2 rounded bg-gray-50">
-                    <span>{product.n || product.title || 'Product'}</span>
-                    <div className="flex items-center gap-4">
-                      <span className="text-sm text-muted-foreground">
-                        x{product.q || product.quantity || 1}
-                      </span>
-                      <span className="font-medium">
-                        €{product.p || product.price || 0}
-                      </span>
+                  <div key={idx} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
+                    <div>
+                      <p className="text-sm font-medium">{product.n || product.title || 'Product'}</p>
+                      <p className="text-xs text-muted-foreground">Qty: {product.q || product.quantity || 1}</p>
                     </div>
+                    <p className="text-sm font-medium">€{product.p || product.price || 0}</p>
                   </div>
                 ))}
               </div>
@@ -750,14 +736,14 @@ export default function BookingDetailPage() {
         {/* AI Description */}
         {booking.ai_desc && (
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
-                AI Generated Description
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                AI Notes
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="whitespace-pre-wrap">{booking.ai_desc}</p>
+              <p className="text-sm whitespace-pre-wrap">{booking.ai_desc}</p>
             </CardContent>
           </Card>
         )}
@@ -765,4 +751,3 @@ export default function BookingDetailPage() {
     </div>
   );
 }
-
