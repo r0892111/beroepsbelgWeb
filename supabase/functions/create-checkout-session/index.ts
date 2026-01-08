@@ -419,6 +419,7 @@ serve(async (req: Request) => {
       stripe_session_id: session.id,
       status: 'pending',
       tour_datetime: tourDatetime, // This will be null if no date provided, or ISO string if date is provided
+      tour_end: tourEndDatetime, // End time (start + duration)
       city: citySlug || tour.city || null,
       request_tanguy: requestTanguy,
       invitees: [{

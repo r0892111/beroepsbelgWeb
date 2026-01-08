@@ -69,6 +69,7 @@ interface TourBooking {
   invitees: Invitee[] | null;
   city: string | null;
   tour_datetime: string | null;
+  tour_end: string | null;
   tour_id: string | null;
   stripe_session_id: string | null;
   google_calendar_link: string | null;
@@ -434,11 +435,15 @@ export default function BookingDetailPage() {
                       <p className="font-medium">{booking.city || tour.city || 'N/A'}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Date & Time</p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Start Time</p>
                       <p className="font-medium">{formatDateTime(booking.tour_datetime)}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">End Time</p>
+                      <p className="font-medium">{booking.tour_end ? formatDateTime(booking.tour_end) : 'N/A'}</p>
+                    </div>
                     <div>
                       <p className="text-xs text-muted-foreground uppercase tracking-wide">Price</p>
                       <p className="font-medium">€{tour.price || 'N/A'}</p>
