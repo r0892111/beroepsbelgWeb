@@ -458,12 +458,17 @@ export default function AdminBookingsPage() {
                       <TableHead>Type</TableHead>
                       <TableHead>TeamLeader Deal</TableHead>
                       <TableHead>Calendar</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredBookings.map((booking) => (
-                      <TableRow key={booking.id}>
-                        <TableCell className="font-medium">#{booking.id}</TableCell>
+                      <TableRow key={booking.id} className="cursor-pointer hover:bg-muted/50">
+                        <TableCell className="font-medium">
+                          <Link href={`/${locale}/admin/bookings/${booking.id}`} className="text-blue-600 hover:underline">
+                            #{booking.id}
+                          </Link>
+                        </TableCell>
                         <TableCell className="max-w-xs">
                           {booking.tour_id && tours.get(booking.tour_id) ? (
                             <div className="space-y-1">
@@ -594,6 +599,14 @@ export default function AdminBookingsPage() {
                           ) : (
                             <span className="text-sm text-muted-foreground">-</span>
                           )}
+                        </TableCell>
+                        <TableCell>
+                          <Link href={`/${locale}/admin/bookings/${booking.id}`}>
+                            <Button variant="outline" size="sm" className="h-auto py-1 px-2">
+                              <ExternalLink className="h-4 w-4 mr-1" />
+                              <span className="text-xs">Details</span>
+                            </Button>
+                          </Link>
                         </TableCell>
                       </TableRow>
                     ))}
