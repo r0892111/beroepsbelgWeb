@@ -91,3 +91,4 @@ COMMENT ON COLUMN airbnb.price IS 'Price per night (NUMERIC with 2 decimal place
 COMMENT ON COLUMN airbnb.title IS 'Title of the AirBNB listing';
 COMMENT ON COLUMN airbnb.image_url IS 'Supabase Storage URL for uploaded image from airbnb-images bucket';
 
+

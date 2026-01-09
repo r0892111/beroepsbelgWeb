@@ -84,3 +84,4 @@ ORDER BY t.city, c.slug;
      - Match by slug: UPDATE tours_table_prod t SET city_id = c.id FROM cities c WHERE t.city = c.slug AND t.city_id IS NULL;
 */
 
+
