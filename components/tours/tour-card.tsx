@@ -82,6 +82,18 @@ export function TourCard({ tour, locale }: TourCardProps) {
             className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
         )}
+        {tour.local_stories && (
+          <div
+            className="absolute top-3 left-3 px-3 py-1.5 rounded-full text-xs font-bold"
+            style={{
+              backgroundColor: 'var(--primary-base)',
+              color: 'white',
+              boxShadow: 'var(--shadow-medium)'
+            }}
+          >
+            {t('localStoriesTag')}
+          </div>
+        )}
         {tour.type === 'Bike' && (
             <div
               className="absolute top-3 right-3 rounded-full p-2"
@@ -237,7 +249,7 @@ export function TourCard({ tour, locale }: TourCardProps) {
                 boxShadow: 'var(--shadow-small)'
               }}
             >
-              <Link href={`/${locale}/tours/${tour.city}/${tour.slug}`}>{t('schedule')}</Link>
+              <Link href={`/${locale}/tours/${tour.city}/${tour.slug}`}>{t('joinTour')}</Link>
             </Button>
           ) : (
             tour.price && tour.id && (

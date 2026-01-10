@@ -182,7 +182,7 @@ export function Header({ locale }: HeaderProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-[#F9F9F7] z-[90] pt-24 px-6 md:hidden flex flex-col overflow-y-auto"
+            className="fixed inset-0 bg-[#F9F9F7] z-[90] pt-24 px-6 pb-8 md:hidden flex flex-col overflow-y-auto"
           >
             {/* User Actions Section */}
             <div className="flex flex-col gap-3 border-b border-gray-200 pb-4 mb-6">

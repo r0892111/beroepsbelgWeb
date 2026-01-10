@@ -202,14 +202,14 @@ export function ProductCard({ product }: ProductCardProps) {
               handleAddToCart();
             }}
             disabled={isAddingToCart}
-            className="w-full gap-2 transition-all duration-300"
+            className="w-full gap-2 transition-all duration-300 h-auto min-h-10 py-2 whitespace-normal text-center sm:whitespace-nowrap"
             style={{
               backgroundColor: 'var(--primary-base)',
               color: 'white',
               boxShadow: 'var(--shadow-small)'
             }}
           >
-            <ShoppingCart className="h-4 w-4" />
+            <ShoppingCart className="h-4 w-4 flex-shrink-0" />
             {t('addToCart')}
           </Button>
         </CardFooter>

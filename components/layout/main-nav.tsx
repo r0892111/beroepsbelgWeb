@@ -188,8 +188,8 @@ export function MainNav({ locale }: MainNavProps) {
                   />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-72">
-                <nav className="flex flex-col gap-4 pt-8">
+              <SheetContent side="right" className="w-72 overflow-y-auto">
+                <nav className="flex flex-col gap-4 pt-8 pb-8">
                   <div className="flex flex-col gap-3 border-b pb-4" style={{ borderColor: 'var(--green-accent)' }}>
                     <Link
                       href={`/${locale}/account`}

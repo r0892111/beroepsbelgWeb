@@ -218,7 +218,12 @@ export function ProductDetailPage({ product, locale }: ProductDetailPageProps) {
                 <Button
                   onClick={handleAddToCart}
                   disabled={isAddingToCart}
-                  className="flex-1 bg-[#0d1117] hover:bg-[#0d1117]/90 gap-2"
+                  className="flex-1 gap-2"
+                  style={{
+                    backgroundColor: 'var(--primary-base)',
+                    color: 'white',
+                    boxShadow: 'var(--shadow-small)'
+                  }}
                 >
                   <ShoppingCart className="h-4 w-4" />
                   {tAuth('addToCart')}
