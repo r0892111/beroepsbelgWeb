@@ -122,6 +122,14 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
                     {getBookingTypeShortLabel(tour)}
                   </Badge>
                 )}
+                {tour.local_stories && (
+                  <Badge
+                    className="text-sm font-semibold"
+                    style={{ backgroundColor: 'var(--primary-base)', color: 'white' }}
+                  >
+                    {tTour('localStoriesTag')}
+                  </Badge>
+                )}
                 {tour.themes && tour.themes.length > 0 && (
                   <>
                     {tour.themes.map((theme) => (

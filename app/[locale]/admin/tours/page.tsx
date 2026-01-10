@@ -46,6 +46,7 @@ interface Tour {
   price: number | null;
   start_location: string | null;
   end_location: string | null;
+  google_maps_url: string | null;
   languages: string[];
   description: string;
   notes: string | null;
@@ -66,6 +67,7 @@ interface TourFormData {
   price: number | null;
   start_location: string;
   end_location: string;
+  google_maps_url: string;
   languages: string[];
   description: string;
   notes: string;
@@ -215,6 +217,7 @@ export default function AdminToursPage() {
     price: null,
     start_location: '',
     end_location: '',
+    google_maps_url: '',
     languages: [],
     description: '',
     notes: '',
@@ -346,6 +349,7 @@ export default function AdminToursPage() {
       price: null,
       start_location: '',
       end_location: '',
+      google_maps_url: '',
       languages: [],
       description: '',
       notes: '',
@@ -372,6 +376,7 @@ export default function AdminToursPage() {
       price: tour.price,
       start_location: tour.start_location || '',
       end_location: tour.end_location || '',
+      google_maps_url: (tour as any).google_maps_url || '',
       languages: Array.isArray(tour.languages) ? tour.languages : [],
       description: tour.description || '',
       notes: tour.notes || '',
@@ -413,12 +418,14 @@ export default function AdminToursPage() {
 
       const payload = {
         city: finalCityName, // Store city name (from cities.name_nl) in tours_table_prod.city
+        city_id: selectedCity?.id || null, // Link tour to city by ID for proper JOIN queries
         title: formData.title,
         type: customTourType.trim() || formData.type,
         duration_minutes: formData.duration_minutes,
         price: formData.price,
         start_location: formData.start_location || null,
         end_location: formData.end_location || null,
+        google_maps_url: formData.google_maps_url || null,
         languages: formData.languages,
         description: formData.description,
         notes: formData.notes || null,
@@ -1852,6 +1859,17 @@ export default function AdminToursPage() {
                   placeholder="e.g., Market Square"
                 />
               </div>
+            </div>
+
+            <div>
+              <Label htmlFor="google_maps_url" className="text-navy font-semibold">Google Maps URL</Label>
+              <Input
+                id="google_maps_url"
+                value={formData.google_maps_url}
+                onChange={(e) => setFormData({ ...formData, google_maps_url: e.target.value })}
+                className="bg-white"
+                placeholder="e.g., https://maps.app.goo.gl/..."
+              />
             </div>
 
             <div>
