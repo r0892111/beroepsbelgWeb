@@ -255,7 +255,7 @@ export function MainNav({ locale }: MainNavProps) {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className="text-sm font-semibold transition-all duration-300 hover:text-[var(--green-accent)] hover:translate-x-1 py-2 relative group"
+                      className="text-sm font-semibold transition-all duration-300 hover:text-[var(--green-accent)] hover:translate-x-1 py-2 pl-3 relative group"
                       style={{ fontFamily: 'Montserrat, sans-serif' }}
                     >
                       <span className="relative z-10">{item.label}</span>

@@ -826,7 +826,7 @@ export default function B2BQuotePage() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="date" className="flex items-center gap-2 text-base font-semibold text-navy">
                       <Calendar className="h-5 w-5" style={{ color: 'var(--brass)' }} />
@@ -1005,7 +1005,7 @@ export default function B2BQuotePage() {
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <h2 className="text-2xl font-serif font-bold text-navy mb-6">{t('step2')}</h2>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="contactFirstName" className="text-base font-semibold text-navy">{t('firstName')}</Label>
                     <Input id="contactFirstName" {...register('contactFirstName')} className="mt-2" />
@@ -1018,7 +1018,7 @@ export default function B2BQuotePage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="contactEmail" className="text-base font-semibold text-navy">{t('emailLabel')}</Label>
                     <Input id="contactEmail" type="email" {...register('contactEmail')} className="mt-2" />
@@ -1077,8 +1077,8 @@ export default function B2BQuotePage() {
                     <div className="pt-4 border-t">
                       <h4 className="font-semibold text-navy mb-4">{t('billingAddressLabel')}</h4>
                       
-                      <div className="grid grid-cols-3 gap-4 mb-4">
-                        <div className="col-span-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                        <div className="sm:col-span-2">
                           <Label htmlFor="street" className="text-base font-semibold text-navy">{t('street')}</Label>
                           <Input id="street" {...register('street')} className="mt-2" />
                         </div>
@@ -1088,7 +1088,7 @@ export default function B2BQuotePage() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                         <div>
                           <Label htmlFor="postalCode" className="text-base font-semibold text-navy">{t('postalCode')}</Label>
                           <Input id="postalCode" {...register('postalCode')} className="mt-2" />
@@ -1099,7 +1099,7 @@ export default function B2BQuotePage() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="billingCity" className="text-base font-semibold text-navy">{t('city')}</Label>
                           <Input id="billingCity" {...register('billingCity')} className="mt-2" />
@@ -1177,7 +1177,7 @@ export default function B2BQuotePage() {
                   <p className="text-muted-foreground">{t('step3Subtitle')}</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {products.map((product) => {
                     const quantity = selectedUpsell[product.uuid] || 0;
                     const isSelected = quantity > 0;

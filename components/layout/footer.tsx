@@ -71,7 +71,7 @@ export function Footer({ locale }: FooterProps) {
               </p>
               <p>
                 <a
-                  href="https://wa.me/32123456789"
+                  href="https://api.whatsapp.com/send?phone=32494254159"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="transition-colors duration-300 hover:underline"
@@ -136,16 +136,7 @@ export function Footer({ locale }: FooterProps) {
             </h3>
             <div className="flex gap-4">
               <a
-                href="https://www.facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 rounded-full transition-all duration-300 hover:scale-110 hover:-rotate-6"
-                style={{ backgroundColor: 'var(--green-accent)', color: 'white' }}
-              >
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a
-                href="https://www.instagram.com"
+                href="https://www.instagram.com/tanguyottomer/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 rounded-full transition-all duration-300 hover:scale-110 hover:rotate-6"
@@ -154,7 +145,16 @@ export function Footer({ locale }: FooterProps) {
                 <Instagram className="h-5 w-5" />
               </a>
               <a
-                href="https://www.youtube.com"
+                href="https://www.facebook.com/tanguy.ottomer/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-full transition-all duration-300 hover:scale-110 hover:-rotate-6"
+                style={{ backgroundColor: 'var(--green-accent)', color: 'white' }}
+              >
+                <Facebook className="h-5 w-5" />
+              </a>
+              <a
+                href="https://www.youtube.com/channel/UC-xT2xEycm8Xoig18wo9Sxg"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 rounded-full transition-all duration-300 hover:scale-110 hover:-rotate-6"

@@ -68,6 +68,7 @@ export function TourBookingDialog({
   const [showUpsellDialog, setShowUpsellDialog] = useState(false);
   const [showAddressDialog, setShowAddressDialog] = useState(false);
   const [showOpMaatDialog, setShowOpMaatDialog] = useState(false);
+  const [showAllProducts, setShowAllProducts] = useState(false);
   const [opMaatAnswers, setOpMaatAnswers] = useState({
     startEnd: '',
     cityPart: '',
@@ -217,13 +218,13 @@ export function TourBookingDialog({
         .then(res => res.json())
         .then((data: Product[]) => {
           // Only show webshop items (books, merchandise, games) - filter out any non-webshop items
-          const webshopItems = data.filter(p => 
-            p.category === 'Book' || 
-            p.category === 'Merchandise' || 
+          const webshopItems = data.filter(p =>
+            p.category === 'Book' ||
+            p.category === 'Merchandise' ||
             p.category === 'Game'
           );
           console.log('Loaded products for upsell:', webshopItems.length);
-          setProducts(webshopItems.slice(0, 6)); // Show up to 6 products for upsell
+          setProducts(webshopItems); // Store all products, UI will handle highlighting first 6
         })
         .catch((err) => {
           console.error('Failed to load products for upsell:', err);
@@ -533,7 +534,7 @@ export function TourBookingDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4 items-start">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
             <div className="space-y-2">
               <Label className="flex items-center gap-1">
                 <CalendarIcon className="h-3 w-3" />
@@ -636,7 +637,7 @@ export function TourBookingDialog({
             Tourduur: {formatDuration(actualDuration)}
           </p>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="people">{t('numberOfPeople')} *</Label>
               <Select
@@ -876,14 +877,14 @@ export function TourBookingDialog({
     </Dialog>
 
       {/* Upsell Products Dialog */}
-      <Dialog 
-        open={showUpsellDialog} 
+      <Dialog
+        open={showUpsellDialog}
         onOpenChange={(isOpen) => {
           console.log('Upsell dialog onOpenChange:', isOpen, 'showUpsellDialog:', showUpsellDialog);
           setShowUpsellDialog(isOpen);
-          if (!isOpen && !loading) {
-            // If upsell dialog closes without proceeding, keep main dialog open
-            // Main dialog is already open, no need to reopen
+          if (!isOpen) {
+            // Reset expanded products view when dialog closes
+            setShowAllProducts(false);
           }
         }}
       >
@@ -900,22 +901,12 @@ export function TourBookingDialog({
             </DialogDescription>
           </DialogHeader>
 
-          {/* FREE SHIPPING BANNER - Very Prominent */}
-          <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-5 rounded-xl mb-4 border-4 border-green-700 shadow-2xl transform hover:scale-[1.02] transition-transform">
-            <div className="flex items-center gap-4">
-              <div className="bg-white/20 rounded-full p-3">
-                <CheckCircle2 className="h-10 w-10 flex-shrink-0" />
-              </div>
-              <div className="flex-1">
-                <div className="text-2xl font-bold mb-2 uppercase tracking-wide">🎉 GRATIS VERZENDING! 🎉</div>
-                <div className="text-base font-semibold opacity-95">
-                  Alle producten worden <span className="underline font-bold text-xl">100% GRATIS</span> verzonden bij je tourboeking!
-                </div>
-                <div className="text-sm mt-2 opacity-90">
-                  Geen verzendkosten - Bespaar €{FREIGHT_COST_INTERNATIONAL.toFixed(2)} op internationale verzending!
-                </div>
-              </div>
-            </div>
+          {/* Free shipping notice */}
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--primary-base)]/10 border border-[var(--primary-base)]/20">
+            <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--primary-base)' }} />
+            <span className="text-sm" style={{ color: 'var(--primary-dark)' }}>
+              Gratis verzending bij je tourboeking
+            </span>
           </div>
 
           {productsLoading ? (
@@ -925,8 +916,9 @@ export function TourBookingDialog({
           ) : products.length > 0 ? (
             <div className="flex flex-col flex-1 min-h-0 space-y-4">
               <div className="overflow-y-auto flex-1 pr-2 -mr-2">
+                {/* Highlighted products (first 6) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {products.map((product) => {
+                {products.slice(0, 6).map((product) => {
                   const quantity = selectedUpsell[product.uuid] || 0;
                   const isSelected = quantity > 0;
                   const categoryLabels: Record<string, string> = {
@@ -934,7 +926,7 @@ export function TourBookingDialog({
                     'Merchandise': 'Merchandise',
                     'Game': 'Spel',
                   };
-                  
+
                   return (
                     <div
                       key={product.uuid}
@@ -967,7 +959,7 @@ export function TourBookingDialog({
                           </p>
                         </div>
                       </div>
-                      
+
                       <div className="mt-auto pt-4 border-t border-gray-200 flex-shrink-0">
                         {isSelected ? (
                           <div className="flex items-center justify-between gap-3">
@@ -1012,6 +1004,124 @@ export function TourBookingDialog({
                   );
                 })}
                 </div>
+
+                {/* Show more products button & expanded section */}
+                {products.length > 6 && (
+                  <div className="mt-6">
+                    {!showAllProducts ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllProducts(true)}
+                        className="w-full py-3 text-sm font-medium text-center border border-dashed border-gray-300 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors"
+                        style={{ color: 'var(--primary-dark)' }}
+                      >
+                        Bekijk meer producten ({products.length - 6} meer)
+                      </button>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="flex-1 h-px bg-gray-200" />
+                          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Meer producten</span>
+                          <div className="flex-1 h-px bg-gray-200" />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {products.slice(6).map((product) => {
+                            const quantity = selectedUpsell[product.uuid] || 0;
+                            const isSelected = quantity > 0;
+                            const categoryLabels: Record<string, string> = {
+                              'Book': 'Boek',
+                              'Merchandise': 'Merchandise',
+                              'Game': 'Spel',
+                            };
+
+                            return (
+                              <div
+                                key={product.uuid}
+                                className={cn(
+                                  "p-5 rounded-xl border-2 transition-all flex flex-col h-full",
+                                  isSelected
+                                    ? 'border-[var(--primary-base)] bg-[var(--primary-base)]/5 shadow-md'
+                                    : 'border-gray-200 hover:border-gray-300 hover:shadow-sm bg-white'
+                                )}
+                              >
+                                <div className="flex items-start gap-4 mb-4 flex-shrink-0">
+                                  <div className="relative w-20 h-20 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
+                                    {product.image ? (
+                                      <Image src={product.image} alt={product.title.nl} fill className="object-cover" />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center">
+                                        <ShoppingBag className="h-8 w-8 text-gray-400" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-semibold text-base leading-tight mb-2 line-clamp-2">
+                                      {product.title.nl}
+                                    </p>
+                                    <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 mb-2">
+                                      {categoryLabels[product.category] || product.category}
+                                    </span>
+                                    <p className="text-xl font-bold" style={{ color: 'var(--primary-base)' }}>
+                                      €{product.price.toFixed(2)}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="mt-auto pt-4 border-t border-gray-200 flex-shrink-0">
+                                  {isSelected ? (
+                                    <div className="flex items-center justify-between gap-3">
+                                      <span className="text-sm font-medium text-muted-foreground">Aantal:</span>
+                                      <div className="flex items-center gap-3">
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => decrementUpsell(product.uuid)}
+                                          className="h-9 w-9 p-0 rounded-full"
+                                        >
+                                          <Minus className="h-4 w-4" />
+                                        </Button>
+                                        <span className="text-lg font-semibold min-w-[2.5rem] text-center">
+                                          {quantity}
+                                        </span>
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => incrementUpsell(product.uuid)}
+                                          className="h-9 w-9 p-0 rounded-full"
+                                        >
+                                          <Plus className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      onClick={() => incrementUpsell(product.uuid)}
+                                      className="w-full h-9"
+                                    >
+                                      <Plus className="h-4 w-4 mr-2" />
+                                      Toevoegen
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowAllProducts(false)}
+                          className="w-full mt-4 py-2 text-xs font-medium text-center text-muted-foreground hover:text-gray-700 transition-colors"
+                        >
+                          Minder tonen
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
               
               {/* Fixed summary section - always visible */}
@@ -1064,22 +1174,7 @@ export function TourBookingDialog({
             </div>
           )}
 
-          <DialogFooter className="flex-col sm:flex-row gap-2 flex-shrink-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setShowUpsellDialog(false);
-                setSelectedUpsell({}); // Clear selections if user cancels
-                // Reopen main booking dialog if user skips
-                setTimeout(() => {
-                  onOpenChange(true);
-                }, 100);
-              }}
-              className="w-full sm:w-auto"
-            >
-              Overslaan
-            </Button>
+          <DialogFooter className="flex-shrink-0">
             <Button
               type="button"
               onClick={() => {
@@ -1100,7 +1195,6 @@ export function TourBookingDialog({
                 }
               }}
               disabled={loading}
-              className="w-full sm:w-auto"
             >
               {loading ? (
                 <>
@@ -1178,7 +1272,7 @@ export function TourBookingDialog({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="postalCode" className="text-sm font-semibold">
                   Postcode *

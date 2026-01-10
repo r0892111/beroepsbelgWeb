@@ -609,14 +609,14 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent className="flex flex-1 flex-col space-y-4">
             <div className="grid flex-1 gap-4 rounded-lg border p-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h3 className="font-semibold text-navy">Teamleader CRM</h3>
                   <p className="text-sm text-muted-foreground">{t('teamleaderDescription')}</p>
                 </div>
                 <Button
                   onClick={handleTeamleaderConnect}
-                  className="btn-primary"
+                  className="btn-primary w-full sm:w-auto"
                   disabled={connectInFlight}
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
@@ -652,14 +652,14 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="grid flex-1 gap-4 rounded-lg border p-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h3 className="font-semibold text-navy">Google Account</h3>
                   <p className="text-sm text-muted-foreground">Connect your Google account for Calendar and other services</p>
                 </div>
                 <Button
                   onClick={handleGoogleConnect}
-                  className="btn-primary"
+                  className="btn-primary w-full sm:w-auto"
                   disabled={googleConnectInFlight}
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
@@ -697,14 +697,14 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="grid flex-1 gap-4 rounded-lg border p-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h3 className="font-semibold text-navy">GoedGepickt Fulfilment</h3>
                   <p className="text-sm text-muted-foreground">{t('goedgepicktDescription')}</p>
                 </div>
                 <Button
                   onClick={handleGoedgepicktConnect}
-                  className="btn-primary"
+                  className="btn-primary w-full sm:w-auto"
                   disabled={goedgepicktLoading}
                 >
                   <Warehouse className="h-4 w-4 mr-2" />
