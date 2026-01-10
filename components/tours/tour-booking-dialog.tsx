@@ -5,7 +5,13 @@ import { useRouter } from 'next/navigation';
 import { loadStripe } from '@stripe/stripe-js';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { 
+  ResponsiveDialog, 
+  ResponsiveDialogHeader, 
+  ResponsiveDialogTitle, 
+  ResponsiveDialogDescription, 
+  ResponsiveDialogFooter 
+} from '@/components/ui/responsive-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,6 +24,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/contexts/auth-context';
+import { useIsMobile } from '@/lib/hooks/use-media-query';
 // Removed direct import - will fetch from API instead
 import type { Product } from '@/lib/data/types';
 
@@ -59,6 +66,7 @@ export function TourBookingDialog({
   const { user } = useAuth();
   const t = useTranslations('booking');
   const tB2b = useTranslations('b2b');
+  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
@@ -471,7 +479,7 @@ export function TourBookingDialog({
 
   return (
     <>
-    <Dialog 
+    <ResponsiveDialog 
       open={open} 
       onOpenChange={(isOpen) => {
         // Don't allow closing main dialog if upsell dialog is open
@@ -480,11 +488,11 @@ export function TourBookingDialog({
         }
         onOpenChange(isOpen);
       }}
+      className="sm:max-w-[500px]"
     >
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{t('title')}</DialogTitle>
-          <DialogDescription className="flex flex-col gap-1">
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>{t('title')}</ResponsiveDialogTitle>
+          <ResponsiveDialogDescription className="flex flex-col gap-1">
             <span>
               {tourTitle} - €{discountedTourPrice.toFixed(2)} {t('perPerson')}
               {tourPrice > discountedTourPrice && (
@@ -498,8 +506,8 @@ export function TourBookingDialog({
                 {t('onlineDiscount')} - {t('youSave')} €{((tourPrice - discountedTourPrice) * formData.numberOfPeople).toFixed(2)} total
               </span>
             )}
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -547,8 +555,48 @@ export function TourBookingDialog({
                     {formData.bookingDate ? format(formData.bookingDate, 'PP') : 'Datum geselecteerd'}
                   </span>
                 </div>
+              ) : isMobile ? (
+                /* Mobile: Button that expands to inline calendar */
+                <div className="space-y-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn(
+                      'w-full h-10 justify-start text-left font-normal',
+                      !formData.bookingDate && 'text-muted-foreground',
+                      showValidation && !isDateValid && 'border-red-500 ring-1 ring-red-500'
+                    )}
+                    onClick={() => setCalendarOpen(!calendarOpen)}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.bookingDate ? format(formData.bookingDate, 'PP') : t('selectDate')}
+                  </Button>
+                  {calendarOpen && (
+                    <div className="rounded-lg border bg-background p-2">
+                      <Calendar
+                        mode="single"
+                        selected={formData.bookingDate}
+                        onSelect={(date: Date | undefined) => {
+                          if (date) {
+                            setFormData((prev) => ({ ...prev, bookingDate: date }));
+                            setSelectedTimeSlot(''); // Reset time slot when date changes
+                            setCalendarOpen(false); // Close calendar after date selection
+                          }
+                        }}
+                        disabled={(date: Date) => {
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          const dateToCheck = new Date(date);
+                          dateToCheck.setHours(0, 0, 0, 0);
+                          return dateToCheck < today;
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
               ) : (
-                <Popover open={calendarOpen} onOpenChange={setCalendarOpen} modal={false}>
+                /* Desktop: Popover calendar */
+                <Popover open={calendarOpen} onOpenChange={setCalendarOpen} modal={true}>
                   <PopoverTrigger asChild>
                     <Button
                       type="button"
@@ -831,9 +879,9 @@ export function TourBookingDialog({
             </div>
           )}
 
-          <DialogFooter>
-            <div className="flex w-full items-center justify-between">
-              <div className="flex flex-col gap-1">
+          <ResponsiveDialogFooter>
+            <div className="flex w-full items-center justify-between gap-4">
+              <div className="flex flex-col gap-1 min-w-0">
                 <div className="text-lg font-bold">
                   {t('total')}: €{totalPrice.toFixed(2)}
                   {originalTourTotal > tourTotal && (
@@ -861,7 +909,7 @@ export function TourBookingDialog({
                   </div>
                 )}
               </div>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading} className="flex-shrink-0">
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -872,13 +920,12 @@ export function TourBookingDialog({
                 )}
               </Button>
             </div>
-          </DialogFooter>
+          </ResponsiveDialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+    </ResponsiveDialog>
 
       {/* Upsell Products Dialog */}
-      <Dialog
+      <ResponsiveDialog
         open={showUpsellDialog}
         onOpenChange={(isOpen) => {
           console.log('Upsell dialog onOpenChange:', isOpen, 'showUpsellDialog:', showUpsellDialog);
@@ -888,19 +935,20 @@ export function TourBookingDialog({
             setShowAllProducts(false);
           }
         }}
+        className="sm:max-w-[700px]"
+        style={{ zIndex: 60 }}
       >
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto" style={{ zIndex: 60 }}>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle className="flex items-center gap-2">
               <div className="p-2 rounded-lg" style={{ backgroundColor: 'var(--primary-base)', color: 'white' }}>
                 <Gift className="h-5 w-5" />
               </div>
               Voeg een cadeau toe (optioneel)
-            </DialogTitle>
-            <DialogDescription>
+            </ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
               Boeken, merchandise en spellen voor je tour
-            </DialogDescription>
-          </DialogHeader>
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
 
           {/* Free shipping notice */}
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--primary-base)]/10 border border-[var(--primary-base)]/20">
@@ -1175,7 +1223,7 @@ export function TourBookingDialog({
             </div>
           )}
 
-          <DialogFooter className="flex-shrink-0">
+          <ResponsiveDialogFooter className="flex-shrink-0">
             <Button
               type="button"
               onClick={() => {
@@ -1196,6 +1244,7 @@ export function TourBookingDialog({
                 }
               }}
               disabled={loading}
+              className="w-full sm:w-auto"
             >
               {loading ? (
                 <>
@@ -1208,27 +1257,26 @@ export function TourBookingDialog({
                 </>
               )}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveDialogFooter>
+      </ResponsiveDialog>
 
       {/* Address Dialog for Upsell Products */}
-      <Dialog 
+      <ResponsiveDialog 
         open={showAddressDialog} 
         onOpenChange={(isOpen) => {
           setShowAddressDialog(isOpen);
         }}
+        className="sm:max-w-[600px]"
       >
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
               Verzendgegevens
-            </DialogTitle>
-            <DialogDescription>
+            </ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
               Vul je gegevens in voor de verzending van je producten
-            </DialogDescription>
-          </DialogHeader>
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
 
           <div className="space-y-4 py-4">
             <div>
@@ -1338,7 +1386,7 @@ export function TourBookingDialog({
             </div>
           )}
 
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+          <ResponsiveDialogFooter className="flex-col sm:flex-row gap-2">
             <Button
               type="button"
               variant="outline"
@@ -1385,29 +1433,29 @@ export function TourBookingDialog({
                 </>
               )}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveDialogFooter>
+      </ResponsiveDialog>
 
       {/* Op Maat Questions Dialog */}
-      <Dialog 
+      <ResponsiveDialog 
         open={showOpMaatDialog} 
         onOpenChange={(isOpen) => {
           setShowOpMaatDialog(isOpen);
         }}
+        className="sm:max-w-[700px]"
+        style={{ zIndex: 70 }}
       >
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto" style={{ zIndex: 70 }}>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle className="flex items-center gap-2">
               <div className="p-2 rounded-lg" style={{ backgroundColor: 'var(--primary-base)', color: 'white' }}>
                 <FileText className="h-5 w-5" />
               </div>
               Help ons je perfecte tour samen te stellen
-            </DialogTitle>
-            <DialogDescription>
+            </ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
               Beantwoord de volgende vragen om je op maat tour te personaliseren
-            </DialogDescription>
-          </DialogHeader>
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
 
           <div className="space-y-6">
             <div>
@@ -1473,7 +1521,7 @@ export function TourBookingDialog({
             </div>
           )}
 
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+          <ResponsiveDialogFooter className="flex-col sm:flex-row gap-2">
             <Button
               type="button"
               variant="outline"
@@ -1510,9 +1558,8 @@ export function TourBookingDialog({
                 </>
               )}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveDialogFooter>
+      </ResponsiveDialog>
     </>
   );
 }
