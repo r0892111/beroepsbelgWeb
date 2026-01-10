@@ -8,12 +8,29 @@ import { useState, useEffect, useRef } from 'react';
 import { ArrowDown } from 'lucide-react';
 import { getHeroVideos, type VideoFile } from '@/lib/supabase/storage';
 
+// Hook to detect mobile devices (for performance - show static image on mobile)
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return isMobile;
+}
+
 interface RefinedHeroProps {
   locale: Locale;
 }
 
 export function RefinedHero({ locale }: RefinedHeroProps) {
   const t = useTranslations('home.hero');
+  const isMobile = useIsMobile();
   const [scrollY, setScrollY] = useState(0);
   const [videos, setVideos] = useState<VideoFile[]>([]);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
@@ -32,6 +49,13 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
 
   useEffect(() => {
     async function loadVideos() {
+      // Skip video loading on mobile for better performance
+      if (isMobile) {
+        setShowFallbackImage(true);
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const fetchedVideos = await getHeroVideos();
         if (fetchedVideos.length > 0) {
@@ -47,7 +71,7 @@ export function RefinedHero({ locale }: RefinedHeroProps) {
       }
     }
     loadVideos();
-  }, []);
+  }, [isMobile]);
 
   useEffect(() => {
     if (videos.length > 1 && nextVideoRef.current) {

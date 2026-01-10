@@ -25,7 +25,15 @@ export default function SiteFooter({ locale }: SiteFooterProps) {
           </Link>
           <div className="flex items-center gap-5 text-2xl opacity-90">
             <a
-              href="https://www.tiktok.com"
+              href="https://www.instagram.com/tanguyottomer/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:opacity-75 transition-opacity"
+            >
+              <Instagram className="h-6 w-6" />
+            </a>
+            <a
+              href="https://www.tiktok.com/@tanguyottomer"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:opacity-75 transition-opacity"
@@ -35,15 +43,7 @@ export default function SiteFooter({ locale }: SiteFooterProps) {
               </svg>
             </a>
             <a
-              href="https://www.youtube.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:opacity-75 transition-opacity"
-            >
-              <Youtube className="h-6 w-6" />
-            </a>
-            <a
-              href="https://www.facebook.com"
+              href="https://www.facebook.com/tanguy.ottomer/"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:opacity-75 transition-opacity"
@@ -51,12 +51,12 @@ export default function SiteFooter({ locale }: SiteFooterProps) {
               <Facebook className="h-6 w-6" />
             </a>
             <a
-              href="https://www.instagram.com"
+              href="https://www.youtube.com/channel/UC-xT2xEycm8Xoig18wo9Sxg"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:opacity-75 transition-opacity"
             >
-              <Instagram className="h-6 w-6" />
+              <Youtube className="h-6 w-6" />
             </a>
           </div>
           <Link href={`/${locale}/newsletter`} className="btn-ghost-white text-lg inline-block">
@@ -74,7 +74,7 @@ export default function SiteFooter({ locale }: SiteFooterProps) {
           >
             info@beroepsbelg.be
           </a>
-          <a href="#" className="block hover:opacity-75 transition-opacity">
+          <a href="https://api.whatsapp.com/send?phone=32494254159" target="_blank" rel="noopener noreferrer" className="block hover:opacity-75 transition-opacity">
             WhatsApp
           </a>
           <a href="#" className="block hover:opacity-75 transition-opacity">

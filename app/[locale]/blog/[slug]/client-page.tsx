@@ -15,6 +15,35 @@ interface BlogDetailClientPageProps {
   locale: Locale;
 }
 
+// Helper to strip markdown formatting from text
+const stripMarkdown = (text: string): string => {
+  if (!text) return '';
+  return text
+    // Remove common excerpt labels (📖 Excerpt, Excerpt:, etc.)
+    .replace(/^📖\s*Excerpt\s*/i, '')
+    .replace(/^Excerpt[:\s]*/i, '')
+    // Remove headers (# ## ### etc.)
+    .replace(/^#{1,6}\s+/gm, '')
+    // Remove bold/italic (**text**, *text*, __text__, _text_)
+    .replace(/(\*\*|__)(.*?)\1/g, '$2')
+    .replace(/(\*|_)(.*?)\1/g, '$2')
+    // Remove inline code (`code`)
+    .replace(/`([^`]+)`/g, '$1')
+    // Remove links [text](url) -> text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    // Remove images ![alt](url)
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '')
+    // Remove blockquotes (> text)
+    .replace(/^>\s+/gm, '')
+    // Remove horizontal rules (---, ***, ___)
+    .replace(/^[-*_]{3,}\s*$/gm, '')
+    // Remove strikethrough (~~text~~)
+    .replace(/~~(.*?)~~/g, '$1')
+    // Clean up extra whitespace
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+};
+
 // Helper to get localized content
 const getLocalizedContent = (blog: Blog, locale: Locale) => {
   let title = blog.title;
@@ -64,7 +93,7 @@ export default function BlogDetailClientPage({ blog, locale }: BlogDetailClientP
           </div>
           <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy mb-4">{title}</h1>
           {excerpt && (
-            <p className="text-xl text-gray-600 mb-4">{excerpt}</p>
+            <p className="text-xl text-gray-600 mb-4">{stripMarkdown(excerpt)}</p>
           )}
           <div className="flex items-center gap-4 text-sm text-gray-500">
             {blog.author && (

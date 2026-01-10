@@ -270,7 +270,7 @@ export default function AccountPage() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
               <TabsTrigger value="favorites" className="gap-2">
                 <Heart className="h-4 w-4" />
                 {t('myFavorites')}

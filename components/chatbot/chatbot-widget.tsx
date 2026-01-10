@@ -120,7 +120,7 @@ export function ChatbotWidget({ locale }: ChatbotWidgetProps) {
       {isOpen && (
         <div
           ref={panelRef}
-          className="fixed bottom-24 right-6 z-[9999] w-[380px] h-[600px] max-h-[calc(100vh-120px)] md:w-[380px] sm:w-[calc(100vw-32px)] sm:right-4 sm:bottom-20 sm:max-h-[calc(100vh-120px)]"
+          className="fixed z-[9999] bottom-20 right-4 left-4 md:left-auto md:right-6 md:bottom-24 md:w-[380px] h-[500px] md:h-[600px] max-h-[calc(100vh-120px)]"
           style={{
             animation: 'slideUpFadeIn 0.3s ease-out',
           }}
