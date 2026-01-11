@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Calendar, Clock, Users } from 'lucide-react';
+import { Calendar, Clock, Users, Info, Check } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TourBookingDialog } from './tour-booking-dialog';
@@ -16,6 +17,7 @@ interface LocalToursBookingProps {
 }
 
 export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration = 120, citySlug }: LocalToursBookingProps) {
+  const t = useTranslations('tourDetail');
   const [bookings, setBookings] = useState<LocalTourBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<LocalTourBooking | null>(null);
@@ -174,6 +176,17 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
           Deze tour vindt plaats elke zaterdag om 14:00. Sluit je aan bij de groep!
         </p>
 
+        {/* Info box about minimum participants */}
+        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <div className="flex gap-3">
+            <Info className="h-5 w-5 flex-shrink-0 text-blue-600 mt-0.5" />
+            <div>
+              <p className="font-medium text-blue-900">{t('localStoriesInfoTitle')}</p>
+              <p className="text-sm text-blue-800 mt-1">{t('localStoriesInfoText')}</p>
+            </div>
+          </div>
+        </div>
+
         <div className="space-y-3">
           {futureBookings.slice(0, 4).map((booking) => {
             const isBooked = booking.is_booked && booking.customer_name;
@@ -192,21 +205,31 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
                     <p className="font-semibold text-navy">{formatDate(booking.booking_date)}</p>
                     <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>14:00</p>
                   </div>
-                  {hasPeople && (
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4" style={{ color: 'var(--slate-blue)' }} />
-                      <Badge variant="outline" className="border-brass text-navy">
-                        {numberOfPeople} {numberOfPeople === 1 ? 'persoon' : 'personen'}
-                      </Badge>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4" style={{ color: 'var(--slate-blue)' }} />
+                    {numberOfPeople >= 5 ? (
+                      <>
+                        <Badge variant="outline" className="border-brass text-navy">
+                          {numberOfPeople} {numberOfPeople === 1 ? 'persoon' : 'personen'}
+                        </Badge>
+                        <div className="flex items-center gap-1 text-sm" style={{ color: 'var(--mint)' }}>
+                          <Check className="h-4 w-4" />
+                          <span>{t('tourConfirmed')}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <span className="text-sm font-medium text-blue-600">
+                        {numberOfPeople}/5
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <Button
                   onClick={() => handleJoinClick(booking)}
-                  style={{ backgroundColor: 'var(--brass)', color: 'var(--belgian-navy)' }}
-                  className="ml-4"
+                  style={{ backgroundColor: 'rgb(26, 216, 138)', color: 'white' }}
+                  className="ml-4 font-semibold hover:opacity-90"
                 >
-                  Sluit aan
+                  {t('joinTour')}
                 </Button>
               </div>
             );

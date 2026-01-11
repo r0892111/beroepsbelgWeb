@@ -659,7 +659,11 @@
     "type": "Type",
     "localStoriesTitle": "Informations Importantes",
     "localStoriesTime": "Tours disponibles uniquement de 14:00h à 16:00h",
-    "localStoriesMinimum": "Minimum de 4 personnes requis",
+    "localStoriesMinimum": "Minimum de 5 personnes requis",
+    "localStoriesInfoTitle": "Bon à savoir",
+    "localStoriesInfoText": "Un minimum de 5 personnes est requis pour que cette visite ait lieu. Si ce nombre n'est pas atteint, vous recevrez un message et un e-mail à l'avance. Votre paiement sera remboursé dans les plus brefs délais.",
+    "tourConfirmed": "Cette visite est confirmée",
+    "joinTour": "Rejoindre",
     "onlineDiscount": "10% de réduction pour les réservations en ligne",
     "originalPrice": "Prix original",
     "discountedPrice": "Prix réduit",
@@ -925,7 +929,48 @@
       },
       "section83": {
         "title": "8.3. Types de cookies :",
-        "content": "Bien qu'il existe plusieurs types de cookies que l'on distingue sur la base de leur fonctionnalité, de leur origine ou de leur durée de conservation, la législation opère principalement une distinction entre les cookies fonctionnels ou techniquement indispensables, d'une part, tous les autres cookies, d'autre part.\n\nLe site internet utilise exclusivement les cookies suivants :\n\nLes cookies fonctionnels\n\nNom\tOrigine\tFonction\tDurée de conservation\nwebhero_session\tDomaine actuel\tLiens de la session serveur active au visiteur (utilisé pour le paramétrage des langues, la connexion)\tJusqu'au terme de la session\nTOKEN XSRF\tDomaine actuel\tUn token pour protéger les formulaires contre les spams.\tJusqu'au terme de la session\n\nLes cookies non fonctionnels\n\nNaam\tHerkomst\tFunctie\tBewaartijd\n_ga_B3NK8C92ZR\tgoogle.com\tDirect\t2 jaar\n_ga\tgoogle.com\tDirect\t2 jaar\n_gid\tgoogle.com\tDirect\t1 dag\n\nEn ce qui concerne les cookies installés par des tierces parties (notamment Google Analytics), veuillez consulter les déclarations faites par ces parties sur leur sites internet respectifs. Attention : nous n'exerçons aucune influence sur le contenu de ces déclarations, ni sur le contenu des cookies de ces tierces parties : Google Analytics cookies"
+        "intro": "Bien qu'il existe différents types de cookies, distingués par leur fonctionnalité, leur origine ou leur durée de conservation, la législation distingue principalement les cookies fonctionnels ou techniquement nécessaires d'une part et tous les autres cookies d'autre part.\n\nEn ce qui concerne les cookies installés par des tierces parties (notamment Google Analytics), veuillez consulter les déclarations faites par ces parties sur leurs sites internet respectifs. Attention : nous n'exerçons aucune influence sur le contenu de ces déclarations, ni sur le contenu des cookies de ces tierces parties : https://developers.google.com/analytics\n\nLe site internet utilise exclusivement les cookies suivants :",
+        "headers": {
+          "name": "Nom",
+          "origin": "Origine",
+          "function": "Fonction",
+          "duration": "Durée de conservation"
+        },
+        "functional": {
+          "title": "Cookies fonctionnels (nécessaires)",
+          "row1": {
+            "origin": "Domaine actuel (Supabase)",
+            "function": "Stockage de la session d'authentification utilisateur",
+            "duration": "Session / 7 jours"
+          },
+          "row2": {
+            "origin": "Domaine actuel",
+            "function": "Stockage de la préférence linguistique",
+            "duration": "1 an"
+          }
+        },
+        "analytics": {
+          "title": "Cookies analytiques (Google Analytics 4)",
+          "row1": {
+            "function": "Distingue les visiteurs uniques",
+            "duration": "2 ans"
+          },
+          "row2": {
+            "function": "Maintient l'état de la session",
+            "duration": "2 ans"
+          }
+        },
+        "payment": {
+          "title": "Cookies de paiement (Stripe)",
+          "row1": {
+            "function": "Prévention et détection de la fraude",
+            "duration": "1 an"
+          },
+          "row2": {
+            "function": "Prévention de la fraude de session",
+            "duration": "30 minutes"
+          }
+        }
       },
       "section84": {
         "title": "8.4. Votre consentement :",
