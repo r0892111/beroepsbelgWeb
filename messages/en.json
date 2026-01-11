@@ -682,7 +682,13 @@
   },
   "blog": {
     "title": "Blog",
-    "readMore": "Read more"
+    "readMore": "Read More",
+    "publishedOn": "Published on",
+    "author": "Author",
+    "category": "Category",
+    "noPosts": "No blog posts found.",
+    "backToBlog": "Back to Blog",
+    "relatedPosts": "Related Posts"
   },
   "contact": {
     "title": "Contact",
@@ -1061,7 +1067,7 @@
   "bookingCancelled": {
     "title": "Booking Cancelled",
     "description": "Your booking was not completed. No charges have been made.",
-    "supportMessage": "If you experienced any issues or have questions, please don't hesitate to contact our support team.",
+    "helpMessage": "If you experienced any issues or have questions, please don't hesitate to contact our support team.",
     "browseTours": "Browse Tours",
     "contactUs": "Contact Us"
   },
@@ -1102,8 +1108,8 @@
   "orderCancelled": {
     "title": "Order Cancelled",
     "description": "Your order was not completed. No charges have been made to your account.",
-    "supportMessage": "If you experienced any issues during checkout or have questions, please contact our support team.",
-    "returnShop": "Return to Shop",
+    "helpMessage": "If you experienced any issues during checkout or have questions, please contact our support team.",
+    "returnToShop": "Return to Shop",
     "contactSupport": "Contact Support"
   },
   "citySection": {
@@ -1170,16 +1176,6 @@
       "description": "An industrial city with a rich history, known for its steel industry, vibrant culture, and Liège waffles."
     }
   },
-  "blog": {
-    "title": "Blog",
-    "readMore": "Read More",
-    "publishedOn": "Published on",
-    "author": "Author",
-    "category": "Category",
-    "noPosts": "No blog posts found.",
-    "backToBlog": "Back to Blog",
-    "relatedPosts": "Related Posts"
-  },
   "search": {
     "title": "Search Results",
     "resultsFor": "Results for",
@@ -1187,5 +1183,42 @@
     "noResults": "No results found.",
     "tryDifferent": "Try a different search term.",
     "loading": "Loading..."
+  },
+  "feedbackForm": {
+    "title": "Feedback for {guideName}",
+    "description": "Share your experience with us. Your feedback helps us improve our tours.",
+    "guideRating": "Guide rating",
+    "guideFeedback": "Feedback about the guide (optional)",
+    "guideFeedbackPlaceholder": "Tell us about your experience with the guide...",
+    "tourRating": "Tour rating",
+    "tourFeedback": "Feedback about the tour (optional)",
+    "tourFeedbackPlaceholder": "Tell us about your experience with the tour...",
+    "bookingRating": "How was your booking experience via the website?",
+    "foundUs": "How did you find us?",
+    "foundUsOtherPlaceholder": "Please specify...",
+    "sourceInstagram": "Instagram",
+    "sourceTiktok": "TikTok",
+    "sourceFacebook": "Facebook",
+    "sourceYoutube": "YouTube",
+    "sourceLinkedin": "LinkedIn",
+    "sourceWhatsapp": "WhatsApp",
+    "sourceTripadvisor": "TripAdvisor",
+    "sourceWordOfMouth": "Word of mouth",
+    "sourcePress": "Press",
+    "sourceOther": "Other",
+    "discountTitle": "Get 20% off your next tour!",
+    "discountDescription": "Enter your email address and receive a discount code for your next booking.",
+    "emailPlaceholder": "your@email.com",
+    "submit": "Submit feedback",
+    "submitting": "Submitting...",
+    "thankYou": "Thank you!",
+    "successMessage": "Your feedback has been successfully submitted. We appreciate your input! You will receive an email shortly with your 20% discount code for your next tour.",
+    "errorGuideNotFound": "Guide not found",
+    "errorLoadGuide": "Could not load guide",
+    "errorRatingsRequired": "Please provide both guide and tour ratings",
+    "errorBookingRatingRequired": "Please rate your booking experience",
+    "errorSourceRequired": "Please select how you found us",
+    "errorSourceOtherRequired": "Please specify how you found us",
+    "errorEmailRequired": "Please enter your email to receive your discount code"
   }
 }

@@ -681,7 +681,13 @@
   },
   "blog": {
     "title": "Blog",
-    "readMore": "Lire la suite"
+    "readMore": "Lire la suite",
+    "publishedOn": "Publié le",
+    "author": "Auteur",
+    "category": "Catégorie",
+    "noPosts": "Aucun article de blog trouvé.",
+    "backToBlog": "Retour au blog",
+    "relatedPosts": "Articles connexes"
   },
   "contact": {
     "title": "Contact",
@@ -1060,7 +1066,7 @@
   "bookingCancelled": {
     "title": "Réservation annulée",
     "description": "Votre réservation n'a pas été complétée. Aucun frais n'a été prélevé.",
-    "supportMessage": "Si vous avez rencontré des problèmes ou avez des questions, n'hésitez pas à contacter notre équipe de support.",
+    "helpMessage": "Si vous avez rencontré des problèmes ou avez des questions, n'hésitez pas à contacter notre équipe de support.",
     "browseTours": "Parcourir les tours",
     "contactUs": "Nous contacter"
   },
@@ -1101,8 +1107,8 @@
   "orderCancelled": {
     "title": "Commande annulée",
     "description": "Votre commande n'a pas été complétée. Aucun frais n'a été prélevé sur votre compte.",
-    "supportMessage": "Si vous avez rencontré des problèmes lors du paiement ou avez des questions, veuillez contacter notre équipe de support.",
-    "returnShop": "Retour à la boutique",
+    "helpMessage": "Si vous avez rencontré des problèmes lors du paiement ou avez des questions, veuillez contacter notre équipe de support.",
+    "returnToShop": "Retour à la boutique",
     "contactSupport": "Contacter le support"
   },
   "citySection": {
@@ -1169,16 +1175,6 @@
       "description": "Une ville industrielle au riche passé, connue pour son industrie sidérurgique, sa culture vibrante et ses gaufres de Liège."
     }
   },
-  "blog": {
-    "title": "Blog",
-    "readMore": "Lire la suite",
-    "publishedOn": "Publié le",
-    "author": "Auteur",
-    "category": "Catégorie",
-    "noPosts": "Aucun article de blog trouvé.",
-    "backToBlog": "Retour au blog",
-    "relatedPosts": "Articles connexes"
-  },
   "search": {
     "title": "Résultats de recherche",
     "resultsFor": "Résultats pour",
@@ -1186,5 +1182,42 @@
     "noResults": "Aucun résultat trouvé.",
     "tryDifferent": "Essayez un autre terme de recherche.",
     "loading": "Chargement..."
+  },
+  "feedbackForm": {
+    "title": "Avis pour {guideName}",
+    "description": "Partagez votre expérience avec nous. Vos commentaires nous aident à améliorer nos visites.",
+    "guideRating": "Note du guide",
+    "guideFeedback": "Commentaires sur le guide (optionnel)",
+    "guideFeedbackPlaceholder": "Parlez-nous de votre expérience avec le guide...",
+    "tourRating": "Note de la visite",
+    "tourFeedback": "Commentaires sur la visite (optionnel)",
+    "tourFeedbackPlaceholder": "Parlez-nous de votre expérience avec la visite...",
+    "bookingRating": "Comment s'est passée votre réservation via le site web?",
+    "foundUs": "Comment nous avez-vous trouvé?",
+    "foundUsOtherPlaceholder": "Veuillez préciser...",
+    "sourceInstagram": "Instagram",
+    "sourceTiktok": "TikTok",
+    "sourceFacebook": "Facebook",
+    "sourceYoutube": "YouTube",
+    "sourceLinkedin": "LinkedIn",
+    "sourceWhatsapp": "WhatsApp",
+    "sourceTripadvisor": "TripAdvisor",
+    "sourceWordOfMouth": "Bouche à oreille",
+    "sourcePress": "Presse",
+    "sourceOther": "Autre",
+    "discountTitle": "Obtenez 20% de réduction sur votre prochaine visite!",
+    "discountDescription": "Entrez votre adresse e-mail et recevez un code de réduction pour votre prochaine réservation.",
+    "emailPlaceholder": "votre@email.com",
+    "submit": "Envoyer les commentaires",
+    "submitting": "Envoi en cours...",
+    "thankYou": "Merci!",
+    "successMessage": "Vos commentaires ont été envoyés avec succès. Nous apprécions votre contribution! Vous recevrez bientôt un e-mail avec votre code de réduction de 20% pour votre prochaine visite.",
+    "errorGuideNotFound": "Guide non trouvé",
+    "errorLoadGuide": "Impossible de charger le guide",
+    "errorRatingsRequired": "Veuillez fournir une note pour le guide et la visite",
+    "errorBookingRatingRequired": "Veuillez noter votre expérience de réservation",
+    "errorSourceRequired": "Veuillez sélectionner comment vous nous avez trouvé",
+    "errorSourceOtherRequired": "Veuillez préciser comment vous nous avez trouvé",
+    "errorEmailRequired": "Veuillez entrer votre e-mail pour recevoir votre code de réduction"
   }
 }

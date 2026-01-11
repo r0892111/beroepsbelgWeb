@@ -1056,7 +1056,7 @@
   "bookingCancelled": {
     "title": "Buchung storniert",
     "description": "Ihre Buchung wurde nicht abgeschlossen. Es wurden keine Gebühren erhoben.",
-    "supportMessage": "Wenn Sie Probleme hatten oder Fragen haben, zögern Sie bitte nicht, unser Support-Team zu kontaktieren.",
+    "helpMessage": "Wenn Sie Probleme hatten oder Fragen haben, zögern Sie bitte nicht, unser Support-Team zu kontaktieren.",
     "browseTours": "Touren durchsuchen",
     "contactUs": "Kontaktieren Sie uns"
   },
@@ -1097,8 +1097,8 @@
   "orderCancelled": {
     "title": "Bestellung storniert",
     "description": "Ihre Bestellung wurde nicht abgeschlossen. Ihr Konto wurde nicht belastet.",
-    "supportMessage": "Wenn Sie während des Bestellvorgangs Probleme hatten oder Fragen haben, kontaktieren Sie bitte unser Support-Team.",
-    "returnShop": "Zurück zum Shop",
+    "helpMessage": "Wenn Sie während des Bestellvorgangs Probleme hatten oder Fragen haben, kontaktieren Sie bitte unser Support-Team.",
+    "returnToShop": "Zurück zum Shop",
     "contactSupport": "Support kontaktieren"
   },
   "citySection": {
@@ -1182,5 +1182,42 @@
     "noResults": "Keine Ergebnisse gefunden.",
     "tryDifferent": "Versuchen Sie einen anderen Suchbegriff.",
     "loading": "Laden..."
+  },
+  "feedbackForm": {
+    "title": "Feedback für {guideName}",
+    "description": "Teilen Sie Ihre Erfahrung mit uns. Ihr Feedback hilft uns, unsere Touren zu verbessern.",
+    "guideRating": "Bewertung des Guides",
+    "guideFeedback": "Feedback zum Guide (optional)",
+    "guideFeedbackPlaceholder": "Erzählen Sie uns von Ihrer Erfahrung mit dem Guide...",
+    "tourRating": "Bewertung der Tour",
+    "tourFeedback": "Feedback zur Tour (optional)",
+    "tourFeedbackPlaceholder": "Erzählen Sie uns von Ihrer Erfahrung mit der Tour...",
+    "bookingRating": "Wie war Ihre Buchungserfahrung über die Website?",
+    "foundUs": "Wie haben Sie uns gefunden?",
+    "foundUsOtherPlaceholder": "Bitte angeben...",
+    "sourceInstagram": "Instagram",
+    "sourceTiktok": "TikTok",
+    "sourceFacebook": "Facebook",
+    "sourceYoutube": "YouTube",
+    "sourceLinkedin": "LinkedIn",
+    "sourceWhatsapp": "WhatsApp",
+    "sourceTripadvisor": "TripAdvisor",
+    "sourceWordOfMouth": "Mundpropaganda",
+    "sourcePress": "Presse",
+    "sourceOther": "Sonstiges",
+    "discountTitle": "Erhalten Sie 20% Rabatt auf Ihre nächste Tour!",
+    "discountDescription": "Geben Sie Ihre E-Mail-Adresse ein und erhalten Sie einen Rabattcode für Ihre nächste Buchung.",
+    "emailPlaceholder": "ihre@email.com",
+    "submit": "Feedback senden",
+    "submitting": "Wird gesendet...",
+    "thankYou": "Danke!",
+    "successMessage": "Ihr Feedback wurde erfolgreich übermittelt. Wir schätzen Ihren Beitrag! Sie erhalten in Kürze eine E-Mail mit Ihrem 20% Rabattcode für Ihre nächste Tour.",
+    "errorGuideNotFound": "Guide nicht gefunden",
+    "errorLoadGuide": "Guide konnte nicht geladen werden",
+    "errorRatingsRequired": "Bitte geben Sie sowohl eine Guide- als auch eine Tour-Bewertung ab",
+    "errorBookingRatingRequired": "Bitte bewerten Sie Ihre Buchungserfahrung",
+    "errorSourceRequired": "Bitte wählen Sie aus, wie Sie uns gefunden haben",
+    "errorSourceOtherRequired": "Bitte geben Sie an, wie Sie uns gefunden haben",
+    "errorEmailRequired": "Bitte geben Sie Ihre E-Mail ein, um Ihren Rabattcode zu erhalten"
   }
 }

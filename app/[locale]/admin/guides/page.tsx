@@ -12,11 +12,22 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, Users, X, Search, Filter, Calendar, Mail, Phone, MapPin, Globe, Clock, Award, Upload, Image as ImageIcon, Cake } from 'lucide-react';
+import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, Users, X, Search, Filter, Calendar, Mail, Phone, MapPin, Globe, Clock, Award, Upload, Image as ImageIcon, Cake, MessageSquare, Star, Link as LinkIcon, Copy } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+
+interface FeedbackSubmission {
+  guide_rating: number;
+  guide_feedback: string | null;
+  tour_rating: number;
+  tour_feedback: string | null;
+  booking_rating?: number;
+  found_us_source?: string;
+  email: string | null;
+  submitted_at: string;
+}
 
 interface Guide {
   id: number;
@@ -33,6 +44,7 @@ interface Guide {
   Email: string | null;
   profile_picture: string | null;
   birthday: string | null;
+  form_submissions: FeedbackSubmission[] | null;
 }
 
 interface GuideFormData {
@@ -68,6 +80,7 @@ export default function AdminGuidesPage() {
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const [selectedGuide, setSelectedGuide] = useState<Guide | null>(null);
   const [editingGuide, setEditingGuide] = useState<Guide | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -203,6 +216,26 @@ export default function AdminGuidesPage() {
   const openProfileDialog = (guide: Guide) => {
     setSelectedGuide(guide);
     setProfileDialogOpen(true);
+  };
+
+  const openFeedbackDialog = (guide: Guide) => {
+    setSelectedGuide(guide);
+    setFeedbackDialogOpen(true);
+  };
+
+  const generateSlug = (name: string | null) => {
+    if (!name) return '';
+    return name
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '');
+  };
+
+  const copyFeedbackLink = (guide: Guide) => {
+    const slug = generateSlug(guide.name);
+    const url = `${window.location.origin}/${locale}/form/${slug}`;
+    navigator.clipboard.writeText(url);
+    toast.success('Feedback link copied to clipboard!');
   };
 
   const openEditDialog = (guide: Guide) => {
@@ -606,6 +639,7 @@ export default function AdminGuidesPage() {
                       <TableHead>Tours Done</TableHead>
                       <TableHead>Availability</TableHead>
                       <TableHead>Calendar</TableHead>
+                      <TableHead>Feedback</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -692,6 +726,28 @@ export default function AdminGuidesPage() {
                               Invite
                             </Button>
                           )}
+                        </TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openFeedbackDialog(guide)}
+                              className="text-xs"
+                              title="View feedback"
+                            >
+                              <MessageSquare className="h-3 w-3 mr-1" />
+                              {guide.form_submissions?.length || 0}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => copyFeedbackLink(guide)}
+                              title="Copy feedback form link"
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
@@ -1288,6 +1344,174 @@ export default function AdminGuidesPage() {
                   Edit Guide
                 </Button>
                 <Button onClick={() => setProfileDialogOpen(false)}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Feedback Dialog */}
+      <Dialog open={feedbackDialogOpen} onOpenChange={setFeedbackDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {selectedGuide && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold text-navy flex items-center gap-2">
+                  <MessageSquare className="h-6 w-6" />
+                  Feedback for {selectedGuide.name}
+                </DialogTitle>
+                <DialogDescription>
+                  View all feedback submissions for this guide
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4 py-4">
+                {/* Feedback Form Link */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <LinkIcon className="h-5 w-5" />
+                      Feedback Form Link
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        readOnly
+                        value={`${typeof window !== 'undefined' ? window.location.origin : ''}/${locale}/form/${generateSlug(selectedGuide.name)}`}
+                        className="bg-gray-50 text-sm"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => copyFeedbackLink(selectedGuide)}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Submissions List */}
+                {selectedGuide.form_submissions && selectedGuide.form_submissions.length > 0 ? (
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-navy">
+                      {selectedGuide.form_submissions.length} Submission{selectedGuide.form_submissions.length !== 1 ? 's' : ''}
+                    </h4>
+                    {selectedGuide.form_submissions
+                      .slice()
+                      .sort((a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime())
+                      .map((submission, idx) => (
+                      <Card key={idx} className="border-l-4 border-l-brass">
+                        <CardContent className="pt-4 space-y-3">
+                          <div className="flex items-center justify-between text-sm text-muted-foreground">
+                            <span>
+                              {new Date(submission.submitted_at).toLocaleDateString('nl-BE', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                            {submission.email && (
+                              <span className="flex items-center gap-1 text-navy font-medium">
+                                <Mail className="h-3 w-3" />
+                                {submission.email}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label className="text-sm font-semibold text-muted-foreground">Guide Rating</Label>
+                              <div className="flex items-center gap-1 mt-1">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <Star
+                                    key={star}
+                                    className={`h-5 w-5 ${
+                                      star <= submission.guide_rating
+                                        ? 'fill-yellow-400 text-yellow-400'
+                                        : 'text-gray-300'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-sm font-semibold text-muted-foreground">Tour Rating</Label>
+                              <div className="flex items-center gap-1 mt-1">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <Star
+                                    key={star}
+                                    className={`h-5 w-5 ${
+                                      star <= submission.tour_rating
+                                        ? 'fill-yellow-400 text-yellow-400'
+                                        : 'text-gray-300'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          {submission.booking_rating && (
+                            <div>
+                              <Label className="text-sm font-semibold text-muted-foreground">Booking Experience</Label>
+                              <div className="flex items-center gap-1 mt-1">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <Star
+                                    key={star}
+                                    className={`h-5 w-5 ${
+                                      star <= submission.booking_rating!
+                                        ? 'fill-yellow-400 text-yellow-400'
+                                        : 'text-gray-300'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {submission.found_us_source && (
+                            <div>
+                              <Label className="text-sm font-semibold text-muted-foreground">Found Us Via</Label>
+                              <p className="text-sm mt-1 bg-blue-50 text-blue-800 px-2 py-1 rounded inline-block capitalize">
+                                {submission.found_us_source}
+                              </p>
+                            </div>
+                          )}
+
+                          {submission.guide_feedback && (
+                            <div>
+                              <Label className="text-sm font-semibold text-muted-foreground">Guide Feedback</Label>
+                              <p className="text-sm mt-1 bg-gray-50 p-2 rounded">{submission.guide_feedback}</p>
+                            </div>
+                          )}
+
+                          {submission.tour_feedback && (
+                            <div>
+                              <Label className="text-sm font-semibold text-muted-foreground">Tour Feedback</Label>
+                              <p className="text-sm mt-1 bg-gray-50 p-2 rounded">{submission.tour_feedback}</p>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No feedback submissions yet</p>
+                    <p className="text-sm mt-2">Share the feedback form link with customers after their tour</p>
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter>
+                <Button onClick={() => setFeedbackDialogOpen(false)}>
                   Close
                 </Button>
               </DialogFooter>

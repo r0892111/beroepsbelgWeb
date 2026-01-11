@@ -223,20 +223,32 @@ serve(async (req: Request) => {
       }
     })
 
-    // Insert order - work with existing table schema and new columns
+    // Insert order - match actual production stripe_orders table schema
     const orderInsert: any = {
       checkout_session_id: session.id,
-      payment_intent_id: session.payment_intent as string || '',
-      customer_id: customerEmail, // Use email as customer_id (existing column)
-      amount_subtotal: Math.round(productTotal * 100), // Product total without shipping (existing column)
-      amount_total: Math.round(totalAmount * 100), // Total with shipping (existing column)
+      payment_intent_id: (session.payment_intent as string) || '',
+      customer_id: customerEmail, // Required field, use email as identifier
+      amount_subtotal: Math.round(productTotal * 100), // Required, in cents
+      amount_total: Math.round(totalAmount * 100), // Required, in cents
       currency: 'eur',
-      payment_status: 'pending', // Existing column
-      status: 'pending', // Will be cast to stripe_order_status enum by database
-      shipping_cost: Math.round(shippingCost * 100), // Store shipping cost in cents
+      payment_status: 'pending', // Required field
+      status: 'pending',
+      // Optional fields
+      customer_name: customerName,
+      customer_email: customerEmail,
+      shipping_address: shippingAddress || null,
+      billing_address: billingAddress || shippingAddress || null,
+      items: orderItems || [],
+      metadata: {
+        customerName,
+        customerEmail,
+        userId: userId || null,
+        shipping_cost: shippingCost,
+      },
+      total_amount: totalAmount, // Also store in euros for compatibility
     };
 
-    // Add new columns (will be added by migration)
+    // Add user_id if authenticated
     if (userId) {
       orderInsert.user_id = userId;
     }
