@@ -255,6 +255,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       message: 'Guide cancelled successfully',
+      booking: updateData,
     });
   } catch (error) {
     console.error('Error in cancel-guide API:', error);
