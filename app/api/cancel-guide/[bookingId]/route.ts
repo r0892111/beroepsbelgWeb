@@ -97,11 +97,21 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { guideId } = body;
+    const guideIdRaw = body.guideId;
 
-    if (!guideId) {
+    if (!guideIdRaw) {
       return NextResponse.json(
         { error: 'Guide ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Ensure guideId is a number for consistent comparison
+    const guideId = typeof guideIdRaw === 'number' ? guideIdRaw : parseInt(String(guideIdRaw), 10);
+    
+    if (isNaN(guideId)) {
+      return NextResponse.json(
+        { error: 'Invalid Guide ID' },
         { status: 400 }
       );
     }
@@ -175,15 +185,24 @@ export async function POST(
       });
     }
 
+    console.log('Updating booking with:', {
+      bookingIdNum,
+      guide_id: null,
+      status: 'pending_guide_confirmation',
+      selectedGuides: updatedSelectedGuides,
+    });
+
     // Update the booking - set guide_id to null
-    const { error: updateError } = await supabase
+    const { data: updateData, error: updateError } = await supabase
       .from('tourbooking')
       .update({
         guide_id: null,
         status: 'pending_guide_confirmation',
         selectedGuides: updatedSelectedGuides,
       })
-      .eq('id', bookingIdNum);
+      .eq('id', bookingIdNum)
+      .select('id, guide_id, status, selectedGuides')
+      .single();
 
     if (updateError) {
       console.error('Error updating booking:', updateError);
@@ -192,6 +211,8 @@ export async function POST(
         { status: 500 }
       );
     }
+
+    console.log('Booking updated successfully:', updateData);
 
     // Update guide metrics - increment cancelled_tours
     const { data: guideData, error: guideError } = await supabase

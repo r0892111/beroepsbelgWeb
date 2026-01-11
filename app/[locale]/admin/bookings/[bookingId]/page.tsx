@@ -395,11 +395,18 @@ export default function BookingDetailPage() {
     }
   };
 
-  const normalizeGuide = (item: number | SelectedGuide): SelectedGuide => {
+  const normalizeGuide = (item: number | SelectedGuide | string): SelectedGuide => {
     if (typeof item === 'number') {
       return { id: item };
     }
-    return item;
+    if (typeof item === 'string') {
+      return { id: parseInt(item, 10) };
+    }
+    // Ensure id is always a number when it's an object
+    return {
+      ...item,
+      id: typeof item.id === 'number' ? item.id : parseInt(String(item.id), 10),
+    };
   };
 
   if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
