@@ -141,48 +141,44 @@ export async function POST(
       );
     }
 
-    // Update selectedGuides array
-    interface SelectedGuide {
-      id: number;
-      status?: 'offered' | 'declined' | 'accepted';
-      offeredAt?: string;
-      respondedAt?: string;
-    }
-
-    let updatedSelectedGuides: SelectedGuide[] = [];
+    // Update selectedGuides array - preserve all existing properties
+    // selectedGuides can contain full guide objects or simplified {id, status} objects
+    let updatedSelectedGuides: any[] = [];
     
     if (booking.selectedGuides && Array.isArray(booking.selectedGuides)) {
-      updatedSelectedGuides = booking.selectedGuides.map((item: any) => {
-        if (typeof item === 'object' && item !== null && 'id' in item) {
-          return item as SelectedGuide;
-        }
-        if (typeof item === 'number') {
-          return { id: item };
-        }
-        if (typeof item === 'string') {
-          return { id: parseInt(item, 10) };
-        }
-        return null;
-      }).filter((item): item is SelectedGuide => item !== null);
+      // Keep the original objects with all their properties
+      updatedSelectedGuides = [...booking.selectedGuides];
     }
 
-    // Check if guide is already in the list
-    const guideIndex = updatedSelectedGuides.findIndex(g => g.id === guideId);
+    console.log('Current selectedGuides:', JSON.stringify(updatedSelectedGuides, null, 2));
+    console.log('Looking for guideId:', guideId, 'type:', typeof guideId);
+
+    // Check if guide is already in the list - handle both number and string id types
+    const guideIndex = updatedSelectedGuides.findIndex((g: any) => {
+      if (!g || typeof g !== 'object') return false;
+      const gId = typeof g.id === 'number' ? g.id : parseInt(String(g.id), 10);
+      console.log('Comparing guide id:', gId, 'with guideId:', guideId, 'match:', gId === guideId);
+      return gId === guideId;
+    });
+
+    console.log('Found guide at index:', guideIndex);
     
     if (guideIndex >= 0) {
-      // Update existing entry to 'declined'
+      // Update existing entry - add status and respondedAt while preserving all other fields
       updatedSelectedGuides[guideIndex] = {
         ...updatedSelectedGuides[guideIndex],
         status: 'declined',
         respondedAt: new Date().toISOString(),
       };
+      console.log('Updated guide entry:', JSON.stringify(updatedSelectedGuides[guideIndex], null, 2));
     } else {
-      // Add guide with 'declined' status
+      // Guide not in list - add with 'declined' status
       updatedSelectedGuides.push({
         id: guideId,
         status: 'declined',
         respondedAt: new Date().toISOString(),
       });
+      console.log('Added new guide entry for id:', guideId);
     }
 
     console.log('Updating booking with:', {
