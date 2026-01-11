@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/contexts/auth-context';
 import { supabase } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, CheckCircle2, XCircle, User, MapPin, Languages, Star, Clock, Ban } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, User, MapPin, Languages, Star, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 
@@ -298,9 +298,25 @@ export default function ChooseGuideClientPage() {
           )}
         </div>
 
+        {/* Show declined guides summary if any */}
+        {declinedGuides.length > 0 && (
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 max-w-2xl mx-auto">
+            <p className="text-sm text-red-800 font-medium mb-2">
+              {declinedGuides.length} guide{declinedGuides.length > 1 ? 's' : ''} declined or cancelled:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {declinedGuides.map((g) => (
+                <span key={g.id} className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">
+                  {g.name || `Guide #${g.id}`}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
-          {guides.map((guide) => {
-            const isDeclined = guide.selectionStatus === 'declined';
+          {/* Only show available and offered guides - exclude declined */}
+          {guides.filter(g => g.selectionStatus !== 'declined').map((guide) => {
             const isOffered = guide.selectionStatus === 'offered';
             const isAvailable = !guide.selectionStatus;
             const isSelectable = isAvailable;
@@ -314,18 +330,16 @@ export default function ChooseGuideClientPage() {
                   selectedGuideId === guide.id
                     ? 'ring-2 ring-blue-500 ring-offset-2'
                     : ''
-                } ${isDeclined ? 'bg-red-50 border-red-200' : ''} ${isOffered ? 'bg-yellow-50 border-yellow-200' : ''}`}
+                } ${isOffered ? 'bg-yellow-50 border-yellow-200' : ''}`}
                 onClick={() => isSelectable && setSelectedGuideId(guide.id)}
               >
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
                       <div className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                        isDeclined ? 'bg-red-100' : isOffered ? 'bg-yellow-100' : 'bg-blue-100'
+                        isOffered ? 'bg-yellow-100' : 'bg-blue-100'
                       }`}>
-                        {isDeclined ? (
-                          <Ban className="h-5 w-5 text-red-600" />
-                        ) : isOffered ? (
+                        {isOffered ? (
                           <Clock className="h-5 w-5 text-yellow-600" />
                         ) : (
                           <User className="h-5 w-5 text-blue-600" />
@@ -345,11 +359,6 @@ export default function ChooseGuideClientPage() {
                       {selectedGuideId === guide.id && (
                         <CheckCircle2 className="h-6 w-6 text-blue-500" />
                       )}
-                      {isDeclined && (
-                        <Badge variant="destructive" className="text-xs">
-                          Declined
-                        </Badge>
-                      )}
                       {isOffered && (
                         <Badge className="bg-yellow-500 text-xs">
                           Waiting
@@ -357,15 +366,10 @@ export default function ChooseGuideClientPage() {
                       )}
                     </div>
                   </div>
-                  {/* Show timestamp for declined/offered */}
-                  {(isDeclined || isOffered) && (
+                  {/* Show timestamp for offered guides */}
+                  {isOffered && guide.offeredAt && (
                     <div className="mt-2 text-xs text-gray-500">
-                      {isDeclined && guide.respondedAt && (
-                        <span>Declined: {format(new Date(guide.respondedAt), 'dd/MM/yyyy HH:mm')}</span>
-                      )}
-                      {isOffered && guide.offeredAt && (
-                        <span>Offered: {format(new Date(guide.offeredAt), 'dd/MM/yyyy HH:mm')}</span>
-                      )}
+                      <span>Offered: {format(new Date(guide.offeredAt), 'dd/MM/yyyy HH:mm')}</span>
                     </div>
                   )}
                 </CardHeader>
