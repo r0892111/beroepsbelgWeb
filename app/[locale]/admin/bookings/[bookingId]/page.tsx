@@ -128,6 +128,8 @@ export default function BookingDetailPage() {
   const [guideDialogOpen, setGuideDialogOpen] = useState(false);
   const [selectedNewGuideId, setSelectedNewGuideId] = useState<number | null>(null);
   const [submittingNewGuide, setSubmittingNewGuide] = useState(false);
+  const [cancellingGuide, setCancellingGuide] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
@@ -307,6 +309,93 @@ export default function BookingDetailPage() {
       toast.error('Failed to select new guide');
     } finally {
       setSubmittingNewGuide(false);
+    }
+  };
+
+  // Handle guide cancellation - removes guide and triggers reassignment
+  const handleGuideCancellation = async () => {
+    if (!booking || !guide) return;
+
+    setCancellingGuide(true);
+    try {
+      // Update selectedGuides: mark current guide as 'cancelled'
+      let updatedSelectedGuides = (booking.selectedGuides || []).map(normalizeGuide);
+      const guideAlreadyInList = updatedSelectedGuides.some(g => g.id === guide.id);
+      
+      if (guideAlreadyInList) {
+        // Update existing entry to 'cancelled'
+        updatedSelectedGuides = updatedSelectedGuides.map(g => {
+          if (g.id === guide.id) {
+            return { ...g, status: 'declined' as const, respondedAt: new Date().toISOString() };
+          }
+          return g;
+        });
+      } else {
+        // Add guide with 'cancelled' status
+        updatedSelectedGuides.push({
+          id: guide.id,
+          status: 'declined' as const,
+          respondedAt: new Date().toISOString(),
+        });
+      }
+
+      // Update booking: remove guide and reset status
+      const { error: updateError } = await supabase
+        .from('tourbooking')
+        .update({
+          guide_id: null,
+          status: 'pending_guide_confirmation',
+          selectedGuides: updatedSelectedGuides,
+        })
+        .eq('id', booking.id);
+
+      if (updateError) {
+        throw new Error('Failed to update booking');
+      }
+
+      // Update guide metrics
+      const { data: guideData } = await supabase
+        .from('guides_temp')
+        .select('cancelled_tours')
+        .eq('id', guide.id)
+        .single();
+
+      if (guideData) {
+        await supabase
+          .from('guides_temp')
+          .update({ cancelled_tours: (guideData.cancelled_tours || 0) + 1 })
+          .eq('id', guide.id);
+      }
+
+      // Trigger webhook to notify about cancellation and find new guide
+      const updatedBooking = { 
+        ...booking, 
+        guide_id: null, 
+        selectedGuides: updatedSelectedGuides,
+        cancelled_guide_id: guide.id,
+        cancelled_guide_name: guide.name,
+      };
+      
+      try {
+        await fetch('https://alexfinit.app.n8n.cloud/webhook/f22ab19e-bc75-475e-ac13-ca9b5c8f72fe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updatedBooking),
+        });
+      } catch (webhookErr) {
+        console.error('Failed to trigger webhook:', webhookErr);
+      }
+
+      toast.success('Guide removed. A new guide will be assigned.');
+      setCancelDialogOpen(false);
+      void fetchBookingDetails();
+    } catch (err) {
+      console.error('Error cancelling guide:', err);
+      toast.error('Failed to cancel guide assignment');
+    } finally {
+      setCancellingGuide(false);
     }
   };
 
@@ -618,14 +707,25 @@ export default function BookingDetailPage() {
             <CardContent className="space-y-4">
               {guide ? (
                 <>
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{guide.name}</p>
+                        <p className="text-xs text-muted-foreground">Confirmed Guide</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">{guide.name}</p>
-                      <p className="text-xs text-muted-foreground">Confirmed Guide</p>
-                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                      onClick={() => setCancelDialogOpen(true)}
+                    >
+                      <XCircle className="h-4 w-4 mr-1" />
+                      Cancel
+                    </Button>
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
@@ -895,7 +995,7 @@ export default function BookingDetailPage() {
               <label className="text-sm font-medium">Select a guide:</label>
               <Select 
                 value={selectedNewGuideId?.toString() || ''} 
-                onValueChange={(val) => setSelectedNewGuideId(parseInt(val, 10))}
+                onValueChange={(val: string) => setSelectedNewGuideId(parseInt(val, 10))}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Choose a guide..." />
@@ -945,6 +1045,63 @@ export default function BookingDetailPage() {
                 <Send className="h-4 w-4" />
               )}
               {submittingNewGuide ? 'Sending...' : 'Send Offer'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Guide Cancellation Confirmation Dialog */}
+      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              Cancel Guide Assignment
+            </DialogTitle>
+            <DialogDescription>
+              This will remove the current guide from this booking and trigger the process to find a new guide.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium text-amber-800 mb-1">
+                    You are about to remove:
+                  </p>
+                  <p className="text-amber-700">
+                    <strong>{guide?.name}</strong> from booking #{booking.id}
+                  </p>
+                  <p className="text-amber-600 mt-2 text-xs">
+                    This will mark the guide as cancelled and increment their cancellation count. The booking will be sent back to the guide assignment workflow.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setCancelDialogOpen(false)}
+              disabled={cancellingGuide}
+            >
+              Keep Guide
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleGuideCancellation}
+              disabled={cancellingGuide}
+              className="gap-2"
+            >
+              {cancellingGuide ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <XCircle className="h-4 w-4" />
+              )}
+              {cancellingGuide ? 'Cancelling...' : 'Yes, Cancel Guide'}
             </Button>
           </DialogFooter>
         </DialogContent>
