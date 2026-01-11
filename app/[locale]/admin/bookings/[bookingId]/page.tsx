@@ -168,7 +168,7 @@ export default function BookingDetailPage() {
         }
       }
 
-      // Fetch guide if guide_id exists
+      // Fetch guide if guide_id exists, otherwise clear guide state
       if (bookingData.guide_id) {
         const { data: guideData } = await supabase
           .from('guides_temp')
@@ -178,7 +178,12 @@ export default function BookingDetailPage() {
 
         if (guideData) {
           setGuide(guideData as Guide);
+        } else {
+          setGuide(null);
         }
+      } else {
+        // Clear guide state when no guide is assigned
+        setGuide(null);
       }
 
       // Fetch all guides for selectedGuides display
