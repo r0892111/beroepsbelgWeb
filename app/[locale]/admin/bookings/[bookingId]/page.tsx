@@ -349,8 +349,12 @@ export default function BookingDetailPage() {
         throw new Error(data.error || 'Failed to cancel guide');
       }
 
+      console.log('Guide cancellation response:', data);
+
       toast.success('Guide removed. A new guide will be assigned.');
       setCancelDialogOpen(false);
+      // Wait a moment for the database to propagate changes
+      await new Promise(resolve => setTimeout(resolve, 500));
       void fetchBookingDetails();
     } catch (err) {
       console.error('Error cancelling guide:', err);
