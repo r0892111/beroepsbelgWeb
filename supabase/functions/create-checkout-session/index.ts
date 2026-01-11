@@ -430,7 +430,13 @@ serve(async (req: Request) => {
         language: opMaat ? 'nl' : language,
         specialRequests: opMaat ? null : (specialRequests || null),
         requestTanguy: requestTanguy,
-        amount: tour.price * numberOfPeople, // Calculate amount based on number of people for all tour types
+        // Store the DISCOUNTED tour amount (what the customer actually pays)
+        // tourFinalAmount = tour.price * numberOfPeople * 0.9 (10% discount applied)
+        amount: tourFinalAmount, // Discounted tour price (10% off)
+        originalAmount: tour.price * numberOfPeople, // Original price for reference
+        discountApplied: discountAmount, // Amount saved
+        tanguyCost: requestTanguy ? TANGUY_COST : 0, // Tanguy button cost if selected
+        extraHourCost: hasExtraHour ? EXTRA_HOUR_COST : 0, // Extra hour cost if selected
         currency: 'eur',
         upsellProducts: upsellProducts.length > 0 ? upsellProducts : undefined, // Store upsell products in invitee
         // Op maat specific answers

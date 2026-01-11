@@ -273,6 +273,10 @@ export default function BookingSuccessPage() {
               language: invitee?.language || 'nl',
               special_requests: invitee?.specialRequests || '',
               amount: invitee?.amount || 0,
+              originalAmount: invitee?.originalAmount || 0,
+              discountApplied: invitee?.discountApplied || 0,
+              tanguyCost: invitee?.tanguyCost || 0,
+              extraHourCost: invitee?.extraHourCost || 0,
               booking_date: bookingDate,
               booking_time: localBookingData.booking_time || '14:00:00',
               tour_datetime: bookingDate,
@@ -303,6 +307,10 @@ export default function BookingSuccessPage() {
               language: invitee?.language || 'nl',
               special_requests: invitee?.specialRequests || '',
               amount: invitee?.amount || 0,
+              originalAmount: invitee?.originalAmount || 0,
+              discountApplied: invitee?.discountApplied || 0,
+              tanguyCost: invitee?.tanguyCost || 0,
+              extraHourCost: invitee?.extraHourCost || 0,
               booking_date: booking.tour_datetime,
               upsell_products: upsellProducts,
               is_local_stories: false,
@@ -615,39 +623,69 @@ export default function BookingSuccessPage() {
               <span className="font-medium">{t('email')}</span>
               <span className="text-muted-foreground">{booking.customer_email}</span>
             </div>
-            {purchasedUpsellProducts.length > 0 && (
-              <div className="pt-4 border-t">
-                <p className="font-medium mb-3 text-base">{t('purchasedProducts') || 'Gekochte producten'}:</p>
-                <div className="space-y-2">
-                  {purchasedUpsellProducts.map((product: any, index) => {
-                    const quantity = product.quantity || 1;
-                    const totalPrice = product.price * quantity;
-                    return (
-                      <div key={product.uuid || index} className="flex justify-between items-center py-1">
-                        <span className="text-sm text-muted-foreground">
-                          {product.title[locale]} {quantity > 1 && <span className="text-xs">(x{quantity})</span>}
-                        </span>
-                        <span className="font-medium text-sm">
-                          €{totalPrice.toFixed(2)}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
+            {/* Price breakdown section */}
+            <div className="pt-4 border-t space-y-2">
+              <p className="font-medium mb-3 text-base">{t('priceBreakdown') || 'Prijsoverzicht'}:</p>
+              
+              {/* Tour price (discounted) */}
+              <div className="flex justify-between items-center py-1">
+                <span className="text-sm text-muted-foreground">
+                  {booking.tour_title} ({booking.number_of_people} {booking.number_of_people > 1 ? 'personen' : 'persoon'})
+                  {booking.discountApplied > 0 && (
+                    <span className="text-green-600 text-xs ml-1">(10% korting)</span>
+                  )}
+                </span>
+                <span className="font-medium text-sm">
+                  €{(parseFloat(booking.amount) || 0).toFixed(2)}
+                </span>
               </div>
-            )}
+
+              {/* Tanguy cost if applicable */}
+              {booking.tanguyCost > 0 && (
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-sm text-muted-foreground">Tanguy</span>
+                  <span className="font-medium text-sm">€{(parseFloat(booking.tanguyCost) || 0).toFixed(2)}</span>
+                </div>
+              )}
+
+              {/* Extra hour cost if applicable */}
+              {booking.extraHourCost > 0 && (
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-sm text-muted-foreground">{t('extraHour') || 'Extra uur'}</span>
+                  <span className="font-medium text-sm">€{(parseFloat(booking.extraHourCost) || 0).toFixed(2)}</span>
+                </div>
+              )}
+
+              {/* Upsell products */}
+              {purchasedUpsellProducts.map((product: any, index) => {
+                const quantity = product.quantity || 1;
+                const totalPrice = product.price * quantity;
+                return (
+                  <div key={product.uuid || index} className="flex justify-between items-center py-1">
+                    <span className="text-sm text-muted-foreground">
+                      {product.title[locale]} {quantity > 1 && <span className="text-xs">(x{quantity})</span>}
+                    </span>
+                    <span className="font-medium text-sm">
+                      €{totalPrice.toFixed(2)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
             <div className="flex justify-between pt-4 border-t">
               <span className="text-lg font-bold">{t('totalPaid')}</span>
               <span className="text-lg font-bold">
                 €{(() => {
-                  // Calculate total: tour amount + upsell products total
+                  // Calculate total: tour amount + upsell products + tanguy + extra hour
                   const tourAmount = parseFloat(booking.amount) || 0;
+                  const tanguyCost = parseFloat(booking.tanguyCost) || 0;
+                  const extraHourCost = parseFloat(booking.extraHourCost) || 0;
                   const upsellTotal = purchasedUpsellProducts.reduce((sum, product: any) => {
                     const quantity = product.quantity || 1;
                     const price = parseFloat(String(product.price)) || 0;
                     return sum + (price * quantity);
                   }, 0);
-                  const totalAmount = tourAmount + upsellTotal;
+                  const totalAmount = tourAmount + tanguyCost + extraHourCost + upsellTotal;
                   return totalAmount.toFixed(2);
                 })()}
               </span>
