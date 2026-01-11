@@ -47,6 +47,7 @@ serve(async (req: Request) => {
     existingTourBookingId = null, // Existing tourbooking ID (for local stories - passed from frontend)
     durationMinutes = null, // Tour duration in minutes (will be calculated from tour data + extra hour)
     extraHour = false, // Extra hour option (150 EUR)
+    locale = 'nl', // Locale for redirect URLs
     } = await req.json()
 
     // Freight costs constants

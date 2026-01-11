@@ -1135,7 +1135,7 @@
   "bookingCancelled": {
     "title": "Boeking geannuleerd",
     "description": "Uw boeking is niet voltooid. Er zijn geen kosten in rekening gebracht.",
-    "supportMessage": "Als u problemen heeft ondervonden of vragen heeft, aarzel dan niet om contact op te nemen met ons support team.",
+    "helpMessage": "Als u problemen heeft ondervonden of vragen heeft, aarzel dan niet om contact op te nemen met ons support team.",
     "browseTours": "Bekijk tours",
     "contactUs": "Neem contact op"
   },
@@ -1176,8 +1176,8 @@
   "orderCancelled": {
     "title": "Bestelling geannuleerd",
     "description": "Uw bestelling is niet voltooid. Uw account is niet belast.",
-    "supportMessage": "Als u problemen heeft ondervonden tijdens het afrekenen of vragen heeft, neem dan contact op met ons support team.",
-    "returnShop": "Terug naar shop",
+    "helpMessage": "Als u problemen heeft ondervonden tijdens het afrekenen of vragen heeft, neem dan contact op met ons support team.",
+    "returnToShop": "Terug naar shop",
     "contactSupport": "Contact support"
   },
   "search": {
@@ -1187,5 +1187,42 @@
     "noResults": "Geen resultaten gevonden.",
     "tryDifferent": "Probeer een andere zoekterm.",
     "loading": "Laden..."
+  },
+  "feedbackForm": {
+    "title": "Feedback voor {guideName}",
+    "description": "Deel je ervaring met ons. Je feedback helpt ons om onze tours te verbeteren.",
+    "guideRating": "Beoordeling gids",
+    "guideFeedback": "Feedback over de gids (optioneel)",
+    "guideFeedbackPlaceholder": "Vertel ons over je ervaring met de gids...",
+    "tourRating": "Beoordeling tour",
+    "tourFeedback": "Feedback over de tour (optioneel)",
+    "tourFeedbackPlaceholder": "Vertel ons over je ervaring met de tour...",
+    "bookingRating": "Hoe verliep je boeking via de website?",
+    "foundUs": "Hoe heb je ons gevonden?",
+    "foundUsOtherPlaceholder": "Specifieer...",
+    "sourceInstagram": "Instagram",
+    "sourceTiktok": "TikTok",
+    "sourceFacebook": "Facebook",
+    "sourceYoutube": "YouTube",
+    "sourceLinkedin": "LinkedIn",
+    "sourceWhatsapp": "WhatsApp",
+    "sourceTripadvisor": "TripAdvisor",
+    "sourceWordOfMouth": "Mond-tot-mond",
+    "sourcePress": "Pers",
+    "sourceOther": "Andere",
+    "discountTitle": "Ontvang 20% korting op je volgende tour!",
+    "discountDescription": "Vul je e-mailadres in en ontvang een kortingscode voor je volgende boeking.",
+    "emailPlaceholder": "jouw@email.com",
+    "submit": "Feedback verzenden",
+    "submitting": "Verzenden...",
+    "thankYou": "Bedankt!",
+    "successMessage": "Je feedback is succesvol verzonden. We waarderen je input! Je ontvangt binnenkort een e-mail met je 20% kortingscode voor je volgende tour.",
+    "errorGuideNotFound": "Gids niet gevonden",
+    "errorLoadGuide": "Kon gids niet laden",
+    "errorRatingsRequired": "Geef alstublieft zowel een gids- als tourbeoordeling",
+    "errorBookingRatingRequired": "Beoordeel alstublieft je boekingservaring",
+    "errorSourceRequired": "Selecteer hoe je ons gevonden hebt",
+    "errorSourceOtherRequired": "Specifieer hoe je ons gevonden hebt",
+    "errorEmailRequired": "Vul je e-mailadres in om je kortingscode te ontvangen"
   }
 }

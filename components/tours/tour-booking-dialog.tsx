@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { loadStripe } from '@stripe/stripe-js';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -63,6 +63,8 @@ export function TourBookingDialog({
   citySlug,
 }: TourBookingDialogProps) {
   const router = useRouter();
+  const params = useParams();
+  const locale = (params.locale as string) || 'nl';
   const { user } = useAuth();
   const t = useTranslations('booking');
   const tB2b = useTranslations('b2b');
@@ -394,6 +396,7 @@ export function TourBookingDialog({
           userId: user?.id || null,
           citySlug: citySlug || null,
           opMaat: opMaat,
+          locale: locale, // Pass locale for correct redirect after payment
           upsellProducts: upsellProducts, // Include upsell products in checkout session
           // Address data for shipping (only if upsell products are selected)
           shippingAddress: upsellProducts.length > 0 ? {
