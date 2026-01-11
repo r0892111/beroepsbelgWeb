@@ -399,18 +399,25 @@ export default function BookingDetailPage() {
     }
   };
 
-  const normalizeGuide = (item: number | SelectedGuide | string): SelectedGuide => {
+  // Normalize guide objects - can be full guide objects or simplified {id, status} objects
+  const normalizeGuide = (item: any): SelectedGuide => {
     if (typeof item === 'number') {
       return { id: item };
     }
     if (typeof item === 'string') {
       return { id: parseInt(item, 10) };
     }
-    // Ensure id is always a number when it's an object
-    return {
-      ...item,
-      id: typeof item.id === 'number' ? item.id : parseInt(String(item.id), 10),
-    };
+    if (typeof item === 'object' && item !== null && 'id' in item) {
+      // Extract the relevant fields, ensuring id is a number
+      return {
+        id: typeof item.id === 'number' ? item.id : parseInt(String(item.id), 10),
+        status: item.status, // 'offered', 'declined', 'accepted', or undefined
+        offeredAt: item.offeredAt,
+        respondedAt: item.respondedAt,
+      };
+    }
+    // Fallback
+    return { id: 0 };
   };
 
   if (!user || (!profile?.isAdmin && !profile?.is_admin)) {

@@ -154,64 +154,35 @@ export async function GET(
       );
     }
 
-    // Extract guide IDs and status from selectedGuides array
-    // selectedGuides is jsonb[], format: [{id, status?, offeredAt?, respondedAt?}, ...]
-    interface GuideStatus {
-      id: number;
-      status?: 'offered' | 'declined' | 'accepted';
-      offeredAt?: string;
-      respondedAt?: string;
-    }
+    // Extract guide info from selectedGuides array
+    // selectedGuides can contain full guide objects OR simplified {id, status} objects
+    // Full objects may have: id, name, Email, cities, languages, status, offeredAt, respondedAt, etc.
     
-    let guideStatuses: GuideStatus[] = [];
-    let guideIds: number[] = [];
+    let guides: any[] = [];
     
     if (booking.selectedGuides && Array.isArray(booking.selectedGuides)) {
-      guideStatuses = booking.selectedGuides
+      guides = booking.selectedGuides
+        .filter((item: any) => item && typeof item === 'object' && 'id' in item)
         .map((item: any) => {
-          // If it's an object with an id field
-          if (typeof item === 'object' && item !== null && 'id' in item) {
-            return {
-              id: parseInt(item.id, 10),
-              status: item.status,
-              offeredAt: item.offeredAt,
-              respondedAt: item.respondedAt,
-            };
-          }
-          // If it's already a number or string number
-          if (typeof item === 'number') {
-            return { id: item };
-          }
-          if (typeof item === 'string') {
-            return { id: parseInt(item, 10) };
-          }
-          return null;
-        })
-        .filter((item: any): item is GuideStatus => item !== null && !isNaN(item.id));
-      
-      guideIds = guideStatuses.map(g => g.id);
-    }
-
-    // Fetch guide details for each guide ID
-    let guides: any[] = [];
-    if (guideIds.length > 0) {
-      const { data: guidesData, error: guidesError } = await supabase
-        .from('guides_temp')
-        .select('id, name, cities, languages, tour_types, content, phonenumber, Email, tours_done')
-        .in('id', guideIds);
-
-      if (!guidesError && guidesData) {
-        // Merge guide details with status info
-        guides = guidesData.map((guide: any) => {
-          const statusInfo = guideStatuses.find(gs => gs.id === guide.id);
+          // The item might be a full guide object or a simplified one
+          // Extract the status info that we've added
           return {
-            ...guide,
-            selectionStatus: statusInfo?.status || null, // null = available
-            offeredAt: statusInfo?.offeredAt || null,
-            respondedAt: statusInfo?.respondedAt || null,
+            id: typeof item.id === 'number' ? item.id : parseInt(String(item.id), 10),
+            name: item.name || null,
+            cities: item.cities || null,
+            languages: item.languages || null,
+            tour_types: item.tour_types || null,
+            content: item.content || null,
+            phonenumber: item.phonenumber || null,
+            Email: item.Email || null,
+            tours_done: item.tours_done || null,
+            // Status fields - these are added when guide is offered/declined/accepted
+            selectionStatus: item.status || null,
+            offeredAt: item.offeredAt || null,
+            respondedAt: item.respondedAt || null,
           };
-        });
-      }
+        })
+        .filter((item: any) => !isNaN(item.id));
     }
 
     return NextResponse.json({
