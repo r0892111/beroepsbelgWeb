@@ -323,74 +323,30 @@ export default function BookingDetailPage() {
 
     setCancellingGuide(true);
     try {
-      // Update selectedGuides: mark current guide as 'cancelled'
-      let updatedSelectedGuides = (booking.selectedGuides || []).map(normalizeGuide);
-      const guideAlreadyInList = updatedSelectedGuides.some(g => g.id === guide.id);
-      
-      if (guideAlreadyInList) {
-        // Update existing entry to 'cancelled'
-        updatedSelectedGuides = updatedSelectedGuides.map(g => {
-          if (g.id === guide.id) {
-            return { ...g, status: 'declined' as const, respondedAt: new Date().toISOString() };
-          }
-          return g;
-        });
-      } else {
-        // Add guide with 'cancelled' status
-        updatedSelectedGuides.push({
-          id: guide.id,
-          status: 'declined' as const,
-          respondedAt: new Date().toISOString(),
-        });
-      }
+      // Get auth token for API call
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
 
-      // Update booking: remove guide and reset status
-      const { error: updateError } = await supabase
-        .from('tourbooking')
-        .update({
-          guide_id: null,
-          status: 'pending_guide_confirmation',
-          selectedGuides: updatedSelectedGuides,
-        })
-        .eq('id', booking.id);
-
-      if (updateError) {
-        throw new Error('Failed to update booking');
-      }
-
-      // Update guide metrics
-      const { data: guideData } = await supabase
-        .from('guides_temp')
-        .select('cancelled_tours')
-        .eq('id', guide.id)
-        .single();
-
-      if (guideData) {
-        await supabase
-          .from('guides_temp')
-          .update({ cancelled_tours: (guideData.cancelled_tours || 0) + 1 })
-          .eq('id', guide.id);
-      }
-
-      // Trigger webhook to notify about cancellation and find new guide
-      const updatedBooking = { 
-        ...booking, 
-        guide_id: null, 
-        selectedGuides: updatedSelectedGuides,
-        cancelled_guide_id: guide.id,
-        cancelled_guide_name: guide.name,
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
       };
-      
-      try {
-        await fetch('https://alexfinit.app.n8n.cloud/webhook/f22ab19e-bc75-475e-ac13-ca9b5c8f72fe', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(updatedBooking),
-        });
-      } catch (webhookErr) {
-        console.error('Failed to trigger webhook:', webhookErr);
+
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+
+      // Call server-side API to cancel guide (bypasses RLS)
+      const response = await fetch(`/api/cancel-guide/${booking.id}`, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({ guideId: guide.id }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to cancel guide');
       }
 
       toast.success('Guide removed. A new guide will be assigned.');
