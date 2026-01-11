@@ -728,7 +728,11 @@
     "type": "Type",
     "localStoriesTitle": "Belangrijke Informatie",
     "localStoriesTime": "Tours zijn enkel beschikbaar van 14:00u tot 16:00u",
-    "localStoriesMinimum": "Minimum van 4 personen vereist",
+    "localStoriesMinimum": "Minimum van 5 personen vereist",
+    "localStoriesInfoTitle": "Goed om te weten",
+    "localStoriesInfoText": "Er is een minimum van 5 personen nodig om deze tour te laten doorgaan. Mocht dit aantal niet bereikt worden, dan ontvang je tijdig een bericht en e-mail. Je betaling wordt in dat geval zo snel mogelijk teruggestort.",
+    "tourConfirmed": "Deze tour gaat door",
+    "joinTour": "Sluit aan",
     "onlineDiscount": "10% korting bij online boeken",
     "originalPrice": "Originele prijs",
     "discountedPrice": "Prijs met korting",
@@ -994,7 +998,48 @@
       },
       "section83": {
         "title": "8.3. Soorten cookies:",
-        "content": "Hoewel er verschillende soorten cookies bestaan, onderscheiden qua functionaliteit, herkomst of bewaartermijn, maakt de wetgeving hoofdzakelijk een onderscheid tussen functionele of technisch noodzakelijke cookies enerzijds en alle andere cookies anderzijds.\n\nDe Website gebruikt uitsluitend volgende cookies:\n\nFunctionele cookies (noodzakelijk)\n\nNaam\tHerkomst\tFunctie\tBewaartijd\nwebhero_session\tHuidige domein\tLinken van de actieve server sessie aan de bezoeker (gebruikt voor taalinstellingen, inloggen)\tTot na de sessie\nXSRF-TOKEN\tHuidige domein\tEen token om formulieren te beschermen tegen spam\tTot na de sessie\n\nAndere cookies\n\nNaam\tHerkomst\tFunctie\tBewaartijd\n_ga_B3NK8C92ZR\tgoogle.com\tDirect\t2 jaar\n_ga\tgoogle.com\tDirect\t2 jaar\n_gid\tgoogle.com\tDirect\t1 dag\n\nVoor cookies geplaatst door derde partijen (o.a. Google Analytics) verwijzen wij je graag naar de verklaringen die deze partijen op hun respectieve websites daarover geven. Let op: wij oefenen geen enkele invloed uit op de inhoud van die verklaringen, noch op de inhoud van de cookies van deze derde partijen: Google Analytics cookies"
+        "intro": "Hoewel er verschillende soorten cookies bestaan, onderscheiden qua functionaliteit, herkomst of bewaartermijn, maakt de wetgeving hoofdzakelijk een onderscheid tussen functionele of technisch noodzakelijke cookies enerzijds en alle andere cookies anderzijds.\n\nVoor cookies geplaatst door derde partijen (o.a. Google Analytics) verwijzen wij je graag naar de verklaringen die deze partijen op hun respectieve websites daarover geven. Let op: wij oefenen geen enkele invloed uit op de inhoud van die verklaringen, noch op de inhoud van de cookies van deze derde partijen: https://developers.google.com/analytics\n\nDe Website gebruikt uitsluitend volgende cookies:",
+        "headers": {
+          "name": "Naam",
+          "origin": "Herkomst",
+          "function": "Functie",
+          "duration": "Bewaartijd"
+        },
+        "functional": {
+          "title": "Functionele cookies (noodzakelijk)",
+          "row1": {
+            "origin": "Huidige domein (Supabase)",
+            "function": "Opslag van gebruikersauthenticatie sessie",
+            "duration": "Sessie / 7 dagen"
+          },
+          "row2": {
+            "origin": "Huidige domein",
+            "function": "Opslag van taalvoorkeur",
+            "duration": "1 jaar"
+          }
+        },
+        "analytics": {
+          "title": "Analytics cookies (Google Analytics 4)",
+          "row1": {
+            "function": "Onderscheidt unieke bezoekers",
+            "duration": "2 jaar"
+          },
+          "row2": {
+            "function": "Bewaart sessiestatus",
+            "duration": "2 jaar"
+          }
+        },
+        "payment": {
+          "title": "Betalingscookies (Stripe)",
+          "row1": {
+            "function": "Fraudepreventie en -detectie",
+            "duration": "1 jaar"
+          },
+          "row2": {
+            "function": "Sessie fraudepreventie",
+            "duration": "30 minuten"
+          }
+        }
       },
       "section84": {
         "title": "8.4. Uw toestemming:",

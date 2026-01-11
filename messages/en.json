@@ -660,7 +660,11 @@
     "type": "Type",
     "localStoriesTitle": "Important Information",
     "localStoriesTime": "Tours are only available from 14:00h to 16:00h",
-    "localStoriesMinimum": "Minimum of 4 persons required",
+    "localStoriesMinimum": "Minimum of 5 persons required",
+    "localStoriesInfoTitle": "Good to know",
+    "localStoriesInfoText": "A minimum of 5 persons is required for this tour to take place. If this number is not reached, you will receive a message and email in advance. Your payment will be refunded as soon as possible.",
+    "tourConfirmed": "This tour is confirmed",
+    "joinTour": "Join",
     "onlineDiscount": "10% discount for online bookings",
     "originalPrice": "Original price",
     "discountedPrice": "Discounted price",
@@ -926,7 +930,48 @@
       },
       "section83": {
         "title": "8.3 Types of cookies:",
-        "content": "Although there are different types of cookies, distinguished in terms of functionality, origin or storage period, the legislation mainly distinguishes between cookies that are functionally or technically necessary on the one hand and all other cookies on the other hand.\n\nThe Website only uses the following cookies:\n\nFunctional cookies\n\nName\tOrigin\tFunction\tStorage time\nwebhero_session\tCurrent domain\tLinking the active server session to the visitor (used for language settings, logging in)\tUntil after the session\nXSRF-TOKEN\tCurrent domain\tA token that serves to protect forms against spam\tUntil after the session\n\nNon-functional cookies\n\nName\tOrigin\tFunction\tStorage time\n_ga_B3NK8C92ZR\tgoogle.com\tDirect\t2 years\n_ga\tgoogle.com\tDirect\t2 years\n_gid\tgoogle.com\tDirect\t1 day\n\nFor cookies placed by third parties (e.g. Google Analytics), please read the statements that these parties give on their respective websites. N.B.: we do not exercise any influence on the content of these statements, nor on the content of the cookies of these third parties: Google Analytics cookies"
+        "intro": "Although there are different types of cookies, distinguished by functionality, origin or retention period, the legislation mainly distinguishes between functional or technically necessary cookies on the one hand and all other cookies on the other.\n\nFor cookies placed by third parties (e.g. Google Analytics), please read the statements that these parties give on their respective websites. N.B.: we do not exercise any influence on the content of these statements, nor on the content of the cookies of these third parties: https://developers.google.com/analytics\n\nThe Website only uses the following cookies:",
+        "headers": {
+          "name": "Name",
+          "origin": "Origin",
+          "function": "Function",
+          "duration": "Duration"
+        },
+        "functional": {
+          "title": "Functional Cookies (necessary)",
+          "row1": {
+            "origin": "Current domain (Supabase)",
+            "function": "User authentication session storage",
+            "duration": "Session / 7 days"
+          },
+          "row2": {
+            "origin": "Current domain",
+            "function": "Stores language preference",
+            "duration": "1 year"
+          }
+        },
+        "analytics": {
+          "title": "Analytics Cookies (Google Analytics 4)",
+          "row1": {
+            "function": "Distinguishes unique visitors",
+            "duration": "2 years"
+          },
+          "row2": {
+            "function": "Maintains session state",
+            "duration": "2 years"
+          }
+        },
+        "payment": {
+          "title": "Payment Cookies (Stripe)",
+          "row1": {
+            "function": "Fraud prevention and detection",
+            "duration": "1 year"
+          },
+          "row2": {
+            "function": "Session fraud prevention",
+            "duration": "30 minutes"
+          }
+        }
       },
       "section84": {
         "title": "8.4. Your consent:",

@@ -659,7 +659,11 @@
     "type": "Typ",
     "localStoriesTitle": "Wichtige Informationen",
     "localStoriesTime": "Touren nur von 14:00 bis 16:00 Uhr verfügbar",
-    "localStoriesMinimum": "Mindestens 4 Personen erforderlich",
+    "localStoriesMinimum": "Mindestens 5 Personen erforderlich",
+    "localStoriesInfoTitle": "Gut zu wissen",
+    "localStoriesInfoText": "Für diese Tour ist eine Mindestteilnehmerzahl von 5 Personen erforderlich. Sollte diese Anzahl nicht erreicht werden, erhalten Sie rechtzeitig eine Nachricht und E-Mail. Ihre Zahlung wird so schnell wie möglich zurückerstattet.",
+    "tourConfirmed": "Diese Tour findet statt",
+    "joinTour": "Teilnehmen",
     "onlineDiscount": "10% Rabatt bei Online-Buchung",
     "originalPrice": "Ursprünglicher Preis",
     "discountedPrice": "Reduzierter Preis",
@@ -915,7 +919,48 @@
       },
       "section83": {
         "title": "8.3 Arten von Cookies:",
-        "content": "Obwohl es verschiedene Arten von Cookies gibt, die in Bezug auf Funktionalität, Herkunft oder Speicherdauer unterschieden werden, unterscheidet die Gesetzgebung hauptsächlich zwischen Cookies, die funktional oder technisch notwendig sind, einerseits und allen anderen Cookies andererseits.\n\nDie Website verwendet nur die folgenden Cookies:\n\nFunktionale Cookies\n\nName\tHerkunft\tFunktion\tSpeicherzeit\nwebhero_session\tAktuelle Domain\tVerknüpfung der aktiven Serversitzung mit dem Besucher (verwendet für Spracheinstellungen, Anmeldung)\tBis nach der Sitzung\nXSRF-TOKEN\tAktuelle Domain\tEin Token, das Formulare vor Spam schützt\tBis nach der Sitzung\n\nNicht-funktionale Cookies\n\nName\tHerkunft\tFunktion\tSpeicherzeit\n_ga_B3NK8C92ZR\tgoogle.com\tDirekt\t2 Jahre\n_ga\tgoogle.com\tDirekt\t2 Jahre\n_gid\tgoogle.com\tDirekt\t1 Tag\n\nFür Cookies, die von Dritten (z.B. Google Analytics) platziert wurden, lesen Sie bitte die Erklärungen, die diese Parteien auf ihren jeweiligen Websites geben. Hinweis: Wir üben keinen Einfluss auf den Inhalt dieser Erklärungen aus, noch auf den Inhalt der Cookies dieser Dritten: Google Analytics Cookies"
+        "intro": "Obwohl es verschiedene Arten von Cookies gibt, die sich nach Funktionalität, Herkunft oder Speicherdauer unterscheiden, unterscheidet die Gesetzgebung hauptsächlich zwischen funktionalen oder technisch notwendigen Cookies einerseits und allen anderen Cookies andererseits.\n\nFür Cookies, die von Dritten (z.B. Google Analytics) platziert wurden, lesen Sie bitte die Erklärungen, die diese Parteien auf ihren jeweiligen Websites geben. Hinweis: Wir üben keinen Einfluss auf den Inhalt dieser Erklärungen aus, noch auf den Inhalt der Cookies dieser Dritten: https://developers.google.com/analytics\n\nDie Website verwendet nur die folgenden Cookies:",
+        "headers": {
+          "name": "Name",
+          "origin": "Herkunft",
+          "function": "Funktion",
+          "duration": "Speicherzeit"
+        },
+        "functional": {
+          "title": "Funktionale Cookies (notwendig)",
+          "row1": {
+            "origin": "Aktuelle Domain (Supabase)",
+            "function": "Speicherung der Benutzerauthentifizierungssitzung",
+            "duration": "Sitzung / 7 Tage"
+          },
+          "row2": {
+            "origin": "Aktuelle Domain",
+            "function": "Speichert die Sprachpräferenz",
+            "duration": "1 Jahr"
+          }
+        },
+        "analytics": {
+          "title": "Analyse-Cookies (Google Analytics 4)",
+          "row1": {
+            "function": "Unterscheidet einzigartige Besucher",
+            "duration": "2 Jahre"
+          },
+          "row2": {
+            "function": "Behält den Sitzungsstatus bei",
+            "duration": "2 Jahre"
+          }
+        },
+        "payment": {
+          "title": "Zahlungs-Cookies (Stripe)",
+          "row1": {
+            "function": "Betrugsprävention und -erkennung",
+            "duration": "1 Jahr"
+          },
+          "row2": {
+            "function": "Sitzungsbetrugsprävention",
+            "duration": "30 Minuten"
+          }
+        }
       },
       "section84": {
         "title": "8.4. Ihre Zustimmung:",

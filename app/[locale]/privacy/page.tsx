@@ -156,128 +156,94 @@ export default async function PrivacyPage({ params }: PrivacyPageProps) {
           <div className="mb-4">
             <h3 className="mb-2 text-xl font-medium">{t('article8.section83.title')}</h3>
             <div className="leading-relaxed text-muted-foreground">
-              {(() => {
-                const content = t('article8.section83.content');
-                const lines = content.split('\n');
-                
-                // Find intro (everything before first table)
-                let introEnd = 0;
-                for (let i = 0; i < lines.length; i++) {
-                  if (lines[i].includes('Functionele') || lines[i].includes('Functional') || lines[i].includes('fonctionnels') || lines[i].includes('Funktionale')) {
-                    introEnd = i;
-                    break;
-                  }
-                }
-                const intro = lines.slice(0, introEnd).join('\n');
-                
-                // Find functional cookies section
-                const functionalStart = lines.findIndex(l => l.includes('Functionele') || l.includes('Functional') || l.includes('fonctionnels') || l.includes('Funktionale'));
-                const functionalHeader = functionalStart >= 0 ? lines[functionalStart] : '';
-                const functionalHeaderRow = functionalStart + 1 >= 0 && functionalStart + 1 < lines.length ? lines[functionalStart + 1] : '';
-                const functionalRows: string[] = [];
-                let i = functionalStart + 2;
-                while (i < lines.length && lines[i].includes('\t') && !lines[i].includes('Andere') && !lines[i].includes('Non-functional') && !lines[i].includes('non fonctionnels') && !lines[i].includes('Nicht-funktionale')) {
-                  functionalRows.push(lines[i]);
-                  i++;
-                }
-                
-                // Find other cookies section
-                const otherStart = lines.findIndex(l => l.includes('Andere') || l.includes('Non-functional') || l.includes('non fonctionnels') || l.includes('Nicht-funktionale'));
-                const otherHeader = otherStart >= 0 ? lines[otherStart] : '';
-                const otherHeaderRow = otherStart + 1 >= 0 && otherStart + 1 < lines.length ? lines[otherStart + 1] : '';
-                const otherRows: string[] = [];
-                i = otherStart + 2;
-                while (i < lines.length && lines[i].includes('\t')) {
-                  otherRows.push(lines[i]);
-                  i++;
-                }
-                
-                // Find closing text (everything after last table)
-                const closingStart = otherStart >= 0 ? otherStart + otherRows.length + 2 : functionalStart + functionalRows.length + 2;
-                const closingText = lines.slice(closingStart).join('\n');
-                
-                // Get column headers from the first header row
-                const getHeaders = (headerRow: string) => {
-                  if (headerRow.includes('Naam') || headerRow.includes('Name') || headerRow.includes('Nom')) {
-                    return ['Naam / Name / Nom / Name', 'Herkomst / Origin / Origine / Herkunft', 'Functie / Function / Fonction / Funktion', 'Bewaartijd / Storage time / Durée de conservation / Speicherzeit'];
-                  }
-                  return headerRow.split('\t').filter(h => h.trim());
-                };
-                
-                const headers = getHeaders(functionalHeaderRow || otherHeaderRow);
-                
-                return (
-                  <>
-                    <p className="mb-4">{intro}</p>
-                    
-                    {functionalHeader && functionalRows.length > 0 && (
-                      <>
-                        <h4 className="mb-3 mt-6 text-lg font-semibold">{functionalHeader}</h4>
-                        <div className="mb-6 overflow-x-auto">
-                          <table className="w-full border-collapse border border-gray-300">
-                            <thead>
-                              <tr className="bg-gray-100">
-                                {headers.map((header, idx) => (
-                                  <th key={idx} className="border border-gray-300 px-4 py-2 text-left font-semibold">{header}</th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {functionalRows.map((row, idx) => {
-                                const cells = row.split('\t');
-                                if (cells.length >= 4) {
-                                  return (
-                                    <tr key={idx} className="hover:bg-gray-50">
-                                      {cells.slice(0, 4).map((cell, cellIdx) => (
-                                        <td key={cellIdx} className="border border-gray-300 px-4 py-2">{cell.trim()}</td>
-                                      ))}
-                                    </tr>
-                                  );
-                                }
-                                return null;
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      </>
-                    )}
-                    
-                    {otherHeader && otherRows.length > 0 && (
-                      <>
-                        <h4 className="mb-3 mt-6 text-lg font-semibold">{otherHeader}</h4>
-                        <div className="mb-6 overflow-x-auto">
-                          <table className="w-full border-collapse border border-gray-300">
-                            <thead>
-                              <tr className="bg-gray-100">
-                                {headers.map((header, idx) => (
-                                  <th key={idx} className="border border-gray-300 px-4 py-2 text-left font-semibold">{header}</th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {otherRows.map((row, idx) => {
-                                const cells = row.split('\t');
-                                if (cells.length >= 4) {
-                                  return (
-                                    <tr key={idx} className="hover:bg-gray-50">
-                                      {cells.slice(0, 4).map((cell, cellIdx) => (
-                                        <td key={cellIdx} className="border border-gray-300 px-4 py-2">{cell.trim()}</td>
-                                      ))}
-                                    </tr>
-                                  );
-                                }
-                                return null;
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      </>
-                    )}
-                    
-                    {closingText && <p className="mt-4">{closingText}</p>}
-                  </>
-                );
-              })()}
+              <div className="mb-4">{renderContent(t('article8.section83.intro'))}</div>
+
+              {/* Functional Cookies */}
+              <h4 className="mb-3 mt-6 text-lg font-semibold text-foreground">{t('article8.section83.functional.title')}</h4>
+              <div className="mb-6 overflow-x-auto">
+                <table className="w-full border-collapse border border-gray-300 text-sm">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="border border-gray-300 px-4 py-2 text-left font-semibold">{t('article8.section83.headers.name')}</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left font-semibold">{t('article8.section83.headers.origin')}</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left font-semibold">{t('article8.section83.headers.function')}</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left font-semibold">{t('article8.section83.headers.duration')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="hover:bg-gray-50">
+                      <td className="border border-gray-300 px-4 py-2 font-mono text-xs">sb-*-auth-token</td>
+                      <td className="border border-gray-300 px-4 py-2">{t('article8.section83.functional.row1.origin')}</td>
+                      <td className="border border-gray-300 px-4 py-2">{t('article8.section83.functional.row1.function')}</td>
+                      <td className="border border-gray-300 px-4 py-2">{t('article8.section83.functional.row1.duration')}</td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="border border-gray-300 px-4 py-2 font-mono text-xs">NEXT_LOCALE</td>
+                      <td className="border border-gray-300 px-4 py-2">{t('article8.section83.functional.row2.origin')}</td>
+                      <td className="border border-gray-300 px-4 py-2">{t('article8.section83.functional.row2.function')}</td>
+                      <td className="border border-gray-300 px-4 py-2">{t('article8.section83.functional.row2.duration')}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Analytics Cookies */}
+              <h4 className="mb-3 mt-6 text-lg font-semibold text-foreground">{t('article8.section83.analytics.title')}</h4>
+              <div className="mb-6 overflow-x-auto">
+                <table className="w-full border-collapse border border-gray-300 text-sm">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="border border-gray-300 px-4 py-2 text-left font-semibold">{t('article8.section83.headers.name')}</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left font-semibold">{t('article8.section83.headers.origin')}</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left font-semibold">{t('article8.section83.headers.function')}</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left font-semibold">{t('article8.section83.headers.duration')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="hover:bg-gray-50">
+                      <td className="border border-gray-300 px-4 py-2 font-mono text-xs">_ga</td>
+                      <td className="border border-gray-300 px-4 py-2">google.com</td>
+                      <td className="border border-gray-300 px-4 py-2">{t('article8.section83.analytics.row1.function')}</td>
+                      <td className="border border-gray-300 px-4 py-2">{t('article8.section83.analytics.row1.duration')}</td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="border border-gray-300 px-4 py-2 font-mono text-xs">_ga_*</td>
+                      <td className="border border-gray-300 px-4 py-2">google.com</td>
+                      <td className="border border-gray-300 px-4 py-2">{t('article8.section83.analytics.row2.function')}</td>
+                      <td className="border border-gray-300 px-4 py-2">{t('article8.section83.analytics.row2.duration')}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Payment Cookies */}
+              <h4 className="mb-3 mt-6 text-lg font-semibold text-foreground">{t('article8.section83.payment.title')}</h4>
+              <div className="mb-6 overflow-x-auto">
+                <table className="w-full border-collapse border border-gray-300 text-sm">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="border border-gray-300 px-4 py-2 text-left font-semibold">{t('article8.section83.headers.name')}</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left font-semibold">{t('article8.section83.headers.origin')}</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left font-semibold">{t('article8.section83.headers.function')}</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left font-semibold">{t('article8.section83.headers.duration')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="hover:bg-gray-50">
+                      <td className="border border-gray-300 px-4 py-2 font-mono text-xs">__stripe_mid</td>
+                      <td className="border border-gray-300 px-4 py-2">stripe.com</td>
+                      <td className="border border-gray-300 px-4 py-2">{t('article8.section83.payment.row1.function')}</td>
+                      <td className="border border-gray-300 px-4 py-2">{t('article8.section83.payment.row1.duration')}</td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="border border-gray-300 px-4 py-2 font-mono text-xs">__stripe_sid</td>
+                      <td className="border border-gray-300 px-4 py-2">stripe.com</td>
+                      <td className="border border-gray-300 px-4 py-2">{t('article8.section83.payment.row2.function')}</td>
+                      <td className="border border-gray-300 px-4 py-2">{t('article8.section83.payment.row2.duration')}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
           <div className="mb-4">
