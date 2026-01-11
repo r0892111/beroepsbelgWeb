@@ -657,21 +657,21 @@ export default function BookingSuccessPage() {
               )}
 
               {/* Upsell products */}
-              {purchasedUpsellProducts.map((product: any, index) => {
-                const quantity = product.quantity || 1;
-                const totalPrice = product.price * quantity;
-                return (
-                  <div key={product.uuid || index} className="flex justify-between items-center py-1">
-                    <span className="text-sm text-muted-foreground">
-                      {product.title[locale]} {quantity > 1 && <span className="text-xs">(x{quantity})</span>}
-                    </span>
-                    <span className="font-medium text-sm">
-                      €{totalPrice.toFixed(2)}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+                  {purchasedUpsellProducts.map((product: any, index) => {
+                    const quantity = product.quantity || 1;
+                    const totalPrice = product.price * quantity;
+                    return (
+                      <div key={product.uuid || index} className="flex justify-between items-center py-1">
+                        <span className="text-sm text-muted-foreground">
+                          {product.title[locale]} {quantity > 1 && <span className="text-xs">(x{quantity})</span>}
+                        </span>
+                        <span className="font-medium text-sm">
+                          €{totalPrice.toFixed(2)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
             <div className="flex justify-between pt-4 border-t">
               <span className="text-lg font-bold">{t('totalPaid')}</span>
               <span className="text-lg font-bold">
