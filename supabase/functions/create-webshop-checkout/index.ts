@@ -29,6 +29,7 @@ serve(async (req: Request) => {
       items,
       customerName,
       customerEmail,
+      customerPhone,
       shippingAddress,
       billingAddress,
       userId,
@@ -194,6 +195,7 @@ serve(async (req: Request) => {
       payment_method_types: ['card', 'bancontact', 'ideal'],
       line_items: lineItems,
       mode: 'payment',
+      allow_promotion_codes: true, // Enable discount/coupon code field
       success_url: `${req.headers.get('origin')}/${locale}/order/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get('origin')}/${locale}/order/cancelled`,
       customer_email: customerEmail,
@@ -240,6 +242,7 @@ serve(async (req: Request) => {
     }
     orderInsert.customer_name = customerName;
     orderInsert.customer_email = customerEmail;
+    orderInsert.customer_phone = customerPhone || null;
     if (shippingAddress) {
       orderInsert.shipping_address = shippingAddress;
     }
@@ -249,7 +252,7 @@ serve(async (req: Request) => {
     if (orderItems && orderItems.length > 0) {
       orderInsert.items = orderItems;
     }
-    orderInsert.metadata = { customerName, customerEmail, userId: userId || null };
+    orderInsert.metadata = { customerName, customerEmail, customerPhone: customerPhone || null, userId: userId || null };
     orderInsert.total_amount = totalAmount; // For compatibility with account page
 
     const { data: orderData, error: orderError } = await supabase

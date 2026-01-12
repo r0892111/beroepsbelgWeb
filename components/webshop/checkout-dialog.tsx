@@ -30,6 +30,7 @@ export function CheckoutDialog({ open, onOpenChange, totalAmount }: CheckoutDial
   const [formData, setFormData] = useState({
     customerName: '',
     customerEmail: '',
+    customerPhone: '',
     street: '',
     city: '',
     postalCode: '',
@@ -71,6 +72,7 @@ export function CheckoutDialog({ open, onOpenChange, totalAmount }: CheckoutDial
           items,
           customerName: formData.customerName,
           customerEmail: formData.customerEmail,
+          customerPhone: formData.customerPhone,
           shippingAddress,
           billingAddress: shippingAddress,
           userId: user?.id || null,
@@ -126,6 +128,18 @@ export function CheckoutDialog({ open, onOpenChange, totalAmount }: CheckoutDial
               required
               value={formData.customerEmail}
               onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="phone">{t('phone')} {t('required')}</Label>
+            <Input
+              id="phone"
+              type="tel"
+              required
+              value={formData.customerPhone}
+              onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
+              placeholder="+32 XXX XX XX XX"
             />
           </div>
 
