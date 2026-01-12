@@ -271,6 +271,7 @@ serve(async (req: Request) => {
       payment_method_types: ['card', 'bancontact', 'ideal'],
       line_items: lineItems,
       mode: 'payment',
+      allow_promotion_codes: true, // Enable discount/coupon code field
       success_url: `${req.headers.get('origin')}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get('origin')}/booking/cancelled`,
       customer_email: customerEmail,

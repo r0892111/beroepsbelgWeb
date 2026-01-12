@@ -589,6 +589,7 @@
     "completePurchase": "Complete your purchase - Total: €{total}",
     "fullName": "Full Name",
     "email": "Email",
+    "phone": "Phone",
     "streetAddress": "Street Address",
     "city": "City",
     "postalCode": "Postal Code",

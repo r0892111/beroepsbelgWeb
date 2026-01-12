@@ -524,10 +524,11 @@ export function TourBookingDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone">{t('phone')}</Label>
+            <Label htmlFor="phone">{t('phone')} *</Label>
             <Input
               id="phone"
               type="tel"
+              required
               value={formData.customerPhone}
               onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
               placeholder="+32 XXX XX XX XX"

@@ -657,6 +657,7 @@
     "completePurchase": "Voltooi je aankoop - Totaal: €{total}",
     "fullName": "Volledige naam",
     "email": "E-mail",
+    "phone": "Telefoon",
     "streetAddress": "Straat en huisnummer",
     "city": "Stad",
     "postalCode": "Postcode",
