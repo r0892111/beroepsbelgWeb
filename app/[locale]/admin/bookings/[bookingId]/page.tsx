@@ -458,6 +458,8 @@ export default function BookingDetailPage() {
   }
 
   const invitee = booking.invitees?.[0];
+  const allInvitees = booking.invitees || [];
+  const isLocalStories = tour?.local_stories === true;
 
   return (
     <div className="min-h-screen bg-sand">
@@ -626,11 +628,60 @@ export default function BookingDetailPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-medium flex items-center gap-2">
                 <User className="h-4 w-4 text-muted-foreground" />
-                Customer
+                {isLocalStories && allInvitees.length > 1 ? `Customers (${allInvitees.length})` : 'Customer'}
               </CardTitle>
+              {isLocalStories && allInvitees.length > 1 && (
+                <CardDescription>
+                  Total people: {allInvitees.reduce((sum, inv) => sum + (inv.numberOfPeople || 1), 0)}
+                </CardDescription>
+              )}
             </CardHeader>
             <CardContent className="space-y-4">
-              {invitee ? (
+              {isLocalStories && allInvitees.length > 1 ? (
+                /* Local Stories - Multiple Invitees */
+                <div className="space-y-4">
+                  {allInvitees.map((inv, index) => (
+                    <div key={index} className={`p-4 rounded-lg border ${index > 0 ? 'bg-muted/30' : 'bg-muted/50'}`}>
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="font-medium text-sm">{inv.name || `Customer ${index + 1}`}</p>
+                        <Badge variant="outline" className="text-xs">
+                          {inv.numberOfPeople || 1} {(inv.numberOfPeople || 1) === 1 ? 'person' : 'people'}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Email</p>
+                          <p className="truncate">{inv.email || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Phone</p>
+                          <p>{inv.phone || 'N/A'}</p>
+                        </div>
+                      </div>
+                      {inv.specialRequests && (
+                        <div className="mt-2 text-sm">
+                          <p className="text-xs text-muted-foreground">Special Requests</p>
+                          <p>{inv.specialRequests}</p>
+                        </div>
+                      )}
+                      {inv.amount && (
+                        <div className="mt-2 pt-2 border-t">
+                          <p className="text-xs text-muted-foreground">Amount</p>
+                          <p className="font-medium">€{inv.amount}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {/* Total amount */}
+                  <div className="pt-2 border-t">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Amount</p>
+                    <p className="text-lg font-semibold">
+                      €{allInvitees.reduce((sum, inv) => sum + (inv.amount || 0), 0)}
+                    </p>
+                  </div>
+                </div>
+              ) : invitee ? (
+                /* Single Customer (Regular tours) */
                 <>
                   <div>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">Name</p>
