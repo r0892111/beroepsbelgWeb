@@ -96,6 +96,24 @@ export function LectureBookingForm({ open, onOpenChange, lectureId, lectureTitle
         throw new Error(errorData.error || 'Failed to submit booking');
       }
 
+      // Send data to n8n webhook
+      try {
+        await fetch('https://alexfinit.app.n8n.cloud/webhook/ed110816-ae87-4492-a151-6e388301e98d', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...bookingData,
+            lecture_title: lectureTitle,
+            submitted_at: new Date().toISOString(),
+          }),
+        });
+      } catch (webhookError) {
+        // Log webhook error but don't fail the submission
+        console.error('Failed to send webhook:', webhookError);
+      }
+
       toast.success(tBooking('success'));
       
       // Reset form
