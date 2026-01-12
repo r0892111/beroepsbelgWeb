@@ -501,27 +501,11 @@ serve(async (req: Request) => {
         }
       }
       
-      // If existingTourBookingId is passed from frontend, use it directly
-      if (existingTourBookingId) {
-        const { data: existingBooking, error: existingBookingError } = await supabase
-          .from('tourbooking')
-          .select('id, invitees, tour_datetime')
-          .eq('id', existingTourBookingId)
-          .eq('tour_id', tourId)
-          .single();
+      // ALWAYS check by date first (most reliable method for local stories)
+      // This ensures we find existing tourbookings even if frontend doesn't have booking_id
+      if (saturdayDateStr) {
+        console.log('Looking for existing tourbooking for Saturday:', saturdayDateStr);
         
-        if (existingBookingError) {
-          console.error('Error fetching existing tourbooking by ID:', existingBookingError);
-        } else if (existingBooking) {
-          existingTourBooking = existingBooking;
-          console.log('Found existing tourbooking by ID:', {
-            tourbookingId: existingTourBooking.id,
-            existingInviteesCount: existingTourBooking.invitees?.length || 0,
-            saturdayDateStr,
-          });
-        }
-      } else if (saturdayDateStr) {
-        // Fallback: If no ID passed, check by date (for backwards compatibility)
         const { data: existingBookings, error: existingBookingError } = await supabase
           .from('tourbooking')
           .select('id, invitees, tour_datetime')
@@ -535,6 +519,30 @@ serve(async (req: Request) => {
           // Found existing tourbooking for this Saturday - use the first one
           existingTourBooking = existingBookings[0];
           console.log('Found existing tourbooking for local stories Saturday (by date):', {
+            tourbookingId: existingTourBooking.id,
+            existingInviteesCount: existingTourBooking.invitees?.length || 0,
+            saturdayDateStr,
+          });
+        } else {
+          console.log('No existing tourbooking found for date, will create new one:', saturdayDateStr);
+        }
+      }
+      
+      // Fallback: If no tourbooking found by date but existingTourBookingId is passed, try that
+      if (!existingTourBooking && existingTourBookingId) {
+        console.log('No tourbooking found by date, trying existingTourBookingId:', existingTourBookingId);
+        const { data: existingBooking, error: existingBookingError } = await supabase
+          .from('tourbooking')
+          .select('id, invitees, tour_datetime')
+          .eq('id', existingTourBookingId)
+          .eq('tour_id', tourId)
+          .single();
+        
+        if (existingBookingError) {
+          console.error('Error fetching existing tourbooking by ID:', existingBookingError);
+        } else if (existingBooking) {
+          existingTourBooking = existingBooking;
+          console.log('Found existing tourbooking by ID:', {
             tourbookingId: existingTourBooking.id,
             existingInviteesCount: existingTourBooking.invitees?.length || 0,
             saturdayDateStr,
