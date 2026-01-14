@@ -625,32 +625,11 @@ export default function AccountPage() {
                                 {tour?.duration_minutes && ` • ${Math.floor(tour.duration_minutes / 60)}h ${tour.duration_minutes % 60}m`}
                               </CardDescription>
                             </div>
-                            <div className="flex flex-col items-end gap-2">
-                              {isPast && (
-                                <Badge variant="outline" className="text-xs">
-                                  {t('past') || 'Past'}
-                                </Badge>
-                              )}
-                              <Badge
-                                className={
-                                  booking.status === 'completed'
-                                    ? 'bg-purple-100 text-purple-800'
-                                    : booking.status === 'confirmed'
-                                    ? 'bg-green-100 text-green-800'
-                                    : booking.status === 'payment_completed'
-                                    ? 'bg-blue-100 text-blue-800'
-                                    : booking.status === 'pending_jotform_confirmation'
-                                    ? 'bg-yellow-100 text-yellow-800'
-                                    : booking.status === 'pending_guide_confirmation'
-                                    ? 'bg-orange-100 text-orange-800'
-                                    : booking.status === 'pending'
-                                    ? 'bg-yellow-100 text-yellow-800'
-                                    : 'bg-gray-100 text-gray-800'
-                                }
-                              >
-                                {booking.status}
+                            {isPast && (
+                              <Badge variant="outline" className="text-xs">
+                                {t('past') || 'Past'}
                               </Badge>
-                            </div>
+                            )}
                           </div>
                         </CardHeader>
                         <CardContent className="space-y-4">

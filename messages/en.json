@@ -1080,6 +1080,8 @@
   },
   "bookingSuccess": {
     "loading": "Loading booking details...",
+    "processingPayment": "Your payment is being processed...",
+    "processingPaymentSubtext": "This usually takes just a few seconds.",
     "notFound": "Booking Not Found",
     "notFoundTitle": "Booking Not Found",
     "notFoundDesc": "We couldn't find your booking details.",
@@ -1265,5 +1267,12 @@
     "errorSourceRequired": "Please select how you found us",
     "errorSourceOtherRequired": "Please specify how you found us",
     "errorEmailRequired": "Please enter your email to receive your discount code"
+  },
+  "unsubscribe": {
+    "processing": "Processing...",
+    "success": "Successfully Unsubscribed",
+    "successMessage": "You will no longer receive abandoned cart reminder emails from us.",
+    "error": "Something went wrong",
+    "errorMessage": "We could not process your unsubscribe request. Please try again or contact support."
   }
 }

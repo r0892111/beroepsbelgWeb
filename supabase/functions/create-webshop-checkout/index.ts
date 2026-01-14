@@ -22,8 +22,8 @@ serve(async (req: Request) => {
     })
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
-    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || ''
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey)
 
     const {
       items,
@@ -31,7 +31,6 @@ serve(async (req: Request) => {
       customerEmail,
       customerPhone,
       shippingAddress,
-      billingAddress,
       userId,
       locale = 'nl',
     } = await req.json()
@@ -39,9 +38,6 @@ serve(async (req: Request) => {
     if (!items || items.length === 0) {
       throw new Error('Cart is empty')
     }
-
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || ''
-    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey)
 
     // Fetch products from webshop_data table using UUIDs
     const productIds = items.map((item: any) => item.productId)
@@ -175,21 +171,19 @@ serve(async (req: Request) => {
         price_data: {
           currency: 'eur',
           product_data: {
-            name: shippingAddress?.country === 'België' || shippingAddress?.country === 'Belgium' 
-              ? 'Verzendkosten (België)' 
+            name: shippingAddress?.country === 'België' || shippingAddress?.country === 'Belgium'
+              ? 'Verzendkosten (België)'
               : 'Verzendkosten (Internationaal)',
           },
-          unit_amount: Math.round(shippingCost * 100), // Convert to cents
+          unit_amount: Math.round(shippingCost * 100),
         },
         quantity: 1,
       });
-      console.log('Added shipping cost to line items:', { 
-        country: shippingAddress?.country, 
-        cost: shippingCost 
+      console.log('Added shipping cost to line items:', {
+        country: shippingAddress?.country,
+        cost: shippingCost
       });
     }
-
-    const totalAmount = productTotal + shippingCost;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card', 'bancontact', 'ideal'],
@@ -204,82 +198,15 @@ serve(async (req: Request) => {
       },
       metadata: {
         customerName,
-        userId: userId || '',
-      },
-    })
-
-    const orderItems = items.map((item: any) => {
-      const product = products.find((p: any) => p.uuid === item.productId)
-      const priceStr = product?.['Price (EUR)']?.toString() || '0'
-      const priceValue = parseFloat(priceStr.replace(',', '.')) || 0
-      
-      return {
-        productId: item.productId,
-        title: product?.Name || 'Product',
-        quantity: item.quantity,
-        price: priceValue,
-        stripe_product_id: product?.stripe_product_id || null,
-        stripe_price_id: product?.stripe_price_id || null,
-      }
-    })
-
-    // Insert order - match actual production stripe_orders table schema
-    const orderInsert: any = {
-      checkout_session_id: session.id,
-      payment_intent_id: (session.payment_intent as string) || '',
-      customer_id: customerEmail, // Required field, use email as identifier
-      amount_subtotal: Math.round(productTotal * 100), // Required, in cents
-      amount_total: Math.round(totalAmount * 100), // Required, in cents
-      currency: 'eur',
-      payment_status: 'pending', // Required field
-      status: 'pending',
-      // Optional fields
-      customer_name: customerName,
-      customer_email: customerEmail,
-      shipping_address: shippingAddress || null,
-      billing_address: billingAddress || shippingAddress || null,
-      items: orderItems || [],
-      metadata: {
-        customerName,
         customerEmail,
-        userId: userId || null,
-        shipping_cost: shippingCost,
+        customerPhone: customerPhone || '',
+        userId: userId || '',
+        order_type: 'webshop', // To distinguish from tour bookings in webhook
       },
-      total_amount: totalAmount, // Also store in euros for compatibility
-    };
+    })
 
-    // Add user_id if authenticated
-    if (userId) {
-      orderInsert.user_id = userId;
-    }
-    orderInsert.customer_name = customerName;
-    orderInsert.customer_email = customerEmail;
-    orderInsert.customer_phone = customerPhone || null;
-    if (shippingAddress) {
-      orderInsert.shipping_address = shippingAddress;
-    }
-    if (billingAddress || shippingAddress) {
-      orderInsert.billing_address = billingAddress || shippingAddress;
-    }
-    if (orderItems && orderItems.length > 0) {
-      orderInsert.items = orderItems;
-    }
-    orderInsert.metadata = { customerName, customerEmail, customerPhone: customerPhone || null, userId: userId || null };
-    orderInsert.total_amount = totalAmount; // For compatibility with account page
-
-    const { data: orderData, error: orderError } = await supabase
-      .from('stripe_orders')
-      .insert(orderInsert)
-      .select()
-      .single()
-
-    if (orderError) {
-      console.error('Error creating order:', orderError)
-      // Don't throw - still return checkout URL even if order creation fails
-      // The webhook might create it later
-    } else {
-      console.log('Order created successfully:', orderData?.id)
-    }
+    // Order will be created by stripe-webhook after successful payment
+    console.log('Checkout session created:', session.id)
 
     return new Response(
       JSON.stringify({ sessionId: session.id, url: session.url }),

@@ -91,190 +91,308 @@ async function handleEvent(event: Stripe.Event) {
     console.info(`Processing checkout.session.completed: ${sessionId}, mode: ${mode}, status: ${payment_status}`);
 
     if (mode === 'payment' && payment_status === 'paid') {
-      // Check if this is a local stories booking by checking local_tours_bookings first
-      const { data: localBooking, error: localBookingError } = await supabase
-        .from('local_tours_bookings')
-        .select('id, status, booking_id, tour_id')
+      // First, check if this is a tour booking by looking for pending_tour_bookings entry
+      const { data: pendingBooking, error: pendingError } = await supabase
+        .from('pending_tour_bookings')
+        .select('*')
         .eq('stripe_session_id', sessionId)
         .maybeSingle();
 
-      const isLocalStories = !!localBooking;
-
-      // For local stories bookings, check if the tour is actually a local stories tour
-      let tourIsLocalStories = false;
-      if (isLocalStories && localBooking?.tour_id) {
-        const { data: tour } = await supabase
-          .from('tours_table_prod')
-          .select('local_stories')
-          .eq('id', localBooking.tour_id)
-          .maybeSingle();
-        tourIsLocalStories = tour?.local_stories === true || tour?.local_stories === 'true' || tour?.local_stories === 1;
-      }
-
-      // First, check if tour booking exists and its current status and booking type
-      const { data: existingBooking, error: checkError } = await supabase
-        .from('tourbooking')
-        .select('id, status, tour_id, booking_type')
-        .eq('stripe_session_id', sessionId)
-        .maybeSingle(); // Use maybeSingle() instead of single() to handle cases where no booking exists yet
-
-      // Determine the appropriate status based on booking type
-      let newStatus = 'payment_completed'; // Default for B2C bookings
-      if (existingBooking?.booking_type === 'B2B') {
-        // For B2B quote bookings, use quote_paid status
-        newStatus = 'quote_paid';
-      }
-
-      // For local stories bookings: always process the webhook
-      // The tourbooking is the parent (one per Saturday tour), and local_tours_bookings is just another signup
-      // Each person joining should trigger the webhook, regardless of the parent tourbooking status
-      if (tourIsLocalStories) {
-        // Always process local stories bookings - each signup is independent
-        // The update queries below have built-in idempotency (they won't update if already at target status)
-        console.info(`Processing local stories booking for session ${sessionId} - tourbooking status: ${existingBooking?.status || 'none'}, local_tours_bookings status: ${localBooking?.status || 'none'}`);
-      } else {
-        // For non-local-stories bookings, use the original idempotency check
-      // If booking exists and is already processed, skip webhook call (idempotency)
-      if (existingBooking && existingBooking.status === newStatus) {
-        console.info(`Tour booking for session ${sessionId} already processed with status ${newStatus}, skipping webhook call`);
-        return;
+      if (pendingError) {
+        console.error('Error fetching pending tour booking:', pendingError);
+        // If table doesn't exist or query fails, check metadata for tour indicator
+        if (metadata?.tourId) {
+          console.error('This appears to be a tour booking but pending_tour_bookings query failed. Ensure the table exists.');
         }
       }
 
-      // Update tour booking status
-      const { data: tourBooking, error: tourBookingError } = await supabase
-        .from('tourbooking')
-        .update({ status: newStatus })
-        .eq('stripe_session_id', sessionId)
-        .neq('status', newStatus) // Only update if not already at this status
-        .select()
-        .maybeSingle(); // Use maybeSingle() to handle cases where no booking exists or already at target status
+      if (pendingBooking) {
+        // This is a tour booking - process it
+        console.info(`Found pending tour booking for session ${sessionId}, type: ${pendingBooking.tour_type}`);
 
-      // Determine tour_id for local stories check (from existingBooking, tourBooking, or localBooking)
-      const tourIdForCheck = existingBooking?.tour_id || tourBooking?.tour_id || localBooking?.tour_id;
+        const bookingData = pendingBooking.booking_data;
+        const tourType = pendingBooking.tour_type;
 
-      if (tourBooking) {
-        console.info(`Successfully updated tour booking for session: ${sessionId}`);
-      } else if (tourBookingError && tourBookingError.code !== 'PGRST116') {
-        // PGRST116 = no rows found, which is fine - might be a webshop order or local stories booking
-        console.error(`Error updating tour booking for session ${sessionId}:`, tourBookingError);
-      } else {
-        // No booking updated - might already be at target status or doesn't exist yet
-        console.info(`Tour booking for session ${sessionId} not updated (may already be at status ${newStatus} or doesn't exist)`);
-      }
-      
-      // For local stories bookings, always process webhook regardless of tourbooking status
-      // The tourbooking is the parent (one per Saturday tour), and local_tours_bookings is just another signup
-      if (tourIsLocalStories) {
-        // Always update local_tours_bookings for local stories bookings
-        if (tourIdForCheck) {
-          const { data: tour, error: tourError } = await supabase
-            .from('tours_table_prod')
-            .select('local_stories')
-            .eq('id', tourIdForCheck)
-            .maybeSingle();
-          
-          if (!tourError && (tour?.local_stories === true || tour?.local_stories === 'true' || tour?.local_stories === 1)) {
-            // Update local_tours_bookings entry - ensure stripe_session_id is set and status is booked
-            const { error: localBookingUpdateError } = await supabase
-              .from('local_tours_bookings')
-              .update({ 
-                stripe_session_id: sessionId,
-                status: 'booked'
-              })
-              .eq('stripe_session_id', sessionId)
-              .neq('status', 'booked'); // Only update if not already booked
-            
-            if (localBookingUpdateError) {
-              console.error('Error updating local_tours_bookings:', localBookingUpdateError);
-            } else {
-              console.info(`Successfully updated local_tours_bookings for session: ${sessionId}`);
+        // Check if booking already exists (idempotency)
+        const { data: existingBooking } = await supabase
+          .from('tourbooking')
+          .select('id, status')
+          .eq('stripe_session_id', sessionId)
+          .maybeSingle();
+
+        if (existingBooking && existingBooking.status === 'payment_completed') {
+          console.info(`Tour booking already exists for session ${sessionId}, skipping creation`);
+          // Delete pending entry and return
+          await supabase.from('pending_tour_bookings').delete().eq('id', pendingBooking.id);
+          return;
+        }
+
+        let createdBookingId: number | null = null;
+
+        // Process based on tour type
+        if (tourType === 'local_stories') {
+          // LOCAL STORIES: Find or create shared tourbooking, append invitee, create local_tours_bookings
+
+          // Log available date fields for debugging
+          console.info('Local stories booking data:', JSON.stringify({
+            saturdayDateStr: bookingData.saturdayDateStr,
+            bookingDate: bookingData.bookingDate,
+            bookingDateTime: bookingData.bookingDateTime,
+            bookingTime: bookingData.bookingTime,
+            tourDatetime: bookingData.tourDatetime,
+            tourEndDatetime: bookingData.tourEndDatetime,
+            tourId: bookingData.tourId,
+            customerEmail: bookingData.customerEmail,
+            numberOfPeople: bookingData.numberOfPeople,
+          }));
+
+          // Derive booking date from multiple sources (fallback chain)
+          let saturdayDateStr = bookingData.saturdayDateStr || '';
+          if (!saturdayDateStr) {
+            // Try bookingDate
+            if (bookingData.bookingDate) {
+              saturdayDateStr = bookingData.bookingDate;
+            }
+            // Try bookingDateTime
+            else if (bookingData.bookingDateTime) {
+              saturdayDateStr = bookingData.bookingDateTime.split('T')[0];
+            }
+            // Try tourDatetime
+            else if (bookingData.tourDatetime) {
+              saturdayDateStr = bookingData.tourDatetime.split('T')[0];
             }
           }
-        }
 
-        // Always call N8N webhook for local stories bookings (each signup is independent)
-        const n8nWebhookUrl =
-          'https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc';
-
-        const payload = {
-          ...session, // full Stripe checkout session
-          metadata: {
-            ...metadata,
-            stripe_session_id: sessionId,
-          },
-        };
-
-        try {
-          console.info('[N8N] Calling tour booking webhook for local stories booking', {
-            url: n8nWebhookUrl,
-            sessionId,
-          });
-
-          const res = await fetch(n8nWebhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          });
-
-          console.info('[N8N] Tour booking webhook response', {
-            status: res.status,
-            ok: res.ok,
-          });
-
-          if (!res.ok) {
-            const text = await res.text();
-            console.error('[N8N] Tour booking webhook error body', text);
+          if (!saturdayDateStr) {
+            console.error('ERROR: No booking date could be derived for local stories tour. Available data:', JSON.stringify(bookingData));
           }
-        } catch (err) {
-          console.error('[N8N] Failed to call tour booking webhook', err);
-        }
 
-        return; // Done processing local stories booking
-      }
+          console.info(`Processing local stories booking for Saturday: ${saturdayDateStr || 'NO DATE AVAILABLE'}`);
 
-      // For non-local-stories bookings, only process if we have a tourBooking
-      if (tourBooking) {
-        // Check if this is a local stories tour and update local_tours_bookings (shouldn't happen here, but just in case)
-        const { data: tour, error: tourError } = await supabase
-          .from('tours_table_prod')
-          .select('local_stories')
-          .eq('id', tourBooking.tour_id)
-          .maybeSingle();
-        
-        if (!tourError && (tour?.local_stories === true || tour?.local_stories === 'true' || tour?.local_stories === 1)) {
-          // Update local_tours_bookings entry - ensure stripe_session_id is set and status is booked
-          const { error: localBookingError } = await supabase
-            .from('local_tours_bookings')
-            .update({ 
+          let tourbookingId: number | null = null;
+          const saturdayDateTime = saturdayDateStr ? `${saturdayDateStr}T14:00:00` : null;
+
+          // Look for existing tourbooking for this Saturday
+          if (saturdayDateStr) {
+            const { data: existingTourBookings } = await supabase
+              .from('tourbooking')
+              .select('id, invitees')
+              .eq('tour_id', bookingData.tourId)
+              .gte('tour_datetime', `${saturdayDateStr}T00:00:00`)
+              .lt('tour_datetime', `${saturdayDateStr}T23:59:59`);
+
+            if (existingTourBookings && existingTourBookings.length > 0) {
+              // Use existing tourbooking
+              const existingTourBooking = existingTourBookings[0];
+              tourbookingId = existingTourBooking.id;
+
+              // Append new invitee to existing invitees
+              const currentInvitees = existingTourBooking.invitees || [];
+              const inviteeExists = currentInvitees.some((inv: any) => inv.email === bookingData.customerEmail);
+
+              if (!inviteeExists) {
+                const newInvitee = {
+                  name: bookingData.customerName,
+                  email: bookingData.customerEmail,
+                  phone: bookingData.customerPhone,
+                  numberOfPeople: bookingData.numberOfPeople,
+                  language: bookingData.language,
+                  specialRequests: bookingData.specialRequests,
+                  requestTanguy: bookingData.requestTanguy,
+                  amount: bookingData.amounts.tourFinalAmount,
+                  originalAmount: bookingData.amounts.tourFullPrice,
+                  discountApplied: bookingData.amounts.discountAmount,
+                  tanguyCost: bookingData.amounts.tanguyCost,
+                  extraHourCost: bookingData.amounts.extraHourCost,
+                  currency: 'eur',
+                  upsellProducts: bookingData.upsellProducts,
+                  opMaatAnswers: bookingData.opMaatAnswers,
+                };
+
+                const updatedInvitees = [...currentInvitees, newInvitee];
+                await supabase
+                  .from('tourbooking')
+                  .update({
+                    invitees: updatedInvitees,
+                    stripe_session_id: sessionId, // Update to latest session
+                    status: 'payment_completed'
+                  })
+                  .eq('id', tourbookingId);
+
+                console.info(`Appended invitee to existing tourbooking ${tourbookingId}`);
+              } else {
+                console.info(`Invitee already exists in tourbooking ${tourbookingId}`);
+              }
+            }
+          }
+
+          // If no existing tourbooking, create new one
+          if (!tourbookingId) {
+            const newTourBooking = {
+              tour_id: bookingData.tourId,
               stripe_session_id: sessionId,
-              status: 'booked'
-            })
-            .eq('stripe_session_id', sessionId)
-            .neq('status', 'booked'); // Only update if not already booked
-          
-          if (localBookingError) {
-            console.error('Error updating local_tours_bookings:', localBookingError);
+              status: 'payment_completed',
+              tour_datetime: bookingData.tourDatetime || saturdayDateTime,
+              tour_end: bookingData.tourEndDatetime,
+              city: bookingData.citySlug,
+              request_tanguy: bookingData.requestTanguy,
+              user_id: bookingData.userId,
+              invitees: [{
+                name: bookingData.customerName,
+                email: bookingData.customerEmail,
+                phone: bookingData.customerPhone,
+                numberOfPeople: bookingData.numberOfPeople,
+                language: bookingData.language,
+                specialRequests: bookingData.specialRequests,
+                requestTanguy: bookingData.requestTanguy,
+                amount: bookingData.amounts.tourFinalAmount,
+                originalAmount: bookingData.amounts.tourFullPrice,
+                discountApplied: bookingData.amounts.discountAmount,
+                tanguyCost: bookingData.amounts.tanguyCost,
+                extraHourCost: bookingData.amounts.extraHourCost,
+                currency: 'eur',
+                upsellProducts: bookingData.upsellProducts,
+                opMaatAnswers: bookingData.opMaatAnswers,
+                tourStartDatetime: bookingData.tourDatetime,
+                tourEndDatetime: bookingData.tourEndDatetime,
+                durationMinutes: bookingData.durationMinutes,
+              }],
+            };
+
+            const { data: newBooking, error: insertError } = await supabase
+              .from('tourbooking')
+              .insert(newTourBooking)
+              .select('id')
+              .single();
+
+            if (insertError) {
+              console.error('Error creating new tourbooking for local stories:', insertError);
+            } else {
+              tourbookingId = newBooking.id;
+              console.info(`Created new tourbooking ${tourbookingId} for local stories`);
+            }
+          }
+
+          createdBookingId = tourbookingId;
+
+          // Create local_tours_bookings entry for this customer
+          // Each customer gets their own row (local stories tours can have multiple customers)
+          if (tourbookingId && saturdayDateStr) {
+            // Derive booking time - handle HH:mm and HH:mm:ss formats
+            let bookingTimeStr = '14:00:00';
+            if (bookingData.bookingTime) {
+              const timeParts = bookingData.bookingTime.split(':');
+              if (timeParts.length === 2) {
+                // HH:mm format - add seconds
+                bookingTimeStr = `${bookingData.bookingTime}:00`;
+              } else if (timeParts.length >= 3) {
+                // Already HH:mm:ss format
+                bookingTimeStr = bookingData.bookingTime;
+              }
+            }
+
+            console.info(`Creating local_tours_bookings entry: date=${saturdayDateStr}, time=${bookingTimeStr}, tourId=${bookingData.tourId}, customer=${bookingData.customerEmail}`);
+
+            const localBookingData = {
+              tour_id: bookingData.tourId,
+              booking_date: saturdayDateStr,
+              booking_time: bookingTimeStr,
+              is_booked: true,
+              status: 'booked',
+              customer_name: bookingData.customerName,
+              customer_email: bookingData.customerEmail,
+              customer_phone: bookingData.customerPhone,
+              stripe_session_id: sessionId,
+              booking_id: tourbookingId,
+              amnt_of_people: bookingData.numberOfPeople,
+              user_id: bookingData.userId,
+            };
+
+            // Always insert a new entry - each customer booking gets their own row
+            const { error: localInsertError } = await supabase
+              .from('local_tours_bookings')
+              .insert(localBookingData);
+
+            if (localInsertError) {
+              console.error('Error creating local_tours_bookings:', localInsertError);
+            } else {
+              console.info(`Created local_tours_bookings entry for session ${sessionId}`);
+            }
+          }
+
+        } else {
+          // STANDARD or OP_MAAT: Simple insert
+          console.info(`Processing ${tourType} booking`);
+
+          const newTourBooking = {
+            tour_id: bookingData.tourId,
+            stripe_session_id: sessionId,
+            status: 'payment_completed',
+            tour_datetime: bookingData.tourDatetime,
+            tour_end: bookingData.tourEndDatetime,
+            city: bookingData.citySlug,
+            request_tanguy: bookingData.requestTanguy,
+            user_id: bookingData.userId,
+            invitees: [{
+              name: bookingData.customerName,
+              email: bookingData.customerEmail,
+              phone: bookingData.customerPhone,
+              numberOfPeople: bookingData.numberOfPeople,
+              language: bookingData.language,
+              specialRequests: bookingData.specialRequests,
+              requestTanguy: bookingData.requestTanguy,
+              amount: bookingData.amounts.tourFinalAmount,
+              originalAmount: bookingData.amounts.tourFullPrice,
+              discountApplied: bookingData.amounts.discountAmount,
+              tanguyCost: bookingData.amounts.tanguyCost,
+              extraHourCost: bookingData.amounts.extraHourCost,
+              currency: 'eur',
+              upsellProducts: bookingData.upsellProducts,
+              opMaatAnswers: bookingData.opMaatAnswers,
+              tourStartDatetime: bookingData.tourDatetime,
+              tourEndDatetime: bookingData.tourEndDatetime,
+              durationMinutes: bookingData.durationMinutes,
+            }],
+          };
+
+          const { data: newBooking, error: insertError } = await supabase
+            .from('tourbooking')
+            .insert(newTourBooking)
+            .select('id')
+            .single();
+
+          if (insertError) {
+            console.error(`Error creating ${tourType} tourbooking:`, insertError);
           } else {
-            console.info(`Successfully updated local_tours_bookings for session: ${sessionId}`);
+            createdBookingId = newBooking.id;
+            console.info(`Created ${tourType} tourbooking ${createdBookingId}`);
           }
         }
 
-        const n8nWebhookUrl =
-          'https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc';
+        // Delete pending booking entry (only if booking was created successfully)
+        if (createdBookingId) {
+          await supabase.from('pending_tour_bookings').delete().eq('id', pendingBooking.id);
+          console.info(`Deleted pending booking entry for session ${sessionId}`);
+        }
+
+        // Call N8N webhook for tour booking confirmation
+        const n8nWebhookUrl = 'https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc';
 
         const payload = {
-          ...session, // full Stripe checkout session
+          ...session,
           metadata: {
             ...metadata,
             stripe_session_id: sessionId,
+            booking_id: createdBookingId,
           },
+          bookingData, // Include full booking data
         };
 
         try {
           console.info('[N8N] Calling tour booking webhook', {
             url: n8nWebhookUrl,
             sessionId,
+            tourType,
           });
 
           const res = await fetch(n8nWebhookUrl, {
@@ -296,36 +414,67 @@ async function handleEvent(event: Stripe.Event) {
           console.error('[N8N] Failed to call tour booking webhook', err);
         }
 
+        return; // Done processing tour booking
+      }
+
+      // If no pending tour booking, check for legacy bookings (backwards compatibility)
+      // This handles any bookings created before the refactor
+      const { data: existingBooking } = await supabase
+        .from('tourbooking')
+        .select('id, status, tour_id, booking_type')
+        .eq('stripe_session_id', sessionId)
+        .maybeSingle();
+
+      if (existingBooking) {
+        // Legacy booking exists - just update status
+        const newStatus = existingBooking.booking_type === 'B2B' ? 'quote_paid' : 'payment_completed';
+
+        // Check if already processed (idempotency) - skip if status already matches
+        if (existingBooking.status === newStatus) {
+          console.info(`Legacy booking ${existingBooking.id} already has status ${newStatus}, skipping duplicate processing`);
+          return;
+        }
+
+        await supabase
+          .from('tourbooking')
+          .update({ status: newStatus })
+          .eq('id', existingBooking.id);
+        console.info(`Updated legacy booking ${existingBooking.id} to status ${newStatus}`);
+
+        // Call N8N webhook (only for actual status updates, not duplicate events)
+        const n8nWebhookUrl = 'https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc';
+        try {
+          await fetch(n8nWebhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...session, metadata: { ...metadata, stripe_session_id: sessionId } }),
+          });
+        } catch (err) {
+          console.error('[N8N] Failed to call tour booking webhook for legacy booking', err);
+        }
+
         return;
       }
 
+      // If no tour booking found (no pending and no legacy), check if this is a webshop order (via metadata)
+      // IMPORTANT: Only process as webshop if order_type is explicitly 'webshop' AND it's not a tour booking
+      console.info(`Checking for webshop order. Metadata:`, JSON.stringify(metadata || {}));
 
-      if (tourBookingError && tourBookingError.code !== 'PGRST116') {
-        // PGRST116 = no rows found, which is fine - might be a webshop order
-        console.error('Error updating tour booking:', tourBookingError);
+      // If this has tourId in metadata, it's a tour booking - don't process as webshop
+      if (metadata?.tourId) {
+        console.error(`Tour booking (tourId: ${metadata.tourId}) could not be processed - no pending or legacy booking found. Check pending_tour_bookings table exists.`);
+        return;
       }
 
-      // If no tour booking found, try to update a webshop order
-      const { data: order, error: orderError } = await supabase
-        .from('stripe_orders')
-        .update({ 
-          status: 'completed',
-          updated_at: new Date().toISOString()
-        })
-        .eq('checkout_session_id', sessionId)
-        .select()
-        .single();
+      if (metadata?.order_type === 'webshop') {
+        console.info(`Processing webshop order for session: ${sessionId}`);
 
-      if (order) {
-        console.info(`Successfully updated webshop order for session: ${sessionId}`);
-
-        // Retrieve full session with line items to get shipping cost
+        // Retrieve full session with line items and shipping details
         const fullSession = await stripe.checkout.sessions.retrieve(sessionId, {
-          expand: ['line_items'],
+          expand: ['line_items', 'line_items.data.price.product'],
         });
 
-        // Calculate shipping cost from line items
-        // Shipping is identified by line items with names containing "Verzendkosten"
+        // Extract items from line items
         let shippingCost = 0;
         const shippingItems: any[] = [];
         const productItems: any[] = [];
@@ -334,13 +483,9 @@ async function handleEvent(event: Stripe.Event) {
           for (const item of fullSession.line_items.data) {
             // Extract item name from different possible locations
             let itemName = '';
-            
-            // Try price_data first (for dynamically created line items)
-            if (item.price_data?.product_data?.name) {
-              itemName = item.price_data.product_data.name;
-            }
-            // Try description
-            else if (item.description) {
+
+            // Try description first
+            if (item.description) {
               itemName = item.description;
             }
             // Try price.product (for existing Stripe products)
@@ -348,18 +493,15 @@ async function handleEvent(event: Stripe.Event) {
               const product = item.price.product;
               if (typeof product === 'object' && product && 'name' in product) {
                 itemName = product.name as string;
-              } else if (typeof product === 'string') {
-                // If product is just an ID, we'd need to fetch it, but for now use description
-                itemName = item.description || '';
               }
             }
-            
+
             const itemNameStr = typeof itemName === 'string' ? itemName : '';
-            
-            if (itemNameStr.toLowerCase().includes('verzendkosten') || 
+
+            if (itemNameStr.toLowerCase().includes('verzendkosten') ||
                 itemNameStr.toLowerCase().includes('shipping') ||
                 itemNameStr.toLowerCase().includes('freight')) {
-              shippingCost += (item.amount_total ?? 0) / 100; // Convert from cents to euros
+              shippingCost += (item.amount_total ?? 0) / 100;
               shippingItems.push({
                 title: itemNameStr,
                 quantity: item.quantity ?? 1,
@@ -375,25 +517,78 @@ async function handleEvent(event: Stripe.Event) {
           }
         }
 
-        // If shipping not found in line items, calculate from order totals
-        if (shippingCost === 0 && order.amount_subtotal && order.amount_total) {
-          shippingCost = (order.amount_total - order.amount_subtotal) / 100;
+        // If shipping not found in line items, calculate from totals
+        if (shippingCost === 0 && fullSession.amount_subtotal && fullSession.amount_total) {
+          shippingCost = (fullSession.amount_total - fullSession.amount_subtotal) / 100;
         }
 
+        // Get shipping address from Stripe session
+        const stripeShipping = fullSession.shipping_details;
+        const shippingAddress = stripeShipping ? {
+          name: stripeShipping.name || '',
+          street: stripeShipping.address?.line1 || '',
+          street2: stripeShipping.address?.line2 || '',
+          city: stripeShipping.address?.city || '',
+          postalCode: stripeShipping.address?.postal_code || '',
+          country: stripeShipping.address?.country || '',
+        } : null;
+
+        // Create the order in database
+        const orderInsert = {
+          checkout_session_id: sessionId,
+          payment_intent_id: typeof fullSession.payment_intent === 'string'
+            ? fullSession.payment_intent
+            : fullSession.payment_intent?.id || '',
+          customer_id: typeof fullSession.customer === 'string'
+            ? fullSession.customer
+            : fullSession.customer?.id || '',
+          currency: fullSession.currency || 'eur',
+          payment_status: fullSession.payment_status || 'paid',
+          status: 'completed',
+          amount_subtotal: fullSession.amount_subtotal || 0,
+          amount_total: fullSession.amount_total || 0,
+          customer_name: metadata?.customerName || '',
+          customer_email: fullSession.customer_email || metadata?.customerEmail || '',
+          shipping_address: shippingAddress,
+          billing_address: shippingAddress, // Use shipping as billing
+          items: productItems,
+          metadata: {
+            customerName: metadata?.customerName || '',
+            customerEmail: metadata?.customerEmail || '',
+            customerPhone: metadata?.customerPhone || '',
+            userId: metadata?.userId || null,
+            shipping_cost: shippingCost,
+          },
+          total_amount: (fullSession.amount_total || 0) / 100, // In euros
+          user_id: metadata?.userId || null,
+        };
+
+        const { data: order, error: orderError } = await supabase
+          .from('stripe_orders')
+          .insert(orderInsert)
+          .select()
+          .single();
+
+        if (orderError) {
+          console.error('Error creating webshop order:', orderError);
+        } else {
+          console.info(`Successfully created webshop order for session: ${sessionId}, order ID: ${order.id}`);
+        }
+
+        // Call N8N webhook for order confirmation
         const n8nWebhookUrl =
           'https://alexfinit.app.n8n.cloud/webhook/efd633d1-a83c-4e58-a537-8ca171eacf66';
 
-        // Build items array for n8n (used by "Items to HTML") - include both products and shipping
         const items = [...productItems, ...shippingItems];
 
         const payload = {
-          session: fullSession, // FULL Stripe session with line items expanded
+          session: fullSession,
           order: {
-            checkout_session_id: order.checkout_session_id,
-            created_at: order.created_at,
-            amount_subtotal: order.amount_subtotal,
-            amount_total: order.amount_total,
-            shipping_cost: shippingCost, // Explicitly include shipping cost
+            checkout_session_id: sessionId,
+            created_at: new Date().toISOString(),
+            amount_subtotal: fullSession.amount_subtotal,
+            amount_total: fullSession.amount_total,
+            shipping_cost: shippingCost,
             items,
           },
         };
@@ -422,22 +617,10 @@ async function handleEvent(event: Stripe.Event) {
         } catch (err) {
           console.error('[N8N] Failed to call webshop webhook', err);
         }
-        
+
         return;
-
-
-
-      
       }
 
-      if (orderError && orderError.code !== 'PGRST116') {
-        console.error('Error updating webshop order:', orderError);
-      }
-
-      // If neither found, log it
-      if (!tourBooking && !order) {
-        console.warn(`No booking or order found for session: ${sessionId}`);
-      }
     }
 
     // Handle subscription checkouts

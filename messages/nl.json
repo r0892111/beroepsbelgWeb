@@ -1148,6 +1148,8 @@
   },
   "bookingSuccess": {
     "loading": "Boekingsgegevens laden...",
+    "processingPayment": "Je betaling wordt verwerkt...",
+    "processingPaymentSubtext": "Dit duurt meestal slechts enkele seconden.",
     "notFound": "Boeking niet gevonden",
     "notFoundTitle": "Boeking niet gevonden",
     "notFoundDesc": "We konden uw boekingsgegevens niet vinden.",
@@ -1269,5 +1271,12 @@
     "errorSourceRequired": "Selecteer hoe je ons gevonden hebt",
     "errorSourceOtherRequired": "Specifieer hoe je ons gevonden hebt",
     "errorEmailRequired": "Vul je e-mailadres in om je kortingscode te ontvangen"
+  },
+  "unsubscribe": {
+    "processing": "Bezig met verwerken...",
+    "success": "Succesvol uitgeschreven",
+    "successMessage": "Je ontvangt geen herinneringsmails meer over je winkelwagen.",
+    "error": "Er ging iets mis",
+    "errorMessage": "We konden je uitschrijving niet verwerken. Probeer het opnieuw of neem contact op met support."
   }
 }
