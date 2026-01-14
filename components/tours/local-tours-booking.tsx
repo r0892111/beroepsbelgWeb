@@ -14,9 +14,10 @@ interface LocalToursBookingProps {
   tourPrice: number;
   tourDuration?: number;
   citySlug: string;
+  tourLanguages?: string[];
 }
 
-export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration = 120, citySlug }: LocalToursBookingProps) {
+export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration = 120, citySlug, tourLanguages }: LocalToursBookingProps) {
   const t = useTranslations('tourDetail');
   const [bookings, setBookings] = useState<LocalTourBooking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -249,6 +250,7 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
           defaultBookingDate={selectedBooking.booking_date}
           existingTourBookingId={selectedBooking.booking_id || undefined}
           citySlug={citySlug}
+          tourLanguages={tourLanguages}
         />
       )}
     </>

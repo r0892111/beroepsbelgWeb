@@ -47,6 +47,7 @@ interface TourBookingDialogProps {
   defaultBookingDate?: string; // Pre-fill booking date (for local stories)
   existingTourBookingId?: number; // Existing tourbooking ID (for local stories - to join existing booking)
   citySlug?: string; // City slug for the tour
+  tourLanguages?: string[]; // Available languages for this tour (from admin panel)
 }
 
 export function TourBookingDialog({
@@ -61,6 +62,7 @@ export function TourBookingDialog({
   defaultBookingDate,
   existingTourBookingId,
   citySlug,
+  tourLanguages,
 }: TourBookingDialogProps) {
   const router = useRouter();
   const params = useParams();
@@ -101,7 +103,7 @@ export function TourBookingDialog({
     customerPhone: '',
     bookingDate: defaultBookingDate ? new Date(defaultBookingDate) : undefined as Date | undefined,
     numberOfPeople: isLocalStories ? 4 : 15, // Local stories: default to 4 (minimum), Regular tours: default to 15 (1-15 people)
-    language: 'nl',
+    language: 'Nederlands',
     specialRequests: '',
     requestTanguy: false,
     extraHour: false, // For opMaat tours: add extra hour (3 hours instead of 2)
@@ -141,6 +143,19 @@ export function TourBookingDialog({
       setSelectedTimeSlot('14:00');
     }
   }, [isLocalStories, open]);
+
+  // Set default language to first available when tourLanguages is provided
+  useEffect(() => {
+    if (open && tourLanguages && tourLanguages.length > 0) {
+      // Check if current language is in the available languages
+      const isCurrentLanguageAvailable = tourLanguages.includes(formData.language);
+
+      // If current language is not available, set to first available
+      if (!isCurrentLanguageAvailable) {
+        setFormData(prev => ({ ...prev, language: tourLanguages[0] }));
+      }
+    }
+  }, [open, tourLanguages]);
 
   // Calculate actual duration (accounting for extra hour for opMaat tours)
   const actualDuration = useMemo(() => {
@@ -447,15 +462,16 @@ export function TourBookingDialog({
   // Calculate discounted price (10% discount for online bookings)
   const discountRate = 0.9; // 10% discount = 90% of original price
   const discountedTourPrice = tourPrice * discountRate;
-  
+
   // Calculate total price including upsells
   const upsellTotal = products
     .filter(p => selectedUpsell[p.uuid] && selectedUpsell[p.uuid] > 0)
     .reduce((sum, p) => sum + (p.price * (selectedUpsell[p.uuid] || 0)), 0);
-  
+
   // Calculate tour total based on number of people (for all tour types) - using discounted price
+  // IMPORTANT: Use Math.round to match Stripe's cent-based rounding (avoids 1 cent discrepancies)
   const originalTourTotal = tourPrice * formData.numberOfPeople;
-  const tourTotal = discountedTourPrice * formData.numberOfPeople;
+  const tourTotal = Math.round(discountedTourPrice * formData.numberOfPeople * 100) / 100;
   
   // Calculate additional costs
   const tanguyCost = formData.requestTanguy ? 125 : 0;
@@ -747,10 +763,22 @@ export function TourBookingDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="nl">{tB2b('languages.nl')}</SelectItem>
-                  <SelectItem value="en">{tB2b('languages.en')}</SelectItem>
-                  <SelectItem value="fr">{tB2b('languages.fr')}</SelectItem>
-                  <SelectItem value="de">{tB2b('languages.de')}</SelectItem>
+                  {tourLanguages && tourLanguages.length > 0 ? (
+                    // Show only languages configured for this tour
+                    tourLanguages.map((lang) => (
+                      <SelectItem key={lang} value={lang}>
+                        {tB2b(`languageNames.${lang}`, { defaultValue: lang })}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    // Fallback: show default 4 languages if no tourLanguages configured
+                    <>
+                      <SelectItem value="Nederlands">{tB2b('languageNames.Nederlands')}</SelectItem>
+                      <SelectItem value="Engels">{tB2b('languageNames.Engels')}</SelectItem>
+                      <SelectItem value="Frans">{tB2b('languageNames.Frans')}</SelectItem>
+                      <SelectItem value="Duits">{tB2b('languageNames.Duits')}</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>

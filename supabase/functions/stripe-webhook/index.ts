@@ -202,6 +202,7 @@ async function handleEvent(event: Stripe.Event) {
                 tanguyCost: bookingData.amounts.tanguyCost,
                 extraHourCost: bookingData.amounts.extraHourCost,
                 currency: 'eur',
+                  isContacted: false,
                 isContacted: false,
                 upsellProducts: bookingData.upsellProducts,
                 opMaatAnswers: bookingData.opMaatAnswers,

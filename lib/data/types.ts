@@ -2,6 +2,13 @@ import type { Locale as I18nLocale } from '@/i18n';
 
 export type Locale = I18nLocale;
 
+// Tour type entry: either a predefined key (string) or custom multilingual object
+export type TourTypeEntry = string | { nl: string; en?: string; fr?: string; de?: string };
+
+// Predefined tour type keys (used for translation lookup)
+export const PREDEFINED_TOUR_TYPES = ['walking', 'biking', 'bus', 'private', 'group', 'boat', 'food'] as const;
+export type PredefinedTourType = typeof PREDEFINED_TOUR_TYPES[number];
+
 export type City = {
   id: string;
   slug: string;
@@ -19,13 +26,17 @@ export type Tour = {
   cityId?: string; // City ID (primary way to link tours to cities)
   slug: string;
   title: string;
-  type: string;
+  type: string; // Deprecated: kept for backward compatibility
+  tour_types?: TourTypeEntry[]; // New: array of tour types (predefined keys or custom objects)
   durationMinutes: number;
   price?: number;
   startLocation?: string;
   endLocation?: string;
   languages: string[];
-  description: string;
+  description: string; // Dutch description (primary)
+  description_en?: string; // English description
+  description_fr?: string; // French description
+  description_de?: string; // German description
   notes?: string;
   op_maat?: boolean;
   local_stories?: boolean;
@@ -35,7 +46,7 @@ export type Tour = {
   primaryMediaType?: 'image' | 'video'; // Type of primary media (image or video)
   tourImages?: TourImage[]; // All tour images
   displayOrder?: number; // Display order within city (lower numbers appear first)
-  themes?: string[]; // Array of theme tags (e.g., architecture, fashion, history)
+  themes?: { nl: string; en?: string; fr?: string; de?: string }[]; // Array of theme tags with translations
   options?: {
     thumbnail?: string;
     badge?: string;

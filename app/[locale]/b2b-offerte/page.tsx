@@ -54,6 +54,21 @@ export default function B2BQuotePage() {
   const params = useParams();
   const router = useRouter();
   const locale = params.locale as string;
+
+  // Helper to get theme text in the correct language
+  const getThemeText = (theme: any): string => {
+    let themeObj = theme;
+    while (typeof themeObj === 'string') {
+      try {
+        themeObj = JSON.parse(themeObj);
+      } catch {
+        return themeObj;
+      }
+    }
+    if (!themeObj || typeof themeObj !== 'object') return String(themeObj || '');
+    return themeObj[locale] || themeObj.nl || themeObj.en || themeObj.fr || themeObj.de || '';
+  };
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<'select' | 'contact' | 'upsell' | 'opmaat' | 'payment' | 'success'>('select');
   const [cities, setCities] = useState<City[]>([]);
@@ -785,16 +800,16 @@ export default function B2BQuotePage() {
                     </div>
                     {selectedTour.themes && selectedTour.themes.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-2">
-                        {selectedTour.themes.map((theme) => (
+                        {selectedTour.themes.map((theme, index) => (
                           <span
-                            key={theme}
+                            key={index}
                             className="text-xs px-2 py-1 rounded-full font-medium"
                             style={{
                               backgroundColor: '#1BDD95',
                               color: 'white',
                             }}
                           >
-                            {theme}
+                            {getThemeText(theme)}
                           </span>
                         ))}
                       </div>

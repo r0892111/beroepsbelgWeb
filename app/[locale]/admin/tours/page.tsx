@@ -59,10 +59,18 @@ interface Tour {
   op_maat?: boolean;
 }
 
+interface ThemeTranslation {
+  nl: string;
+  en?: string;
+  fr?: string;
+  de?: string;
+}
+
 interface TourFormData {
   city: string;
   title: string;
-  type: string;
+  type: string; // Deprecated: kept for backward compatibility
+  tour_types: TourTypeEntry[]; // New: array of predefined keys or custom multilingual objects
   duration_minutes: number;
   price: number | null;
   start_location: string;
@@ -70,15 +78,34 @@ interface TourFormData {
   google_maps_url: string;
   languages: string[];
   description: string;
+  description_en: string;
+  description_fr: string;
+  description_de: string;
   notes: string;
   options: Record<string, any>;
-  themes: string[];
+  themes: ThemeTranslation[];
   local_stories: boolean;
   op_maat: boolean;
 }
 
-const LANGUAGE_OPTIONS = ['Nederlands', 'Engels', 'Frans', 'Duits', 'Spaans', 'Italiaans'];
-const TOUR_TYPE_OPTIONS = ['Walking', 'Biking', 'Bus', 'Private', 'Group', 'Boat', 'Food', 'Custom'];
+const LANGUAGE_OPTIONS = [
+  'Nederlands', 'Engels', 'Frans', 'Duits', 'Spaans', 'Italiaans', 'Portugees',
+  'Chinees', 'Japans', 'Koreaans', 'Arabisch', 'Russisch', 'Pools', 'Turks',
+  'Hindi', 'Grieks', 'Zweeds', 'Noors', 'Deens', 'Fins', 'Tsjechisch',
+  'Hongaars', 'Roemeens', 'Hebreeuws', 'Thai'
+];
+// Predefined tour types with their display labels and keys
+const TOUR_TYPE_OPTIONS = [
+  { key: 'walking', label: 'Walking' },
+  { key: 'biking', label: 'Biking' },
+  { key: 'bus', label: 'Bus' },
+  { key: 'private', label: 'Private' },
+  { key: 'group', label: 'Group' },
+  { key: 'boat', label: 'Boat' },
+  { key: 'food', label: 'Food' },
+] as const;
+
+type TourTypeEntry = string | { nl: string; en?: string; fr?: string; de?: string };
 
 // Client-side slugify function (matches server-side citySlugify logic)
 const slugify = (value: string) =>
@@ -212,7 +239,8 @@ export default function AdminToursPage() {
   const [formData, setFormData] = useState<TourFormData>({
     city: '',
     title: '',
-    type: '',
+    type: '', // Deprecated
+    tour_types: [],
     duration_minutes: 120,
     price: null,
     start_location: '',
@@ -220,21 +248,27 @@ export default function AdminToursPage() {
     google_maps_url: '',
     languages: [],
     description: '',
+    description_en: '',
+    description_fr: '',
+    description_de: '',
     notes: '',
     options: {},
     themes: [],
     local_stories: false,
     op_maat: false,
   });
-  
+
   // Custom language input state
   const [customLanguage, setCustomLanguage] = useState('');
-  
-  // Custom theme input state
-  const [customTheme, setCustomTheme] = useState('');
-  
-  // Custom tour type input state
-  const [customTourType, setCustomTourType] = useState('');
+
+  // Custom theme input state (multilingual)
+  const [customTheme, setCustomTheme] = useState<ThemeTranslation>({ nl: '', en: '', fr: '', de: '' });
+
+  // Custom tour type input state (multilingual)
+  const [customTourType, setCustomTourType] = useState<ThemeTranslation>({ nl: '', en: '', fr: '', de: '' });
+
+  // Show custom tour type input fields
+  const [showCustomTourType, setShowCustomTourType] = useState(false);
 
   useEffect(() => {
     if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
@@ -344,7 +378,8 @@ export default function AdminToursPage() {
     setFormData({
       city: '',
       title: '',
-      type: '',
+      type: '', // Deprecated
+      tour_types: [],
       duration_minutes: 120,
       price: null,
       start_location: '',
@@ -352,6 +387,9 @@ export default function AdminToursPage() {
       google_maps_url: '',
       languages: [],
       description: '',
+      description_en: '',
+      description_fr: '',
+      description_de: '',
       notes: '',
       options: {},
       themes: [],
@@ -359,19 +397,52 @@ export default function AdminToursPage() {
       op_maat: false,
     });
     setCustomLanguage('');
-    setCustomTheme('');
-    setCustomTourType('');
+    setCustomTheme({ nl: '', en: '', fr: '', de: '' });
+    setCustomTourType({ nl: '', en: '', fr: '', de: '' });
+    setShowCustomTourType(false);
     setDialogOpen(true);
   };
 
   const openEditDialog = (tour: Tour) => {
     setEditingTour(tour);
-    // Check if tour type is in the predefined options
-    const isCustomType = tour.type && !TOUR_TYPE_OPTIONS.includes(tour.type);
+
+    // Parse tour_types with fallback to legacy type field
+    const parseTourTypesFromTour = (): TourTypeEntry[] => {
+      // Try new tour_types field first (from database)
+      const rawTourTypes = (tour as any).tour_types;
+      if (rawTourTypes && Array.isArray(rawTourTypes) && rawTourTypes.length > 0) {
+        return rawTourTypes;
+      }
+
+      // Fallback to legacy type field
+      if (tour.type && typeof tour.type === 'string' && tour.type.trim()) {
+        const normalizedType = tour.type.toLowerCase().trim();
+        const predefinedKeys = TOUR_TYPE_OPTIONS.map(opt => opt.key);
+        if (predefinedKeys.includes(normalizedType as any)) {
+          return [normalizedType];
+        }
+        // It's a custom type
+        return [{ nl: tour.type, en: tour.type, fr: tour.type, de: tour.type }];
+      }
+
+      return [];
+    };
+
+    const tourTypes = parseTourTypesFromTour();
+
+    // Check if there are any custom types (objects, not strings)
+    const customTypes = tourTypes.filter(t => typeof t === 'object');
+    const hasCustomType = customTypes.length > 0;
+    const firstCustomType = hasCustomType ? customTypes[0] as ThemeTranslation : { nl: '', en: '', fr: '', de: '' };
+
+    // Find the city name from slug for the select dropdown
+    const cityData = cities.find(c => c.slug === tour.city || c.name_nl === tour.city);
+    const cityName = cityData?.name_nl || tour.city || '';
     setFormData({
-      city: tour.city || '',
+      city: cityName,
       title: tour.title || '',
-      type: isCustomType ? 'Custom' : (tour.type || ''),
+      type: tour.type || '', // Keep for backward compatibility
+      tour_types: tourTypes,
       duration_minutes: tour.duration_minutes || 120,
       price: tour.price,
       start_location: tour.start_location || '',
@@ -379,15 +450,36 @@ export default function AdminToursPage() {
       google_maps_url: (tour as any).google_maps_url || '',
       languages: Array.isArray(tour.languages) ? tour.languages : [],
       description: tour.description || '',
+      description_en: (tour as any).description_en || '',
+      description_fr: (tour as any).description_fr || '',
+      description_de: (tour as any).description_de || '',
       notes: tour.notes || '',
       options: tour.options || {},
-      themes: Array.isArray(tour.themes) ? tour.themes : [],
+      // Parse themes - handle JSON strings from database
+      themes: (() => {
+        let themesData = tour.themes;
+        // Parse if it's a JSON string
+        if (typeof themesData === 'string') {
+          try { themesData = JSON.parse(themesData); } catch { themesData = []; }
+        }
+        if (!Array.isArray(themesData)) return [];
+        return themesData.map((t: any) => {
+          // Parse nested JSON strings
+          let theme = t;
+          while (typeof theme === 'string') {
+            try { theme = JSON.parse(theme); } catch { break; }
+          }
+          if (typeof theme === 'string') return { nl: theme, en: '', fr: '', de: '' };
+          return theme;
+        });
+      })(),
       local_stories: Boolean(tour.local_stories === true || (tour.local_stories as any) === 'true' || (tour.local_stories as any) === 1),
       op_maat: Boolean(tour.op_maat === true || (tour.op_maat as any) === 'true' || (tour.op_maat as any) === 1),
     });
     setCustomLanguage('');
-    setCustomTheme('');
-    setCustomTourType(isCustomType ? tour.type : '');
+    setCustomTheme({ nl: '', en: '', fr: '', de: '' });
+    setCustomTourType(firstCustomType);
+    setShowCustomTourType(hasCustomType);
     setDialogOpen(true);
   };
 
@@ -416,11 +508,41 @@ export default function AdminToursPage() {
       // Use the name_nl from the selected city to ensure consistency
       const finalCityName = selectedCity?.name_nl || cityName;
 
+      // Build tour_types array
+      let finalTourTypes: TourTypeEntry[] = [...formData.tour_types];
+
+      // If custom type is being added, add it to the array
+      if (showCustomTourType && customTourType.nl.trim()) {
+        // Remove any existing custom types (objects) first
+        finalTourTypes = finalTourTypes.filter(t => typeof t === 'string');
+        // Add the new custom type
+        finalTourTypes.push({
+          nl: customTourType.nl.trim(),
+          en: customTourType.en?.trim() || customTourType.nl.trim(),
+          fr: customTourType.fr?.trim() || customTourType.nl.trim(),
+          de: customTourType.de?.trim() || customTourType.nl.trim(),
+        });
+      }
+
+      // Legacy type field: use first tour type (for backward compatibility)
+      let legacyType = '';
+      if (finalTourTypes.length > 0) {
+        const firstType = finalTourTypes[0];
+        if (typeof firstType === 'string') {
+          // Predefined type - capitalize for display
+          legacyType = firstType.charAt(0).toUpperCase() + firstType.slice(1);
+        } else {
+          // Custom type - use Dutch text
+          legacyType = firstType.nl;
+        }
+      }
+
       const payload = {
         city: finalCityName, // Store city name (from cities.name_nl) in tours_table_prod.city
         city_id: selectedCity?.id || null, // Link tour to city by ID for proper JOIN queries
         title: formData.title,
-        type: customTourType.trim() || formData.type,
+        type: legacyType, // Legacy field for backward compatibility
+        tour_types: finalTourTypes, // New field for multi-select tour types
         duration_minutes: formData.duration_minutes,
         price: formData.price,
         start_location: formData.start_location || null,
@@ -428,6 +550,9 @@ export default function AdminToursPage() {
         google_maps_url: formData.google_maps_url || null,
         languages: formData.languages,
         description: formData.description,
+        description_en: formData.description_en || null,
+        description_fr: formData.description_fr || null,
+        description_de: formData.description_de || null,
         notes: formData.notes || null,
         options: formData.options || {},
         themes: formData.themes || [],
@@ -1658,9 +1783,9 @@ export default function AdminToursPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Types</SelectItem>
-                      {TOUR_TYPE_OPTIONS.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
+                      {TOUR_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option.key} value={option.label}>
+                          {option.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1756,49 +1881,120 @@ export default function AdminToursPage() {
               </div>
 
               <div>
-                <Label htmlFor="type" className="text-navy font-semibold">Tour Type*</Label>
-                <Select
-                  value={formData.type}
-                  onValueChange={(value) => {
-                    setFormData({ ...formData, type: value });
-                    if (value !== 'Custom') {
-                      setCustomTourType(''); // Clear custom type when selecting from dropdown
-                    } else {
-                      // When selecting Custom, ensure customTourType is initialized if needed
-                      if (!customTourType) {
-                        setCustomTourType('');
-                      }
-                    }
-                  }}
-                  required={formData.type !== 'Custom' || !customTourType.trim()}
-                >
-                  <SelectTrigger className="bg-white">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TOUR_TYPE_OPTIONS.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {formData.type === 'Custom' && (
-                  <div className="mt-2">
-                    <Label htmlFor="customTourType" className="text-sm text-muted-foreground">Custom Tour Type*</Label>
-                    <Input
-                      id="customTourType"
-                      value={customTourType}
-                      onChange={(e) => {
-                        setCustomTourType(e.target.value);
-                        // Keep formData.type as 'Custom' to maintain input visibility
-                      }}
-                      placeholder="e.g., Segway, Helicopter, Train..."
-                      className="bg-white mt-1"
-                      required
-                    />
+                <Label className="text-navy font-semibold">Tour Types*</Label>
+                <div className="border rounded-lg p-3 bg-white space-y-3">
+                  {/* Predefined tour types as checkboxes */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {TOUR_TYPE_OPTIONS.map((option) => {
+                      const isChecked = formData.tour_types.some(t => t === option.key);
+                      return (
+                        <label key={option.key} className="flex items-center gap-2 cursor-pointer">
+                          <Checkbox
+                            checked={isChecked}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setFormData({
+                                  ...formData,
+                                  tour_types: [...formData.tour_types, option.key],
+                                });
+                              } else {
+                                setFormData({
+                                  ...formData,
+                                  tour_types: formData.tour_types.filter(t => t !== option.key),
+                                });
+                              }
+                            }}
+                          />
+                          <span className="text-sm">{option.label}</span>
+                        </label>
+                      );
+                    })}
                   </div>
-                )}
+
+                  {/* Custom type toggle */}
+                  <div className="border-t pt-3">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox
+                        checked={showCustomTourType}
+                        onCheckedChange={(checked) => {
+                          setShowCustomTourType(!!checked);
+                          if (!checked) {
+                            setCustomTourType({ nl: '', en: '', fr: '', de: '' });
+                            // Remove custom types (objects) from tour_types
+                            setFormData({
+                              ...formData,
+                              tour_types: formData.tour_types.filter(t => typeof t === 'string'),
+                            });
+                          }
+                        }}
+                      />
+                      <span className="text-sm font-medium">Add Custom Type</span>
+                    </label>
+
+                    {/* Custom type multilingual inputs */}
+                    {showCustomTourType && (
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Dutch (NL)*</Label>
+                          <Input
+                            value={customTourType.nl}
+                            onChange={(e) => setCustomTourType({ ...customTourType, nl: e.target.value })}
+                            placeholder="e.g., Segway Tour"
+                            className="bg-white mt-1 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">English (EN)</Label>
+                          <Input
+                            value={customTourType.en || ''}
+                            onChange={(e) => setCustomTourType({ ...customTourType, en: e.target.value })}
+                            placeholder="e.g., Segway Tour"
+                            className="bg-white mt-1 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">French (FR)</Label>
+                          <Input
+                            value={customTourType.fr || ''}
+                            onChange={(e) => setCustomTourType({ ...customTourType, fr: e.target.value })}
+                            placeholder="e.g., Tour en Segway"
+                            className="bg-white mt-1 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">German (DE)</Label>
+                          <Input
+                            value={customTourType.de || ''}
+                            onChange={(e) => setCustomTourType({ ...customTourType, de: e.target.value })}
+                            placeholder="e.g., Segway-Tour"
+                            className="bg-white mt-1 text-sm"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Show selected types */}
+                  {(formData.tour_types.length > 0 || (showCustomTourType && customTourType.nl)) && (
+                    <div className="border-t pt-2 flex flex-wrap gap-1">
+                      {formData.tour_types.map((t, idx) => {
+                        const label = typeof t === 'string'
+                          ? TOUR_TYPE_OPTIONS.find(o => o.key === t)?.label || t
+                          : t.nl;
+                        return (
+                          <Badge key={idx} className="bg-green-100 text-green-900 border border-green-300">
+                            {label}
+                          </Badge>
+                        );
+                      })}
+                      {showCustomTourType && customTourType.nl && (
+                        <Badge className="bg-blue-100 text-blue-900 border border-blue-300">
+                          {customTourType.nl} (custom)
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -1952,15 +2148,17 @@ export default function AdminToursPage() {
             </div>
 
             <div>
-              <Label className="text-navy font-semibold">Themes</Label>
-              <div className="border rounded-lg p-3 space-y-2 bg-white">
+              <Label className="text-navy font-semibold">Themes (Multilingual)</Label>
+              <div className="border rounded-lg p-3 space-y-3 bg-white">
+                {/* Existing themes */}
                 <div className="flex flex-wrap gap-2">
-                  {formData.themes.map((theme) => (
-                    <Badge key={theme} className="bg-purple-100 text-purple-900 border border-purple-300 hover:bg-purple-200 flex items-center gap-1">
-                      {theme}
+                  {formData.themes.map((theme, index) => (
+                    <Badge key={index} className="bg-purple-100 text-purple-900 border border-purple-300 hover:bg-purple-200 flex items-center gap-1 py-1">
+                      <span className="font-medium">{theme.nl}</span>
+                      {theme.en && <span className="text-xs opacity-70">| {theme.en}</span>}
                       <X
-                        className="h-3 w-3 cursor-pointer hover:bg-purple-300/50 rounded"
-                        onClick={() => setFormData({ ...formData, themes: formData.themes.filter(t => t !== theme) })}
+                        className="h-3 w-3 cursor-pointer hover:bg-purple-300/50 rounded ml-1"
+                        onClick={() => setFormData({ ...formData, themes: formData.themes.filter((_, i) => i !== index) })}
                       />
                     </Badge>
                   ))}
@@ -1968,51 +2166,127 @@ export default function AdminToursPage() {
                     <span className="text-sm text-muted-foreground">No themes added</span>
                   )}
                 </div>
-                <div className="flex gap-2">
-                  <Input
-                    value={customTheme}
-                    onChange={(e) => setCustomTheme(e.target.value)}
-                    placeholder="Type theme (e.g., architecture, fashion, history)..."
-                    className="bg-white flex-1"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        const theme = customTheme.trim();
-                        if (theme && !formData.themes.includes(theme)) {
-                          setFormData({ ...formData, themes: [...formData.themes, theme] });
-                          setCustomTheme('');
-                        }
-                      }
-                    }}
-                  />
+                {/* Add new theme with translations */}
+                <div className="border-t pt-3 space-y-2">
+                  <p className="text-sm text-muted-foreground">Add a new theme (all languages required):</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Dutch (NL) *</Label>
+                      <Input
+                        value={customTheme.nl}
+                        onChange={(e) => setCustomTheme({ ...customTheme, nl: e.target.value })}
+                        placeholder="e.g., architectuur"
+                        className="bg-white"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">English (EN) *</Label>
+                      <Input
+                        value={customTheme.en || ''}
+                        onChange={(e) => setCustomTheme({ ...customTheme, en: e.target.value })}
+                        placeholder="e.g., architecture"
+                        className="bg-white"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">French (FR) *</Label>
+                      <Input
+                        value={customTheme.fr || ''}
+                        onChange={(e) => setCustomTheme({ ...customTheme, fr: e.target.value })}
+                        placeholder="e.g., architecture"
+                        className="bg-white"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">German (DE) *</Label>
+                      <Input
+                        value={customTheme.de || ''}
+                        onChange={(e) => setCustomTheme({ ...customTheme, de: e.target.value })}
+                        placeholder="e.g., Architektur"
+                        className="bg-white"
+                      />
+                    </div>
+                  </div>
                   <Button
                     type="button"
                     variant="outline"
+                    className="w-full"
                     onClick={() => {
-                      const theme = customTheme.trim();
-                      if (theme && !formData.themes.includes(theme)) {
-                        setFormData({ ...formData, themes: [...formData.themes, theme] });
-                        setCustomTheme('');
+                      const nlTheme = customTheme.nl.trim();
+                      const enTheme = customTheme.en?.trim() || '';
+                      const frTheme = customTheme.fr?.trim() || '';
+                      const deTheme = customTheme.de?.trim() || '';
+                      if (nlTheme && enTheme && frTheme && deTheme) {
+                        const newTheme: ThemeTranslation = {
+                          nl: nlTheme,
+                          en: enTheme,
+                          fr: frTheme,
+                          de: deTheme,
+                        };
+                        setFormData({ ...formData, themes: [...formData.themes, newTheme] });
+                        setCustomTheme({ nl: '', en: '', fr: '', de: '' });
                       }
                     }}
+                    disabled={!customTheme.nl.trim() || !customTheme.en?.trim() || !customTheme.fr?.trim() || !customTheme.de?.trim()}
                   >
-                    Add
+                    Add Theme
                   </Button>
                 </div>
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="description" className="text-navy font-semibold">Description*</Label>
-              <Textarea
-                id="description"
-                rows={4}
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Detailed description of the tour..."
-                required
-                className="bg-white"
-              />
+            <div className="space-y-4">
+              <Label className="text-navy font-semibold">Description (All Languages Required)*</Label>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <Label htmlFor="description" className="text-xs text-muted-foreground">Dutch (NL) *</Label>
+                  <Textarea
+                    id="description"
+                    rows={3}
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Gedetailleerde beschrijving van de tour..."
+                    required
+                    className="bg-white"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="description_en" className="text-xs text-muted-foreground">English (EN) *</Label>
+                  <Textarea
+                    id="description_en"
+                    rows={3}
+                    value={formData.description_en}
+                    onChange={(e) => setFormData({ ...formData, description_en: e.target.value })}
+                    placeholder="Detailed description of the tour..."
+                    required
+                    className="bg-white"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="description_fr" className="text-xs text-muted-foreground">French (FR) *</Label>
+                  <Textarea
+                    id="description_fr"
+                    rows={3}
+                    value={formData.description_fr}
+                    onChange={(e) => setFormData({ ...formData, description_fr: e.target.value })}
+                    placeholder="Description détaillée de la visite..."
+                    required
+                    className="bg-white"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="description_de" className="text-xs text-muted-foreground">German (DE) *</Label>
+                  <Textarea
+                    id="description_de"
+                    rows={3}
+                    value={formData.description_de}
+                    onChange={(e) => setFormData({ ...formData, description_de: e.target.value })}
+                    placeholder="Detaillierte Beschreibung der Tour..."
+                    required
+                    className="bg-white"
+                  />
+                </div>
+              </div>
             </div>
 
             <div>
