@@ -516,6 +516,33 @@
       "zh": "Chinese",
       "ja": "Japanese"
     },
+    "languageNames": {
+      "Nederlands": "Dutch",
+      "Engels": "English",
+      "Frans": "French",
+      "Duits": "German",
+      "Spaans": "Spanish",
+      "Italiaans": "Italian",
+      "Portugees": "Portuguese",
+      "Chinees": "Chinese",
+      "Japans": "Japanese",
+      "Koreaans": "Korean",
+      "Arabisch": "Arabic",
+      "Russisch": "Russian",
+      "Pools": "Polish",
+      "Turks": "Turkish",
+      "Hindi": "Hindi",
+      "Grieks": "Greek",
+      "Zweeds": "Swedish",
+      "Noors": "Norwegian",
+      "Deens": "Danish",
+      "Fins": "Finnish",
+      "Tsjechisch": "Czech",
+      "Hongaars": "Hungarian",
+      "Roemeens": "Romanian",
+      "Hebreeuws": "Hebrew",
+      "Thai": "Thai"
+    },
     "selectTour": "Select a tour",
     "selectDateAndTime": "Please select both a date and a time slot",
     "fillNumberOfPeople": "Please fill in the number of people",
@@ -656,6 +683,7 @@
     "end": "End",
     "duration": "Duration",
     "languages": "Languages",
+    "themes": "Themes",
     "localStoriesTag": "Every Saturday - join us!",
     "type": "Type",
     "localStoriesTitle": "Important Information",
@@ -669,6 +697,15 @@
     "originalPrice": "Original price",
     "discountedPrice": "Discounted price",
     "youSave": "You save"
+  },
+  "tourTypes": {
+    "walking": "Walking Tour",
+    "biking": "Bike Tour",
+    "bus": "Bus Tour",
+    "private": "Private Tour",
+    "group": "Group Tour",
+    "boat": "Boat Tour",
+    "food": "Food Tour"
   },
   "faq": {
     "title": "FAQ",
@@ -1109,7 +1146,8 @@
     "noDate": "No date",
     "customerName": "Name",
     "email": "Email",
-    "purchasedProducts": "Purchased Products"
+    "purchasedProducts": "Purchased Products",
+    "priceBreakdown": "Price Breakdown"
   },
   "bookingCancelled": {
     "title": "Booking Cancelled",

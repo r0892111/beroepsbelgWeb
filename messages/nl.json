@@ -644,6 +644,33 @@
       "ru": "Russisch",
       "zh": "Chinees",
       "ja": "Japans"
+    },
+    "languageNames": {
+      "Nederlands": "Nederlands",
+      "Engels": "Engels",
+      "Frans": "Frans",
+      "Duits": "Duits",
+      "Spaans": "Spaans",
+      "Italiaans": "Italiaans",
+      "Portugees": "Portugees",
+      "Chinees": "Chinees",
+      "Japans": "Japans",
+      "Koreaans": "Koreaans",
+      "Arabisch": "Arabisch",
+      "Russisch": "Russisch",
+      "Pools": "Pools",
+      "Turks": "Turks",
+      "Hindi": "Hindi",
+      "Grieks": "Grieks",
+      "Zweeds": "Zweeds",
+      "Noors": "Noors",
+      "Deens": "Deens",
+      "Fins": "Fins",
+      "Tsjechisch": "Tsjechisch",
+      "Hongaars": "Hongaars",
+      "Roemeens": "Roemeens",
+      "Hebreeuws": "Hebreeuws",
+      "Thai": "Thai"
     }
   },
   "cart": {
@@ -724,6 +751,7 @@
     "end": "Einde",
     "duration": "Duur",
     "languages": "Talen",
+    "themes": "Thema's",
     "localStoriesTag": "Elke zaterdag - sluit aan!",
     "type": "Type",
     "localStoriesTitle": "Belangrijke Informatie",
@@ -737,6 +765,15 @@
     "originalPrice": "Originele prijs",
     "discountedPrice": "Prijs met korting",
     "youSave": "Je bespaart"
+  },
+  "tourTypes": {
+    "walking": "Wandeltour",
+    "biking": "Fietstour",
+    "bus": "Bustour",
+    "private": "Privétour",
+    "group": "Groepstour",
+    "boat": "Boottour",
+    "food": "Culinaire Tour"
   },
   "faq": {
     "title": "FAQ",
@@ -1177,7 +1214,8 @@
     "noDate": "Geen datum",
     "customerName": "Naam",
     "email": "E-mail",
-    "purchasedProducts": "Gekochte producten"
+    "purchasedProducts": "Gekochte producten",
+    "priceBreakdown": "Prijsoverzicht"
   },
   "bookingCancelled": {
     "title": "Boeking geannuleerd",

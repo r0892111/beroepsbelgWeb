@@ -1,5 +1,6 @@
 import { supabaseServer } from '@/lib/supabase/server';
-import type { Locale, City, Tour, Product, FaqItem, PressLink, ProductImage, TourImage, Lecture, LectureImage, LectureBooking, Press, NewsletterSubscription, Blog, BlogImage } from '@/lib/data/types';
+import type { Locale, City, Tour, Product, FaqItem, PressLink, ProductImage, TourImage, Lecture, LectureImage, LectureBooking, Press, NewsletterSubscription, Blog, BlogImage, TourTypeEntry } from '@/lib/data/types';
+import { PREDEFINED_TOUR_TYPES } from '@/lib/data/types';
 
 export type LocalTourBooking = {
   id: string;
@@ -68,6 +69,30 @@ const parseNumber = (value: unknown): number | null => {
     return Number.isNaN(parsed) ? null : parsed;
   }
   return null;
+};
+
+/**
+ * Parse tour_types from database with fallback to legacy type field
+ * Returns array of TourTypeEntry (predefined keys or custom objects)
+ */
+const parseTourTypes = (tourTypes: any, legacyType: string | null): TourTypeEntry[] => {
+  // Try to use new tour_types field first
+  if (tourTypes && Array.isArray(tourTypes) && tourTypes.length > 0) {
+    return tourTypes;
+  }
+
+  // Fallback to legacy type field
+  if (legacyType && typeof legacyType === 'string' && legacyType.trim()) {
+    const normalizedType = legacyType.toLowerCase().trim();
+    // Check if it's a predefined type
+    if (PREDEFINED_TOUR_TYPES.includes(normalizedType as any)) {
+      return [normalizedType];
+    }
+    // It's a custom type - store as multilingual object
+    return [{ nl: legacyType, en: legacyType, fr: legacyType, de: legacyType }];
+  }
+
+  return [];
 };
 
 
@@ -223,13 +248,17 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
       cityId: cityId || undefined, // Primary way to link tours to cities
       slug: slugify(row.title),
       title: row.title,
-      type: row.type,
+      type: row.type, // Deprecated: kept for backward compatibility
+      tour_types: parseTourTypes(row.tour_types, row.type), // New: with fallback to legacy type
       durationMinutes: row.duration_minutes,
       price: row.price ? Number(row.price) : undefined,
       startLocation: row.start_location,
       endLocation: row.end_location,
       languages: row.languages || [],
       description: row.description,
+      description_en: row.description_en,
+      description_fr: row.description_fr,
+      description_de: row.description_de,
       notes: row.notes,
       op_maat: row.op_maat === true || row.op_maat === 'true' || row.op_maat === 1,
       local_stories: row.local_stories === true || row.local_stories === 'true' || row.local_stories === 1,
@@ -350,13 +379,17 @@ export async function getTourBySlug(citySlug: string, slug: string): Promise<Tou
     cityId: matchingTour.city_id || undefined,
     slug: slugify(matchingTour.title),
     title: matchingTour.title,
-    type: matchingTour.type,
+    type: matchingTour.type, // Deprecated: kept for backward compatibility
+    tour_types: parseTourTypes(matchingTour.tour_types, matchingTour.type), // New: with fallback to legacy type
     durationMinutes: matchingTour.duration_minutes,
     price: matchingTour.price ? Number(matchingTour.price) : undefined,
     startLocation: matchingTour.start_location,
     endLocation: matchingTour.end_location,
     languages: matchingTour.languages || [],
     description: matchingTour.description,
+    description_en: matchingTour.description_en,
+    description_fr: matchingTour.description_fr,
+    description_de: matchingTour.description_de,
     notes: matchingTour.notes,
     op_maat: matchingTour.op_maat === true || matchingTour.op_maat === 'true' || matchingTour.op_maat === 1,
     local_stories: localStoriesValue,

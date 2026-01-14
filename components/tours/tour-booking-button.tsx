@@ -13,11 +13,12 @@ interface TourBookingButtonProps {
   isLocalStories?: boolean;
   opMaat?: boolean;
   citySlug?: string;
+  tourLanguages?: string[];
   size?: 'default' | 'sm' | 'lg' | 'icon';
   className?: string;
 }
 
-export function TourBookingButton({ tourId, tourTitle, tourPrice, tourDuration, isLocalStories, opMaat, citySlug, size = 'lg', className }: TourBookingButtonProps) {
+export function TourBookingButton({ tourId, tourTitle, tourPrice, tourDuration, isLocalStories, opMaat, citySlug, tourLanguages, size = 'lg', className }: TourBookingButtonProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const t = useTranslations('booking');
 
@@ -48,6 +49,7 @@ export function TourBookingButton({ tourId, tourTitle, tourPrice, tourDuration, 
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         citySlug={citySlug}
+        tourLanguages={tourLanguages}
       />
     </>
   );

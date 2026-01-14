@@ -96,11 +96,24 @@ export default function SearchPage() {
     // Search tours
     tours.forEach((tour: any) => {
       const title = tour.title?.toLowerCase() || '';
-      const description = tour.description?.toLowerCase() || '';
+      const descriptionNl = tour.description?.toLowerCase() || '';
+      const descriptionEn = tour.description_en?.toLowerCase() || '';
+      const descriptionFr = tour.description_fr?.toLowerCase() || '';
+      const descriptionDe = tour.description_de?.toLowerCase() || '';
       const city = tour.city?.toLowerCase() || '';
       const citySlug = tour.cities?.slug || tour.city?.toLowerCase() || 'unknown';
-      
-      if (title.includes(queryLower) || description.includes(queryLower) || city.includes(queryLower)) {
+
+      // Get description in current locale
+      const getLocalizedDescription = () => {
+        if (locale === 'en' && tour.description_en) return tour.description_en;
+        if (locale === 'fr' && tour.description_fr) return tour.description_fr;
+        if (locale === 'de' && tour.description_de) return tour.description_de;
+        return tour.description;
+      };
+
+      if (title.includes(queryLower) || descriptionNl.includes(queryLower) ||
+          descriptionEn.includes(queryLower) || descriptionFr.includes(queryLower) ||
+          descriptionDe.includes(queryLower) || city.includes(queryLower)) {
         // Generate slug from title (matching the slugify function used in content.ts)
         const slug = tour.title
           .toLowerCase()
@@ -112,7 +125,7 @@ export default function SearchPage() {
           type: 'tour',
           id: tour.id,
           title: tour.title || 'Untitled Tour',
-          description: tour.description,
+          description: getLocalizedDescription(),
           url: `/${locale}/tours/${citySlug}/${slug}`,
           category: tour.city,
         });

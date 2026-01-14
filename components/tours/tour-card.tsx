@@ -19,9 +19,56 @@ interface TourCardProps {
 export function TourCard({ tour, locale }: TourCardProps) {
   const t = useTranslations('common');
   const tBooking = useTranslations('booking');
+  const tTourTypes = useTranslations('tourTypes');
   // Note: badge field removed with options field
   const badge = undefined;
-  
+
+  // Helper to get tour type text in the correct language
+  const getTourTypeText = (tourType: any): string => {
+    // If it's a predefined key (string), use the translation
+    if (typeof tourType === 'string') {
+      try {
+        const translated = tTourTypes(tourType as any);
+        if (translated && translated !== tourType) {
+          return translated;
+        }
+      } catch {
+        // Fall through to return the key
+      }
+      // Capitalize the key as fallback
+      return tourType.charAt(0).toUpperCase() + tourType.slice(1);
+    }
+
+    // If it's a custom type (object), get the locale-specific text
+    if (tourType && typeof tourType === 'object') {
+      return tourType[locale] || tourType.nl || tourType.en || tourType.fr || tourType.de || '';
+    }
+
+    return String(tourType || '');
+  };
+
+  // Helper to get theme text in the correct language
+  const getThemeText = (theme: any): string => {
+    let themeObj = theme;
+    while (typeof themeObj === 'string') {
+      try {
+        themeObj = JSON.parse(themeObj);
+      } catch {
+        return themeObj;
+      }
+    }
+    if (!themeObj || typeof themeObj !== 'object') return String(themeObj || '');
+    return themeObj[locale] || themeObj.nl || themeObj.en || themeObj.fr || themeObj.de || '';
+  };
+
+  // Helper to get description in the correct language
+  const getDescription = (): string => {
+    if (locale === 'en' && tour.description_en) return tour.description_en;
+    if (locale === 'fr' && tour.description_fr) return tour.description_fr;
+    if (locale === 'de' && tour.description_de) return tour.description_de;
+    return tour.description; // Default to Dutch
+  };
+
   // Calculate discounted price (10% discount for online bookings)
   const discountRate = 0.9; // 10% discount = 90% of original price
   const originalPrice = tour.price || 0;
@@ -94,7 +141,8 @@ export function TourCard({ tour, locale }: TourCardProps) {
             {t('localStoriesTag')}
           </div>
         )}
-        {tour.type === 'Bike' && (
+        {/* Show bike icon if biking is in tour_types */}
+        {tour.tour_types?.some(t => t === 'biking' || (typeof t === 'object' && t.nl?.toLowerCase().includes('fiets'))) && (
             <div
               className="absolute top-3 right-3 rounded-full p-2"
               style={{
@@ -143,13 +191,14 @@ export function TourCard({ tour, locale }: TourCardProps) {
           className="line-clamp-2"
           style={{ color: 'var(--text-tertiary)' }}
         >
-          {tour.description}
+          {getDescription()}
         </CardDescription>
-        {tour.themes && tour.themes.length > 0 && (
+        {/* Tour types badges */}
+        {tour.tour_types && tour.tour_types.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2">
-            {tour.themes.map((theme) => (
+            {tour.tour_types.map((tourType, index) => (
               <Badge
-                key={theme}
+                key={`type-${index}`}
                 className="text-xs px-2 py-0.5"
                 style={{
                   backgroundColor: '#1BDD95',
@@ -157,7 +206,25 @@ export function TourCard({ tour, locale }: TourCardProps) {
                   border: 'none',
                 }}
               >
-                {theme}
+                {getTourTypeText(tourType)}
+              </Badge>
+            ))}
+          </div>
+        )}
+        {/* Theme badges */}
+        {tour.themes && tour.themes.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {tour.themes.map((theme, index) => (
+              <Badge
+                key={`theme-${index}`}
+                className="text-xs px-2 py-0.5"
+                style={{
+                  backgroundColor: '#1BDD95',
+                  color: 'white',
+                  border: 'none',
+                }}
+              >
+                {getThemeText(theme)}
               </Badge>
             ))}
           </div>
@@ -262,6 +329,7 @@ export function TourCard({ tour, locale }: TourCardProps) {
                   isLocalStories={tour.local_stories}
                   opMaat={tour.op_maat}
                   citySlug={tour.city}
+                  tourLanguages={tour.languages}
                   size="sm"
                   className="w-full"
                 />

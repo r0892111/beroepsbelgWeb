@@ -516,6 +516,33 @@
       "zh": "Chinois",
       "ja": "Japonais"
     },
+    "languageNames": {
+      "Nederlands": "Néerlandais",
+      "Engels": "Anglais",
+      "Frans": "Français",
+      "Duits": "Allemand",
+      "Spaans": "Espagnol",
+      "Italiaans": "Italien",
+      "Portugees": "Portugais",
+      "Chinees": "Chinois",
+      "Japans": "Japonais",
+      "Koreaans": "Coréen",
+      "Arabisch": "Arabe",
+      "Russisch": "Russe",
+      "Pools": "Polonais",
+      "Turks": "Turc",
+      "Hindi": "Hindi",
+      "Grieks": "Grec",
+      "Zweeds": "Suédois",
+      "Noors": "Norvégien",
+      "Deens": "Danois",
+      "Fins": "Finnois",
+      "Tsjechisch": "Tchèque",
+      "Hongaars": "Hongrois",
+      "Roemeens": "Roumain",
+      "Hebreeuws": "Hébreu",
+      "Thai": "Thaï"
+    },
     "selectTour": "Sélectionnez une visite",
     "selectDateAndTime": "Veuillez sélectionner une date et un créneau horaire",
     "fillNumberOfPeople": "Veuillez indiquer le nombre de personnes",
@@ -655,6 +682,7 @@
     "end": "Arrivée",
     "duration": "Durée",
     "languages": "Langues",
+    "themes": "Thèmes",
     "localStoriesTag": "Chaque samedi - rejoignez-nous!",
     "type": "Type",
     "localStoriesTitle": "Informations Importantes",
@@ -668,6 +696,15 @@
     "originalPrice": "Prix original",
     "discountedPrice": "Prix réduit",
     "youSave": "Vous économisez"
+  },
+  "tourTypes": {
+    "walking": "Visite à pied",
+    "biking": "Tour à vélo",
+    "bus": "Tour en bus",
+    "private": "Visite privée",
+    "group": "Visite en groupe",
+    "boat": "Tour en bateau",
+    "food": "Tour gastronomique"
   },
   "faq": {
     "title": "FAQ",
@@ -1108,7 +1145,8 @@
     "noDate": "Aucune date",
     "customerName": "Nom",
     "email": "E-mail",
-    "purchasedProducts": "Produits achetés"
+    "purchasedProducts": "Produits achetés",
+    "priceBreakdown": "Détail du prix"
   },
   "bookingCancelled": {
     "title": "Réservation annulée",

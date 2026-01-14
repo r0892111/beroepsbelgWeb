@@ -75,6 +75,68 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
   const t = await getTranslations('common');
   const tTour = await getTranslations('tourDetail');
   const tBooking = await getTranslations('booking');
+  const tB2b = await getTranslations('b2b');
+  const tTourTypes = await getTranslations('tourTypes');
+
+  // Helper to translate language names
+  const translateLanguage = (lang: string) => {
+    // Try to get translation, fall back to original name
+    try {
+      const translated = tB2b(`languageNames.${lang}`);
+      return translated !== `languageNames.${lang}` ? translated : lang;
+    } catch {
+      return lang;
+    }
+  };
+
+  // Helper to get tour type text in the correct language
+  const getTourTypeText = (tourType: any): string => {
+    // If it's a predefined key (string), use the translation
+    if (typeof tourType === 'string') {
+      try {
+        const translated = tTourTypes(tourType as any);
+        // If translation exists, return it
+        if (translated && translated !== tourType) {
+          return translated;
+        }
+      } catch {
+        // Fall through to return the key
+      }
+      // Capitalize the key as fallback
+      return tourType.charAt(0).toUpperCase() + tourType.slice(1);
+    }
+
+    // If it's a custom type (object), get the locale-specific text
+    if (tourType && typeof tourType === 'object') {
+      return tourType[locale] || tourType.nl || tourType.en || tourType.fr || tourType.de || '';
+    }
+
+    return String(tourType || '');
+  };
+
+  // Helper to get theme text in the correct language
+  const getThemeText = (theme: any): string => {
+    // Handle deeply nested JSON strings from database
+    let themeObj = theme;
+    while (typeof themeObj === 'string') {
+      try {
+        themeObj = JSON.parse(themeObj);
+      } catch {
+        return themeObj; // Plain string, return as-is (backward compatibility)
+      }
+    }
+    if (!themeObj || typeof themeObj !== 'object') return String(themeObj || '');
+    // Try to get the theme in the current locale, fall back to Dutch, then to any available
+    return themeObj[locale] || themeObj.nl || themeObj.en || themeObj.fr || themeObj.de || '';
+  };
+
+  // Helper to get description in the correct language
+  const getDescription = (): string => {
+    if (locale === 'en' && tour.description_en) return tour.description_en;
+    if (locale === 'fr' && tour.description_fr) return tour.description_fr;
+    if (locale === 'de' && tour.description_de) return tour.description_de;
+    return tour.description; // Default to Dutch
+  };
 
   // Calculate discounted price (10% discount for online bookings)
   const discountRate = 0.9;
@@ -105,14 +167,27 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
               <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy">{tour.title}</h1>
               <div className="flex items-center gap-2 flex-wrap">
-                {tour.type === 'bike' && (
-                  <Badge
-                    variant="outline"
-                    className="flex items-center gap-1 border-brass text-navy"
-                  >
-                    <Bike className="h-4 w-4" />
-                    {tTour('bikeTour')}
-                  </Badge>
+                {/* Tour Types badges */}
+                {tour.tour_types && tour.tour_types.length > 0 && (
+                  <>
+                    {tour.tour_types.map((tourType, index) => {
+                      const isBiking = tourType === 'biking' || (typeof tourType === 'object' && tourType.nl?.toLowerCase().includes('fiets'));
+                      return (
+                        <Badge
+                          key={`type-${index}`}
+                          className="text-sm px-2 py-1 flex items-center gap-1"
+                          style={{
+                            backgroundColor: '#1BDD95',
+                            color: 'white',
+                            border: 'none',
+                          }}
+                        >
+                          {isBiking && <Bike className="h-4 w-4" />}
+                          {getTourTypeText(tourType)}
+                        </Badge>
+                      );
+                    })}
+                  </>
                 )}
                 {tour.op_maat && (
                   <Badge
@@ -132,9 +207,9 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
                 )}
                 {tour.themes && tour.themes.length > 0 && (
                   <>
-                    {tour.themes.map((theme) => (
+                    {tour.themes.map((theme, index) => (
                       <Badge
-                        key={theme}
+                        key={`theme-${index}`}
                         className="text-sm px-2 py-1"
                         style={{
                           backgroundColor: '#1BDD95',
@@ -142,7 +217,7 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
                           border: 'none',
                         }}
                       >
-                        {theme}
+                        {getThemeText(theme)}
                       </Badge>
                     ))}
                   </>
@@ -187,9 +262,9 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
           )}
 
         <div className="mb-12 space-y-6">
-          {tour.description && (
+          {getDescription() && (
             <div className="prose max-w-none">
-              {tour.description.split('\n\n').map((paragraph, idx) => {
+              {getDescription().split('\n\n').map((paragraph, idx) => {
                 const hasFAQ = paragraph.includes('FAQ');
                 if (hasFAQ) {
                   const parts = paragraph.split(/(FAQ-pagina|FAQ page|page FAQ|FAQ-Seite)/gi);
@@ -259,7 +334,7 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
                 <Languages className="mt-1 h-5 w-5 flex-shrink-0" style={{ color: 'var(--brass)' }} />
                 <div>
                   <p className="font-semibold text-navy mb-1">{tTour('languages')}</p>
-                  <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>{tour.languages.join(', ')}</p>
+                  <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>{tour.languages.map(translateLanguage).join(', ')}</p>
                 </div>
               </div>
             )}
@@ -267,18 +342,18 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
               <div className="flex items-start gap-3">
                 <Sparkles className="mt-1 h-5 w-5 flex-shrink-0" style={{ color: 'var(--brass)' }} />
                 <div>
-                  <p className="font-semibold text-navy mb-1">Themes</p>
+                  <p className="font-semibold text-navy mb-1">{tTour('themes')}</p>
                   <div className="flex flex-wrap gap-1.5 mt-1">
-                    {tour.themes.map((theme) => (
+                    {tour.themes.map((theme, index) => (
                       <span
-                        key={theme}
+                        key={index}
                         className="text-xs px-2 py-1 rounded-full font-medium"
                         style={{
                           backgroundColor: '#1BDD95',
                           color: 'white',
                         }}
                       >
-                        {theme}
+                        {getThemeText(theme)}
                       </span>
                     ))}
                   </div>
@@ -289,12 +364,13 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
         </div>
 
         {tour.local_stories && (
-          <LocalToursBooking 
-            tourId={tour.id} 
+          <LocalToursBooking
+            tourId={tour.id}
             tourTitle={tour.title}
             tourPrice={tour.price || 0}
             tourDuration={tour.durationMinutes}
             citySlug={city}
+            tourLanguages={tour.languages}
           />
         )}
 
@@ -308,6 +384,7 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
               isLocalStories={false}
               opMaat={tour.op_maat}
               citySlug={city}
+              tourLanguages={tour.languages}
             />
           </div>
         )}
