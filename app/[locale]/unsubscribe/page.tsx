@@ -19,9 +19,9 @@ export default function UnsubscribePage() {
       return;
     }
 
-    async function unsubscribe() {
+    async function unsubscribe(tokenValue: string) {
       try {
-        const response = await fetch(`/api/unsubscribe?token=${encodeURIComponent(token)}`);
+        const response = await fetch(`/api/unsubscribe?token=${encodeURIComponent(tokenValue)}`);
         if (response.ok) {
           setStatus('success');
         } else {
@@ -32,7 +32,7 @@ export default function UnsubscribePage() {
       }
     }
 
-    unsubscribe();
+    unsubscribe(token);
   }, [token]);
 
   return (
