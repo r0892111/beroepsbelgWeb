@@ -249,13 +249,19 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
   if (citySlug) {
     // Find city ID from slug
     const cityId = Array.from(cityIdToSlugMap.entries()).find(([_, slug]) => slug === citySlug)?.[0];
-    if (cityId) {
-      // Filter by cityId (primary method)
-      filteredTours = tours.filter(t => t.cityId === cityId);
-    } else {
-      // Fallback to slug matching (for backward compatibility)
-      filteredTours = tours.filter(t => t.city === citySlug);
-    }
+
+    // Filter by cityId (primary) OR by city slug (for tours without city_id set)
+    filteredTours = tours.filter(t => {
+      // Primary: match by cityId
+      if (cityId && t.cityId === cityId) {
+        return true;
+      }
+      // Fallback: match by city slug (for tours without city_id)
+      if (!t.cityId && t.city === citySlug) {
+        return true;
+      }
+      return false;
+    });
   }
 
   return filteredTours;
@@ -1112,88 +1118,31 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
       // If existing already has booking_id, keep it (don't replace)
     });
     
-    // Create missing bookings for upcoming Saturdays (with 0 people, status 'booked')
-    const bookingsToCreate: any[] = [];
+    // Build bookings array - use existing entries or create virtual placeholders for display
+    // NOTE: We no longer create placeholder entries in the database - they're only virtual for the UI
+    // Real entries are created by the webhook when someone actually books
     const bookings: LocalTourBooking[] = nextSaturdays.map(saturday => {
       const dateStr = saturday.toISOString().split('T')[0];
       const existing = bookingsMap.get(dateStr);
-      
+
       if (existing) {
         return existing;
       }
-      
-      // Get number of people for this date
+
+      // Get number of people for this date (from tourbooking invitees)
       const numberOfPeople = peopleCountByDate.get(dateStr) || 0;
-      
-      // Prepare booking to create (status 'booked' but no customer info yet)
-      const newBooking = {
-        tour_id: tourId,
-        booking_date: dateStr,
-        booking_time: '14:00:00',
-        is_booked: true, // Always show as booked
-        status: 'booked', // Status is booked even without customer info
-        customer_name: null,
-        customer_email: null,
-        customer_phone: null,
-        stripe_session_id: null,
-      };
-      
-      bookingsToCreate.push(newBooking);
-      
-      // Return placeholder that will be replaced after creation
+
+      // Return virtual placeholder for display (not stored in database)
       return {
-        id: `temp-${dateStr}`,
+        id: `virtual-${dateStr}`,
         tour_id: tourId,
         booking_date: dateStr,
         booking_time: '14:00:00',
-        is_booked: true,
-        status: 'booked',
+        is_booked: true, // Always show as bookable
+        status: 'booked' as const,
         number_of_people: numberOfPeople,
       };
     });
-    
-    // Create missing bookings in the database
-    if (bookingsToCreate.length > 0) {
-      console.log('getLocalToursBookings: Creating missing bookings:', {
-        count: bookingsToCreate.length,
-        bookingsToCreate,
-      });
-      const { data: createdBookings, error: createError } = await supabaseServer
-        .from('local_tours_bookings')
-        .insert(bookingsToCreate)
-        .select();
-      
-      console.log('getLocalToursBookings: Create result:', {
-        createdBookingsCount: createdBookings?.length || 0,
-        createdBookings,
-        createError,
-      });
-      
-      if (createError) {
-        console.error('Error creating local tours bookings:', createError);
-      } else if (createdBookings) {
-        // Update the bookings array with the created booking IDs
-        createdBookings.forEach((created: any) => {
-          const index = bookings.findIndex(b => b.booking_date === created.booking_date && b.id?.startsWith('temp-'));
-          if (index !== -1) {
-            const dateStr = created.booking_date;
-            const numberOfPeople = peopleCountByDate.get(dateStr) || 0;
-            
-            bookings[index] = {
-              id: created.id,
-              tour_id: created.tour_id,
-              booking_date: dateStr,
-              booking_time: created.booking_time || '14:00:00',
-              is_booked: true,
-              status: 'booked',
-              number_of_people: numberOfPeople,
-              created_at: created.created_at,
-              updated_at: created.updated_at,
-            };
-          }
-        });
-      }
-    }
     
     console.log('getLocalToursBookings: Final bookings to return:', {
       bookingsCount: bookings.length,

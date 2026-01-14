@@ -1079,6 +1079,8 @@
   },
   "bookingSuccess": {
     "loading": "Chargement des détails de la réservation...",
+    "processingPayment": "Votre paiement est en cours de traitement...",
+    "processingPaymentSubtext": "Cela ne prend généralement que quelques secondes.",
     "notFound": "Réservation introuvable",
     "notFoundTitle": "Réservation introuvable",
     "notFoundDesc": "Nous n'avons pas pu trouver les détails de votre réservation.",
@@ -1264,5 +1266,12 @@
     "errorSourceRequired": "Veuillez sélectionner comment vous nous avez trouvé",
     "errorSourceOtherRequired": "Veuillez préciser comment vous nous avez trouvé",
     "errorEmailRequired": "Veuillez entrer votre e-mail pour recevoir votre code de réduction"
+  },
+  "unsubscribe": {
+    "processing": "Traitement en cours...",
+    "success": "Désabonnement réussi",
+    "successMessage": "Vous ne recevrez plus d'e-mails de rappel concernant votre panier.",
+    "error": "Une erreur s'est produite",
+    "errorMessage": "Nous n'avons pas pu traiter votre demande de désabonnement. Veuillez réessayer ou contacter le support."
   }
 }

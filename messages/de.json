@@ -1069,6 +1069,8 @@
   },
   "bookingSuccess": {
     "loading": "Buchungsdetails werden geladen...",
+    "processingPayment": "Ihre Zahlung wird verarbeitet...",
+    "processingPaymentSubtext": "Dies dauert normalerweise nur wenige Sekunden.",
     "notFound": "Buchung nicht gefunden",
     "notFoundTitle": "Buchung nicht gefunden",
     "notFoundDesc": "Wir konnten Ihre Buchungsdetails nicht finden.",
@@ -1264,5 +1266,12 @@
     "errorSourceRequired": "Bitte wählen Sie aus, wie Sie uns gefunden haben",
     "errorSourceOtherRequired": "Bitte geben Sie an, wie Sie uns gefunden haben",
     "errorEmailRequired": "Bitte geben Sie Ihre E-Mail ein, um Ihren Rabattcode zu erhalten"
+  },
+  "unsubscribe": {
+    "processing": "Wird verarbeitet...",
+    "success": "Erfolgreich abgemeldet",
+    "successMessage": "Sie erhalten keine Erinnerungs-E-Mails mehr zu Ihrem Warenkorb.",
+    "error": "Etwas ist schiefgelaufen",
+    "errorMessage": "Wir konnten Ihre Abmeldung nicht verarbeiten. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support."
   }
 }

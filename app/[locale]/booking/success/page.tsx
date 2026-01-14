@@ -18,6 +18,7 @@ export default function BookingSuccessPage() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
   const [loading, setLoading] = useState(true);
+  const [processingPayment, setProcessingPayment] = useState(false);
   const [booking, setBooking] = useState<any>(null);
   const [relatedTours, setRelatedTours] = useState<Tour[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
@@ -99,11 +100,14 @@ export default function BookingSuccessPage() {
       }
     };
 
-    const fetchBooking = async () => {
+    const fetchBooking = async (retryCount = 0): Promise<boolean> => {
       if (!sessionId) {
         setLoading(false);
-        return;
+        return false;
       }
+
+      const MAX_RETRIES = 15; // Max 30 seconds (15 * 2 seconds)
+      const RETRY_DELAY = 2000; // 2 seconds
 
       try {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -316,10 +320,43 @@ export default function BookingSuccessPage() {
               is_local_stories: false,
             };
           } else {
-            // No booking found
+            // No booking found - check if payment is still processing
+            console.log('No booking found yet for session:', sessionId);
+
+            // Check if there's a pending booking (payment still processing)
+            const pendingResponse = await fetch(
+              `${supabaseUrl}/rest/v1/pending_tour_bookings?stripe_session_id=eq.${sessionId}&select=*`,
+              {
+                headers: {
+                  'apikey': supabaseAnonKey || '',
+                  'Authorization': `Bearer ${supabaseAnonKey}`,
+                },
+              }
+            );
+
+            if (pendingResponse.ok) {
+              const pendingData = await pendingResponse.json();
+              if (pendingData && pendingData.length > 0) {
+                // Pending booking exists - payment is processing
+                console.log('Found pending booking, payment processing...', { retryCount });
+                setProcessingPayment(true);
+
+                if (retryCount < MAX_RETRIES) {
+                  // Wait and retry
+                  await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+                  return fetchBooking(retryCount + 1);
+                } else {
+                  console.error('Max retries reached, booking still processing');
+                  setLoading(false);
+                  return false;
+                }
+              }
+            }
+
+            // No pending booking either - genuine not found
             console.error('No booking found for session:', sessionId);
             setLoading(false);
-            return;
+            return false;
           }
             
           console.log('Setting booking data for JotForm pre-fill:', {
@@ -452,13 +489,20 @@ export default function BookingSuccessPage() {
           } else {
             console.log('No upsell products found in booking');
           }
+
+          // Successfully found and loaded booking
+          setProcessingPayment(false);
+          setLoading(false);
+          return true;
         } else {
           console.error('No booking found for session:', sessionId);
+          setLoading(false);
+          return false;
         }
       } catch (error) {
         console.error('Error fetching booking:', error);
-      } finally {
         setLoading(false);
+        return false;
       }
     };
 
@@ -538,7 +582,17 @@ export default function BookingSuccessPage() {
       <div className="container mx-auto px-4 py-16">
         <div className="flex flex-col items-center justify-center min-h-[400px]">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          <p className="mt-4 text-muted-foreground">{t('loading')}</p>
+          <p className="mt-4 text-muted-foreground">
+            {processingPayment
+              ? (t('processingPayment') || 'Je betaling wordt verwerkt...')
+              : t('loading')
+            }
+          </p>
+          {processingPayment && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              {t('processingPaymentSubtext') || 'Dit duurt meestal slechts enkele seconden.'}
+            </p>
+          )}
         </div>
       </div>
     );

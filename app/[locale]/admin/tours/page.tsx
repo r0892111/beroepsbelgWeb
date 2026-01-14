@@ -476,7 +476,14 @@ export default function AdminToursPage() {
         .delete()
         .eq('id', tour.id);
 
-      if (error) throw error;
+      if (error) {
+        // Check for foreign key constraint violation
+        if (error.code === '23503') {
+          toast.error('Cannot delete tour: there are existing bookings for this tour. Delete or reassign the bookings first.');
+          return;
+        }
+        throw error;
+      }
       toast.success('Tour deleted successfully');
       void fetchTours();
     } catch (err) {
