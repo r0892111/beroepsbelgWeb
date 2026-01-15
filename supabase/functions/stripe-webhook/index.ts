@@ -554,21 +554,23 @@ async function handleEvent(event: Stripe.Event) {
           status: 'completed',
           amount_subtotal: fullSession.amount_subtotal || 0,
           amount_total: fullSession.amount_total || 0,
-          customer_name: metadata?.customerName || '',
-          customer_email: fullSession.customer_email || metadata?.customerEmail || '',
+          customer_name: metadata?.customerName || 'Guest',
+          customer_email: fullSession.customer_email || metadata?.customerEmail || 'unknown@guest.com',
           shipping_address: shippingAddress,
           billing_address: shippingAddress, // Use shipping as billing
           items: productItems,
           metadata: {
-            customerName: metadata?.customerName || '',
-            customerEmail: metadata?.customerEmail || '',
+            customerName: metadata?.customerName || 'Guest',
+            customerEmail: fullSession.customer_email || metadata?.customerEmail || 'unknown@email.com',
             customerPhone: metadata?.customerPhone || '',
-            userId: metadata?.userId || null,
+            userId: metadata?.userId && metadata.userId.trim() !== '' ? metadata.userId : null,
             shipping_cost: shippingCost,
           },
           total_amount: (fullSession.amount_total || 0) / 100, // In euros
-          user_id: metadata?.userId || null,
+          user_id: metadata?.userId && metadata.userId.trim() !== '' ? metadata.userId : null,
         };
+
+        console.info('Inserting webshop order:', JSON.stringify(orderInsert, null, 2));
 
         // Insert the order (checkout no longer creates it due to NOT NULL constraints)
         const { data: order, error: orderError } = await supabase
