@@ -34,7 +34,7 @@ interface TourWithImages extends Tour {
 
 const STORAGE_BUCKET = 'Tour Photos';
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB for images
-const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB for videos
+const MAX_VIDEO_SIZE = 250 * 1024 * 1024; // 250MB for videos
 
 export default function AdminTourImagesPage() {
   const { user, profile, signOut } = useAuth();
@@ -419,7 +419,7 @@ export default function AdminTourImagesPage() {
       return;
     }
     if (oversizedVideos.length > 0) {
-      toast.error(`Some video files exceed 100MB limit`);
+      toast.error(`Some video files exceed 250MB limit`);
       return;
     }
 
@@ -1425,7 +1425,7 @@ export default function AdminTourImagesPage() {
                         <p className="text-sm text-gray-600">
                           Drag and drop images or videos here, or click to select
                         </p>
-                        <p className="mt-1 text-xs text-gray-500">PNG, JPG, WEBP, MP4, WEBM, MOV up to 50MB (images) / 100MB (videos)</p>
+                        <p className="mt-1 text-xs text-gray-500">PNG, JPG, WEBP, MP4, WEBM, MOV up to 50MB (images) / 250MB (videos)</p>
                       </div>
                       <Input
                         type="file"
