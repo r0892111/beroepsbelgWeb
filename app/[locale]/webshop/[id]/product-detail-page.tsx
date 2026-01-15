@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { Heart, ShoppingCart, Book, Gamepad2, Package, ArrowLeft } from 'lucide-react';
+import { Heart, ShoppingCart, Book, Gamepad2, Package, ArrowLeft, Share2 } from 'lucide-react';
 import { Product } from '@/lib/data/types';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useFavoritesContext } from '@/lib/contexts/favorites-context';
@@ -14,6 +14,7 @@ import { useCartContext } from '@/lib/contexts/cart-context';
 import { toast } from 'sonner';
 import { getProductPlaceholder } from '@/lib/utils/placeholder-images';
 import { ProductImageGallery } from '@/components/webshop/product-image-gallery';
+import { ProductShareButtons } from '@/components/webshop/product-share-buttons';
 import { supabase } from '@/lib/supabase/client';
 import type { ProductImage } from '@/lib/data/types';
 import type { Locale } from '@/lib/data/types';
@@ -28,6 +29,7 @@ export function ProductDetailPage({ product, locale }: ProductDetailPageProps) {
   const router = useRouter();
   const t = useTranslations('product');
   const tAuth = useTranslations('auth');
+  const tCommon = useTranslations('common');
   const { user } = useAuth();
   const { isFavorite, addFavorite, removeFavorite } = useFavoritesContext();
   const { addToCart } = useCartContext();
@@ -228,6 +230,18 @@ export function ProductDetailPage({ product, locale }: ProductDetailPageProps) {
                   <ShoppingCart className="h-4 w-4" />
                   {tAuth('addToCart')}
                 </Button>
+              </div>
+
+              {/* Share Section */}
+              <div className="pt-6 border-t border-gray-200 mt-6">
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <Share2 className="h-5 w-5" style={{ color: 'var(--brass)' }} />
+                  {tCommon('share')}
+                </h3>
+                <ProductShareButtons
+                  shareUrl={`https://beroepsbelg.be/${locale}/webshop/${product.uuid}`}
+                  shareTitle={product.title[locale]}
+                />
               </div>
             </div>
           </div>

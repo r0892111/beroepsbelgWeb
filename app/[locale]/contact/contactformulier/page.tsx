@@ -5,16 +5,17 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslations } from 'next-intl';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, MessageCircle, Newspaper, HelpCircle, Briefcase } from 'lucide-react';
 import { sendContactFormWebhook } from '@/lib/utils/webhooks';
 
 const contactSchema = z.object({
   name: z.string().min(1),
-  email: z.string().email(),
   phone: z.string().optional(),
   message: z.string().min(10),
   consent: z.boolean().refine((val) => val === true),
@@ -24,7 +25,10 @@ type ContactFormData = z.infer<typeof contactSchema>;
 
 export default function ContactPage() {
   const t = useTranslations('contact');
+  const tNav = useTranslations('nav');
   const tForms = useTranslations('forms');
+  const params = useParams();
+  const locale = params.locale as string;
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -51,7 +55,7 @@ export default function ContactPage() {
     // Send to n8n webhook (non-blocking)
     sendContactFormWebhook({
       name: data.name,
-      email: data.email,
+      email: '',
       phone: data.phone,
       message: data.message,
       consent: data.consent,
@@ -76,21 +80,49 @@ export default function ContactPage() {
         </div>
       </section>
 
+      {/* Quick Navigation Cards */}
+      <div className="container mx-auto px-4 -mt-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+          {/* News Card */}
+          <Link
+            href={`/${locale}/blog`}
+            className="bg-white border border-neutral-200 rounded-xl p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex items-center gap-4"
+          >
+            <div className="w-12 h-12 bg-[#1BDD95] rounded-full flex items-center justify-center flex-shrink-0">
+              <Newspaper className="w-6 h-6 text-white" />
+            </div>
+            <span className="font-oswald font-bold text-lg text-neutral-900">{tNav('news')}</span>
+          </Link>
+
+          {/* FAQ Card */}
+          <Link
+            href={`/${locale}/faq`}
+            className="bg-white border border-neutral-200 rounded-xl p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex items-center gap-4"
+          >
+            <div className="w-12 h-12 bg-[#1BDD95] rounded-full flex items-center justify-center flex-shrink-0">
+              <HelpCircle className="w-6 h-6 text-white" />
+            </div>
+            <span className="font-oswald font-bold text-lg text-neutral-900">{tNav('faq')}</span>
+          </Link>
+
+          {/* Jobs Card */}
+          <Link
+            href={`/${locale}/jobs/become-a-guide`}
+            className="bg-white border border-neutral-200 rounded-xl p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex items-center gap-4"
+          >
+            <div className="w-12 h-12 bg-[#1BDD95] rounded-full flex items-center justify-center flex-shrink-0">
+              <Briefcase className="w-6 h-6 text-white" />
+            </div>
+            <span className="font-oswald font-bold text-lg text-neutral-900">{tNav('jobs')}</span>
+          </Link>
+        </div>
+      </div>
+
       {/* Main Content */}
       <div className="container mx-auto px-4 py-16 md:py-24">
         <div className="grid lg:grid-cols-5 gap-12 max-w-6xl mx-auto">
           {/* Left Column - Contact Info Cards (2/5 width) */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Address Card */}
-            <div className="bg-white border border-neutral-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-300">
-              <div className="w-12 h-12 bg-[#1BDD95] rounded-full flex items-center justify-center mb-4">
-                <MapPin className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="font-oswald font-bold text-lg mb-2 text-neutral-900">{t('addressLabel')}</h3>
-              <p className="font-inter text-neutral-600">2000 Antwerpen</p>
-              <p className="font-inter text-neutral-600">België</p>
-            </div>
-
             {/* Email Card */}
             <div className="bg-white border border-neutral-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-300">
               <div className="w-12 h-12 bg-[#1BDD95] rounded-full flex items-center justify-center mb-4">
@@ -105,19 +137,21 @@ export default function ContactPage() {
               </a>
             </div>
 
-            {/* Phone Card */}
-            <div className="bg-white border border-neutral-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-300">
-              <div className="w-12 h-12 bg-[#1BDD95] rounded-full flex items-center justify-center mb-4">
-                <Phone className="w-6 h-6 text-white" />
+            {/* WhatsApp Card */}
+            <a
+              href="https://wa.me/32494254159?text=Hallo%2C%20ik%20heb%20een%20vraag%20over..."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block bg-white border border-neutral-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-300"
+            >
+              <div className="w-12 h-12 bg-[#25D366] rounded-full flex items-center justify-center mb-4">
+                <MessageCircle className="w-6 h-6 text-white" />
               </div>
-              <h3 className="font-oswald font-bold text-lg mb-2 text-neutral-900">{t('phoneLabel')}</h3>
-              <a
-                href="tel:+32494254159"
-                className="font-inter text-neutral-600 hover:text-[#1BDD95] transition-colors"
-              >
+              <h3 className="font-oswald font-bold text-lg mb-2 text-neutral-900">WhatsApp</h3>
+              <p className="font-inter text-neutral-600 hover:text-[#25D366] transition-colors">
                 +32 494 25 41 59
-              </a>
-            </div>
+              </p>
+            </a>
           </div>
 
           {/* Right Column - Contact Form (3/5 width) */}
@@ -142,23 +176,6 @@ export default function ContactPage() {
                     className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg font-inter focus:border-[#1BDD95] focus:ring-0 transition-colors"
                   />
                   {errors.name && <p className="mt-2 text-sm text-red-600">{tForms('required')}</p>}
-                </div>
-
-                {/* Email Field */}
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="block font-oswald text-sm uppercase tracking-wider font-semibold text-neutral-700 mb-2"
-                  >
-                    {tForms('email')}*
-                  </label>
-                  <Input
-                    id="email"
-                    type="email"
-                    {...register('email')}
-                    className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg font-inter focus:border-[#1BDD95] focus:ring-0 transition-colors"
-                  />
-                  {errors.email && <p className="mt-2 text-sm text-red-600">{tForms('invalidEmail')}</p>}
                 </div>
 
                 {/* Phone Field */}

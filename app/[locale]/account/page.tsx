@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useFavoritesContext } from '@/lib/contexts/favorites-context';
+import { useTourFavoritesContext } from '@/lib/contexts/tour-favorites-context';
 import { useCartContext } from '@/lib/contexts/cart-context';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -25,6 +26,7 @@ export default function AccountPage() {
   const t = useTranslations('auth');
   const { user, profile, signOut, loading: authLoading } = useAuth();
   const { favorites, favoritesCount, removeFavorite } = useFavoritesContext();
+  const { favorites: tourFavorites, tourFavoritesCount, removeTourFavorite, loading: tourFavoritesLoading } = useTourFavoritesContext();
   const { cartItems, cartCount, updateQuantity, removeFromCart, addToCart } = useCartContext();
   const router = useRouter();
   const params = useParams();
@@ -35,6 +37,8 @@ export default function AccountPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [productsError, setProductsError] = useState<string | null>(null);
+  const [allTours, setAllTours] = useState<any[]>([]);
+  const [allToursLoading, setAllToursLoading] = useState(true);
   const [orders, setOrders] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [tours, setTours] = useState<Map<string, any>>(new Map());
@@ -77,6 +81,35 @@ export default function AccountPage() {
     };
   }, []);
 
+  // Load all tours at startup (like products)
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadAllTours() {
+      try {
+        const { data, error } = await supabase
+          .from('tours_table_prod')
+          .select('id, title, city, slug, type, duration_minutes, price, image, description');
+
+        if (error) throw error;
+        if (!isMounted) return;
+        setAllTours(data || []);
+      } catch (error) {
+        console.error('Error loading tours:', error);
+      } finally {
+        if (isMounted) {
+          setAllToursLoading(false);
+        }
+      }
+    }
+
+    void loadAllTours();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   useEffect(() => {
     if (tabFromUrl === 'cart' || tabFromUrl === 'favorites' || tabFromUrl === 'orders' || tabFromUrl === 'tours') {
       setActiveTab(tabFromUrl);
@@ -98,6 +131,7 @@ export default function AccountPage() {
     }
   }, [activeTab, user]);
 
+
   const fetchTours = async () => {
     try {
       const { data, error } = await supabase
@@ -115,6 +149,7 @@ export default function AccountPage() {
       console.error('Error fetching tours:', error);
     }
   };
+
 
   const fetchOrders = async () => {
     if (!user) return;
@@ -243,6 +278,11 @@ export default function AccountPage() {
     favorites.some((fav) => fav.product_id === p.uuid)
   );
 
+  // Compute favorite tours by filtering allTours (like favoriteProducts)
+  const favoriteTours = allTours.filter((tour) =>
+    tourFavorites.some((fav) => fav.tour_id === tour.id)
+  );
+
   // Use cart items directly - they already have products populated from JOIN
   const cartTotal = cartItems.reduce((total, item) => {
     return total + (item.products?.price || 0) * item.quantity;
@@ -274,9 +314,9 @@ export default function AccountPage() {
               <TabsTrigger value="favorites" className="gap-2">
                 <Heart className="h-4 w-4" />
                 {t('myFavorites')}
-                {favoritesCount > 0 && (
+                {(favoritesCount + tourFavoritesCount) > 0 && (
                   <span className="ml-1 rounded-full bg-[#92F0B1] px-2 py-0.5 text-xs text-[#0d1117]">
-                    {favoritesCount}
+                    {favoritesCount + tourFavoritesCount}
                   </span>
                 )}
               </TabsTrigger>
@@ -300,78 +340,150 @@ export default function AccountPage() {
             </TabsList>
 
             <TabsContent value="favorites">
-              {favoriteProducts.length === 0 ? (
-                <Card>
-                  <CardContent className="flex flex-col items-center justify-center py-16">
-                    <Heart className="mb-4 h-16 w-16 text-[#6b7280]" />
-                    <h3 className="mb-2 text-xl font-semibold text-[#0d1117]">{t('noFavorites')}</h3>
-                    <p className="mb-6 text-center text-[#6b7280]">{t('noFavoritesDesc')}</p>
-                    <Button asChild className="bg-[#92F0B1] text-[#0d1117] hover:bg-[#6ee7a8]">
-                      <Link href={`/${locale}/webshop`}>{t('browseProducts')}</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {favoriteProducts.map((product) => (
-                    <Card key={product.slug} className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden" onClick={() => handleProductClick(product)}>
-                      {product.image && (
-                        <div className="relative w-full h-48 overflow-hidden">
-                          <Image
-                            src={product.image}
-                            alt={product.title[locale as 'nl' | 'en' | 'fr' | 'de']}
-                            fill
-                            className="object-cover"
-                            unoptimized
-                          />
-                        </div>
-                      )}
-                      {!product.image && (
-                        <div className="relative w-full h-48 overflow-hidden">
-                          <Image
-                            src={getProductPlaceholder(product.category || 'Book')}
-                            alt={product.title[locale as 'nl' | 'en' | 'fr' | 'de']}
-                            fill
-                            className="object-cover"
-                            unoptimized
-                          />
-                        </div>
-                      )}
-                      <CardHeader>
-                        <CardTitle className="text-lg">{product.title[locale as 'nl' | 'en' | 'fr' | 'de']}</CardTitle>
-                        <CardDescription>€{product.price.toFixed(2)}</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        <Button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            await addToCart(product.uuid, 1);
-                            toast.success(t('addToCart'));
-                          }}
-                          size="sm"
-                          className="w-full gap-2 bg-[#0d1117] hover:bg-[#0d1117]/90"
-                        >
-                          <ShoppingCart className="h-4 w-4" />
-                          {t('addToCart')}
-                        </Button>
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeFavorite(product.uuid);
-                            toast.success(t('removeFromFavorites'));
-                          }}
-                          variant="outline"
-                          size="sm"
-                          className="w-full gap-2"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          {t('removeFromFavorites')}
+              <div className="space-y-8">
+                {/* Favorite Tours Section */}
+                <div>
+                  <h2 className="text-xl font-semibold text-[#0d1117] mb-4 flex items-center gap-2">
+                    <MapPin className="h-5 w-5" />
+                    {t('favoriteTours') || 'Favoriete Tours'}
+                    {tourFavoritesCount > 0 && (
+                      <span className="rounded-full bg-[#92F0B1] px-2 py-0.5 text-xs text-[#0d1117]">
+                        {tourFavoritesCount}
+                      </span>
+                    )}
+                  </h2>
+                  {(tourFavoritesLoading || allToursLoading) ? (
+                    <Card>
+                      <CardContent className="flex items-center justify-center py-8">
+                        <div className="h-6 w-6 animate-spin rounded-full border-4 border-[#92F0B1] border-t-transparent"></div>
+                      </CardContent>
+                    </Card>
+                  ) : favoriteTours.length === 0 ? (
+                    <Card>
+                      <CardContent className="flex flex-col items-center justify-center py-8">
+                        <MapPin className="mb-3 h-10 w-10 text-[#6b7280]" />
+                        <p className="text-center text-[#6b7280]">{t('noFavoriteTours') || 'Nog geen favoriete tours'}</p>
+                        <Button asChild className="mt-4 bg-[#92F0B1] text-[#0d1117] hover:bg-[#6ee7a8]" size="sm">
+                          <Link href={`/${locale}/tours`}>{t('browseTours') || 'Bekijk Tours'}</Link>
                         </Button>
                       </CardContent>
                     </Card>
-                  ))}
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {favoriteTours.map((tour) => (
+                        <Card
+                          key={tour.id}
+                          className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden"
+                          onClick={() => router.push(`/${locale}/tours/${tour.city}/${tour.slug}`)}
+                        >
+                          <div className="relative w-full h-40 overflow-hidden">
+                            <Image
+                              src={tour.image || '/images/placeholder-tour.jpg'}
+                              alt={tour.title}
+                              fill
+                              className="object-cover"
+                              unoptimized
+                            />
+                          </div>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg">{tour.title}</CardTitle>
+                            <CardDescription className="flex items-center gap-2">
+                              <span>{tour.city}</span>
+                              {tour.price && <span>• €{Number(tour.price).toFixed(2)}</span>}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="pt-0">
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeTourFavorite(tour.id);
+                                toast.success(t('removeFromFavorites'));
+                              }}
+                              variant="outline"
+                              size="sm"
+                              className="w-full gap-2"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              {t('removeFromFavorites')}
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
+
+                {/* Favorite Products Section */}
+                <div>
+                  <h2 className="text-xl font-semibold text-[#0d1117] mb-4 flex items-center gap-2">
+                    <Package className="h-5 w-5" />
+                    {t('favoriteProducts') || 'Favoriete Producten'}
+                    {favoritesCount > 0 && (
+                      <span className="rounded-full bg-[#92F0B1] px-2 py-0.5 text-xs text-[#0d1117]">
+                        {favoritesCount}
+                      </span>
+                    )}
+                  </h2>
+                  {favoriteProducts.length === 0 ? (
+                    <Card>
+                      <CardContent className="flex flex-col items-center justify-center py-8">
+                        <Package className="mb-3 h-10 w-10 text-[#6b7280]" />
+                        <p className="text-center text-[#6b7280]">{t('noFavoriteProducts') || 'Nog geen favoriete producten'}</p>
+                        <Button asChild className="mt-4 bg-[#92F0B1] text-[#0d1117] hover:bg-[#6ee7a8]" size="sm">
+                          <Link href={`/${locale}/webshop`}>{t('browseProducts')}</Link>
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {favoriteProducts.map((product) => (
+                        <Card key={product.slug} className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden" onClick={() => handleProductClick(product)}>
+                          <div className="relative w-full h-40 overflow-hidden">
+                            <Image
+                              src={product.image || getProductPlaceholder(product.category || 'Book')}
+                              alt={product.title[locale as 'nl' | 'en' | 'fr' | 'de']}
+                              fill
+                              className="object-cover"
+                              unoptimized
+                            />
+                          </div>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg">{product.title[locale as 'nl' | 'en' | 'fr' | 'de']}</CardTitle>
+                            <CardDescription>€{product.price.toFixed(2)}</CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-2 pt-0">
+                            <Button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                await addToCart(product.uuid, 1);
+                                toast.success(t('addToCart'));
+                              }}
+                              size="sm"
+                              className="w-full gap-2 bg-[#0d1117] hover:bg-[#0d1117]/90"
+                            >
+                              <ShoppingCart className="h-4 w-4" />
+                              {t('addToCart')}
+                            </Button>
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeFavorite(product.uuid);
+                                toast.success(t('removeFromFavorites'));
+                              }}
+                              variant="outline"
+                              size="sm"
+                              className="w-full gap-2"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              {t('removeFromFavorites')}
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </TabsContent>
 
             <TabsContent value="cart">

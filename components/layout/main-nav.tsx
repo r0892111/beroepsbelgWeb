@@ -36,14 +36,11 @@ export function MainNav({ locale }: MainNavProps) {
   const navItems = [
     { label: t('tours'), href: `/${locale}/tours` },
     { label: t('lecture'), href: `/${locale}/lezing` },
-    { label: t('blog'), href: `/${locale}/blog` },
     { label: t('webshop'), href: `/${locale}/webshop` },
-    { label: t('press'), href: `/${locale}/pers` },
-    { label: t('faq'), href: `/${locale}/faq` },
-    { label: t('jobs'), href: `/${locale}/jobs/become-a-guide` },
-    { label: t('contact'), href: `/${locale}/contact/contactformulier` },
     { label: t('b2b'), href: `/${locale}/b2b-offerte` },
+    { label: t('contact'), href: `/${locale}/contact/contactformulier` },
     { label: t('airbnb'), href: `/${locale}/airbnb` },
+    { label: t('press'), href: `/${locale}/pers` },
   ];
 
   return (

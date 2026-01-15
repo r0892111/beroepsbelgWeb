@@ -16,6 +16,13 @@ export interface Favorite {
   created_at: string;
 }
 
+export interface TourFavorite {
+  id: string;
+  user_id: string;
+  tour_id: string;
+  created_at: string;
+}
+
 export interface Product {
   id: string;
   slug: string;

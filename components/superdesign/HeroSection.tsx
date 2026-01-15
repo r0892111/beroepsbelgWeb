@@ -15,6 +15,7 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ShopSection } from './ShopSection';
 import { CitySection } from './CitySection';
+import { FounderSection } from './FounderSection';
 import { PressSection } from './PressSection';
 import { type Locale } from '@/i18n';
 
@@ -244,7 +245,10 @@ export function HeroSection({ locale }: HeroSectionProps) {
             <ShopSection />
          </div>
 
-         {/* SECTION 3: FEATURED IN (TRUST) */}
+         {/* SECTION 3: FOUNDER (ABOUT) */}
+         <FounderSection />
+
+         {/* SECTION 4: FEATURED IN (TRUST) */}
          <PressSection />
       </motion.div>
     </div>

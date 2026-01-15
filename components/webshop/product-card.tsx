@@ -113,15 +113,18 @@ export function ProductCard({ product }: ProductCardProps) {
                   {product.category}
                 </span>
               </div>
-              <CardTitle
-                className="text-lg leading-tight"
-                style={{
-                  fontFamily: 'Montserrat, sans-serif',
-                  color: 'var(--text-primary)'
-                }}
-              >
-                {product.title[locale]}
-              </CardTitle>
+              {/* Fixed height title area for consistent alignment */}
+              <div className="h-[40px] md:h-[52px]">
+                <CardTitle
+                  className="text-base md:text-lg leading-tight line-clamp-2"
+                  style={{
+                    fontFamily: 'Montserrat, sans-serif',
+                    color: 'var(--text-primary)'
+                  }}
+                >
+                  {product.title[locale]}
+                </CardTitle>
+              </div>
               <CardDescription
                 className="mt-2 font-bold text-lg"
                 style={{ color: 'var(--primary-base)' }}
@@ -136,45 +139,50 @@ export function ProductCard({ product }: ProductCardProps) {
                 e.stopPropagation(); // Prevent card click from triggering
                 handleToggleFavorite();
               }}
-              className={`transition-all duration-300 ${isFavorite(product.uuid) ? 'text-red-500' : 'hover:bg-transparent'}`}
+              className={`transition-all duration-300 flex-shrink-0 ${isFavorite(product.uuid) ? 'text-red-500' : 'hover:bg-transparent'}`}
             >
               <Heart className={`h-5 w-5 ${isFavorite(product.uuid) ? 'fill-current' : ''}`} />
             </Button>
           </div>
         </CardHeader>
         <CardContent
-          className="flex-1 flex flex-col"
-          style={{ backgroundColor: 'var(--card-content-bg)', paddingTop: '1.75rem', paddingBottom: '1.75rem' }}
+          className="flex flex-col"
+          style={{ backgroundColor: 'var(--card-content-bg)', paddingTop: '1.25rem', paddingBottom: '1rem' }}
         >
-          <div className="relative w-full min-h-[200px] rounded-lg border border-[#1a3628]/10 mb-4 overflow-hidden flex items-center justify-center bg-gray-50">
+          {/* Fixed height image container - taller than square for book covers etc */}
+          <div className="relative w-full h-[180px] md:h-[280px] rounded-lg border border-[#1a3628]/10 mb-4 overflow-hidden bg-gray-50">
             <Image
               src={product.image || getProductPlaceholder(product.category)}
               alt={product.title[locale]}
-              width={800}
-              height={600}
-              className="w-full h-auto max-h-[400px] object-contain group-hover:scale-105 transition-transform duration-300"
+              fill
+              className="object-contain group-hover:scale-105 transition-transform duration-300"
               unoptimized
-              style={{ maxWidth: '100%' }}
             />
           </div>
-          <p
-            className="text-sm line-clamp-3 leading-relaxed"
-            style={{ color: 'var(--text-tertiary)' }}
-          >
-            {product.description[locale]}
-          </p>
-          {product.label && (
-            <span
-              className="inline-block mt-3 rounded-full px-3 py-1 text-xs font-semibold"
-              style={{
-                backgroundColor: 'var(--primary-lighter)',
-                color: 'var(--text-primary)',
-                boxShadow: 'var(--shadow-small)'
-              }}
+          {/* Fixed height description area to ensure text alignment across cards */}
+          <div className="h-[54px] md:h-[72px]">
+            <p
+              className="text-sm line-clamp-3 leading-relaxed"
+              style={{ color: 'var(--text-tertiary)' }}
             >
-              {product.label}
-            </span>
-          )}
+              {product.description[locale]}
+            </p>
+          </div>
+          {/* Fixed height label area */}
+          <div className="h-[20px] md:h-[24px] mt-1">
+            {product.label && (
+              <span
+                className="inline-block rounded-full px-3 py-1 text-xs font-semibold"
+                style={{
+                  backgroundColor: 'var(--primary-lighter)',
+                  color: 'var(--text-primary)',
+                  boxShadow: 'var(--shadow-small)'
+                }}
+              >
+                {product.label}
+              </span>
+            )}
+          </div>
         </CardContent>
         <CardFooter
           className="flex flex-col gap-2 px-6 pb-6 pt-4"

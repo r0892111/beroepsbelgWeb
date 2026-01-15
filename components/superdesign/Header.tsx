@@ -13,6 +13,7 @@ import { type Locale, locales } from '@/i18n';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useCartContext } from '@/lib/contexts/cart-context';
 import { useFavoritesContext } from '@/lib/contexts/favorites-context';
+import { useTourFavoritesContext } from '@/lib/contexts/tour-favorites-context';
 import { CartSheet } from '@/components/webshop/cart-sheet';
 import { useTranslations } from 'next-intl';
 
@@ -28,6 +29,8 @@ export function Header({ locale }: HeaderProps) {
   const { user, profile } = useAuth();
   const { cartCount } = useCartContext();
   const { favoritesCount } = useFavoritesContext();
+  const { tourFavoritesCount } = useTourFavoritesContext();
+  const totalFavoritesCount = favoritesCount + tourFavoritesCount;
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -40,14 +43,11 @@ export function Header({ locale }: HeaderProps) {
   const navItems = [
     { label: 'Tours', href: `/${locale}/tours`, hasDropdown: false },
     { label: 'Lezing', href: `/${locale}/lezing`, hasDropdown: false },
-    { label: 'Blog', href: `/${locale}/blog`, hasDropdown: false },
     { label: 'Webshop', href: `/${locale}/webshop`, hasDropdown: false },
-    { label: 'Press', href: `/${locale}/pers`, hasDropdown: false },
-    { label: 'FAQ', href: `/${locale}/faq`, hasDropdown: false },
-    { label: 'Jobs', href: `/${locale}/jobs/become-a-guide`, hasDropdown: false },
+    { label: 'Offerte', href: `/${locale}/b2b-offerte`, hasDropdown: false },
     { label: 'Contact', href: `/${locale}/contact/contactformulier`, hasDropdown: false },
-    { label: 'B2B', href: `/${locale}/b2b-offerte`, hasDropdown: false },
     { label: 'AirBNB', href: `/${locale}/airbnb`, hasDropdown: false },
+    { label: 'Pers', href: `/${locale}/pers`, hasDropdown: false },
   ];
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
@@ -141,9 +141,9 @@ export function Header({ locale }: HeaderProps) {
           <Link href={`/${locale}/account?tab=favorites`} className="hidden md:block relative">
             <button className="p-2 hover:bg-black/5 rounded-full transition-colors relative">
               <Heart className="w-5 h-5 text-gray-900" />
-              {favoritesCount > 0 && (
+              {totalFavoritesCount > 0 && (
                 <span className="absolute top-0 right-0 bg-[#1BDD95] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center">
-                  {favoritesCount}
+                  {totalFavoritesCount}
                 </span>
               )}
             </button>
@@ -201,9 +201,9 @@ export function Header({ locale }: HeaderProps) {
               >
                 <Heart className="w-5 h-5" />
                 {t('favorites')}
-                {favoritesCount > 0 && (
+                {totalFavoritesCount > 0 && (
                   <span className="ml-auto bg-[#1BDD95] text-white text-xs font-bold px-2 py-1 rounded-full">
-                    {favoritesCount}
+                    {totalFavoritesCount}
                   </span>
                 )}
               </Link>

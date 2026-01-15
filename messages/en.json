@@ -7,6 +7,7 @@
     "faq": "FAQ",
     "jobs": "Jobs",
     "blog": "Blog",
+    "news": "News",
     "contact": "Contact",
     "b2b": "Quote",
     "airbnb": "AirBNB",
@@ -19,7 +20,7 @@
     "social": "Social"
   },
   "hero": {
-    "kicker": "— Discover Belgium like you've never seen it before",
+    "kicker": "Discover all our beautiful cities of Belgium with an expert by your side",
     "heading": "Your guide in Belgium",
     "cta": "Discover our tours",
     "cnnQuote": "One of the 7 savviest guides in the world – CNN",
@@ -75,7 +76,9 @@
     "hour": "hour",
     "hours": "hours",
     "minute": "minute",
-    "minutes": "minutes"
+    "minutes": "minutes",
+    "linkCopied": "Link copied!",
+    "toursPageTagline": "Discover all our beautiful cities of Belgium with an expert by your side"
   },
   "newsletter": {
     "title": "Stay informed",
@@ -163,6 +166,10 @@
     "myOrders": "My Orders",
     "noFavorites": "You have no favorites yet",
     "noFavoritesDesc": "Start adding products to your favorites list",
+    "favoriteTours": "Favorite Tours",
+    "favoriteProducts": "Favorite Products",
+    "noFavoriteTours": "No favorite tours yet",
+    "noFavoriteProducts": "No favorite products yet",
     "emptyCart": "Your cart is empty",
     "emptyCartDesc": "Add products to your cart to place an order",
     "noOrders": "No Orders",
@@ -714,6 +721,12 @@
     "ctaDescription": "The best way to learn about Belgium is to experience it firsthand. Book a tour and let our expert guides show you around!",
     "exploreOurTours": "Explore Our Tours"
   },
+  "founder": {
+    "kicker": "About BeroepsBelg",
+    "line1": "BeroepsBelg was founded by bestselling author Tanguy Ottomer.",
+    "line2": "As an award-winning city guide, he selected captivating storytellers who grew into his national team.",
+    "line3": "Since 2007, BeroepsBelg has appeared in Belgian and international press thanks to expertise in good times with a layer of history."
+  },
   "press": {
     "title": "In the Press",
     "subtitle": "BeroepsBelg in the media",
@@ -1028,11 +1041,11 @@
       },
       "article2": {
         "title": "Article 2 – Offers",
-        "content": "Our offers are purely indicative and non-binding and expire if they are not accepted by the Customer within 30 calendar days. Offers only become legally valid as an agreement through signing of the offer by the Customer and by us. We also reserve the right to refuse certain assignments without giving reasons."
+        "content": "Our offers are purely indicative and non-binding and expire definitively if they are not accepted by the Customer within 5 calendar days. Offers only become legally valid as an agreement through timely signing of the offer by the Customer and by us. We also reserve the right to refuse certain assignments without giving reasons."
       },
       "article3": {
         "title": "Article 3 – Price and payment",
-        "content": "The price for our goods/services is that stated on the quotation.\n\nAll our invoices are payable within 14 days of receipt, unless the quotation specifies a different due date. If we request an advance payment, we will only commence our activities after receipt of the advance payment.\n\nFor any delay in payment, the Customer is automatically and without prior notice of default liable for default interest of 1% per month started, whereby each month started counts as a full month, and this without prejudice to any compensation and costs. Also automatically and without prior notice of default, a fixed compensation is due amounting to 10% of the invoice amount with a minimum of 250 euros as a penalty clause, this without prior notice of default and in addition to the principal sum, the default interest, collection, reminder, prosecution costs and expenses due to loss of time and judicial or legal costs. This penalty clause does not affect the obligation to pay the agreed default interest.\n\nDisputes must be notified to us by registered mail within five working days after sending the invoice on pain of inadmissibility."
+        "content": "The price for our goods/services is that stated on the quotation.\n\nAll our invoices are payable within 7 days of receipt, unless the quotation specifies a different due date. If we request an advance payment, we will only commence our activities after receipt of the advance payment.\n\nFor any delay in payment, the Customer is automatically and without prior notice of default liable for default interest of 5% per month started, whereby each month started counts as a full month, and this without prejudice to any compensation and costs. Also automatically and without prior notice of default, a fixed compensation is due amounting to 10% of the invoice amount with a minimum of 250 euros as a penalty clause, this without prior notice of default and in addition to the principal sum, the default interest, collection, reminder, prosecution costs and expenses due to loss of time and judicial or legal costs. This penalty clause does not affect the obligation to pay the agreed default interest.\n\nDisputes must be notified to us by registered mail within five working days after sending the invoice on pain of inadmissibility."
       },
       "article4": {
         "title": "Article 4 - Duration of the agreement and termination",
@@ -1079,7 +1092,7 @@
       },
       "article4": {
         "title": "Article 4 Right of withdrawal",
-        "content": "If you buy goods or services from us, you have the right to inform us of your decision to withdraw from the agreement within 14 days from delivery or conclusion of the agreement. After that, you must return the goods within 14 calendar days (you pay the shipping costs for this yourself). Upon receipt, we will refund you the full purchase price with the same payment method you used to pay.\n\nThe direct costs of returning the goods are therefore at your expense. We will indicate what the cost price is or make an estimate, if this cannot reasonably be calculated in advance. If the goods cannot be returned by post, we will come to pick them up from you and you will not be charged for this.\n\nWe may wait with refund until we have received the goods back or until you have shown that you have returned the goods, whichever comes first.\n\nDuring the first 14 days after delivery, we expect you to handle the order and packaging carefully. If you still want to be able to return the goods as described above, you may only unpack or use them to the extent necessary to assess whether you wish to keep the item. Returned goods may be tested, but may not be used. If you return the goods, this must if possible be done together with the original packaging, with all delivered accessories and in the original state and packaging and taking into account our instructions below.\n\nYou can return your return package via post or a courier.\n\nTo properly exercise your right of withdrawal, you can let us know by email that you wish to return your order. We will send you an acknowledgment of receipt of your withdrawal by email. A model form is available here."
+        "content": "If you buy goods from us, you have the right to inform us of your decision to withdraw from the agreement within 14 days from delivery. After that, you must return the goods within 14 calendar days (you pay the shipping costs for this yourself). Upon receipt, we will refund you the full purchase price with the same payment method you used to pay.\n\nThe direct costs of returning the goods are therefore at your expense. We will indicate what the cost price is or make an estimate, if this cannot reasonably be calculated in advance. If the goods cannot be returned by post, we will come to pick them up from you and you will not be charged for this.\n\nWe may wait with refund until we have received the goods back or until you have shown that you have returned the goods, whichever comes first.\n\nDuring the first 14 days after delivery, we expect you to handle the order and packaging carefully. If you still want to be able to return the goods as described above, you may only unpack or use them to the extent necessary to assess whether you wish to keep the item. Returned goods may be tested, but may not be used. If you return the goods, this must if possible be done together with the original packaging, with all delivered accessories and in the original state and packaging and taking into account our instructions below.\n\nYou can return your return package via post or a courier.\n\nTo properly exercise your right of withdrawal, you can let us know by email that you wish to return your order. We will send you an acknowledgment of receipt of your withdrawal by email. A model form is available here."
       },
       "article5": {
         "title": "Article 5 The price",
