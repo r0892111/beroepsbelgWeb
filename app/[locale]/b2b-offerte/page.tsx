@@ -97,7 +97,7 @@ export default function B2BQuotePage() {
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
 
-  const selectedTour = tours.find((tour) => (tour.id ?? tour.slug) === selectedTourId);
+  const selectedTour = tours.find((tour) => String(tour.id ?? tour.slug) === String(selectedTourId));
 
   const numPeople = parseInt(numberOfPeople) || 0;
 
@@ -411,7 +411,7 @@ export default function B2BQuotePage() {
 
     try {
       const selectedCityData = cities.find((city) => city.slug === data.city);
-      const selectedTourData = tours.find((tour) => tour.id === data.tourId);
+      const selectedTourData = tours.find((tour) => String(tour.id) === String(data.tourId));
       // Convert selectedUpsell object to standardized format: {id, n: name, p: price, q: quantity}
       // ID is included for database lookups, but not sent to Stripe metadata (to save space)
       const upsellProducts = Object.entries(selectedUpsell)
@@ -751,7 +751,7 @@ export default function B2BQuotePage() {
                       </SelectTrigger>
                       <SelectContent>
                         {availableTours.map((tour) => (
-                          <SelectItem key={tour.id ?? tour.slug} value={tour.id ?? tour.slug}>
+                          <SelectItem key={String(tour.id ?? tour.slug)} value={String(tour.id ?? tour.slug)}>
                             {tour.title}
                           </SelectItem>
                         ))}
