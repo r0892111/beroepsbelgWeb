@@ -34,6 +34,7 @@ async function getGoogleAccessToken(): Promise<string | null> {
     .single();
 
   if (profileError || !adminProfile) {
+    console.error('Failed to get admin profile:', profileError?.message || 'No admin found with Google tokens');
     return null;
   }
 
@@ -66,6 +67,8 @@ async function getGoogleAccessToken(): Promise<string | null> {
       });
 
       if (!refreshResponse.ok) {
+        const errorText = await refreshResponse.text();
+        console.error('Failed to refresh Google token:', refreshResponse.status, errorText);
         return null;
       }
 
@@ -166,8 +169,10 @@ export async function POST(request: NextRequest) {
     });
 
     if (!freeBusyResponse.ok) {
+      const errorText = await freeBusyResponse.text();
+      console.error('FreeBusy API error:', freeBusyResponse.status, errorText);
       return NextResponse.json(
-        { error: 'Failed to check calendar availability' },
+        { error: 'Failed to check calendar availability', details: errorText },
         { status: 500 }
       );
     }
@@ -191,8 +196,16 @@ export async function POST(request: NextRequest) {
     
     // Check for errors in the calendar data
     if (calendarData.errors && calendarData.errors.length > 0) {
+      console.error('Calendar access errors:', JSON.stringify(calendarData.errors, null, 2));
+      console.error('Full freeBusy response:', JSON.stringify(freeBusyData, null, 2));
       return NextResponse.json(
-        { error: 'Calendar access error' },
+        { 
+          error: 'Calendar access error',
+          details: calendarData.errors[0]?.reason || 'Unknown error',
+          message: calendarData.errors[0]?.domain === 'calendar' 
+            ? 'The calendar may not be accessible. Make sure the calendar is shared with the admin account or is public.' 
+            : 'Failed to access the calendar'
+        },
         { status: 403 }
       );
     }
