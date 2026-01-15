@@ -181,8 +181,8 @@ export default function AdminAirBNBPage() {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image file size must be less than 5MB');
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error('Image file size must be less than 50MB');
       return;
     }
 
@@ -196,7 +196,8 @@ export default function AdminAirBNBPage() {
 
   const removeImageFile = () => {
     setImageFile(null);
-    setImagePreview(editingAirBNB?.image_url || null);
+    setImagePreview(null);
+    setFormData(prev => ({ ...prev, image_url: '' }));
   };
 
   const uploadImageFile = async (file: File): Promise<string | null> => {
@@ -617,7 +618,7 @@ export default function AdminAirBNBPage() {
                       </div>
                     )}
                     <p className="mt-1 text-xs text-neutral-500 font-inter">
-                      Maximum file size: 5MB
+                      Maximum file size: 50MB
                     </p>
                   </div>
 

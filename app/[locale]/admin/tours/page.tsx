@@ -57,6 +57,7 @@ interface Tour {
   themes: string[] | null;
   local_stories?: boolean;
   op_maat?: boolean;
+  status?: 'draft' | 'published';
 }
 
 interface ThemeTranslation {
@@ -86,6 +87,7 @@ interface TourFormData {
   themes: ThemeTranslation[];
   local_stories: boolean;
   op_maat: boolean;
+  status: 'draft' | 'published';
 }
 
 const LANGUAGE_OPTIONS = [
@@ -165,7 +167,7 @@ interface CityData {
   coming_soon_text_fr: string | null;
   coming_soon_text_de: string | null;
   image: string | null;
-  status: 'live' | 'coming-soon' | null;
+  status: 'draft' | 'live' | 'coming-soon' | null;
   display_order: number | null;
 }
 
@@ -217,7 +219,7 @@ export default function AdminToursPage() {
     coming_soon_text_fr: null,
     coming_soon_text_de: null,
     image: null,
-    status: 'live',
+    status: 'draft',
     display_order: null,
   });
   const [isNewCity, setIsNewCity] = useState(false);
@@ -226,6 +228,7 @@ export default function AdminToursPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCity, setFilterCity] = useState<string>('all'); // 'all' or city_id UUID
   const [filterType, setFilterType] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all'); // 'all', 'draft', 'published'
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -256,6 +259,7 @@ export default function AdminToursPage() {
     themes: [],
     local_stories: false,
     op_maat: false,
+    status: 'draft',
   });
 
   // Custom language input state
@@ -395,6 +399,7 @@ export default function AdminToursPage() {
       themes: [],
       local_stories: false,
       op_maat: false,
+      status: 'draft',
     });
     setCustomLanguage('');
     setCustomTheme({ nl: '', en: '', fr: '', de: '' });
@@ -475,6 +480,7 @@ export default function AdminToursPage() {
       })(),
       local_stories: Boolean(tour.local_stories === true || (tour.local_stories as any) === 'true' || (tour.local_stories as any) === 1),
       op_maat: Boolean(tour.op_maat === true || (tour.op_maat as any) === 'true' || (tour.op_maat as any) === 1),
+      status: tour.status || 'published', // Default to 'published' for existing tours without status
     });
     setCustomLanguage('');
     setCustomTheme({ nl: '', en: '', fr: '', de: '' });
@@ -558,6 +564,7 @@ export default function AdminToursPage() {
         themes: formData.themes || [],
         local_stories: formData.local_stories || false,
         op_maat: formData.op_maat || false,
+        status: formData.status || 'draft',
         updated_at: new Date().toISOString(),
       };
 
@@ -642,13 +649,17 @@ export default function AdminToursPage() {
     // Type filter
     const matchesType = filterType === 'all' || tour.type === filterType;
 
-    return matchesSearch && matchesCity && matchesType;
+    // Status filter
+    const matchesStatus = filterStatus === 'all' || tour.status === filterStatus;
+
+    return matchesSearch && matchesCity && matchesType && matchesStatus;
   });
 
   const clearFilters = () => {
     setSearchQuery('');
     setFilterCity('all');
     setFilterType('all');
+    setFilterStatus('all');
   };
 
   const formatDuration = (minutes: number) => {
@@ -1106,7 +1117,7 @@ export default function AdminToursPage() {
         coming_soon_text_fr: city.coming_soon_text_fr,
         coming_soon_text_de: city.coming_soon_text_de,
         image: city.image,
-        status: city.status || 'live',
+        status: city.status || 'draft',
         display_order: city.display_order,
       });
     } else {
@@ -1132,7 +1143,7 @@ export default function AdminToursPage() {
         coming_soon_text_fr: null,
         coming_soon_text_de: null,
         image: null,
-        status: 'live',
+        status: 'draft',
         display_order: null,
       });
     }
@@ -1158,10 +1169,11 @@ export default function AdminToursPage() {
       };
 
       if (isNewCity) {
-        // Create new city
+        // Create new city - exclude id field (let database generate it)
+        const { id, ...insertPayload } = payload;
         const { error } = await supabase
           .from('cities')
-          .insert([payload]);
+          .insert([insertPayload]);
 
         if (error) throw error;
         toast.success('City created successfully');
@@ -1418,6 +1430,15 @@ export default function AdminToursPage() {
                 <Badge variant="outline" className="ml-2">
                   {cityTours.length} {cityTours.length === 1 ? 'tour' : 'tours'}
                 </Badge>
+                {cityData?.status === 'draft' && (
+                  <Badge className="bg-amber-100 text-amber-900 border border-amber-300">Draft</Badge>
+                )}
+                {cityData?.status === 'live' && (
+                  <Badge className="bg-green-100 text-green-900 border border-green-300">Live</Badge>
+                )}
+                {cityData?.status === 'coming-soon' && (
+                  <Badge className="bg-blue-100 text-blue-900 border border-blue-300">Coming Soon</Badge>
+                )}
               </CardTitle>
               <CardDescription>
                 Drag cities to reorder. The order will be reflected on the /tours page.
@@ -1524,6 +1545,7 @@ export default function AdminToursPage() {
                       <TableHead className="w-8"></TableHead>
                       <TableHead>City</TableHead>
                       <TableHead>Title</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Duration</TableHead>
                       <TableHead>Price</TableHead>
@@ -1615,6 +1637,13 @@ export default function AdminToursPage() {
         </TableCell>
         <TableCell className="font-medium max-w-xs">
           <div className="truncate">{tour.title}</div>
+        </TableCell>
+        <TableCell>
+          {tour.status === 'draft' ? (
+            <Badge className="bg-amber-100 text-amber-900 border border-amber-300">Draft</Badge>
+          ) : (
+            <Badge className="bg-green-100 text-green-900 border border-green-300">Published</Badge>
+          )}
         </TableCell>
         <TableCell>
           <Badge className="bg-blue-100 text-blue-900">{tour.type}</Badge>
@@ -1752,7 +1781,7 @@ export default function AdminToursPage() {
                   variant="outline"
                   size="sm"
                   onClick={clearFilters}
-                  disabled={!searchQuery && filterCity === 'all' && filterType === 'all'}
+                  disabled={!searchQuery && filterCity === 'all' && filterType === 'all' && filterStatus === 'all'}
                 >
                   <X className="h-4 w-4 mr-2" />
                   Clear
@@ -1791,9 +1820,22 @@ export default function AdminToursPage() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="flex-1 min-w-[200px]">
+                  <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <SelectTrigger className="bg-white">
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="draft">Draft only</SelectItem>
+                      <SelectItem value="published">Published only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              {(searchQuery || filterCity !== 'all' || filterType !== 'all') && (
+              {(searchQuery || filterCity !== 'all' || filterType !== 'all' || filterStatus !== 'all') && (
                 <div className="text-sm text-muted-foreground">
                   Showing {filteredTours.length} of {tours.length} tours
                 </div>
@@ -1998,16 +2040,34 @@ export default function AdminToursPage() {
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="title" className="text-navy font-semibold">Tour Title*</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                required
-                className="bg-white"
-                placeholder="e.g., Historic City Center Walking Tour"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="title" className="text-navy font-semibold">Tour Title*</Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  required
+                  className="bg-white"
+                  placeholder="e.g., Historic City Center Walking Tour"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="status" className="text-navy font-semibold">Status*</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value) => setFormData({ ...formData, status: value as 'draft' | 'published' })}
+                >
+                  <SelectTrigger className="bg-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="published">Published</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -2538,13 +2598,14 @@ export default function AdminToursPage() {
             <div>
               <Label htmlFor="city-status" className="text-navy font-semibold">Status*</Label>
               <Select
-                value={cityFormData.status || 'live'}
-                onValueChange={(value) => setCityFormData({ ...cityFormData, status: value as 'live' | 'coming-soon' })}
+                value={cityFormData.status || 'draft'}
+                onValueChange={(value) => setCityFormData({ ...cityFormData, status: value as 'draft' | 'live' | 'coming-soon' })}
               >
                 <SelectTrigger className="bg-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="draft">Draft</SelectItem>
                   <SelectItem value="live">Live</SelectItem>
                   <SelectItem value="coming-soon">Coming Soon</SelectItem>
                 </SelectContent>

@@ -14,7 +14,7 @@ export type City = {
   slug: string;
   name: Record<Locale, string>;
   teaser: Record<Locale, string>;
-  status?: 'live' | 'coming-soon';
+  status?: 'draft' | 'live' | 'coming-soon';
   image?: string;
   ctaText?: Record<Locale, string>;
   comingSoonText?: Record<Locale, string>;
@@ -46,6 +46,7 @@ export type Tour = {
   primaryMediaType?: 'image' | 'video'; // Type of primary media (image or video)
   tourImages?: TourImage[]; // All tour images
   displayOrder?: number; // Display order within city (lower numbers appear first)
+  status?: 'draft' | 'published'; // Publication status (draft = not visible to public)
   themes?: { nl: string; en?: string; fr?: string; de?: string }[]; // Array of theme tags with translations
   options?: {
     thumbnail?: string;
