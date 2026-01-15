@@ -628,25 +628,30 @@ export default function BookingDetailPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-medium flex items-center gap-2">
                 <User className="h-4 w-4 text-muted-foreground" />
-                {isLocalStories ? `Customers (${allInvitees.length})` : 'Customer'}
+                {allInvitees.length > 1 ? `Customers (${allInvitees.length})` : 'Customer'}
               </CardTitle>
-              {isLocalStories && (
-                <CardDescription>
-                  Total people: {allInvitees.reduce((sum, inv) => sum + (inv.numberOfPeople || 1), 0)}
-                </CardDescription>
-              )}
+              <CardDescription>
+                Total people: {allInvitees.reduce((sum, inv) => sum + (inv.numberOfPeople || 1), 0)}
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {isLocalStories ? (
-                /* Local Stories - All Invitees */
+              {allInvitees.length > 0 ? (
+                /* Show all invitees */
                 <div className="space-y-4">
                   {allInvitees.map((inv, index) => (
                     <div key={index} className={`p-4 rounded-lg border ${index > 0 ? 'bg-muted/30' : 'bg-muted/50'}`}>
                       <div className="flex items-center justify-between mb-3">
                         <p className="font-medium text-sm">{inv.name || `Customer ${index + 1}`}</p>
-                        <Badge variant="outline" className="text-xs">
-                          {inv.numberOfPeople || 1} {(inv.numberOfPeople || 1) === 1 ? 'person' : 'people'}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          {inv.language && (
+                            <Badge variant="secondary" className="text-xs">
+                              {inv.language.toUpperCase()}
+                            </Badge>
+                          )}
+                          <Badge variant="outline" className="text-xs">
+                            {inv.numberOfPeople || 1} {(inv.numberOfPeople || 1) === 1 ? 'person' : 'people'}
+                          </Badge>
+                        </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>
@@ -673,53 +678,15 @@ export default function BookingDetailPage() {
                     </div>
                   ))}
                   {/* Total amount */}
-                  <div className="pt-2 border-t">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Amount</p>
-                    <p className="text-lg font-semibold">
-                      €{allInvitees.reduce((sum, inv) => sum + (inv.amount || 0), 0)}
-                    </p>
-                  </div>
-                </div>
-              ) : invitee ? (
-                /* Single Customer (Regular tours) */
-                <>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Name</p>
-                    <p className="font-medium">{invitee.name || 'N/A'}</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Email</p>
-                      <p className="text-sm truncate">{invitee.email || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Phone</p>
-                      <p className="text-sm">{invitee.phone || 'N/A'}</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Group Size</p>
-                      <p className="font-medium">{invitee.numberOfPeople || 1} {(invitee.numberOfPeople || 1) === 1 ? 'person' : 'people'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Language</p>
-                      <p className="font-medium">{invitee.language?.toUpperCase() || 'NL'}</p>
-                    </div>
-                  </div>
-                  {invitee.specialRequests && (
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Special Requests</p>
-                      <p className="text-sm">{invitee.specialRequests}</p>
-                    </div>
-                  )}
-                  {invitee.amount && (
+                  {allInvitees.length > 1 && (
                     <div className="pt-2 border-t">
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Amount Paid</p>
-                      <p className="text-lg font-semibold">€{invitee.amount}</p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Amount</p>
+                      <p className="text-lg font-semibold">
+                        €{allInvitees.reduce((sum, inv) => sum + (inv.amount || 0), 0)}
+                      </p>
                     </div>
                   )}
-                </>
+                </div>
               ) : (
                 <p className="text-sm text-muted-foreground">Customer information not available</p>
               )}

@@ -188,42 +188,36 @@ async function handleEvent(event: Stripe.Event) {
 
               // Append new invitee to existing invitees
               const currentInvitees = existingTourBooking.invitees || [];
-              const inviteeExists = currentInvitees.some((inv: any) => inv.email === bookingData.customerEmail);
+              const newInvitee = {
+                name: bookingData.customerName,
+                email: bookingData.customerEmail,
+                phone: bookingData.customerPhone,
+                numberOfPeople: bookingData.numberOfPeople,
+                language: bookingData.language,
+                specialRequests: bookingData.specialRequests,
+                requestTanguy: bookingData.requestTanguy,
+                amount: bookingData.amounts.tourFinalAmount,
+                originalAmount: bookingData.amounts.tourFullPrice,
+                discountApplied: bookingData.amounts.discountAmount,
+                tanguyCost: bookingData.amounts.tanguyCost,
+                extraHourCost: bookingData.amounts.extraHourCost,
+                currency: 'eur',
+                isContacted: false,
+                upsellProducts: bookingData.upsellProducts,
+                opMaatAnswers: bookingData.opMaatAnswers,
+              };
 
-              if (!inviteeExists) {
-                const newInvitee = {
-                  name: bookingData.customerName,
-                  email: bookingData.customerEmail,
-                  phone: bookingData.customerPhone,
-                  numberOfPeople: bookingData.numberOfPeople,
-                  language: bookingData.language,
-                  specialRequests: bookingData.specialRequests,
-                  requestTanguy: bookingData.requestTanguy,
-                  amount: bookingData.amounts.tourFinalAmount,
-                  originalAmount: bookingData.amounts.tourFullPrice,
-                  discountApplied: bookingData.amounts.discountAmount,
-                  tanguyCost: bookingData.amounts.tanguyCost,
-                  extraHourCost: bookingData.amounts.extraHourCost,
-                  currency: 'eur',
-                  isContacted: false,
-                  upsellProducts: bookingData.upsellProducts,
-                  opMaatAnswers: bookingData.opMaatAnswers,
-                };
+              const updatedInvitees = [...currentInvitees, newInvitee];
+              await supabase
+                .from('tourbooking')
+                .update({
+                  invitees: updatedInvitees,
+                  stripe_session_id: sessionId, // Update to latest session
+                  status: 'payment_completed'
+                })
+                .eq('id', tourbookingId);
 
-                const updatedInvitees = [...currentInvitees, newInvitee];
-                await supabase
-                  .from('tourbooking')
-                  .update({
-                    invitees: updatedInvitees,
-                    stripe_session_id: sessionId, // Update to latest session
-                    status: 'payment_completed'
-                  })
-                  .eq('id', tourbookingId);
-
-                console.info(`Appended invitee to existing tourbooking ${tourbookingId}`);
-              } else {
-                console.info(`Invitee already exists in tourbooking ${tourbookingId}`);
-              }
+              console.info(`Appended invitee to existing tourbooking ${tourbookingId}`);
             }
           }
 
