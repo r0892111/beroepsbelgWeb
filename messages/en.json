@@ -38,8 +38,8 @@
   "shop": {
     "marqueeText": "WEBSHOP — NEW COLLECTION — DISCOVER NOW",
     "addToCart": "Add to Cart",
-    "curated": "Curated",
-    "collection": "Collection",
+    "curated": "Webshop",
+    "collection": "",
     "exclusiveItems": "Exclusive books, prints & objects",
     "viewAllProducts": "View All Products"
   },
@@ -78,6 +78,7 @@
     "minute": "minute",
     "minutes": "minutes",
     "linkCopied": "Link copied!",
+    "toursPageTitle": "Tours",
     "toursPageTagline": "Discover all our beautiful cities of Belgium with an expert by your side"
   },
   "newsletter": {
@@ -735,14 +736,15 @@
     "featuredIn": "Featured In"
   },
   "blog": {
-    "title": "Blog",
+    "title": "News",
     "readMore": "Read More",
     "publishedOn": "Published on",
     "author": "Author",
     "category": "Category",
     "noPosts": "No blog posts found.",
     "backToBlog": "Back to Blog",
-    "relatedPosts": "Related Posts"
+    "relatedPosts": "Related Posts",
+    "featured": "Featured"
   },
   "contact": {
     "title": "Contact",
@@ -778,7 +780,7 @@
     },
     "dynamicTeam": {
       "title": "Dynamic team",
-      "description": "Become part of a close-knit team of guides and meet interesting people"
+      "description": "Become part of an enthusiastic team of guides and meet interesting people."
     },
     "flexibleLocations": {
       "title": "Flexible locations",

@@ -62,16 +62,23 @@ export default async function AirBNBPage({ params }: AirBNBPageProps) {
   const hasListings = airbnbListings.length > 0;
 
   return (
-    <div className="min-h-screen bg-[#F9F9F7] py-16 md:py-24 px-4 md:px-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="mb-4 text-center text-5xl md:text-6xl lg:text-7xl font-bold font-oswald uppercase tracking-tight text-neutral-900">
-          AirBNB
-        </h1>
-        <p className="text-center text-lg md:text-xl text-neutral-600 font-inter mb-16 max-w-2xl mx-auto">
-          Discover unique accommodations in Belgium's most beautiful cities
-        </p>
+    <div className="min-h-screen bg-[#F9F9F7]">
+      {/* Hero Section with Green Background */}
+      <div className="bg-[#1BDD95] pt-10 md:pt-14 pb-24 md:pb-32 px-4 md:px-8">
+        <div className="max-w-7xl mx-auto text-center">
+          <h1 className="mb-4 text-5xl md:text-6xl lg:text-7xl font-bold font-oswald uppercase tracking-tight text-white">
+            AirBNB
+          </h1>
+          <p className="text-lg md:text-xl text-white/90 font-inter max-w-2xl mx-auto">
+            Discover unique accommodations in Belgium's most beautiful cities
+          </p>
+        </div>
+      </div>
 
-        {!hasListings ? (
+      {/* Content Section - overlaps the green */}
+      <div className="px-4 md:px-8 -mt-24 md:-mt-32 pb-16 md:pb-24">
+        <div className="max-w-7xl mx-auto">
+          {!hasListings ? (
           <div className="mb-8 p-6 bg-[#1BDD95]/10 border-2 border-[#1BDD95] rounded-2xl">
             <p className="text-center text-neutral-700 font-inter">
               <strong>Coming Soon:</strong> We're currently setting up our AirBNB listings. Check back soon for available properties!
@@ -79,7 +86,7 @@ export default async function AirBNBPage({ params }: AirBNBPageProps) {
           </div>
         ) : (
           <div className="space-y-16">
-            {sortedCityKeys.map((cityKey) => {
+            {sortedCityKeys.map((cityKey, cityIndex) => {
               const cityListings = groupedByCity.get(cityKey) || [];
               const cityData = cityKey !== 'no-city'
                 ? cities.find(c => c.slug === cityKey)
@@ -91,12 +98,15 @@ export default async function AirBNBPage({ params }: AirBNBPageProps) {
               // Skip cities with no listings (shouldn't happen, but just in case)
               if (cityListings.length === 0) return null;
 
+              // First city overlaps with green banner, use white text
+              const isFirstCity = cityIndex === 0;
+
               return (
                 <div key={cityKey} className="space-y-6">
                   {cityName && (
                     <div className="flex items-center gap-3">
-                      <MapPin className="h-6 w-6 text-[#1BDD95]" />
-                      <h2 className="text-3xl md:text-4xl font-bold font-oswald uppercase tracking-tight text-neutral-900">
+                      <MapPin className={`h-6 w-6 ${isFirstCity ? 'text-white' : 'text-[#1BDD95]'}`} />
+                      <h2 className={`text-3xl md:text-4xl font-bold font-oswald uppercase tracking-tight ${isFirstCity ? 'text-white' : 'text-neutral-900'}`}>
                         {cityName}
                       </h2>
                     </div>
@@ -179,6 +189,7 @@ export default async function AirBNBPage({ params }: AirBNBPageProps) {
             })}
           </div>
         )}
+        </div>
       </div>
     </div>
   );

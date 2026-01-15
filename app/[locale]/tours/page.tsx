@@ -73,16 +73,23 @@ export default async function ToursPage({ params }: ToursPageProps) {
   
   
   return (
-    <div className="min-h-screen bg-[#F9F9F7] py-16 md:py-24 px-4 md:px-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="mb-4 text-center text-5xl md:text-6xl lg:text-7xl font-bold font-oswald uppercase tracking-tight text-neutral-900">
-          Tours
-        </h1>
-        <p className="text-center text-lg md:text-xl text-neutral-600 font-inter mb-16 max-w-2xl mx-auto">
-          {t('toursPageTagline')}
-        </p>
+    <div className="min-h-screen bg-[#F9F9F7]">
+      {/* Hero Section with Green Background */}
+      <div className="bg-[#1BDD95] pt-10 md:pt-14 pb-32 md:pb-40 px-4 md:px-8">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="mb-4 text-center text-5xl md:text-6xl lg:text-7xl font-bold font-oswald uppercase tracking-tight text-white">
+            {t('toursPageTitle')}
+          </h1>
+          <p className="text-center text-lg md:text-xl text-white/90 font-inter max-w-2xl mx-auto">
+            {t('toursPageTagline')}
+          </p>
+        </div>
+      </div>
 
-        <div className="grid gap-8 md:gap-10 sm:grid-cols-2 lg:grid-cols-3">
+      {/* City Cards Section - subtle overlap with shadow touching green */}
+      <div className="px-4 md:px-8 -mt-24 md:-mt-32 pb-16 md:pb-24">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid gap-8 md:gap-10 sm:grid-cols-2 lg:grid-cols-3">
           {cities.map((city) => (
             <div
               key={city.slug}
@@ -129,6 +136,7 @@ export default async function ToursPage({ params }: ToursPageProps) {
               </div>
             </div>
           ))}
+          </div>
         </div>
       </div>
     </div>

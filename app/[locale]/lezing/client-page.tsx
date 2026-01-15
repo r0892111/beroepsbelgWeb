@@ -61,14 +61,21 @@ export default function LezingClientPage({ lectures, locale }: LezingClientPageP
   };
 
   return (
-    <div className="min-h-screen bg-[#F9F9F7] py-16 md:py-24 px-4 md:px-8">
-      <div className="mx-auto max-w-5xl">
-        <h1 className="mb-6 text-center md:text-left text-5xl md:text-6xl lg:text-7xl font-bold font-oswald uppercase tracking-tight text-neutral-900">
-          {t('title')}
-        </h1>
+    <div className="min-h-screen bg-[#F9F9F7]">
+      {/* Hero Section with Green Background */}
+      <div className="bg-[#1BDD95] pt-10 md:pt-14 pb-32 md:pb-40 px-4 md:px-8">
+        <div className="max-w-5xl mx-auto">
+          <h1 className="mb-4 text-center text-5xl md:text-6xl lg:text-7xl font-bold font-oswald uppercase tracking-tight text-white">
+            {t('title')}
+          </h1>
+        </div>
+      </div>
 
-        {/* Disclaimer for all locales */}
-        {showDisclaimer && (
+      {/* Content Section - overlaps the green */}
+      <div className="px-4 md:px-8 -mt-24 md:-mt-32 pb-16 md:pb-24">
+        <div className="mx-auto max-w-5xl">
+          {/* Disclaimer for all locales */}
+          {showDisclaimer && (
           <Alert className="mb-8 border-blue-200 bg-blue-50">
             <Info className="h-4 w-4 text-blue-600" />
             <AlertDescription className="flex items-center justify-between">
@@ -224,13 +231,14 @@ export default function LezingClientPage({ lectures, locale }: LezingClientPageP
           </div>
         )}
 
-        {/* Booking Form Popup */}
-        <LectureBookingForm
-          open={bookingFormOpen}
-          onOpenChange={setBookingFormOpen}
-          lectureId={selectedLectureId}
-          lectureTitle={selectedLectureTitle}
-        />
+          {/* Booking Form Popup */}
+          <LectureBookingForm
+            open={bookingFormOpen}
+            onOpenChange={setBookingFormOpen}
+            lectureId={selectedLectureId}
+            lectureTitle={selectedLectureTitle}
+          />
+        </div>
       </div>
     </div>
   );

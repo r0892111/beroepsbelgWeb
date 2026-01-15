@@ -697,18 +697,22 @@ export default function B2BQuotePage() {
   const stepNumber = step === 'select' ? 1 : step === 'contact' ? 2 : step === 'upsell' ? 3 : step === 'opmaat' ? 4 : 5;
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#fdfcfa' }}>
-      <div className="container mx-auto px-4 py-16">
-        <div className="mx-auto max-w-3xl">
-          <div className="mb-8 text-center">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-navy" style={{ backgroundColor: 'var(--brass-light)' }}>
-              <Sparkles className="h-4 w-4" />
-              Offertes
-            </div>
-            <h1 className="mb-3 text-4xl font-bold font-serif text-navy">{t('title')}</h1>
-            <p className="text-lg" style={{ color: 'var(--slate-blue)' }}>{t('subtitle')}</p>
-          </div>
+    <div className="min-h-screen bg-[#F9F9F7]">
+      {/* Hero Section with Green Background */}
+      <div className="bg-[#1BDD95] pt-10 md:pt-14 pb-32 md:pb-40 px-4 md:px-8">
+        <div className="max-w-3xl mx-auto text-center">
+          <h1 className="mb-4 text-5xl md:text-6xl lg:text-7xl font-bold font-oswald uppercase tracking-tight text-white">
+            {t('title')}
+          </h1>
+          <p className="text-lg md:text-xl text-white/90 font-inter max-w-2xl mx-auto">
+            {t('subtitle')}
+          </p>
+        </div>
+      </div>
 
+      {/* Content Section - overlaps the green */}
+      <div className="container mx-auto px-4 -mt-24 md:-mt-32 pb-16">
+        <div className="mx-auto max-w-3xl">
           {/* Progress steps */}
           <div className="mb-8 flex items-center justify-center">
             <div className="flex items-center gap-2 w-full max-w-md">
@@ -720,7 +724,7 @@ export default function B2BQuotePage() {
                 return (
                   <div
                     key={s}
-                    className="h-2 flex-1 rounded-full transition-all"
+                    className="h-2 flex-1 rounded-full transition-all ring-2 ring-white/30"
                     style={{ backgroundColor: bgColor }}
                   />
                 );

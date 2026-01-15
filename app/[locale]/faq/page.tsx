@@ -81,21 +81,25 @@ export default async function FaqPage({ params }: FaqPageProps) {
   return (
     <>
       {faqsForSchema.length > 0 && <FaqPageJsonLd faqs={faqsForSchema} />}
-      <div className="min-h-screen bg-[#F9F9F7] py-20 md:py-32 px-4 md:px-8">
-      <div className="mx-auto max-w-5xl">
-        {/* Header Section - Editorial Style */}
-        <div className="mb-16 text-center">
-          <h1 className="mb-4 text-5xl md:text-7xl lg:text-8xl font-serif text-neutral-900 tracking-tight leading-tight">
-            FAQ
-          </h1>
-          <p className="text-lg md:text-xl text-neutral-600 font-inter max-w-2xl mx-auto">
-            {t('subtitle')}
-          </p>
+      <div className="min-h-screen bg-[#F9F9F7]">
+        {/* Hero Section with Green Background */}
+        <div className="bg-[#1BDD95] pt-10 md:pt-14 pb-32 md:pb-40 px-4 md:px-8">
+          <div className="max-w-5xl mx-auto text-center">
+            <h1 className="mb-4 text-5xl md:text-6xl lg:text-7xl font-bold font-oswald uppercase tracking-tight text-white">
+              FAQ
+            </h1>
+            <p className="text-lg md:text-xl text-white/90 font-inter max-w-2xl mx-auto">
+              {t('subtitle')}
+            </p>
+          </div>
         </div>
 
-        {/* FAQ Accordion - Custom Styled */}
-        {faqItems.length > 0 ? (
-        <Accordion type="single" collapsible className="space-y-4 mb-16">
+        {/* FAQ Accordion Section - overlaps the green */}
+        <div className="px-4 md:px-8 -mt-24 md:-mt-32 pb-16 md:pb-24">
+          <div className="mx-auto max-w-5xl">
+            {/* FAQ Accordion - Custom Styled */}
+            {faqItems.length > 0 ? (
+            <Accordion type="single" collapsible className="space-y-4 mb-16">
           {faqItems.map((item, index) => (
             <AccordionItem
               key={index}
@@ -143,8 +147,9 @@ export default async function FaqPage({ params }: FaqPageProps) {
             </a>
           </div>
         </div>
+          </div>
+        </div>
       </div>
-    </div>
     </>
   );
 }
