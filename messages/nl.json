@@ -38,8 +38,8 @@
   "shop": {
     "marqueeText": "WEBSHOP — NIEUWE COLLECTIE — ONTDEK NU",
     "addToCart": "Toevoegen aan winkelwagen",
-    "curated": "Gecureerde",
-    "collection": "Collectie",
+    "curated": "Webshop",
+    "collection": "",
     "exclusiveItems": "Exclusieve boeken, prints & objecten",
     "viewAllProducts": "Bekijk Alle Producten"
   },
@@ -142,6 +142,7 @@
     "minute": "min",
     "minutes": "min",
     "linkCopied": "Link gekopieerd!",
+    "toursPageTitle": "Tours",
     "toursPageTagline": "Ontdek al onze prachtige steden van België met een expert aan je zijde"
   },
   "newsletter": {
@@ -803,14 +804,15 @@
     "noArticles": "Geen persberichten beschikbaar."
   },
   "blog": {
-    "title": "Blog",
+    "title": "Nieuws",
     "readMore": "Lees meer",
     "publishedOn": "Gepubliceerd op",
     "author": "Auteur",
     "category": "Categorie",
     "noPosts": "Geen blogposts gevonden.",
     "backToBlog": "Terug naar Blog",
-    "relatedPosts": "Gerelateerde Berichten"
+    "relatedPosts": "Gerelateerde Berichten",
+    "featured": "Uitgelicht"
   },
   "contact": {
     "title": "Contact",
@@ -846,7 +848,7 @@
     },
     "dynamicTeam": {
       "title": "Dynamisch team",
-      "description": "Word deel van een hecht team van gidsen en ontmoet interessante mensen"
+      "description": "Word deel van een enthousiast team van gidsen en ontmoet interessante mensen"
     },
     "flexibleLocations": {
       "title": "Flexibele locaties",

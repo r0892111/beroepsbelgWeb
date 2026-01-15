@@ -98,19 +98,30 @@ export default async function ToursCityPage({ params }: ToursCityPageProps) {
     .join(' ');
 
   return (
-    <div className="container mx-auto px-4 py-20">
-      <h1 className="mb-12 text-center text-4xl font-bold">
-        Tours {cityDisplayName}
-      </h1>
-      {tours.length > 0 ? (
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {tours.map((tour) => (
-            <TourCard key={tour.slug} tour={tour} locale={locale} />
-          ))}
+    <div className="min-h-screen bg-[#F9F9F7]">
+      {/* Hero Section with Green Background */}
+      <div className="bg-[#1BDD95] pt-10 md:pt-14 pb-32 md:pb-40 px-4 md:px-8">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="mb-4 text-center text-5xl md:text-6xl lg:text-7xl font-bold font-oswald uppercase tracking-tight text-white">
+            Tours {cityDisplayName}
+          </h1>
         </div>
-      ) : (
-        <p className="text-center text-muted-foreground">Binnenkort beschikbaar</p>
-      )}
+      </div>
+
+      {/* Tour Cards Section - overlaps the green */}
+      <div className="px-4 md:px-8 -mt-24 md:-mt-32 pb-16 md:pb-24">
+        <div className="max-w-7xl mx-auto">
+          {tours.length > 0 ? (
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              {tours.map((tour) => (
+                <TourCard key={tour.slug} tour={tour} locale={locale} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground">Binnenkort beschikbaar</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

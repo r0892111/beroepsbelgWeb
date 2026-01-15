@@ -117,36 +117,27 @@ export default function PersPage() {
   }
 
   return (
-    <section className="min-h-screen py-16 md:py-24 bg-[#F9F9F7] relative overflow-hidden">
-      {/* Decorative Background Elements */}
-      <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none overflow-hidden">
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-[#1BDD95] rounded-full blur-[100px]" />
-        <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-[#1BDD95] rounded-full blur-[120px]" />
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-blue-100 rounded-full blur-[100px]" />
-      </div>
-
-      <div className="container mx-auto px-4 md:px-8 text-center relative z-10">
-        {/* Header Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="flex flex-col items-center mb-12 md:mb-16"
-        >
-          {/* Large Title with Decorative Dot */}
-          <div className="relative inline-block mb-4">
-            {/* Decorative Mint Green Dot */}
-            <div className="absolute -top-4 -right-8 md:-top-6 md:-right-12 w-12 h-12 md:w-16 md:h-16 bg-[#1BDD95] rounded-full opacity-80" />
-
-            <h1 className="relative z-10 font-serif text-5xl md:text-7xl lg:text-8xl text-[rgb(23,23,23)] tracking-tight leading-[0.9]">
+    <section className="min-h-screen bg-[#F9F9F7] relative overflow-hidden">
+      {/* Hero Section with Green Background */}
+      <div className="bg-[#1BDD95] pt-10 md:pt-14 pb-24 md:pb-32 px-4 md:px-8 relative z-10">
+        <div className="max-w-7xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <h1 className="mb-4 text-5xl md:text-6xl lg:text-7xl font-bold font-oswald uppercase tracking-tight text-white">
               {t('title')}
             </h1>
-          </div>
+            <p className="text-lg md:text-xl text-white/90 font-inter max-w-2xl mx-auto">
+              {t('subtitle')}
+            </p>
+          </motion.div>
+        </div>
+      </div>
 
-          <p className="text-lg md:text-xl text-neutral-600 font-inter max-w-2xl">
-            {t('subtitle')}
-          </p>
-        </motion.div>
+      {/* Content Section - overlaps the green */}
+      <div className="container mx-auto px-4 md:px-8 -mt-16 md:-mt-24 pb-16 md:pb-24 text-center relative z-10">
 
         {/* Brick Layout Grid */}
         <div className="flex flex-col gap-3 md:gap-5 items-center max-w-7xl mx-auto overflow-x-hidden pb-8">

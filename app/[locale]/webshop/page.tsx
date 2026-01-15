@@ -157,16 +157,20 @@ export default function WebshopPage() {
 
   return (
     <div className="min-h-screen bg-[#F9F9F7]">
-      <div className="container mx-auto px-4 md:px-8 py-16 md:py-24">
-        <div className="mb-16 text-center">
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold font-oswald uppercase tracking-tight text-neutral-900 mb-4">
+      {/* Hero Section with Green Background */}
+      <div className="bg-[#1BDD95] pt-10 md:pt-14 pb-40 md:pb-52 px-4 md:px-8">
+        <div className="max-w-7xl mx-auto text-center">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold font-oswald uppercase tracking-tight text-white mb-4">
             {t('title')}
           </h1>
-          <p className="text-lg md:text-xl text-neutral-600 font-inter max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl text-white/90 font-inter max-w-2xl mx-auto">
             {t('subtitle')}
           </p>
         </div>
+      </div>
 
+      {/* Content Section - overlaps the green */}
+      <div className="container mx-auto px-4 md:px-8 -mt-32 md:-mt-44 pb-16 md:pb-24">
         {/* Search Bar */}
         <div className="mb-8 max-w-2xl mx-auto">
           <div className="relative">
@@ -191,24 +195,20 @@ export default function WebshopPage() {
         </div>
 
         {/* Category Filters */}
-        <div className="mb-12 flex flex-wrap justify-center gap-3">
+        <div className="mb-16 flex flex-wrap justify-center gap-3">
           {categories.map((category) => (
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
               className={`px-6 py-3 rounded-full font-oswald font-bold text-sm uppercase tracking-widest transition-all ${
                 selectedCategory === category
-                  ? 'bg-[#1BDD95] text-white shadow-lg hover:bg-[#14BE82] hover:scale-105'
+                  ? 'bg-[#1BDD95] text-white shadow-lg hover:bg-[#14BE82] hover:scale-105 border border-white/30'
                   : 'bg-white border-2 border-neutral-200 text-neutral-700 hover:border-neutral-900 hover:text-neutral-900'
               }`}
             >
               {getCategoryLabel(category)}
             </button>
           ))}
-        </div>
-
-        <div className="mb-8 text-center text-sm text-neutral-500 font-inter">
-          {t('productCount', { count: filteredProducts.length })}
         </div>
 
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

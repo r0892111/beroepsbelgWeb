@@ -38,8 +38,8 @@
   "shop": {
     "marqueeText": "WEBSHOP — NEUE KOLLEKTION — JETZT ENTDECKEN",
     "addToCart": "In den Warenkorb",
-    "curated": "Kuratiert",
-    "collection": "Kollektion",
+    "curated": "Webshop",
+    "collection": "",
     "exclusiveItems": "Exklusive Bücher, Drucke & Objekte",
     "viewAllProducts": "Alle Produkte Anzeigen"
   },
@@ -78,6 +78,7 @@
     "minute": "Minute",
     "minutes": "Minuten",
     "linkCopied": "Link kopiert!",
+    "toursPageTitle": "Stadtführungen",
     "toursPageTagline": "Entdecken Sie alle unsere wunderschönen Städte Belgiens mit einem Experten an Ihrer Seite"
   },
   "newsletter": {
@@ -767,7 +768,7 @@
     },
     "dynamicTeam": {
       "title": "Dynamisches Team",
-      "description": "Werden Sie Teil eines eng verbundenen Teams von Führern und treffen Sie interessante Menschen"
+      "description": "Werden Sie Teil eines engagierten Guide-Teams und lernen Sie interessante Menschen kennen."
     },
     "flexibleLocations": {
       "title": "Flexible Standorte",
@@ -1264,14 +1265,15 @@
     }
   },
   "blog": {
-    "title": "Blog",
+    "title": "Neuigkeiten",
     "readMore": "Weiterlesen",
     "publishedOn": "Veröffentlicht am",
     "author": "Autor",
     "category": "Kategorie",
     "noPosts": "Keine Blog-Beiträge gefunden.",
     "backToBlog": "Zurück zum Blog",
-    "relatedPosts": "Verwandte Beiträge"
+    "relatedPosts": "Verwandte Beiträge",
+    "featured": "Empfohlen"
   },
   "search": {
     "title": "Suchergebnisse",

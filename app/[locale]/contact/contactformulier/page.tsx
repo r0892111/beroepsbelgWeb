@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Mail, MessageCircle, Newspaper, HelpCircle, Briefcase } from 'lucide-react';
+import { MessageCircle, Newspaper, HelpCircle, Briefcase } from 'lucide-react';
 import { sendContactFormWebhook } from '@/lib/utils/webhooks';
 
 const contactSchema = z.object({
@@ -123,20 +123,6 @@ export default function ContactPage() {
         <div className="grid lg:grid-cols-5 gap-12 max-w-6xl mx-auto">
           {/* Left Column - Contact Info Cards (2/5 width) */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Email Card */}
-            <div className="bg-white border border-neutral-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-300">
-              <div className="w-12 h-12 bg-[#1BDD95] rounded-full flex items-center justify-center mb-4">
-                <Mail className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="font-oswald font-bold text-lg mb-2 text-neutral-900">{t('emailLabel')}</h3>
-              <a
-                href="mailto:info@beroepsbelg.be"
-                className="font-inter text-neutral-600 hover:text-[#1BDD95] transition-colors"
-              >
-                info@beroepsbelg.be
-              </a>
-            </div>
-
             {/* WhatsApp Card */}
             <a
               href="https://wa.me/32494254159?text=Hallo%2C%20ik%20heb%20een%20vraag%20over..."
