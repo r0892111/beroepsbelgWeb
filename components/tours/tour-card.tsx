@@ -10,6 +10,7 @@ import { useTranslations } from 'next-intl';
 import { Bike, Clock } from 'lucide-react';
 import { getTourPlaceholder } from '@/lib/utils/placeholder-images';
 import { TourBookingButton } from './tour-booking-button';
+import { TourFavoriteButton } from './tour-favorite-button';
 
 interface TourCardProps {
   tour: Tour;
@@ -109,7 +110,7 @@ export function TourCard({ tour, locale }: TourCardProps) {
         e.currentTarget.style.borderColor = 'var(--border-subtle)';
       }}
     >
-      <Link href={`/${locale}/tours/${tour.city}/${tour.slug}`} className="relative h-48 w-full overflow-hidden block cursor-pointer">
+      <Link href={`/${locale}/tours/${tour.city}/${tour.slug}`} className="relative h-56 w-full overflow-hidden block cursor-pointer">
         {isVideo ? (
           <video
             src={imageUrl}
@@ -144,7 +145,7 @@ export function TourCard({ tour, locale }: TourCardProps) {
         {/* Show bike icon if biking is in tour_types */}
         {tour.tour_types?.some(t => t === 'biking' || (typeof t === 'object' && t.nl?.toLowerCase().includes('fiets'))) && (
             <div
-              className="absolute top-3 right-3 rounded-full p-2"
+              className="absolute top-3 right-12 rounded-full p-2"
               style={{
                 backgroundColor: 'var(--primary-base)',
                 color: 'white',
@@ -154,6 +155,12 @@ export function TourCard({ tour, locale }: TourCardProps) {
               <Bike className="h-5 w-5" />
             </div>
           )}
+        {/* Favorite button */}
+        {tour.id && (
+          <div className="absolute top-3 right-3">
+            <TourFavoriteButton tourId={tour.id} />
+          </div>
+        )}
       </Link>
       <CardHeader
         className="flex-1 flex flex-col justify-center"

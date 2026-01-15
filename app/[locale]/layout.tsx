@@ -12,6 +12,7 @@ import { AuthProvider } from '@/lib/contexts/auth-context';
 import { AdminProvider } from '@/lib/contexts/admin-context';
 import { CartProvider } from '@/lib/contexts/cart-context';
 import { FavoritesProvider } from '@/lib/contexts/favorites-context';
+import { TourFavoritesProvider } from '@/lib/contexts/tour-favorites-context';
 import { LocalBusinessJsonLd } from '@/components/seo/json-ld';
 
 export const metadata: Metadata = {
@@ -55,14 +56,16 @@ export default async function LocaleLayout({
           <AdminProvider>
             <CartProvider>
               <FavoritesProvider>
-                <div className="flex min-h-screen flex-col">
-                  <MainNav locale={locale as Locale} />
-                  <main className="flex-1">{children}</main>
-                  <Footer locale={locale as Locale} />
-                </div>
-                <CookieBanner />
-                <Toaster />
-                <ChatbotWidget locale={locale} />
+                <TourFavoritesProvider>
+                  <div className="flex min-h-screen flex-col">
+                    <MainNav locale={locale as Locale} />
+                    <main className="flex-1">{children}</main>
+                    <Footer locale={locale as Locale} />
+                  </div>
+                  <CookieBanner />
+                  <Toaster />
+                  <ChatbotWidget locale={locale} />
+                </TourFavoritesProvider>
               </FavoritesProvider>
             </CartProvider>
           </AdminProvider>

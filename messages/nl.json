@@ -7,6 +7,7 @@
     "faq": "FAQ",
     "jobs": "Jobs",
     "blog": "Blog",
+    "news": "Nieuws",
     "contact": "Contact",
     "b2b": "Offerte",
     "airbnb": "AirBNB",
@@ -19,7 +20,7 @@
     "social": "Sociaal"
   },
   "hero": {
-    "kicker": "— Ontdek België zoals je het nog nooit hebt gezien",
+    "kicker": "Ontdek al onze prachtige steden van België met een expert aan je zijde",
     "heading": "Uw gids in België",
     "cta": "Ontdek onze tours",
     "cnnQuote": "Een van de 7 slimste gidsen ter wereld – CNN",
@@ -139,7 +140,9 @@
     "hour": "uur",
     "hours": "uur",
     "minute": "min",
-    "minutes": "min"
+    "minutes": "min",
+    "linkCopied": "Link gekopieerd!",
+    "toursPageTagline": "Ontdek al onze prachtige steden van België met een expert aan je zijde"
   },
   "newsletter": {
     "title": "Blijf op de hoogte",
@@ -227,6 +230,10 @@
     "myOrders": "Mijn Bestellingen",
     "noFavorites": "Je hebt nog geen favorieten",
     "noFavoritesDesc": "Begin met het toevoegen van producten aan je favorieten lijst",
+    "favoriteTours": "Favoriete Tours",
+    "favoriteProducts": "Favoriete Producten",
+    "noFavoriteTours": "Nog geen favoriete tours",
+    "noFavoriteProducts": "Nog geen favoriete producten",
     "emptyCart": "Je winkelwagen is leeg",
     "emptyCartDesc": "Voeg producten toe aan je winkelwagen om te bestellen",
     "noOrders": "Geen bestellingen",
@@ -782,6 +789,12 @@
     "ctaDescription": "De beste manier om België te leren kennen is door het uit eerste hand te ervaren. Boek een tour en laat onze deskundige gidsen u rondleiden!",
     "exploreOurTours": "Ontdek Onze Tours"
   },
+  "founder": {
+    "kicker": "Over BeroepsBelg",
+    "line1": "BeroepsBelg werd opgericht door bestsellerauteur Tanguy Ottomer.",
+    "line2": "Als awardwinnende stadsgids selecteerde hij boeiende vertellers die uitgroeiden tot zijn nationale team.",
+    "line3": "Sinds 2007 verschijnt BeroepsBelg in Belgische en internationale pers dankzij expertise in good times met een laagje geschiedenis."
+  },
   "press": {
     "title": "In de Pers",
     "subtitle": "BeroepsBelg in de media",
@@ -1096,11 +1109,11 @@
       },
       "article2": {
         "title": "Artikel 2 – Offertes",
-        "content": "Onze offertes zijn louter indicatief en vrijblijvend en vervallen indien zij niet binnen 30 kalenderdagen werden aanvaard door de Klant. Offertes krijgen pas rechtsgeldigheid als overeenkomst door ondertekening van de offerte door de Klant én door ons. Wij behouden ons bovendien het recht voor om bepaalde opdrachten zonder opgave van reden te weigeren."
+        "content": "Onze offertes zijn louter indicatief en vrijblijvend en vervallen definitief indien zij niet binnen 5 kalenderdagen werden aanvaard door de Klant. Offertes krijgen pas rechtsgeldigheid als overeenkomst door ondertekening van de offerte tijdig door de Klant én door ons. Wij behouden ons bovendien het recht voor om bepaalde opdrachten zonder opgave van reden te weigeren."
       },
       "article3": {
         "title": "Artikel 3 – Prijs en betaling",
-        "content": "De prijs voor onze goederen/diensten is deze vermeld op de offerte.\n\nAl onze facturen zijn betaalbaar binnen 14 dagen na ontvangst ervan, behoudens indien de offerte een andere vervaldatum bepaalt. Indien wij een voorschot vragen zullen wij onze activiteiten pas aanvatten na ontvangst van het voorschot.\n\nVoor iedere vertraging in de betaling is de Klant vanaf de vervaldag van de factuur van rechtswege en zonder voorafgaande ingebrekestelling een verwijlintrest verschuldigd van 1% per begonnen maand waarbij elke begonnen maand geldt als een volledige maand en zulks onverminderd eventuele schadevergoeding en kosten. Eveneens is van rechtswege en zonder voorafgaande ingebrekestelling een forfaitaire vergoeding verschuldigd ten belope van 10% van het factuurbedrag met een minimum van 250 euro als schadebeding, dit zonder voorafgaande ingebrekestelling en bovenop de hoofdsom, de verwijlinteresten, innings-, aanmanings-, vervolgingskosten en onkosten ten gevolge van tijdverlies en gerechtelijke of juridische kosten. Dit schadebeding doet geen afbreuk aan de verplichting de bedongen verwijlintresten te betalen.\n\nBetwistingen dienen binnen de vijf werkdagen na verzending van de factuur per aangetekend schrijven aan ons kenbaar gemaakt te worden op straffe van onontvankelijkheid."
+        "content": "De prijs voor onze goederen/diensten is deze vermeld op de offerte.\n\nAl onze facturen zijn betaalbaar binnen 7 dagen na ontvangst ervan, behoudens indien de offerte een andere vervaldatum bepaalt. Indien wij een voorschot vragen zullen wij onze activiteiten pas aanvatten na ontvangst van het voorschot.\n\nVoor iedere vertraging in de betaling is de Klant vanaf de vervaldag van de factuur van rechtswege en zonder voorafgaande ingebrekestelling een verwijlintrest verschuldigd van 5% per begonnen maand waarbij elke begonnen maand geldt als een volledige maand en zulks onverminderd eventuele schadevergoeding en kosten. Eveneens is van rechtswege en zonder voorafgaande ingebrekestelling een forfaitaire vergoeding verschuldigd ten belope van 10% van het factuurbedrag met een minimum van 250 euro als schadebeding, dit zonder voorafgaande ingebrekestelling en bovenop de hoofdsom, de verwijlinteresten, innings-, aanmanings-, vervolgingskosten en onkosten ten gevolge van tijdverlies en gerechtelijke of juridische kosten. Dit schadebeding doet geen afbreuk aan de verplichting de bedongen verwijlintresten te betalen.\n\nBetwistingen dienen binnen de vijf werkdagen na verzending van de factuur per aangetekend schrijven aan ons kenbaar gemaakt te worden op straffe van onontvankelijkheid."
       },
       "article4": {
         "title": "Artikel 4 - Duur van de overeenkomst en beëindiging",
@@ -1147,7 +1160,7 @@
       },
       "article4": {
         "title": "Artikel 4 Herroepingsrecht",
-        "content": "Als je goederen of diensten bij ons koopt, heb je gedurende 14 dagen vanaf de levering of het sluiten van de overeenkomst het recht om ons op de hoogte te brengen van jouw beslissing om de overeenkomst te herroepen. Hierna dien je de goederen binnen 14 kalenderdagen terug te sturen (de verzendkosten hiervoor betaal je zelf). Na ontvangst betalen we je de volledige aankoopprijs terug met hetzelfde betaalmiddel waarmee je hebt betaald.\n\nDe directe kosten van het terugzenden van de goederen komen dus voor jouw rekening. Wij zullen aangeven wat hiervan de kostprijs is of een raming maken, indien dit niet redelijkerwijze op voorhand kan worden berekend. Indien de goederen onmogelijk per post kunnen worden teruggezonden zullen wij deze bij jou komen afhalen en zullen jou hiervoor geen kosten worden aangerekend.\n\nWij mogen wachten met terugbetaling tot wij de goederen hebben teruggekregen of tot je hebt aangetoond dat je de goederen hebt teruggezonden, al naar gelang welk tijdstip eerst valt.\n\nTijdens de eerste 14 dagen na de levering verwachten we dat je zorgvuldig omgaat met de bestelling en de verpakking. Als je de goederen nog wil kunnen terugsturen zoals hierboven omschreven, mag je ze enkel in die mate uitpakken of gebruiken als nodig is om te kunnen beoordelen of je het goed wenst te behouden. Teruggestuurde goederen mogen getest zijn, maar mogen niet gebruikt zijn. Als je de goederen terugstuurt, moet dit indien mogelijk gebeuren samen met de originele verpakking, met alle geleverde toebehoren en in de originele staat en verpakking en rekening houdende met onze instructies hieronder.\n\nJe kan je retourpakket retourneren via de post of een koerier.\n\nOm je herroepingsrecht correct uit te oefenen, kan je ons per e-mail laten weten dat je je bestelling wenst terug te sturen. Wij zullen je per e-mail een ontvangstbevestiging van jouw herroeping sturen. Een modelformulier is hier beschikbaar."
+        "content": "Als je goederen bij ons koopt, heb je gedurende 14 dagen vanaf de levering het recht om ons op de hoogte te brengen van jouw beslissing om de overeenkomst te herroepen. Hierna dien je de goederen binnen 14 kalenderdagen terug te sturen (de verzendkosten hiervoor betaal je zelf). Na ontvangst betalen we je de volledige aankoopprijs terug met hetzelfde betaalmiddel waarmee je hebt betaald.\n\nDe directe kosten van het terugzenden van de goederen komen dus voor jouw rekening. Wij zullen aangeven wat hiervan de kostprijs is of een raming maken, indien dit niet redelijkerwijze op voorhand kan worden berekend. Indien de goederen onmogelijk per post kunnen worden teruggezonden zullen wij deze bij jou komen afhalen en zullen jou hiervoor geen kosten worden aangerekend.\n\nWij mogen wachten met terugbetaling tot wij de goederen hebben teruggekregen of tot je hebt aangetoond dat je de goederen hebt teruggezonden, al naar gelang welk tijdstip eerst valt.\n\nTijdens de eerste 14 dagen na de levering verwachten we dat je zorgvuldig omgaat met de bestelling en de verpakking. Als je de goederen nog wil kunnen terugsturen zoals hierboven omschreven, mag je ze enkel in die mate uitpakken of gebruiken als nodig is om te kunnen beoordelen of je het goed wenst te behouden. Teruggestuurde goederen mogen getest zijn, maar mogen niet gebruikt zijn. Als je de goederen terugstuurt, moet dit indien mogelijk gebeuren samen met de originele verpakking, met alle geleverde toebehoren en in de originele staat en verpakking en rekening houdende met onze instructies hieronder.\n\nJe kan je retourpakket retourneren via de post of een koerier.\n\nOm je herroepingsrecht correct uit te oefenen, kan je ons per e-mail laten weten dat je je bestelling wenst terug te sturen. Wij zullen je per e-mail een ontvangstbevestiging van jouw herroeping sturen. Een modelformulier is hier beschikbaar."
       },
       "article5": {
         "title": "Artikel 5 De prijs",

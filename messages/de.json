@@ -7,6 +7,7 @@
     "faq": "FAQ",
     "jobs": "Jobs",
     "blog": "Blog",
+    "news": "Neuigkeiten",
     "contact": "Kontakt",
     "b2b": "Angebot",
     "airbnb": "AirBNB",
@@ -19,7 +20,7 @@
     "social": "Soziales"
   },
   "hero": {
-    "kicker": "— Entdecken Sie Belgien wie nie zuvor",
+    "kicker": "Entdecken Sie alle unsere wunderschönen Städte Belgiens mit einem Experten an Ihrer Seite",
     "heading": "Ihr Führer in Belgien",
     "cta": "Entdecken Sie unsere Touren",
     "cnnQuote": "Einer der 7 klügsten Führer der Welt – CNN",
@@ -75,7 +76,9 @@
     "hour": "Stunde",
     "hours": "Stunden",
     "minute": "Minute",
-    "minutes": "Minuten"
+    "minutes": "Minuten",
+    "linkCopied": "Link kopiert!",
+    "toursPageTagline": "Entdecken Sie alle unsere wunderschönen Städte Belgiens mit einem Experten an Ihrer Seite"
   },
   "newsletter": {
     "title": "Bleiben Sie auf dem Laufenden",
@@ -163,6 +166,10 @@
     "myOrders": "Meine Bestellungen",
     "noFavorites": "Sie haben noch keine Favoriten",
     "noFavoritesDesc": "Fügen Sie Produkte zu Ihrer Favoritenliste hinzu",
+    "favoriteTours": "Lieblings-Tours",
+    "favoriteProducts": "Lieblingsprodukte",
+    "noFavoriteTours": "Noch keine Lieblings-Tours",
+    "noFavoriteProducts": "Noch keine Lieblingsprodukte",
     "emptyCart": "Ihr Warenkorb ist leer",
     "emptyCartDesc": "Fügen Sie Produkte zu Ihrem Warenkorb hinzu, um zu bestellen",
     "noOrders": "Keine Bestellungen",
@@ -713,6 +720,12 @@
     "ctaDescription": "Der beste Weg, Belgien kennenzulernen, ist es aus erster Hand zu erleben. Buchen Sie eine Tour und lassen Sie sich von unseren Expertenführern herumführen!",
     "exploreOurTours": "Entdecken Sie Unsere Touren"
   },
+  "founder": {
+    "kicker": "Über BeroepsBelg",
+    "line1": "BeroepsBelg wurde vom Bestsellerautor Tanguy Ottomer gegründet.",
+    "line2": "Als preisgekrönter Stadtführer wählte er fesselnde Geschichtenerzähler aus, die zu seinem nationalen Team heranwuchsen.",
+    "line3": "Seit 2007 erscheint BeroepsBelg in der belgischen und internationalen Presse dank seiner Expertise für gute Zeiten mit einer Prise Geschichte."
+  },
   "press": {
     "title": "In der Presse",
     "subtitle": "BeroepsBelg in den Medien",
@@ -1017,11 +1030,11 @@
       },
       "article2": {
         "title": "Artikel 2 – Angebote",
-        "content": "Unsere Angebote sind rein indikativ und unverbindlich und verfallen, wenn sie nicht innerhalb von 30 Kalendertagen vom Kunden angenommen werden. Angebote werden erst rechtsgültig als Vereinbarung durch Unterzeichnung des Angebots durch den Kunden und durch uns. Wir behalten uns außerdem das Recht vor, bestimmte Aufträge ohne Angabe von Gründen abzulehnen."
+        "content": "Unsere Angebote sind rein indikativ und unverbindlich und verfallen endgültig, wenn sie nicht innerhalb von 5 Kalendertagen vom Kunden angenommen werden. Angebote werden erst rechtsgültig als Vereinbarung durch rechtzeitige Unterzeichnung des Angebots durch den Kunden und durch uns. Wir behalten uns außerdem das Recht vor, bestimmte Aufträge ohne Angabe von Gründen abzulehnen."
       },
       "article3": {
         "title": "Artikel 3 – Preis und Zahlung",
-        "content": "Der Preis für unsere Waren/Dienstleistungen ist der im Angebot angegebene.\n\nAlle unsere Rechnungen sind innerhalb von 14 Tagen nach Erhalt zahlbar, es sei denn, das Angebot legt ein anderes Fälligkeitsdatum fest. Wenn wir eine Anzahlung verlangen, werden wir unsere Aktivitäten erst nach Erhalt der Anzahlung aufnehmen.\n\nFür jede Verzögerung der Zahlung ist der Kunde ab dem Fälligkeitsdatum der Rechnung automatisch und ohne vorherige Mahnung Verzugszinsen in Höhe von 1% pro begonnenem Monat schuldig, wobei jeder begonnene Monat als voller Monat zählt, und dies unbeschadet eventueller Entschädigungen und Kosten. Ebenfalls automatisch und ohne vorherige Mahnung ist eine Pauschale in Höhe von 10% des Rechnungsbetrags mit einem Minimum von 250 Euro als Schadensersatzklausel geschuldet, dies ohne vorherige Mahnung und zusätzlich zum Hauptbetrag, den Verzugszinsen, den Inkassokosten, Mahn-, Verfolgungskosten und Ausgaben aufgrund von Zeitverlust und gerichtlichen oder rechtlichen Kosten. Diese Schadensersatzklausel beeinträchtigt nicht die Verpflichtung, die vereinbarten Verzugszinsen zu zahlen.\n\nStreitigkeiten müssen uns innerhalb von fünf Werktagen nach Versendung der Rechnung per Einschreiben mitgeteilt werden, andernfalls sind sie unzulässig."
+        "content": "Der Preis für unsere Waren/Dienstleistungen ist der im Angebot angegebene.\n\nAlle unsere Rechnungen sind innerhalb von 7 Tagen nach Erhalt zahlbar, es sei denn, das Angebot legt ein anderes Fälligkeitsdatum fest. Wenn wir eine Anzahlung verlangen, werden wir unsere Aktivitäten erst nach Erhalt der Anzahlung aufnehmen.\n\nFür jede Verzögerung der Zahlung ist der Kunde ab dem Fälligkeitsdatum der Rechnung automatisch und ohne vorherige Mahnung Verzugszinsen in Höhe von 5% pro begonnenem Monat schuldig, wobei jeder begonnene Monat als voller Monat zählt, und dies unbeschadet eventueller Entschädigungen und Kosten. Ebenfalls automatisch und ohne vorherige Mahnung ist eine Pauschale in Höhe von 10% des Rechnungsbetrags mit einem Minimum von 250 Euro als Schadensersatzklausel geschuldet, dies ohne vorherige Mahnung und zusätzlich zum Hauptbetrag, den Verzugszinsen, den Inkassokosten, Mahn-, Verfolgungskosten und Ausgaben aufgrund von Zeitverlust und gerichtlichen oder rechtlichen Kosten. Diese Schadensersatzklausel beeinträchtigt nicht die Verpflichtung, die vereinbarten Verzugszinsen zu zahlen.\n\nStreitigkeiten müssen uns innerhalb von fünf Werktagen nach Versendung der Rechnung per Einschreiben mitgeteilt werden, andernfalls sind sie unzulässig."
       },
       "article4": {
         "title": "Artikel 4 - Dauer der Vereinbarung und Kündigung",
@@ -1068,7 +1081,7 @@
       },
       "article4": {
         "title": "Artikel 4 Widerrufsrecht",
-        "content": "Wenn Sie Waren oder Dienstleistungen bei uns kaufen, haben Sie innerhalb von 14 Tagen ab Lieferung oder Abschluss der Vereinbarung das Recht, uns von Ihrer Entscheidung zu informieren, sich von der Vereinbarung zurückzuziehen. Danach müssen Sie die Waren innerhalb von 14 Kalendertagen zurücksenden (die Versandkosten hierfür zahlen Sie selbst). Nach Erhalt erstatten wir Ihnen den vollen Kaufpreis mit demselben Zahlungsmittel, mit dem Sie bezahlt haben.\n\nDie direkten Kosten für die Rücksendung der Waren gehen also zu Ihren Lasten. Wir werden angeben, was die Kosten hierfür sind oder eine Schätzung vornehmen, wenn dies nicht vernünftigerweise im Voraus berechnet werden kann. Wenn die Waren nicht per Post zurückgesendet werden können, werden wir sie bei Ihnen abholen und Ihnen hierfür keine Kosten berechnen.\n\nWir können mit der Rückerstattung warten, bis wir die Waren zurückerhalten haben oder bis Sie nachgewiesen haben, dass Sie die Waren zurückgesendet haben, je nachdem, was zuerst eintritt.\n\nWährend der ersten 14 Tage nach der Lieferung erwarten wir, dass Sie die Bestellung und die Verpackung sorgfältig behandeln. Wenn Sie die Waren noch wie oben beschrieben zurücksenden können möchten, dürfen Sie sie nur in dem Maße auspacken oder verwenden, wie es notwendig ist, um beurteilen zu können, ob Sie den Artikel behalten möchten. Zurückgesendete Waren dürfen getestet worden sein, dürfen aber nicht verwendet worden sein. Wenn Sie die Waren zurücksenden, muss dies, wenn möglich, zusammen mit der Originalverpackung, mit allen gelieferten Zubehörteilen und im Originalzustand und in der Originalverpackung und unter Berücksichtigung unserer Anweisungen unten erfolgen.\n\nSie können Ihr Rücksendepaket per Post oder Kurier zurücksenden.\n\nUm Ihr Widerrufsrecht ordnungsgemäß auszuüben, können Sie uns per E-Mail mitteilen, dass Sie Ihre Bestellung zurücksenden möchten. Wir senden Ihnen per E-Mail eine Empfangsbestätigung Ihres Widerrufs. Ein Musterformular ist hier verfügbar."
+        "content": "Wenn Sie Waren bei uns kaufen, haben Sie innerhalb von 14 Tagen ab Lieferung das Recht, uns von Ihrer Entscheidung zu informieren, sich von der Vereinbarung zurückzuziehen. Danach müssen Sie die Waren innerhalb von 14 Kalendertagen zurücksenden (die Versandkosten hierfür zahlen Sie selbst). Nach Erhalt erstatten wir Ihnen den vollen Kaufpreis mit demselben Zahlungsmittel, mit dem Sie bezahlt haben.\n\nDie direkten Kosten für die Rücksendung der Waren gehen also zu Ihren Lasten. Wir werden angeben, was die Kosten hierfür sind oder eine Schätzung vornehmen, wenn dies nicht vernünftigerweise im Voraus berechnet werden kann. Wenn die Waren nicht per Post zurückgesendet werden können, werden wir sie bei Ihnen abholen und Ihnen hierfür keine Kosten berechnen.\n\nWir können mit der Rückerstattung warten, bis wir die Waren zurückerhalten haben oder bis Sie nachgewiesen haben, dass Sie die Waren zurückgesendet haben, je nachdem, was zuerst eintritt.\n\nWährend der ersten 14 Tage nach der Lieferung erwarten wir, dass Sie die Bestellung und die Verpackung sorgfältig behandeln. Wenn Sie die Waren noch wie oben beschrieben zurücksenden können möchten, dürfen Sie sie nur in dem Maße auspacken oder verwenden, wie es notwendig ist, um beurteilen zu können, ob Sie den Artikel behalten möchten. Zurückgesendete Waren dürfen getestet worden sein, dürfen aber nicht verwendet worden sein. Wenn Sie die Waren zurücksenden, muss dies, wenn möglich, zusammen mit der Originalverpackung, mit allen gelieferten Zubehörteilen und im Originalzustand und in der Originalverpackung und unter Berücksichtigung unserer Anweisungen unten erfolgen.\n\nSie können Ihr Rücksendepaket per Post oder Kurier zurücksenden.\n\nUm Ihr Widerrufsrecht ordnungsgemäß auszuüben, können Sie uns per E-Mail mitteilen, dass Sie Ihre Bestellung zurücksenden möchten. Wir senden Ihnen per E-Mail eine Empfangsbestätigung Ihres Widerrufs. Ein Musterformular ist hier verfügbar."
       },
       "article5": {
         "title": "Artikel 5 Der Preis",

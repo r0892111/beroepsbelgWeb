@@ -79,7 +79,7 @@ export default async function ToursPage({ params }: ToursPageProps) {
           Tours
         </h1>
         <p className="text-center text-lg md:text-xl text-neutral-600 font-inter mb-16 max-w-2xl mx-auto">
-          Discover Belgium's most captivating cities with expert local guides
+          {t('toursPageTagline')}
         </p>
 
         <div className="grid gap-8 md:gap-10 sm:grid-cols-2 lg:grid-cols-3">

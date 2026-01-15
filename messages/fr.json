@@ -7,6 +7,7 @@
     "faq": "FAQ",
     "jobs": "Emplois",
     "blog": "Blog",
+    "news": "Actualités",
     "contact": "Contact",
     "b2b": "Devis",
     "airbnb": "AirBNB",
@@ -19,7 +20,7 @@
     "social": "Réseaux sociaux"
   },
   "hero": {
-    "kicker": "— Découvrez la Belgique comme vous ne l'avez jamais vue",
+    "kicker": "Découvrez toutes nos belles villes de Belgique avec un expert à vos côtés",
     "heading": "Votre guide en Belgique",
     "cta": "Découvrez nos tours",
     "cnnQuote": "L'un des 7 guides les plus intelligents au monde – CNN",
@@ -75,7 +76,9 @@
     "hour": "heure",
     "hours": "heures",
     "minute": "minute",
-    "minutes": "minutes"
+    "minutes": "minutes",
+    "linkCopied": "Lien copié!",
+    "toursPageTagline": "Découvrez toutes nos belles villes de Belgique avec un expert à vos côtés"
   },
   "newsletter": {
     "title": "Restez informé",
@@ -163,6 +166,10 @@
     "myOrders": "Mes Commandes",
     "noFavorites": "Vous n'avez pas encore de favoris",
     "noFavoritesDesc": "Commencez à ajouter des produits à vos favoris",
+    "favoriteTours": "Tours Favoris",
+    "favoriteProducts": "Produits Favoris",
+    "noFavoriteTours": "Pas encore de tours favoris",
+    "noFavoriteProducts": "Pas encore de produits favoris",
     "emptyCart": "Votre panier est vide",
     "emptyCartDesc": "Ajoutez des produits à votre panier pour commander",
     "noOrders": "Aucune Commande",
@@ -713,6 +720,12 @@
     "ctaDescription": "La meilleure façon de découvrir la Belgique est de la vivre de première main. Réservez un tour et laissez nos guides experts vous faire découvrir !",
     "exploreOurTours": "Découvrir Nos Tours"
   },
+  "founder": {
+    "kicker": "À Propos de BeroepsBelg",
+    "line1": "BeroepsBelg a été fondé par l'auteur à succès Tanguy Ottomer.",
+    "line2": "En tant que guide touristique primé, il a sélectionné des conteurs captivants qui sont devenus son équipe nationale.",
+    "line3": "Depuis 2007, BeroepsBelg apparaît dans la presse belge et internationale grâce à son expertise des bons moments avec une touche d'histoire."
+  },
   "press": {
     "title": "Dans la Presse",
     "subtitle": "BeroepsBelg dans les médias",
@@ -1027,11 +1040,11 @@
       },
       "article2": {
         "title": "Article 2 – Offres",
-        "content": "Nos offres sont purement indicatives et non contraignantes et expirent si elles ne sont pas acceptées par le Client dans les 30 jours calendaires. Les offres ne deviennent légalement valables en tant qu'accord que par la signature de l'offre par le Client et par nous. Nous nous réservons également le droit de refuser certaines missions sans donner de raison."
+        "content": "Nos offres sont purement indicatives et non contraignantes et expirent définitivement si elles ne sont pas acceptées par le Client dans les 5 jours calendaires. Les offres ne deviennent légalement valables en tant qu'accord que par la signature en temps opportun de l'offre par le Client et par nous. Nous nous réservons également le droit de refuser certaines missions sans donner de raison."
       },
       "article3": {
         "title": "Article 3 – Prix et paiement",
-        "content": "Le prix de nos biens/services est celui indiqué sur le devis.\n\nToutes nos factures sont payables dans les 14 jours suivant leur réception, sauf si le devis spécifie une autre date d'échéance. Si nous demandons un acompte, nous ne commencerons nos activités qu'après réception de l'acompte.\n\nPour tout retard de paiement, le Client est automatiquement et sans mise en demeure préalable redevable d'intérêts de retard de 1% par mois commencé, chaque mois commencé comptant comme un mois complet, et ce sans préjudice de toute indemnisation et frais. Également automatiquement et sans mise en demeure préalable, une indemnité forfaitaire est due s'élevant à 10% du montant de la facture avec un minimum de 250 euros à titre de clause pénale, ceci sans mise en demeure préalable et en plus du capital, des intérêts de retard, des frais de recouvrement, de rappel, de poursuite et des dépenses dues à la perte de temps et aux frais judiciaires ou juridiques. Cette clause pénale ne porte pas atteinte à l'obligation de payer les intérêts de retard convenus.\n\nLes contestations doivent nous être notifiées par courrier recommandé dans les cinq jours ouvrables suivant l'envoi de la facture sous peine d'irrecevabilité."
+        "content": "Le prix de nos biens/services est celui indiqué sur le devis.\n\nToutes nos factures sont payables dans les 7 jours suivant leur réception, sauf si le devis spécifie une autre date d'échéance. Si nous demandons un acompte, nous ne commencerons nos activités qu'après réception de l'acompte.\n\nPour tout retard de paiement, le Client est automatiquement et sans mise en demeure préalable redevable d'intérêts de retard de 5% par mois commencé, chaque mois commencé comptant comme un mois complet, et ce sans préjudice de toute indemnisation et frais. Également automatiquement et sans mise en demeure préalable, une indemnité forfaitaire est due s'élevant à 10% du montant de la facture avec un minimum de 250 euros à titre de clause pénale, ceci sans mise en demeure préalable et en plus du capital, des intérêts de retard, des frais de recouvrement, de rappel, de poursuite et des dépenses dues à la perte de temps et aux frais judiciaires ou juridiques. Cette clause pénale ne porte pas atteinte à l'obligation de payer les intérêts de retard convenus.\n\nLes contestations doivent nous être notifiées par courrier recommandé dans les cinq jours ouvrables suivant l'envoi de la facture sous peine d'irrecevabilité."
       },
       "article4": {
         "title": "Article 4 - Durée de l'accord et résiliation",
@@ -1078,7 +1091,7 @@
       },
       "article4": {
         "title": "Article 4 Droit de rétractation",
-        "content": "Si vous achetez des biens ou services chez nous, vous avez le droit de nous informer de votre décision de vous rétracter de l'accord dans les 14 jours suivant la livraison ou la conclusion de l'accord. Après cela, vous devez renvoyer les biens dans les 14 jours calendaires (vous payez vous-même les frais d'expédition). À réception, nous vous rembourserons le prix d'achat complet avec le même moyen de paiement que vous avez utilisé pour payer.\n\nLes coûts directs de renvoi des biens sont donc à votre charge. Nous indiquerons quel est le prix de revient ou ferons une estimation, si cela ne peut pas être raisonnablement calculé à l'avance. Si les biens ne peuvent pas être renvoyés par la poste, nous viendrons les récupérer chez vous et aucun frais ne vous sera facturé pour cela.\n\nNous pouvons attendre le remboursement jusqu'à ce que nous ayons récupéré les biens ou jusqu'à ce que vous ayez montré que vous avez renvoyé les biens, selon ce qui se produit en premier.\n\nPendant les 14 premiers jours après la livraison, nous nous attendons à ce que vous manipuliez la commande et l'emballage avec soin. Si vous souhaitez toujours pouvoir renvoyer les biens comme décrit ci-dessus, vous ne pouvez les déballer ou les utiliser que dans la mesure nécessaire pour évaluer si vous souhaitez conserver l'article. Les biens renvoyés peuvent être testés, mais ne doivent pas être utilisés. Si vous renvoyez les biens, cela doit si possible être fait avec l'emballage d'origine, avec tous les accessoires livrés et dans l'état et l'emballage d'origine et en tenant compte de nos instructions ci-dessous.\n\nVous pouvez renvoyer votre colis de retour par la poste ou un coursier.\n\nPour exercer correctement votre droit de rétractation, vous pouvez nous faire savoir par e-mail que vous souhaitez renvoyer votre commande. Nous vous enverrons un accusé de réception de votre rétractation par e-mail. Un formulaire modèle est disponible ici."
+        "content": "Si vous achetez des biens chez nous, vous avez le droit de nous informer de votre décision de vous rétracter de l'accord dans les 14 jours suivant la livraison. Après cela, vous devez renvoyer les biens dans les 14 jours calendaires (vous payez vous-même les frais d'expédition). À réception, nous vous rembourserons le prix d'achat complet avec le même moyen de paiement que vous avez utilisé pour payer.\n\nLes coûts directs de renvoi des biens sont donc à votre charge. Nous indiquerons quel est le prix de revient ou ferons une estimation, si cela ne peut pas être raisonnablement calculé à l'avance. Si les biens ne peuvent pas être renvoyés par la poste, nous viendrons les récupérer chez vous et aucun frais ne vous sera facturé pour cela.\n\nNous pouvons attendre le remboursement jusqu'à ce que nous ayons récupéré les biens ou jusqu'à ce que vous ayez montré que vous avez renvoyé les biens, selon ce qui se produit en premier.\n\nPendant les 14 premiers jours après la livraison, nous nous attendons à ce que vous manipuliez la commande et l'emballage avec soin. Si vous souhaitez toujours pouvoir renvoyer les biens comme décrit ci-dessus, vous ne pouvez les déballer ou les utiliser que dans la mesure nécessaire pour évaluer si vous souhaitez conserver l'article. Les biens renvoyés peuvent être testés, mais ne doivent pas être utilisés. Si vous renvoyez les biens, cela doit si possible être fait avec l'emballage d'origine, avec tous les accessoires livrés et dans l'état et l'emballage d'origine et en tenant compte de nos instructions ci-dessous.\n\nVous pouvez renvoyer votre colis de retour par la poste ou un coursier.\n\nPour exercer correctement votre droit de rétractation, vous pouvez nous faire savoir par e-mail que vous souhaitez renvoyer votre commande. Nous vous enverrons un accusé de réception de votre rétractation par e-mail. Un formulaire modèle est disponible ici."
       },
       "article5": {
         "title": "Article 5 Le prix",
