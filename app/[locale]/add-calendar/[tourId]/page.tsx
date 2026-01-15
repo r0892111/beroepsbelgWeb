@@ -4,7 +4,17 @@ import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
+import { Calendar, CheckCircle2, Loader2, AlertCircle, Download, ExternalLink } from 'lucide-react';
+
+interface CalendarResponse {
+  icsUrl?: string;
+  googleCalendarUrl?: string;
+  outlookUrl?: string;
+  title?: string;
+  startDate?: string;
+  endDate?: string;
+  location?: string;
+}
 
 export default function AddToCalendarPage() {
   const params = useParams();
@@ -13,6 +23,7 @@ export default function AddToCalendarPage() {
   
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [calendarData, setCalendarData] = useState<CalendarResponse | null>(null);
 
   const handleAddToCalendar = async () => {
     setStatus('loading');
@@ -32,11 +43,13 @@ export default function AddToCalendarPage() {
       });
 
       if (response.ok) {
+        const data = await response.json();
+        setCalendarData(data);
         setStatus('success');
       } else {
         const errorText = await response.text();
         console.error('Webhook error:', errorText);
-        setErrorMessage('Failed to add to calendar. Please try again.');
+        setErrorMessage('Failed to generate calendar invite. Please try again.');
         setStatus('error');
       }
     } catch (error) {
@@ -61,14 +74,14 @@ export default function AddToCalendarPage() {
           </div>
           <CardTitle className="text-2xl font-serif">
             {status === 'success' 
-              ? 'Added to Calendar!' 
+              ? 'Calendar Invite Ready!' 
               : status === 'error'
               ? 'Something went wrong'
               : 'Add Tour to Calendar'}
           </CardTitle>
           <CardDescription>
             {status === 'success' 
-              ? 'The calendar event has been created successfully.'
+              ? calendarData?.title || 'Your calendar invite is ready to download.'
               : status === 'error'
               ? errorMessage
               : `Tour ID: ${tourId}`}
@@ -82,28 +95,96 @@ export default function AddToCalendarPage() {
               style={{ backgroundColor: 'var(--brass, #d4af37)' }}
             >
               <Calendar className="h-4 w-4" />
-              Add to Calendar
+              Generate Calendar Invite
             </Button>
           )}
 
           {status === 'loading' && (
             <Button disabled className="w-full gap-2">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Adding to calendar...
+              Generating invite...
             </Button>
           )}
 
-          {status === 'success' && (
-            <div className="text-center space-y-4">
-              <p className="text-sm text-muted-foreground">
-                You can close this page now.
-              </p>
+          {status === 'success' && calendarData && (
+            <div className="space-y-3">
+              {/* Event details */}
+              {(calendarData.startDate || calendarData.location) && (
+                <div className="p-3 rounded-lg bg-muted text-sm space-y-1">
+                  {calendarData.startDate && (
+                    <p><strong>Date:</strong> {new Date(calendarData.startDate).toLocaleDateString(locale, { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}</p>
+                  )}
+                  {calendarData.location && (
+                    <p><strong>Location:</strong> {calendarData.location}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Google Calendar */}
+              {calendarData.googleCalendarUrl && (
+                <Button 
+                  asChild
+                  className="w-full gap-2"
+                  style={{ backgroundColor: '#4285f4' }}
+                >
+                  <a href={calendarData.googleCalendarUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4" />
+                    Add to Google Calendar
+                  </a>
+                </Button>
+              )}
+
+              {/* ICS Download */}
+              {calendarData.icsUrl && (
+                <Button 
+                  asChild
+                  variant="outline"
+                  className="w-full gap-2"
+                >
+                  <a href={calendarData.icsUrl} download="tour-invite.ics">
+                    <Download className="h-4 w-4" />
+                    Download .ics File (Apple/Outlook)
+                  </a>
+                </Button>
+              )}
+
+              {/* Outlook Web */}
+              {calendarData.outlookUrl && (
+                <Button 
+                  asChild
+                  variant="outline"
+                  className="w-full gap-2"
+                >
+                  <a href={calendarData.outlookUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4" />
+                    Add to Outlook
+                  </a>
+                </Button>
+              )}
+
+              {/* If no URLs returned, show a message */}
+              {!calendarData.googleCalendarUrl && !calendarData.icsUrl && !calendarData.outlookUrl && (
+                <p className="text-center text-sm text-muted-foreground">
+                  Calendar invite has been processed. Check your email for details.
+                </p>
+              )}
+
               <Button 
-                variant="outline" 
-                onClick={() => setStatus('idle')}
+                variant="ghost" 
+                onClick={() => {
+                  setStatus('idle');
+                  setCalendarData(null);
+                }}
                 className="w-full"
               >
-                Add Again
+                Generate New Invite
               </Button>
             </div>
           )}
