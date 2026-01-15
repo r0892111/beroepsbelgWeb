@@ -628,17 +628,17 @@ export default function BookingDetailPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-medium flex items-center gap-2">
                 <User className="h-4 w-4 text-muted-foreground" />
-                {isLocalStories && allInvitees.length > 1 ? `Customers (${allInvitees.length})` : 'Customer'}
+                {isLocalStories ? `Customers (${allInvitees.length})` : 'Customer'}
               </CardTitle>
-              {isLocalStories && allInvitees.length > 1 && (
+              {isLocalStories && (
                 <CardDescription>
                   Total people: {allInvitees.reduce((sum, inv) => sum + (inv.numberOfPeople || 1), 0)}
                 </CardDescription>
               )}
             </CardHeader>
             <CardContent className="space-y-4">
-              {isLocalStories && allInvitees.length > 1 ? (
-                /* Local Stories - Multiple Invitees */
+              {isLocalStories ? (
+                /* Local Stories - All Invitees */
                 <div className="space-y-4">
                   {allInvitees.map((inv, index) => (
                     <div key={index} className={`p-4 rounded-lg border ${index > 0 ? 'bg-muted/30' : 'bg-muted/50'}`}>
