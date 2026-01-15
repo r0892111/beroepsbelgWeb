@@ -108,6 +108,7 @@ export async function getCities(): Promise<City[]> {
   const { data, error } = await supabaseServer
     .from('cities')
     .select('id, slug, name_nl, name_en, name_fr, name_de, teaser_nl, teaser_en, teaser_fr, teaser_de, cta_text_nl, cta_text_en, cta_text_fr, cta_text_de, coming_soon_text_nl, coming_soon_text_en, coming_soon_text_fr, coming_soon_text_de, image, status, display_order')
+    .neq('status', 'draft') // Filter out draft cities from public view
     .order('display_order', { ascending: true });
 
   if (error) {
@@ -188,6 +189,7 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
         name_de
       )
     `)
+    .eq('status', 'published') // Only show published tours on public site
     .order('city_id', { ascending: true, nullsFirst: false })
     .order('display_order', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: true });
@@ -313,7 +315,8 @@ export async function getTourBySlug(citySlug: string, slug: string): Promise<Tou
         id,
         slug
       )
-    `);
+    `)
+    .eq('status', 'published'); // Only show published tours on public site
 
   if (error) {
     console.error('[getTourBySlug] Database error:', error);
