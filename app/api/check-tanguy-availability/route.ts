@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 // Calendar ID from public embed URL
-// Public URL: https://calendar.google.com/calendar/embed?src=c_a1f78a143e1fcf899820d47da1ab128bd7a1f291f9dc572b7a33fb761e45b8d8%40group.calendar.google.com&ctz=Europe%2FBrussels
+// Public URL: https://calendar.google.com/calendar/embed?src=c_4ab8e279307c0e7083f815bff63cb65ce14df69f37ba5f9f4e5e8620a5b612d2%40group.calendar.google.com&ctz=Europe%2FBrussels
 // URL-decoded calendar ID:
-const TANGUY_CALENDAR_ID = 'c_a1f78a143e1fcf899820d47da1ab128bd7a1f291f9dc572b7a33fb761e45b8d8@group.calendar.google.com';
+const TANGUY_CALENDAR_ID = 'c_4ab8e279307c0e7083f815bff63cb65ce14df69f37ba5f9f4e5e8620a5b612d2@group.calendar.google.com';
 
 function getSupabaseServer() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
