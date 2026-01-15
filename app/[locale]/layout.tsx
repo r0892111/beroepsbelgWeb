@@ -12,10 +12,15 @@ import { AuthProvider } from '@/lib/contexts/auth-context';
 import { AdminProvider } from '@/lib/contexts/admin-context';
 import { CartProvider } from '@/lib/contexts/cart-context';
 import { FavoritesProvider } from '@/lib/contexts/favorites-context';
+import { LocalBusinessJsonLd } from '@/components/seo/json-ld';
 
 export const metadata: Metadata = {
-  title: 'BeroepsBelg',
-  description: 'Ontdek België met professionele stadswandelingen in Antwerpen, Brussel, Brugge, Gent en meer.',
+  title: {
+    default: 'BeroepsBelg | Stadsgids & City Guide België',
+    template: '%s | BeroepsBelg',
+  },
+  description: 'Professionele stadsgids in België. Stadswandelingen, teambuilding en rondleidingen in Antwerpen, Brussel, Brugge, Gent en meer.',
+  keywords: ['stadsgids', 'city guide', 'stadswandelingen', 'teambuilding', 'rondleidingen', 'Antwerpen', 'Brussel', 'Brugge', 'Gent', 'België'],
   icons: {
     icon: '/favicon.png',
     shortcut: '/favicon.png',
@@ -43,23 +48,26 @@ export default async function LocaleLayout({
   const messages = await getMessages({ locale });
 
   return (
-    <NextIntlClientProvider messages={messages} locale={locale}>
-      <AuthProvider>
-        <AdminProvider>
-          <CartProvider>
-            <FavoritesProvider>
-              <div className="flex min-h-screen flex-col">
-                <MainNav locale={locale as Locale} />
-                <main className="flex-1">{children}</main>
-                <Footer locale={locale as Locale} />
-              </div>
-              <CookieBanner />
-              <Toaster />
-              <ChatbotWidget locale={locale} />
-            </FavoritesProvider>
-          </CartProvider>
-        </AdminProvider>
-      </AuthProvider>
-    </NextIntlClientProvider>
+    <>
+      <LocalBusinessJsonLd />
+      <NextIntlClientProvider messages={messages} locale={locale}>
+        <AuthProvider>
+          <AdminProvider>
+            <CartProvider>
+              <FavoritesProvider>
+                <div className="flex min-h-screen flex-col">
+                  <MainNav locale={locale as Locale} />
+                  <main className="flex-1">{children}</main>
+                  <Footer locale={locale as Locale} />
+                </div>
+                <CookieBanner />
+                <Toaster />
+                <ChatbotWidget locale={locale} />
+              </FavoritesProvider>
+            </CartProvider>
+          </AdminProvider>
+        </AuthProvider>
+      </NextIntlClientProvider>
+    </>
   );
 }

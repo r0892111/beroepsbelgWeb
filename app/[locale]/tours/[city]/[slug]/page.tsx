@@ -1,8 +1,10 @@
-import { type Locale } from '@/i18n';
+import { type Locale, locales } from '@/i18n';
 import { getTourBySlug } from '@/lib/api/content';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Share2, Facebook, Instagram, MapPin, Clock, Languages, Bike, Sparkles } from 'lucide-react';
+import type { Metadata } from 'next';
+import { TouristTripJsonLd } from '@/components/seo/json-ld';
 
 // Custom TikTok Icon
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -32,6 +34,61 @@ interface TourDetailPageProps {
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const dynamicParams = true;
+
+const BASE_URL = 'https://beroepsbelg.be';
+
+export async function generateMetadata({ params }: TourDetailPageProps): Promise<Metadata> {
+  const { locale, city, slug } = await params;
+  const tour = await getTourBySlug(city, slug);
+
+  if (!tour) {
+    return {
+      title: 'Tour Not Found | BeroepsBelg',
+    };
+  }
+
+  // Get localized description
+  let description = tour.description || '';
+  if (locale === 'en' && tour.description_en) description = tour.description_en;
+  else if (locale === 'fr' && tour.description_fr) description = tour.description_fr;
+  else if (locale === 'de' && tour.description_de) description = tour.description_de;
+
+  // Truncate description for meta
+  const metaDescription = description.length > 160 
+    ? description.substring(0, 157).replace(/\n/g, ' ').trim() + '...'
+    : description.replace(/\n/g, ' ').trim();
+
+  const title = `${tour.title} | BeroepsBelg Tours`;
+  const url = `${BASE_URL}/${locale}/tours/${city}/${slug}`;
+
+  const languages: Record<string, string> = {};
+  locales.forEach((loc) => {
+    languages[loc] = `${BASE_URL}/${loc}/tours/${city}/${slug}`;
+  });
+
+  return {
+    title,
+    description: metaDescription,
+    openGraph: {
+      title,
+      description: metaDescription,
+      url,
+      siteName: 'BeroepsBelg',
+      type: 'website',
+      images: tour.image ? [{ url: tour.image, alt: tour.title }] : [],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description: metaDescription,
+      images: tour.image ? [tour.image] : [],
+    },
+    alternates: {
+      canonical: url,
+      languages,
+    },
+  };
+}
 
 // Format duration from minutes to readable string
 const formatDuration = (minutes: number, t: any) => {
@@ -150,18 +207,30 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
     .join(' ');
 
   return (
-    <div className="bg-ivory min-h-screen">
-      <div className="container mx-auto px-4 py-20">
-        <div className="mx-auto max-w-5xl">
-          <div className="mb-6">
-            <Link
-              href={`/${locale}/tours/${city}`}
-              className="text-sm font-semibold transition-colors hover:opacity-70"
-              style={{ color: 'var(--brass)' }}
-            >
-              ← {tTour('backToCity', { city: cityDisplayName })}
-            </Link>
-          </div>
+    <>
+      <TouristTripJsonLd
+        name={tour.title}
+        description={getDescription()}
+        image={tour.image}
+        price={tour.price}
+        duration={tour.durationMinutes}
+        startLocation={tour.startLocation}
+        city={cityDisplayName}
+        url={`${BASE_URL}/${locale}/tours/${city}/${tour.slug}`}
+        languages={tour.languages}
+      />
+      <div className="bg-ivory min-h-screen">
+        <div className="container mx-auto px-4 py-20">
+          <div className="mx-auto max-w-5xl">
+            <div className="mb-6">
+              <Link
+                href={`/${locale}/tours/${city}`}
+                className="text-sm font-semibold transition-colors hover:opacity-70"
+                style={{ color: 'var(--brass)' }}
+              >
+                ← {tTour('backToCity', { city: cityDisplayName })}
+              </Link>
+            </div>
 
           <div className="mb-12">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -435,10 +504,11 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
               </Button>
             </a>
           </div>
-        </div>
+          </div>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
   } catch (error) {
     console.error('[TourDetailPage] Error fetching tour:', error);

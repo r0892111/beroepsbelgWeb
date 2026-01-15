@@ -1,4 +1,4 @@
-import { type Locale } from '@/i18n';
+import { type Locale, locales } from '@/i18n';
 import { getFaqItems } from '@/lib/api/content';
 import { getTranslations } from 'next-intl/server';
 import {
@@ -8,9 +8,63 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { ToursCTABanner } from '@/components/upsells/tours-cta-banner';
+import type { Metadata } from 'next';
+import { FaqPageJsonLd } from '@/components/seo/json-ld';
+
+const BASE_URL = 'https://beroepsbelg.be';
+
+const pageMetadata: Record<Locale, { title: string; description: string }> = {
+  nl: {
+    title: 'Veelgestelde Vragen (FAQ) | BeroepsBelg',
+    description: 'Vind antwoorden op veelgestelde vragen over onze stadswandelingen, boekingen, prijzen en meer. Alles wat je moet weten over BeroepsBelg tours.',
+  },
+  en: {
+    title: 'Frequently Asked Questions (FAQ) | BeroepsBelg',
+    description: 'Find answers to frequently asked questions about our city tours, bookings, prices and more. Everything you need to know about BeroepsBelg tours.',
+  },
+  fr: {
+    title: 'Questions Fréquemment Posées (FAQ) | BeroepsBelg',
+    description: 'Trouvez des réponses aux questions fréquemment posées sur nos visites guidées, réservations, prix et plus encore.',
+  },
+  de: {
+    title: 'Häufig Gestellte Fragen (FAQ) | BeroepsBelg',
+    description: 'Finden Sie Antworten auf häufig gestellte Fragen zu unseren Stadtführungen, Buchungen, Preisen und mehr.',
+  },
+};
 
 interface FaqPageProps {
   params: Promise<{ locale: Locale }>;
+}
+
+export async function generateMetadata({ params }: FaqPageProps): Promise<Metadata> {
+  const { locale } = await params;
+  const meta = pageMetadata[locale] || pageMetadata.nl;
+
+  const languages: Record<string, string> = {};
+  locales.forEach((loc) => {
+    languages[loc] = `${BASE_URL}/${loc}/faq`;
+  });
+
+  return {
+    title: meta.title,
+    description: meta.description,
+    openGraph: {
+      title: meta.title,
+      description: meta.description,
+      url: `${BASE_URL}/${locale}/faq`,
+      siteName: 'BeroepsBelg',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: meta.title,
+      description: meta.description,
+    },
+    alternates: {
+      canonical: `${BASE_URL}/${locale}/faq`,
+      languages,
+    },
+  };
 }
 
 export default async function FaqPage({ params }: FaqPageProps) {
@@ -18,8 +72,16 @@ export default async function FaqPage({ params }: FaqPageProps) {
   const t = await getTranslations('faq');
   const faqItems = await getFaqItems();
 
+  // Prepare FAQ data for JSON-LD
+  const faqsForSchema = faqItems.map((item) => ({
+    question: item.question[locale] || item.question.nl || '',
+    answer: item.answer[locale] || item.answer.nl || '',
+  }));
+
   return (
-    <div className="min-h-screen bg-[#F9F9F7] py-20 md:py-32 px-4 md:px-8">
+    <>
+      {faqsForSchema.length > 0 && <FaqPageJsonLd faqs={faqsForSchema} />}
+      <div className="min-h-screen bg-[#F9F9F7] py-20 md:py-32 px-4 md:px-8">
       <div className="mx-auto max-w-5xl">
         {/* Header Section - Editorial Style */}
         <div className="mb-16 text-center">
@@ -83,5 +145,6 @@ export default async function FaqPage({ params }: FaqPageProps) {
         </div>
       </div>
     </div>
+    </>
   );
 }
