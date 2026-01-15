@@ -58,12 +58,14 @@ serve(async (req: Request) => {
 
     // Log received booking data for debugging
     console.log('Received booking data:', {
+      tourId,
+      customerEmail,
       bookingDate,
       bookingTime,
       bookingDateTime,
       opMaat,
+      existingTourBookingId,
       upsellProductsCount: upsellProducts.length,
-      upsellProducts: upsellProducts,
     })
 
     const { data: tour, error: tourError } = await supabase
@@ -271,6 +273,7 @@ serve(async (req: Request) => {
       payment_method_types: ['card', 'bancontact', 'ideal'],
       line_items: lineItems,
       mode: 'payment',
+      allow_promotion_codes: true, // Allow customers to enter promo codes
       success_url: `${req.headers.get('origin')}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get('origin')}/booking/cancelled`,
       customer_email: customerEmail,
@@ -461,7 +464,16 @@ serve(async (req: Request) => {
     let saturdayDateStr: string = '';
     let saturdayDateTime: string = '';
     
-    if (isLocalStoriesTour && bookingDate) {
+    console.log('Local stories check:', {
+      isLocalStoriesTour,
+      bookingDate,
+      bookingDateTime,
+      hasBookingDate: !!bookingDate,
+      hasBookingDateTime: !!bookingDateTime,
+      willEnterLocalStoriesBlock: isLocalStoriesTour && (bookingDate || bookingDateTime),
+    });
+    
+    if (isLocalStoriesTour && (bookingDate || bookingDateTime)) {
       // Use combined datetime if available, otherwise use bookingDate
       let dateToUse: string | null = null;
       if (bookingDateTime && bookingDateTime.trim()) {
@@ -470,6 +482,8 @@ serve(async (req: Request) => {
         dateToUse = bookingDate;
       }
       
+      console.log('Local stories date extraction:', { dateToUse, bookingDate, bookingDateTime });
+      
       if (dateToUse) {
         // For local stories tours, format the Saturday date
         const bookingDateObj = new Date(dateToUse);
@@ -477,7 +491,12 @@ serve(async (req: Request) => {
         if (!isNaN(bookingDateObj.getTime())) {
           saturdayDateStr = bookingDateObj.toISOString().split('T')[0];
           saturdayDateTime = `${saturdayDateStr}T14:00:00`; // Always 14:00 for local stories
+          console.log('Local stories date set:', { saturdayDateStr, saturdayDateTime });
+        } else {
+          console.error('Local stories date invalid:', { dateToUse, bookingDateObj });
         }
+      } else {
+        console.error('Local stories: dateToUse is null/empty');
       }
       
       // If existingTourBookingId is passed from frontend, use it directly
@@ -525,6 +544,14 @@ serve(async (req: Request) => {
     // For local stories tours, use existing tourbooking or create new one
     let createdBooking: any = null;
     let bookingError: any = null;
+    
+    console.log('DECISION POINT - Local stories booking path:', {
+      isLocalStoriesTour,
+      hasExistingTourBooking: !!existingTourBooking,
+      existingTourBookingId: existingTourBooking?.id,
+      willUseExistingBooking: isLocalStoriesTour && !!existingTourBooking,
+      willCreateNewBooking: !(isLocalStoriesTour && existingTourBooking),
+    });
     
     if (isLocalStoriesTour && existingTourBooking) {
       // Use existing tourbooking - update stripe_session_id so webhook can find it
@@ -621,6 +648,15 @@ serve(async (req: Request) => {
           opMaatAnswers: opMaatAnswers || null,
         };
         
+        console.log('INVITEE APPEND DECISION:', {
+          hasExistingTourBooking: !!existingTourBooking,
+          existingTourBookingId: existingTourBooking?.id,
+          createdBookingId: createdBooking.id,
+          idsMatch: existingTourBooking?.id === createdBooking.id,
+          willAppendInvitee: !!(existingTourBooking && createdBooking.id === existingTourBooking.id),
+          newInviteeEmail: customerEmail,
+        });
+        
         if (existingTourBooking && createdBooking.id === existingTourBooking.id) {
           // Using existing tourbooking - append new invitee to existing invitees array
           // IMPORTANT: Fetch fresh invitees from database to ensure we don't overwrite any concurrent additions
@@ -635,98 +671,41 @@ serve(async (req: Request) => {
           }
           
           const currentInvitees = freshBooking?.invitees || createdBooking.invitees || [];
+          const updatedInvitees = [...currentInvitees, newInvitee];
           
-          // Check if this invitee already exists (by email) to avoid duplicates
-          const inviteeExists = currentInvitees.some((inv: any) => inv.email === customerEmail);
+          // Update tourbooking with new invitee added (append, not overwrite)
+          const { error: updateInviteesError } = await supabase
+            .from('tourbooking')
+            .update({ invitees: updatedInvitees })
+            .eq('id', createdBooking.id);
           
-          if (!inviteeExists) {
-            const updatedInvitees = [...currentInvitees, newInvitee];
-            
-            // Update tourbooking with new invitee added (append, not overwrite)
-            const { error: updateInviteesError } = await supabase
-              .from('tourbooking')
-              .update({ invitees: updatedInvitees })
-              .eq('id', createdBooking.id);
-            
-            if (updateInviteesError) {
-              console.error('Error updating invitees for existing tourbooking:', updateInviteesError);
-            } else {
-              console.log('Successfully added new invitee to existing tourbooking:', {
-                tourbookingId: createdBooking.id,
-                customerEmail,
-                previousInviteesCount: currentInvitees.length,
-                totalInvitees: updatedInvitees.length,
-              });
-            }
+          if (updateInviteesError) {
+            console.error('Error updating invitees for existing tourbooking:', updateInviteesError);
           } else {
-            console.log('Invitee already exists in existing tourbooking, skipping duplicate add:', {
+            console.log('Successfully added new invitee to existing tourbooking:', {
               tourbookingId: createdBooking.id,
               customerEmail,
-              currentInviteesCount: currentInvitees.length,
+              previousInviteesCount: currentInvitees.length,
+              totalInvitees: updatedInvitees.length,
             });
           }
         } else {
-          // New tourbooking - ensure invitee is in the invitees array and tour_datetime is set correctly
-          // IMPORTANT: Fetch fresh invitees from database to ensure we don't overwrite any concurrent additions
-          const { data: freshBooking, error: freshFetchError } = await supabase
-            .from('tourbooking')
-            .select('invitees')
-            .eq('id', createdBooking.id)
-            .single();
-          
-          if (freshFetchError) {
-            console.error('Error fetching fresh invitees for new booking:', freshFetchError);
-          }
-          
-          const currentInvitees = freshBooking?.invitees || createdBooking?.invitees || [];
-          // Check if this invitee already exists (by email) to avoid duplicates
-          const inviteeExists = currentInvitees.some((inv: any) => inv.email === customerEmail);
-          
-          if (!inviteeExists) {
-            // Add the invitee if it doesn't already exist (append to existing list)
-            const updatedInvitees = [...currentInvitees, newInvitee];
-            
-            const updateData: any = {
-              invitees: updatedInvitees,
-            };
-            
-            // Also set tour_datetime if we have it
-            if (saturdayDateTime) {
-              updateData.tour_datetime = saturdayDateTime;
-            }
-            
-            const { error: updateError } = await supabase
+          // New tourbooking - the invitee was already added during insert, but we need to set tour_datetime
+          // Also set tour_datetime if we have it
+          if (saturdayDateTime) {
+            const { error: updateDateTimeError } = await supabase
               .from('tourbooking')
-              .update(updateData)
+              .update({ tour_datetime: saturdayDateTime })
               .eq('id', createdBooking.id);
             
-            if (updateError) {
-              console.error('Error updating invitees/tour_datetime for new local stories tourbooking:', updateError);
+            if (updateDateTimeError) {
+              console.error('Error updating tour_datetime for new local stories booking:', updateDateTimeError);
             } else {
-              console.log('Successfully added invitee to new local stories tourbooking:', {
+              console.log('Updated tour_datetime for new local stories tourbooking:', {
                 tourbookingId: createdBooking.id,
-                previousInviteesCount: currentInvitees.length,
-                totalInvitees: updatedInvitees.length,
                 tour_datetime: saturdayDateTime,
               });
             }
-          } else {
-            // Invitee already exists, just update tour_datetime if needed
-            if (saturdayDateTime) {
-              const { error: updateDateTimeError } = await supabase
-                .from('tourbooking')
-                .update({ tour_datetime: saturdayDateTime })
-                .eq('id', createdBooking.id);
-              
-              if (updateDateTimeError) {
-                console.error('Error updating tour_datetime for new local stories booking:', updateDateTimeError);
-              }
-            }
-            console.log('Invitee already exists in tourbooking, skipping duplicate add:', {
-              tourbookingId: createdBooking.id,
-              customerEmail,
-              currentInviteesCount: currentInvitees.length,
-            });
           }
         }
         
