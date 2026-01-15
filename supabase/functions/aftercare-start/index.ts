@@ -82,7 +82,7 @@ Deno.serve(async (req: Request) => {
     const { data: bookings, error } = await supabase
       .from("tourbooking")
       .select("*")
-      .eq("status", "accepted")
+      .eq("status", "aftercare_ready")
       .lt("tour_datetime", now); // tour date already passed
 
     if (error) {
@@ -95,7 +95,7 @@ Deno.serve(async (req: Request) => {
 
     console.log(`[aftercare] Found ${bookings.length} bookings`);
 
-    const webhookUrl = "https://alexfinit.app.n8n.cloud/webhook/efd633d1-a83c-4e58-a537-8ca171eacf70";
+    const webhookUrl = "https://alexfinit.app.n8n.cloud/webhook/e1dc029a-1223-4e8d-918a-72bcb072c2ad";
     
 
     for (const booking of bookings) {

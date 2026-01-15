@@ -138,6 +138,7 @@ export async function POST(request: NextRequest) {
       specialRequests: additionalInfo || null,
       amount: 0, // B2B bookings don't have payment yet
       currency: 'eur',
+      isContacted: false,
       upsellProducts: upsellProducts.length > 0 ? upsellProducts : undefined,
       // B2B specific fields
       companyName: companyName || null,
