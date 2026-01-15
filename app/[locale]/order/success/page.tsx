@@ -194,7 +194,7 @@ export default function OrderSuccessPage() {
             <div className="flex justify-between border-b pb-2">
               <span className="font-medium">{t('status')}</span>
               <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                {order.status === 'paid' ? t('statusPaid') : t('statusProcessing')}
+                {order.status === 'completed' ? t('statusPaid') : t('statusProcessing')}
               </span>
             </div>
           </div>

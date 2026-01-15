@@ -205,6 +205,7 @@ async function handleEvent(event: Stripe.Event) {
                   tanguyCost: bookingData.amounts.tanguyCost,
                   extraHourCost: bookingData.amounts.extraHourCost,
                   currency: 'eur',
+                  isContacted: false,
                   upsellProducts: bookingData.upsellProducts,
                   opMaatAnswers: bookingData.opMaatAnswers,
                 };
@@ -251,6 +252,7 @@ async function handleEvent(event: Stripe.Event) {
                 tanguyCost: bookingData.amounts.tanguyCost,
                 extraHourCost: bookingData.amounts.extraHourCost,
                 currency: 'eur',
+                isContacted: false,
                 upsellProducts: bookingData.upsellProducts,
                 opMaatAnswers: bookingData.opMaatAnswers,
                 tourStartDatetime: bookingData.tourDatetime,
@@ -347,6 +349,7 @@ async function handleEvent(event: Stripe.Event) {
               tanguyCost: bookingData.amounts.tanguyCost,
               extraHourCost: bookingData.amounts.extraHourCost,
               currency: 'eur',
+              isContacted: false,
               upsellProducts: bookingData.upsellProducts,
               opMaatAnswers: bookingData.opMaatAnswers,
               tourStartDatetime: bookingData.tourDatetime,
@@ -534,14 +537,18 @@ async function handleEvent(event: Stripe.Event) {
         } : null;
 
         // Create the order in database
+        const paymentIntentId = typeof fullSession.payment_intent === 'string'
+          ? fullSession.payment_intent
+          : fullSession.payment_intent?.id || `pi_${sessionId}`;
+        
+        const customerId = typeof fullSession.customer === 'string'
+          ? fullSession.customer
+          : fullSession.customer?.id || `guest_${sessionId}`;
+
         const orderInsert = {
           checkout_session_id: sessionId,
-          payment_intent_id: typeof fullSession.payment_intent === 'string'
-            ? fullSession.payment_intent
-            : fullSession.payment_intent?.id || '',
-          customer_id: typeof fullSession.customer === 'string'
-            ? fullSession.customer
-            : fullSession.customer?.id || '',
+          payment_intent_id: paymentIntentId,
+          customer_id: customerId,
           currency: fullSession.currency || 'eur',
           payment_status: fullSession.payment_status || 'paid',
           status: 'completed',
@@ -563,6 +570,7 @@ async function handleEvent(event: Stripe.Event) {
           user_id: metadata?.userId || null,
         };
 
+        // Insert the order (checkout no longer creates it due to NOT NULL constraints)
         const { data: order, error: orderError } = await supabase
           .from('stripe_orders')
           .insert(orderInsert)

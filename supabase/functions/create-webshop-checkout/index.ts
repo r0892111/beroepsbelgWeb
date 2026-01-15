@@ -22,191 +22,170 @@ serve(async (req: Request) => {
     })
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || ''
-    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey)
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
 
     const {
-      items,
+      items, // Array of { productId, quantity }
       customerName,
       customerEmail,
       customerPhone,
       shippingAddress,
+      billingAddress,
       userId,
       locale = 'nl',
     } = await req.json()
 
-    if (!items || items.length === 0) {
-      throw new Error('Cart is empty')
+    // Validate required fields
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      throw new Error('No items provided')
+    }
+    if (!customerName || !customerEmail) {
+      throw new Error('Customer name and email are required')
+    }
+    if (!shippingAddress) {
+      throw new Error('Shipping address is required')
     }
 
-    // Fetch products from webshop_data table using UUIDs
-    const productIds = items.map((item: any) => item.productId)
-    console.log('Fetching products with UUIDs:', productIds)
-    
-    const { data: products, error: productsError } = await supabaseClient
+    console.log('Received webshop checkout request:', {
+      itemCount: items.length,
+      customerEmail,
+      locale,
+    })
+
+    // Fetch products from webshop_data
+    const productIds = items.map((item: { productId: string }) => item.productId)
+    const { data: products, error: productsError } = await supabase
       .from('webshop_data')
-      .select('*')
+      .select('uuid, Name, Description, "Price (EUR)", stripe_product_id, stripe_price_id, product_images')
       .in('uuid', productIds)
 
     if (productsError) {
       console.error('Error fetching products:', productsError)
-      throw new Error(`Failed to fetch product details: ${productsError.message}`)
+      throw new Error('Failed to fetch products')
     }
 
     if (!products || products.length === 0) {
-      console.error('No products found for UUIDs:', productIds)
-      throw new Error(`No products found for the provided IDs: ${productIds.join(', ')}`)
+      throw new Error('No products found')
     }
 
-    // Log the first product to see its structure
-    if (products.length > 0) {
-      console.log('Sample product structure:', JSON.stringify(products[0], null, 2))
-      console.log('Product UUIDs found:', products.map((p: any) => p.uuid))
-    }
+    // Create a map for quick lookup
+    const productMap = new Map(products.map(p => [p.uuid, p]))
 
-    if (products.length !== productIds.length) {
-      const foundIds = products.map((p: any) => p.uuid)
-      const missingIds = productIds.filter((id: string) => !foundIds.includes(id))
-      console.warn('Some products not found. Missing:', missingIds)
-      console.warn('Requested IDs:', productIds)
-      console.warn('Found IDs:', foundIds)
-      throw new Error(`Some products not found: ${missingIds.join(', ')}`)
-    }
+    // Build line items for Stripe
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = []
+    const orderItems: any[] = []
+    let subtotal = 0
 
-    console.log(`Found ${products.length} products`)
-
-    // Build line items using Stripe price IDs if available, otherwise create price_data
-    const lineItems = items.map((item: any) => {
-      const product = products.find((p: any) => p.uuid === item.productId)
+    for (const item of items) {
+      const product = productMap.get(item.productId)
       if (!product) {
-        console.error(`Product not found in results. Looking for: ${item.productId}`)
-        console.error('Available product UUIDs:', products.map((p: any) => p.uuid))
-        throw new Error(`Product not found: ${item.productId}`)
+        console.warn(`Product not found: ${item.productId}`)
+        continue
       }
 
-      console.log(`Processing product: ${product.Name} (${product.uuid}), has Stripe price: ${!!product.stripe_price_id}`)
+      const priceValue = parseFloat(product['Price (EUR)']?.toString().replace(',', '.') || '0')
+      const quantity = item.quantity || 1
 
-      // If Stripe price ID exists, use it directly (preferred)
       if (product.stripe_price_id) {
-        return {
+        // Use existing Stripe price
+        lineItems.push({
           price: product.stripe_price_id,
-          quantity: item.quantity,
-        }
+          quantity: quantity,
+        })
+      } else {
+        // Create price data inline (fallback if no Stripe price exists)
+        lineItems.push({
+          price_data: {
+            currency: 'eur',
+            product_data: {
+              name: product.Name || 'Product',
+              description: product.Description || undefined,
+            },
+            unit_amount: Math.round(priceValue * 100),
+          },
+          quantity: quantity,
+        })
       }
 
-      // Fallback: create price_data if Stripe price ID is not available
-      const priceStr = product['Price (EUR)']?.toString() || '0'
-      const priceValue = parseFloat(priceStr.replace(',', '.')) || 0
-      
-      return {
-        price_data: {
-          currency: 'eur',
-          product_data: {
-            name: product.Name || 'Product',
-            description: product.Description || '',
-            metadata: {
-              webshop_uuid: product.uuid,
-              category: product.Category || '',
-            },
-          },
-          unit_amount: Math.round(priceValue * 100),
+      // Track for order record
+      const itemTotal = priceValue * quantity
+      subtotal += itemTotal
+      orderItems.push({
+        productId: product.uuid,
+        name: product.Name,
+        description: product.Description,
+        price: priceValue,
+        quantity: quantity,
+        total: itemTotal,
+        image: product.product_images?.[0] || null,
+      })
+
+      console.log('Added product to checkout:', {
+        name: product.Name,
+        price: priceValue,
+        quantity: quantity,
+        hasStripePrice: !!product.stripe_price_id,
+      })
+    }
+
+    if (lineItems.length === 0) {
+      throw new Error('No valid products to checkout')
+    }
+
+    // Calculate shipping cost
+    const FREIGHT_COST_BE = 7.50
+    const FREIGHT_COST_INTERNATIONAL = 14.99
+    const isBelgium = shippingAddress.country === 'België' || shippingAddress.country === 'Belgium'
+    const shippingCost = isBelgium ? FREIGHT_COST_BE : FREIGHT_COST_INTERNATIONAL
+
+    // Add shipping as a line item
+    lineItems.push({
+      price_data: {
+        currency: 'eur',
+        product_data: {
+          name: isBelgium ? 'Verzendkosten (België)' : 'Verzendkosten (Internationaal)',
         },
-        quantity: item.quantity,
-      }
+        unit_amount: Math.round(shippingCost * 100),
+      },
+      quantity: 1,
     })
 
-    // Calculate product total
-    const productTotal = items.reduce((sum: number, item: any) => {
-      const product = products.find((p: any) => p.uuid === item.productId)
-      if (!product) return sum
-      
-      const priceStr = product['Price (EUR)']?.toString() || '0'
-      const priceValue = parseFloat(priceStr.replace(',', '.')) || 0
-      return sum + priceValue * item.quantity
-    }, 0)
+    const totalAmount = subtotal + shippingCost
 
-    // Freight costs constants
-    const FREIGHT_COST_BE = 7.50;
-    const FREIGHT_COST_INTERNATIONAL = 14.99;
-    const FREE_SHIPPING_THRESHOLD = 150.00; // Free shipping for orders over €150
+    console.log('Checkout summary:', {
+      subtotal,
+      shippingCost,
+      totalAmount,
+      lineItemCount: lineItems.length,
+    })
 
-    // Calculate shipping cost based on country and order total
-    let shippingCost = 0;
-    
-    // Free shipping if order total (without shipping) is €150 or more
-    if (productTotal >= FREE_SHIPPING_THRESHOLD) {
-      shippingCost = 0;
-      console.log('Free shipping applied - order total exceeds €150:', { productTotal });
-    } else {
-      // Calculate shipping based on country
-      if (shippingAddress && shippingAddress.country) {
-        const country = shippingAddress.country.toLowerCase();
-        if (country === 'belgië' || country === 'belgium' || country === 'belgique' || country === 'belgien') {
-          shippingCost = FREIGHT_COST_BE;
-        } else {
-          shippingCost = FREIGHT_COST_INTERNATIONAL;
-        }
-      } else {
-        // Default to international if no country provided
-        shippingCost = FREIGHT_COST_INTERNATIONAL;
-      }
-    }
-
-    // Add shipping as a line item (only if there's a cost, or show as free if over threshold)
-    if (productTotal >= FREE_SHIPPING_THRESHOLD) {
-      // Show free shipping as a line item for transparency
-      lineItems.push({
-        price_data: {
-          currency: 'eur',
-          product_data: {
-            name: 'Verzendkosten (GRATIS - bestelling boven €150)',
-          },
-          unit_amount: 0, // Free shipping
-        },
-        quantity: 1,
-      });
-      console.log('Added free shipping to line items (order over €150)');
-    } else if (shippingCost > 0) {
-      lineItems.push({
-        price_data: {
-          currency: 'eur',
-          product_data: {
-            name: shippingAddress?.country === 'België' || shippingAddress?.country === 'Belgium'
-              ? 'Verzendkosten (België)'
-              : 'Verzendkosten (Internationaal)',
-          },
-          unit_amount: Math.round(shippingCost * 100),
-        },
-        quantity: 1,
-      });
-      console.log('Added shipping cost to line items:', {
-        country: shippingAddress?.country,
-        cost: shippingCost
-      });
-    }
-
+    // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card', 'bancontact', 'ideal'],
       line_items: lineItems,
       mode: 'payment',
-      allow_promotion_codes: true, // Enable discount/coupon code field
+      allow_promotion_codes: true,
       success_url: `${req.headers.get('origin')}/${locale}/order/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get('origin')}/${locale}/order/cancelled`,
+      cancel_url: `${req.headers.get('origin')}/${locale}/webshop`,
       customer_email: customerEmail,
-      shipping_address_collection: {
-        allowed_countries: ['BE', 'NL', 'FR', 'DE', 'LU'],
-      },
       metadata: {
+        order_type: 'webshop',
         customerName,
-        customerEmail,
         customerPhone: customerPhone || '',
         userId: userId || '',
-        order_type: 'webshop', // To distinguish from tour bookings in webhook
+        locale,
+        itemCount: orderItems.length.toString(),
+      },
+      shipping_address_collection: {
+        allowed_countries: ['BE', 'NL', 'FR', 'DE', 'LU', 'GB', 'ES', 'IT', 'PT', 'AT', 'CH'],
       },
     })
 
-    // Order will be created by stripe-webhook after successful payment
-    console.log('Checkout session created:', session.id)
+    console.log('Created Stripe checkout session:', session.id)
+
+    // Note: Order is created by stripe-webhook after payment completes
+    // This ensures we have payment_intent_id and customer_id which are required fields
 
     return new Response(
       JSON.stringify({ sessionId: session.id, url: session.url }),
@@ -218,7 +197,7 @@ serve(async (req: Request) => {
       }
     )
   } catch (error) {
-    console.error('Error creating checkout session:', error)
+    console.error('Error creating webshop checkout session:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       {
