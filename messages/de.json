@@ -1163,17 +1163,21 @@
   },
   "giftcard": {
     "selectAmount": "Wählen Sie einen Betrag",
+    "selectAmountDescription": "Wählen Sie den Wert für Ihre Geschenkkarte",
     "orCustomAmount": "Oder geben Sie einen eigenen Betrag ein",
-    "minimumAmount": "Mindestbetrag ist 10€",
-    "minimumAmountNote": "Minimum 10€",
+    "customAmount": "Eigener Betrag",
+    "minimumAmount": "Mindestbetrag ist 25€",
+    "minimumAmountNote": "Minimum 25€",
     "giftCardValue": "Geschenkkarten-Wert",
     "noShipping": "Digitale Lieferung - keine Versandkosten",
     "adding": "Wird hinzugefügt...",
     "addToCartButton": "€{amount} Geschenkkarte hinzufügen",
+    "addToCartWithAmount": "Geschenkkarte hinzufügen",
     "addedToCart": "Geschenkkarte zum Warenkorb hinzugefügt!",
     "failedToAdd": "Geschenkkarte konnte nicht hinzugefügt werden",
     "title": "Geschenkkarte",
-    "description": "Verschenken Sie einen einzigartigen Stadtspaziergang!"
+    "description": "Verschenken Sie einen einzigartigen Stadtspaziergang!",
+    "dragToSelect": "Ziehen Sie, um Ihren Betrag auszuwählen"
   },
   "orderSuccess": {
     "loading": "Bestelldetails werden geladen...",

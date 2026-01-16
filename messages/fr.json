@@ -1174,17 +1174,21 @@
   },
   "giftcard": {
     "selectAmount": "Choisissez un montant",
+    "selectAmountDescription": "Choisissez la valeur de votre carte cadeau",
     "orCustomAmount": "Ou entrez un montant personnalisé",
-    "minimumAmount": "Le montant minimum est de 10€",
-    "minimumAmountNote": "Minimum 10€",
+    "customAmount": "Montant personnalisé",
+    "minimumAmount": "Le montant minimum est de 25€",
+    "minimumAmountNote": "Minimum 25€",
     "giftCardValue": "Valeur de la carte cadeau",
     "noShipping": "Livraison numérique - pas de frais de port",
     "adding": "Ajout en cours...",
     "addToCartButton": "Ajouter une carte cadeau de €{amount}",
+    "addToCartWithAmount": "Ajouter la carte cadeau",
     "addedToCart": "Carte cadeau ajoutée au panier!",
     "failedToAdd": "Échec de l'ajout de la carte cadeau",
     "title": "Carte Cadeau",
-    "description": "Offrez le cadeau d'une promenade en ville unique!"
+    "description": "Offrez le cadeau d'une promenade en ville unique!",
+    "dragToSelect": "Faites glisser pour sélectionner votre montant"
   },
   "orderSuccess": {
     "loading": "Chargement des détails de la commande...",
