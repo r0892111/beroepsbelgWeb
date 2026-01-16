@@ -454,6 +454,111 @@ async function handleEvent(event: Stripe.Event) {
         return;
       }
 
+      // Check if this is a manual payment link from admin panel
+      if (metadata?.isManualPaymentLink === 'true' && metadata?.bookingId) {
+        console.info(`Processing manual payment link for booking ${metadata.bookingId}, session ${sessionId}`);
+
+        const bookingId = parseInt(metadata.bookingId, 10);
+        const customerEmail = session.customer_email;
+        const amountPaid = (session.amount_total || 0) / 100; // Convert from cents to euros
+        const localBookingId = metadata.localBookingId || null;
+
+        // Fetch the booking
+        const { data: booking, error: bookingError } = await supabase
+          .from('tourbooking')
+          .select('id, invitees, tour_id')
+          .eq('id', bookingId)
+          .single();
+
+        if (bookingError || !booking) {
+          console.error(`Manual payment link: Booking ${bookingId} not found`, bookingError);
+          return;
+        }
+
+        // Update the invitee's amount and clear pending payment fields
+        const updatedInvitees = ((booking.invitees as any[]) || []).map((inv: any) => {
+          if (inv.email === customerEmail) {
+            // Remove pending payment tracking since payment is complete
+            const { pendingPaymentPeople, pendingPaymentAmount, ...rest } = inv;
+            return {
+              ...rest,
+              amount: (rest.amount || 0) + amountPaid, // Add to existing amount (for additional people payments)
+              isPaid: true,
+            };
+          }
+          return inv;
+        });
+
+        // Update tourbooking with new invitee data
+        const { error: updateError } = await supabase
+          .from('tourbooking')
+          .update({ invitees: updatedInvitees })
+          .eq('id', bookingId);
+
+        if (updateError) {
+          console.error(`Manual payment link: Failed to update booking ${bookingId}`, updateError);
+        } else {
+          console.info(`Manual payment link: Updated invitee payment status for booking ${bookingId}`);
+        }
+
+        // If this is a Local Stories booking, also update the local_tours_bookings entry
+        if (localBookingId) {
+          const { error: localUpdateError } = await supabase
+            .from('local_tours_bookings')
+            .update({ stripe_session_id: sessionId })
+            .eq('id', localBookingId);
+
+          if (localUpdateError) {
+            console.error(`Manual payment link: Failed to update local_tours_bookings ${localBookingId}`, localUpdateError);
+          } else {
+            console.info(`Manual payment link: Updated local_tours_bookings ${localBookingId} with stripe_session_id`);
+          }
+        }
+
+        // Call N8N webhook to send payment confirmation email
+        const n8nPaymentConfirmationWebhook = 'https://alexfinit.app.n8n.cloud/webhook/manual-payment-completed';
+
+        // Fetch tour info for the email
+        let tourTitle = 'Tour';
+        if (booking.tour_id) {
+          const { data: tour } = await supabase
+            .from('tours_table_prod')
+            .select('title')
+            .eq('id', booking.tour_id)
+            .single();
+          if (tour) tourTitle = tour.title;
+        }
+
+        try {
+          console.info('[N8N] Calling manual payment confirmation webhook');
+
+          const res = await fetch(n8nPaymentConfirmationWebhook, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              bookingId,
+              customerEmail,
+              customerName: metadata.customerName || 'Customer',
+              numberOfPeople: parseInt(metadata.numberOfPeople || '1', 10),
+              amountPaid,
+              tourName: tourTitle,
+              stripeSessionId: sessionId,
+              localBookingId,
+              isManualPaymentLink: true,
+            }),
+          });
+
+          console.info('[N8N] Manual payment webhook response', {
+            status: res.status,
+            ok: res.ok,
+          });
+        } catch (err) {
+          console.error('[N8N] Failed to call manual payment confirmation webhook', err);
+        }
+
+        return;
+      }
+
       // If no tour booking found (no pending and no legacy), check if this is a webshop order (via metadata)
       // IMPORTANT: Only process as webshop if order_type is explicitly 'webshop' AND it's not a tour booking
       console.info(`Checking for webshop order. Metadata:`, JSON.stringify(metadata || {}));

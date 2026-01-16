@@ -7,7 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Home, LogOut, RefreshCw, Calendar, Search, Filter, X, ExternalLink, UserPlus, Users, AlertCircle } from 'lucide-react';
+import { Home, LogOut, RefreshCw, Calendar, Search, Filter, X, ExternalLink, UserPlus, Users, AlertCircle, Plus, Hash } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -44,8 +47,22 @@ interface Tour {
   id: string;
   title: string;
   city: string;
+  price?: number;
   op_maat?: boolean;
   local_stories?: boolean;
+}
+
+interface CreateBookingForm {
+  tourId: string;
+  date: string;
+  time: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  numberOfPeople: number;
+  language: string;
+  specialRequests: string;
+  isPaid: boolean;
 }
 
 interface Guide {
@@ -78,6 +95,31 @@ export default function AdminBookingsPage() {
   const [selectedNewGuideId, setSelectedNewGuideId] = useState<number | null>(null);
   const [sendingGuideOffer, setSendingGuideOffer] = useState(false);
 
+  // Create booking dialog state
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [creatingBooking, setCreatingBooking] = useState(false);
+  const [allTours, setAllTours] = useState<Tour[]>([]);
+  const [createForm, setCreateForm] = useState<CreateBookingForm>({
+    tourId: '',
+    date: '',
+    time: '14:00',
+    customerName: '',
+    customerEmail: '',
+    customerPhone: '',
+    numberOfPeople: 1,
+    language: 'nl',
+    specialRequests: '',
+    isPaid: false,
+  });
+
+  // IDs dialog state
+  const [idsDialogOpen, setIdsDialogOpen] = useState(false);
+  const [selectedBookingForIds, setSelectedBookingForIds] = useState<TourBooking | null>(null);
+
+  // Duplicate booking warning dialog state
+  const [duplicateWarningOpen, setDuplicateWarningOpen] = useState(false);
+  const [existingDuplicateBooking, setExistingDuplicateBooking] = useState<TourBooking | null>(null);
+
   const CITY_OPTIONS = ['Antwerpen', 'Brussel', 'Brugge', 'Gent', 'Knokke-Heist', 'Leuven', 'Mechelen', 'Hasselt'];
   const STATUS_OPTIONS = ['pending', 'payment_completed', 'pending_jotform_confirmation', 'pending_guide_confirmation', 'confirmed', 'completed', 'cancelled'];
 
@@ -109,7 +151,8 @@ export default function AdminBookingsPage() {
       // Fetch tours
       const { data: toursData } = await supabase
         .from('tours_table_prod')
-        .select('id, title, city, op_maat, local_stories');
+        .select('id, title, city, price, op_maat, local_stories')
+        .order('title', { ascending: true });
 
       if (toursData) {
         const toursMap = new Map<string, Tour>();
@@ -117,6 +160,7 @@ export default function AdminBookingsPage() {
           toursMap.set(tour.id, tour);
         });
         setTours(toursMap);
+        setAllTours(toursData as Tour[]);
       }
 
       // Fetch guides
@@ -266,6 +310,150 @@ export default function AdminBookingsPage() {
     }
   };
 
+  // Reset create form
+  const resetCreateForm = () => {
+    setCreateForm({
+      tourId: '',
+      date: '',
+      time: '14:00',
+      customerName: '',
+      customerEmail: '',
+      customerPhone: '',
+      numberOfPeople: 1,
+      language: 'nl',
+      specialRequests: '',
+      isPaid: false,
+    });
+  };
+
+  // Get selected tour info
+  const selectedTour = createForm.tourId ? tours.get(createForm.tourId) : null;
+
+  // Check for duplicate bookings before creating
+  const checkForDuplicateBooking = async (): Promise<TourBooking | null> => {
+    if (!createForm.tourId || !createForm.date) return null;
+
+    const tourDatetime = `${createForm.date}T${createForm.time}:00`;
+
+    // Check for existing booking with same tour and datetime
+    const { data: existingBookings } = await supabase
+      .from('tourbooking')
+      .select('*')
+      .eq('tour_id', createForm.tourId)
+      .gte('tour_datetime', `${createForm.date}T00:00:00`)
+      .lt('tour_datetime', `${createForm.date}T23:59:59`);
+
+    if (existingBookings && existingBookings.length > 0) {
+      return existingBookings[0] as TourBooking;
+    }
+
+    return null;
+  };
+
+  // Handle create booking submission
+  const handleCreateBooking = async (skipDuplicateCheck = false) => {
+    if (!createForm.tourId || !createForm.date || !createForm.customerName || !createForm.customerEmail) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    // Check for duplicates first (unless we're skipping because user confirmed)
+    if (!skipDuplicateCheck) {
+      const existingBooking = await checkForDuplicateBooking();
+      if (existingBooking) {
+        setExistingDuplicateBooking(existingBooking);
+        setDuplicateWarningOpen(true);
+        return;
+      }
+    }
+
+    setCreatingBooking(true);
+    try {
+      const tour = tours.get(createForm.tourId);
+      if (!tour) {
+        toast.error('Selected tour not found');
+        return;
+      }
+
+      // Build tour datetime
+      const tourDatetime = `${createForm.date}T${createForm.time}:00`;
+
+      // Create invitee object
+      const calculatedAmount = (tour.price || 0) * createForm.numberOfPeople;
+      const invitee: Record<string, unknown> = {
+        name: createForm.customerName,
+        email: createForm.customerEmail,
+        phone: createForm.customerPhone,
+        numberOfPeople: createForm.numberOfPeople,
+        language: createForm.language,
+        specialRequests: createForm.specialRequests,
+        currency: 'eur',
+        isContacted: false,
+        isPaid: createForm.isPaid,
+      };
+
+      // Only set amount if customer has already paid
+      // Don't set pendingPaymentPeople here - that's only for when adding extra people later
+      if (createForm.isPaid) {
+        invitee.amount = calculatedAmount;
+      }
+      // If not paid, just don't set amount - the blue "Send Payment Link" button will show
+
+      // Create tourbooking entry
+      const { data: newBooking, error: bookingError } = await supabase
+        .from('tourbooking')
+        .insert({
+          tour_id: createForm.tourId,
+          tour_datetime: tourDatetime,
+          city: tour.city,
+          status: createForm.isPaid ? 'payment_completed' : 'pending',
+          invitees: [invitee],
+          booking_type: 'B2C',
+        })
+        .select('id')
+        .single();
+
+      if (bookingError) {
+        console.error('Error creating booking:', bookingError);
+        toast.error('Failed to create booking');
+        return;
+      }
+
+      // If Local Stories tour, also create local_tours_bookings entry
+      if (tour.local_stories && newBooking) {
+        const { error: localError } = await supabase
+          .from('local_tours_bookings')
+          .insert({
+            tour_id: createForm.tourId,
+            booking_date: createForm.date,
+            booking_time: `${createForm.time}:00`,
+            is_booked: true,
+            status: 'booked',
+            customer_name: createForm.customerName,
+            customer_email: createForm.customerEmail,
+            customer_phone: createForm.customerPhone,
+            booking_id: newBooking.id,
+            amnt_of_people: createForm.numberOfPeople,
+          });
+
+        if (localError) {
+          console.error('Error creating local tours booking:', localError);
+          // Don't fail the whole operation, the main booking was created
+        }
+      }
+
+      toast.success('Booking created successfully!');
+      setCreateDialogOpen(false);
+      resetCreateForm();
+      void fetchBookings();
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      toast.error('Failed to create booking');
+    } finally {
+      setCreatingBooking(false);
+    }
+  };
+
   const formatDateTime = (dateStr: string | null) => {
     if (!dateStr) return 'N/A';
     try {
@@ -340,6 +528,14 @@ export default function AdminBookingsPage() {
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => setCreateDialogOpen(true)}
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Create Booking
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -456,33 +652,28 @@ export default function AdminBookingsPage() {
                       <TableHead>Guide</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Type</TableHead>
-                      <TableHead>TeamLeader Deal</TableHead>
+                      <TableHead>Deal</TableHead>
                       <TableHead>Calendar</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead>IDs</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredBookings.map((booking) => (
-                      <TableRow key={booking.id} className="cursor-pointer hover:bg-muted/50">
+                      <TableRow
+                        key={booking.id}
+                        className="cursor-pointer hover:bg-green-50 hover:ring-2 hover:ring-inset hover:ring-green-300 transition-all"
+                        onClick={() => router.push(`/${locale}/admin/bookings/${booking.id}`)}
+                      >
                         <TableCell className="font-medium">
-                          <Link href={`/${locale}/admin/bookings/${booking.id}`} className="text-blue-600 hover:underline">
-                            #{booking.id}
-                          </Link>
+                          #{booking.id}
                         </TableCell>
                         <TableCell className="max-w-xs">
                           {booking.tour_id && tours.get(booking.tour_id) ? (
-                            <div className="space-y-1">
-                              <div className="font-medium text-sm truncate">
-                                {tours.get(booking.tour_id)!.title}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                ID: {booking.tour_id.slice(0, 8)}...
-                              </div>
+                            <div className="font-medium text-sm truncate">
+                              {tours.get(booking.tour_id)!.title}
                             </div>
                           ) : (
-                            <span className="text-sm text-muted-foreground">
-                              {booking.tour_id ? `ID: ${booking.tour_id.slice(0, 8)}...` : 'N/A'}
-                            </span>
+                            <span className="text-sm text-muted-foreground">N/A</span>
                           )}
                         </TableCell>
                         <TableCell>
@@ -493,18 +684,11 @@ export default function AdminBookingsPage() {
                         </TableCell>
                         <TableCell>
                           {booking.guide_id && guides.get(booking.guide_id) ? (
-                            <div className="space-y-1">
-                              <div className="text-sm font-medium">
-                                {guides.get(booking.guide_id)!.name}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                ID: #{booking.guide_id}
-                              </div>
+                            <div className="text-sm font-medium">
+                              {guides.get(booking.guide_id)!.name}
                             </div>
                           ) : booking.guide_id ? (
-                            <span className="text-sm text-muted-foreground">
-                              #{booking.guide_id}
-                            </span>
+                            <span className="text-sm text-muted-foreground">Assigned</span>
                           ) : needsNewGuide(booking) ? (
                             <div className="space-y-1">
                               <div className="flex items-center gap-1 text-amber-600 text-xs">
@@ -514,7 +698,10 @@ export default function AdminBookingsPage() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleOpenGuideDialog(booking)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenGuideDialog(booking);
+                                }}
                                 className="h-7 text-xs"
                               >
                                 <UserPlus className="h-3 w-3 mr-1" />
@@ -551,29 +738,25 @@ export default function AdminBookingsPage() {
                         </TableCell>
                         <TableCell>
                           {booking.deal_id ? (
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-muted-foreground font-mono">
-                                {booking.deal_id}
-                              </span>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                asChild
-                                className="h-auto py-1 px-2"
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              asChild
+                              className="h-auto py-1 px-2"
+                            >
+                              <a
+                                href={`https://focus.teamleader.eu/web/deals/${booking.deal_id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="Open deal in TeamLeader"
+                                onClick={(e) => e.stopPropagation()}
                               >
-                                <a
-                                  href={`https://focus.teamleader.eu/web/deals/${booking.deal_id}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  title="Open deal in TeamLeader"
-                                >
-                                  <ExternalLink className="h-3 w-3 mr-1" />
-                                  <span className="text-xs font-medium">
-                                    Open Deal
-                                  </span>
-                                </a>
-                              </Button>
-                            </div>
+                                <ExternalLink className="h-3 w-3 mr-1" />
+                                <span className="text-xs font-medium">
+                                  TeamLeader Deal
+                                </span>
+                              </a>
+                            </Button>
                           ) : (
                             <span className="text-sm text-muted-foreground">-</span>
                           )}
@@ -591,6 +774,7 @@ export default function AdminBookingsPage() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 title="Open in Google Calendar"
+                                onClick={(e) => e.stopPropagation()}
                               >
                                 <Calendar className="h-4 w-4 mr-1" />
                                 <span className="text-xs">View</span>
@@ -601,12 +785,18 @@ export default function AdminBookingsPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <Link href={`/${locale}/admin/bookings/${booking.id}`}>
-                            <Button variant="outline" size="sm" className="h-auto py-1 px-2">
-                              <ExternalLink className="h-4 w-4 mr-1" />
-                              <span className="text-xs">Details</span>
-                            </Button>
-                          </Link>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-auto py-1 px-2 text-muted-foreground hover:text-foreground"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedBookingForIds(booking);
+                              setIdsDialogOpen(true);
+                            }}
+                          >
+                            <Hash className="h-3 w-3" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -732,6 +922,348 @@ export default function AdminBookingsPage() {
                   Send Offer
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Booking Dialog */}
+      <Dialog open={createDialogOpen} onOpenChange={(open) => {
+        setCreateDialogOpen(open);
+        if (!open) resetCreateForm();
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Create New Booking
+            </DialogTitle>
+            <DialogDescription>
+              Manually create a tour booking for a customer.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Tour Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="tour">Tour *</Label>
+              <Select
+                value={createForm.tourId}
+                onValueChange={(value) => setCreateForm({ ...createForm, tourId: value })}
+              >
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder="Select a tour..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {allTours.map((tour) => (
+                    <SelectItem key={tour.id} value={tour.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{tour.title}</span>
+                        <span className="text-xs text-muted-foreground">({tour.city})</span>
+                        {tour.local_stories && <Badge variant="outline" className="text-xs">Local Stories</Badge>}
+                        {tour.op_maat && <Badge variant="outline" className="text-xs">Op Maat</Badge>}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedTour && (
+                <p className="text-xs text-muted-foreground">
+                  Base price: €{selectedTour.price || 0} per person
+                  {selectedTour.local_stories && ' • This is a Local Stories tour'}
+                  {selectedTour.op_maat && ' • This is a Custom (Op Maat) tour'}
+                </p>
+              )}
+            </div>
+
+            {/* Date and Time */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="date">Date *</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={createForm.date}
+                  onChange={(e) => setCreateForm({ ...createForm, date: e.target.value })}
+                  className="bg-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="time">Time *</Label>
+                <Input
+                  id="time"
+                  type="time"
+                  value={createForm.time}
+                  onChange={(e) => setCreateForm({ ...createForm, time: e.target.value })}
+                  className="bg-white"
+                />
+              </div>
+            </div>
+
+            {/* Customer Details */}
+            <div className="border-t pt-4">
+              <h4 className="text-sm font-medium mb-3">Customer Details</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="customerName">Name *</Label>
+                  <Input
+                    id="customerName"
+                    value={createForm.customerName}
+                    onChange={(e) => setCreateForm({ ...createForm, customerName: e.target.value })}
+                    placeholder="Customer name"
+                    className="bg-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="customerEmail">Email *</Label>
+                  <Input
+                    id="customerEmail"
+                    type="email"
+                    value={createForm.customerEmail}
+                    onChange={(e) => setCreateForm({ ...createForm, customerEmail: e.target.value })}
+                    placeholder="customer@email.com"
+                    className="bg-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="customerPhone">Phone</Label>
+                  <Input
+                    id="customerPhone"
+                    value={createForm.customerPhone}
+                    onChange={(e) => setCreateForm({ ...createForm, customerPhone: e.target.value })}
+                    placeholder="+32..."
+                    className="bg-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="numberOfPeople">Number of People *</Label>
+                  <Input
+                    id="numberOfPeople"
+                    type="number"
+                    min={1}
+                    value={createForm.numberOfPeople}
+                    onChange={(e) => setCreateForm({ ...createForm, numberOfPeople: parseInt(e.target.value) || 1 })}
+                    className="bg-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="language">Language</Label>
+                  <Select
+                    value={createForm.language}
+                    onValueChange={(value) => setCreateForm({ ...createForm, language: value })}
+                  >
+                    <SelectTrigger className="bg-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nl">Dutch (NL)</SelectItem>
+                      <SelectItem value="en">English (EN)</SelectItem>
+                      <SelectItem value="fr">French (FR)</SelectItem>
+                      <SelectItem value="de">German (DE)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2 mt-4">
+                <Label htmlFor="specialRequests">Special Requests</Label>
+                <Textarea
+                  id="specialRequests"
+                  value={createForm.specialRequests}
+                  onChange={(e) => setCreateForm({ ...createForm, specialRequests: e.target.value })}
+                  placeholder="Any special requests or notes..."
+                  className="bg-white"
+                  rows={2}
+                />
+              </div>
+            </div>
+
+            {/* Payment Status */}
+            <div className="border-t pt-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="isPaid"
+                  checked={createForm.isPaid}
+                  onCheckedChange={(checked) => setCreateForm({ ...createForm, isPaid: checked === true })}
+                />
+                <Label htmlFor="isPaid" className="text-sm font-medium cursor-pointer">
+                  Customer has already paid
+                </Label>
+              </div>
+              {!createForm.isPaid && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Booking will be created with status &quot;pending&quot;. You can send a payment link later.
+                </p>
+              )}
+            </div>
+
+            {/* Price Summary */}
+            {selectedTour && (
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-medium mb-2">Price Summary</h4>
+                <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span>Base price × {createForm.numberOfPeople} {createForm.numberOfPeople === 1 ? 'person' : 'people'}</span>
+                    <span>€{(selectedTour.price || 0) * createForm.numberOfPeople}</span>
+                  </div>
+                  <div className="flex justify-between font-medium pt-1 border-t">
+                    <span>Total</span>
+                    <span>€{(selectedTour.price || 0) * createForm.numberOfPeople}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCreateDialogOpen(false);
+                resetCreateForm();
+              }}
+              disabled={creatingBooking}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => handleCreateBooking()}
+              disabled={creatingBooking || !createForm.tourId || !createForm.date || !createForm.customerName || !createForm.customerEmail}
+            >
+              {creatingBooking ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Booking
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Duplicate Booking Warning Dialog */}
+      <Dialog open={duplicateWarningOpen} onOpenChange={setDuplicateWarningOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-600">
+              <AlertCircle className="h-5 w-5" />
+              Existing Booking Found
+            </DialogTitle>
+            <DialogDescription>
+              A booking already exists for this tour on the selected date.
+            </DialogDescription>
+          </DialogHeader>
+
+          {existingDuplicateBooking && (
+            <div className="py-4 space-y-3">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <p className="text-sm font-medium text-amber-800 mb-2">Existing booking details:</p>
+                <div className="space-y-1 text-sm text-amber-700">
+                  <p><span className="font-medium">Tour:</span> {tours.get(existingDuplicateBooking.tour_id || '')?.title || 'Unknown'}</p>
+                  <p><span className="font-medium">Date:</span> {existingDuplicateBooking.tour_datetime ? format(new Date(existingDuplicateBooking.tour_datetime), 'dd/MM/yyyy HH:mm') : 'N/A'}</p>
+                  <p><span className="font-medium">Status:</span> {existingDuplicateBooking.status}</p>
+                  <p><span className="font-medium">Booking ID:</span> #{existingDuplicateBooking.id}</p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Do you want to create a new booking anyway, or would you prefer to add people to the existing booking?
+              </p>
+            </div>
+          )}
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDuplicateWarningOpen(false);
+                setExistingDuplicateBooking(null);
+              }}
+            >
+              Cancel
+            </Button>
+            {existingDuplicateBooking && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setDuplicateWarningOpen(false);
+                  setCreateDialogOpen(false);
+                  setExistingDuplicateBooking(null);
+                  resetCreateForm();
+                  // Navigate to the existing booking
+                  router.push(`/${locale}/admin/bookings/${existingDuplicateBooking.id}`);
+                }}
+              >
+                View Existing Booking
+              </Button>
+            )}
+            <Button
+              variant="default"
+              className="bg-amber-600 hover:bg-amber-700"
+              onClick={() => {
+                setDuplicateWarningOpen(false);
+                setExistingDuplicateBooking(null);
+                handleCreateBooking(true); // Skip duplicate check
+              }}
+            >
+              Create Anyway
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* IDs Dialog */}
+      <Dialog open={idsDialogOpen} onOpenChange={setIdsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Hash className="h-5 w-5" />
+              Booking IDs
+            </DialogTitle>
+            <DialogDescription>
+              Technical reference IDs for booking #{selectedBookingForIds?.id}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedBookingForIds && (
+            <div className="space-y-3 py-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Booking ID:</span>
+                <span className="font-mono font-medium">{selectedBookingForIds.id}</span>
+              </div>
+              {selectedBookingForIds.tour_id && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Tour ID:</span>
+                  <span className="font-mono text-xs">{selectedBookingForIds.tour_id}</span>
+                </div>
+              )}
+              {selectedBookingForIds.deal_id && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Deal ID:</span>
+                  <span className="font-mono">{selectedBookingForIds.deal_id}</span>
+                </div>
+              )}
+              {selectedBookingForIds.stripe_session_id && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Stripe Session:</span>
+                  <span className="font-mono text-xs truncate max-w-[200px]">{selectedBookingForIds.stripe_session_id}</span>
+                </div>
+              )}
+              {selectedBookingForIds.guide_id && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Guide ID:</span>
+                  <span className="font-mono">{selectedBookingForIds.guide_id}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIdsDialogOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

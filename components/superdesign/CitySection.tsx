@@ -379,7 +379,7 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.1 }}
-                  className="text-4xl md:text-6xl lg:text-[80px] xl:text-[100px] leading-[0.95] text-neutral-900 font-oswald font-bold tracking-tight uppercase text-center w-full"
+                  className="text-3xl md:text-5xl lg:text-[65px] xl:text-[80px] leading-[0.95] text-neutral-900 font-oswald font-bold tracking-tight uppercase text-center w-full"
                   suppressHydrationWarning
                 >
                   {activeCity.name}
