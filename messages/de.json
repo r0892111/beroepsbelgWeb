@@ -1178,6 +1178,8 @@
     "orderItems": "Bestellte Artikel",
     "quantity": "Menge",
     "totalPaid": "Gesamt bezahlt",
+    "subtotal": "Zwischensumme",
+    "shippingCost": "Versandkosten",
     "total": "Gesamt",
     "shippingInfo": "Versandinformationen",
     "shippingAddress": "Lieferadresse",

@@ -1189,6 +1189,8 @@
     "orderItems": "Articles commandés",
     "quantity": "Quantité",
     "totalPaid": "Total payé",
+    "subtotal": "Sous-total",
+    "shippingCost": "Frais de livraison",
     "total": "Total",
     "shippingInfo": "Informations de livraison",
     "shippingAddress": "Adresse de livraison",
