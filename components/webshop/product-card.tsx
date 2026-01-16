@@ -80,7 +80,7 @@ export function ProductCard({ product }: ProductCardProps) {
   
   // Check if this is a gift card
   const isGiftCard = product.category === 'GiftCard' || 
-    (product as any).stripe_product_id === 'prod_TnrjY3dpMoUw4G';
+    product.stripe_product_id === 'prod_TnrjY3dpMoUw4G';
 
   return (
     <>

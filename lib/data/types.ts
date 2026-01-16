@@ -61,7 +61,7 @@ export type Product = {
   slug: string;
   uuid: string;
   title: Record<Locale, string>;
-  category: 'Book' | 'Merchandise' | 'Game';
+  category: 'Book' | 'Merchandise' | 'Game' | 'GiftCard';
   price: number;
   description: Record<Locale, string>;
   additionalInfo?: Record<Locale, string>;
@@ -69,6 +69,8 @@ export type Product = {
   image?: string;
   displayOrder?: number; // Global display order (lower numbers appear first)
   categoryDisplayOrder?: number; // Per-category display order (lower numbers appear first within category)
+  stripe_product_id?: string; // Stripe product ID (for gift cards etc.)
+  is_giftcard?: boolean; // Whether this is a gift card product
 };
 
 export type ProductImage = {

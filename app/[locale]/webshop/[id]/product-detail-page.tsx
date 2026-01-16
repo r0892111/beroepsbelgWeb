@@ -40,7 +40,7 @@ export function ProductDetailPage({ product, locale }: ProductDetailPageProps) {
   
   // Check if this is a gift card product
   const isGiftCard = product.category === 'GiftCard' || 
-    (product as any).stripe_product_id === 'prod_TnrjY3dpMoUw4G';
+    product.stripe_product_id === 'prod_TnrjY3dpMoUw4G';
 
   // Fetch product images when page loads
   useEffect(() => {
