@@ -32,10 +32,9 @@ export function CartSheet() {
     }
   }, [sheetOpen]);
 
-  // Helper to check if a product is a gift card
+  // Helper to check if a product is a gift card (based on category or is_giftcard flag)
   const isGiftCard = (product: any) => {
-    return product?.category === 'GiftCard' || 
-           product?.stripe_product_id === 'prod_TnrjY3dpMoUw4G';
+    return product?.category === 'GiftCard' || product?.is_giftcard === true;
   };
 
   // Helper to get the price for an item (custom for gift cards)

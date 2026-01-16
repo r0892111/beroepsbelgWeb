@@ -39,9 +39,8 @@ export function ProductDetailPage({ product, locale }: ProductDetailPageProps) {
   const [loadingImages, setLoadingImages] = useState(false);
   const [giftCardDialogOpen, setGiftCardDialogOpen] = useState(false);
   
-  // Check if this is a gift card product
-  const isGiftCard = product.category === 'GiftCard' || 
-    product.stripe_product_id === 'prod_TnrjY3dpMoUw4G';
+  // Check if this is a gift card product (based on category or is_giftcard flag from database)
+  const isGiftCard = product.category === 'GiftCard' || product.is_giftcard === true;
 
   // Fetch product images when page loads
   useEffect(() => {

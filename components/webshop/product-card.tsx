@@ -80,9 +80,8 @@ export function ProductCard({ product }: ProductCardProps) {
     }
   };
   
-  // Check if this is a gift card
-  const isGiftCard = product.category === 'GiftCard' || 
-    product.stripe_product_id === 'prod_TnrjY3dpMoUw4G';
+  // Check if this is a gift card (based on category or is_giftcard flag from database)
+  const isGiftCard = product.category === 'GiftCard' || product.is_giftcard === true;
 
   return (
     <>

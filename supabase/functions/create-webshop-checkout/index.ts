@@ -59,7 +59,7 @@ serve(async (req: Request) => {
     const productIds = items.map((item: { productId: string }) => item.productId)
     const { data: products, error: productsError } = await supabase
       .from('webshop_data')
-      .select('uuid, Name, Description, "Price (EUR)", stripe_product_id, stripe_price_id, product_images')
+      .select('uuid, Name, Description, "Price (EUR)", Category, stripe_product_id, stripe_price_id, product_images, is_giftcard')
       .in('uuid', productIds)
 
     if (productsError) {
@@ -87,7 +87,8 @@ serve(async (req: Request) => {
       }
 
       const quantity = item.quantity || 1
-      const isGiftCard = item.isGiftCard || product.stripe_product_id === 'prod_TnrjY3dpMoUw4G'
+      // Check if this is a gift card based on category or is_giftcard flag from database
+      const isGiftCard = item.isGiftCard || product.Category === 'GiftCard' || product.is_giftcard === true
       
       // Use custom price for gift cards, otherwise use product price
       let priceValue: number
