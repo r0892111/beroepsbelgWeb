@@ -634,7 +634,9 @@
     "processing": "Processing...",
     "proceedToPayment": "Proceed to Payment",
     "required": "*",
-    "total": "Total"
+    "total": "Total",
+    "digitalDelivery": "Digital Delivery",
+    "giftCardNoShipping": "Gift cards are delivered via email - no shipping address needed!"
   },
   "booking": {
     "title": "Book Tour",
@@ -1170,6 +1172,20 @@
     "helpMessage": "If you experienced any issues or have questions, please don't hesitate to contact our support team.",
     "browseTours": "Browse Tours",
     "contactUs": "Contact Us"
+  },
+  "giftcard": {
+    "selectAmount": "Select an amount",
+    "orCustomAmount": "Or enter a custom amount",
+    "minimumAmount": "Minimum amount is €10",
+    "minimumAmountNote": "Minimum €10",
+    "giftCardValue": "Gift Card Value",
+    "noShipping": "Digital delivery - no shipping costs",
+    "adding": "Adding...",
+    "addToCartButton": "Add €{amount} Gift Card to Cart",
+    "addedToCart": "Gift card added to cart!",
+    "failedToAdd": "Failed to add gift card",
+    "title": "Gift Card",
+    "description": "Give the gift of a unique city walk!"
   },
   "orderSuccess": {
     "loading": "Loading order details...",

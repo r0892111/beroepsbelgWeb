@@ -7,7 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, ShoppingCart, Book, Gamepad2, Package } from 'lucide-react';
+import { Heart, ShoppingCart, Book, Gamepad2, Package, Gift } from 'lucide-react';
 import { Product } from '@/lib/data/types';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useFavoritesContext } from '@/lib/contexts/favorites-context';
@@ -71,10 +71,16 @@ export function ProductCard({ product }: ProductCardProps) {
         return <Gamepad2 className="h-4 w-4" />;
       case 'Merchandise':
         return <Package className="h-4 w-4" />;
+      case 'GiftCard':
+        return <Gift className="h-4 w-4" />;
       default:
         return null;
     }
   };
+  
+  // Check if this is a gift card
+  const isGiftCard = product.category === 'GiftCard' || 
+    (product as any).stripe_product_id === 'prod_TnrjY3dpMoUw4G';
 
   return (
     <>
@@ -129,7 +135,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 className="mt-2 font-bold text-lg"
                 style={{ color: 'var(--primary-base)' }}
               >
-                €{product.price.toFixed(2)}
+                {isGiftCard ? '€10 - €200+' : `€${product.price.toFixed(2)}`}
               </CardDescription>
             </div>
             <Button
@@ -204,22 +210,40 @@ export function ProductCard({ product }: ProductCardProps) {
           >
             <Link href={`/${locale}/webshop/${product.uuid}`}>Details</Link>
           </Button>
-          <Button
-            onClick={(e) => {
-              e.stopPropagation(); // Prevent card click from triggering
-              handleAddToCart();
-            }}
-            disabled={isAddingToCart}
-            className="w-full gap-2 transition-all duration-300 h-auto min-h-10 py-2 whitespace-normal text-center sm:whitespace-nowrap"
-            style={{
-              backgroundColor: 'var(--primary-base)',
-              color: 'white',
-              boxShadow: 'var(--shadow-small)'
-            }}
-          >
-            <ShoppingCart className="h-4 w-4 flex-shrink-0" />
-            {t('addToCart')}
-          </Button>
+          {isGiftCard ? (
+            <Button
+              asChild
+              className="w-full gap-2 transition-all duration-300 h-auto min-h-10 py-2 whitespace-normal text-center sm:whitespace-nowrap"
+              style={{
+                backgroundColor: 'var(--primary-base)',
+                color: 'white',
+                boxShadow: 'var(--shadow-small)'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Link href={`/${locale}/webshop/${product.uuid}`}>
+                <Gift className="h-4 w-4 flex-shrink-0" />
+                Kies bedrag
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent card click from triggering
+                handleAddToCart();
+              }}
+              disabled={isAddingToCart}
+              className="w-full gap-2 transition-all duration-300 h-auto min-h-10 py-2 whitespace-normal text-center sm:whitespace-nowrap"
+              style={{
+                backgroundColor: 'var(--primary-base)',
+                color: 'white',
+                boxShadow: 'var(--shadow-small)'
+              }}
+            >
+              <ShoppingCart className="h-4 w-4 flex-shrink-0" />
+              {t('addToCart')}
+            </Button>
+          )}
         </CardFooter>
       </Card>
     </>
