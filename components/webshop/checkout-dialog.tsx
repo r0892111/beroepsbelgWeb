@@ -42,9 +42,8 @@ export function CheckoutDialog({ open, onOpenChange, totalAmount }: CheckoutDial
     if (cartItems.length === 0) return false;
     return cartItems.every(item => {
       const product = item.products as any;
-      // Check if product is a gift card by category or stripe_product_id
-      return product?.category === 'GiftCard' || 
-             product?.stripe_product_id === 'prod_TnrjY3dpMoUw4G';
+      // Check if product is a gift card by category or is_giftcard flag
+      return product?.category === 'GiftCard' || product?.is_giftcard === true;
     });
   }, [cartItems]);
 
@@ -63,8 +62,7 @@ export function CheckoutDialog({ open, onOpenChange, totalAmount }: CheckoutDial
 
       const items = cartItems.map(item => {
         const product = item.products as any;
-        const isGiftCard = product?.category === 'GiftCard' || 
-                          product?.stripe_product_id === 'prod_TnrjY3dpMoUw4G';
+        const isGiftCard = product?.category === 'GiftCard' || product?.is_giftcard === true;
         
         return {
           productId: item.product_id,
