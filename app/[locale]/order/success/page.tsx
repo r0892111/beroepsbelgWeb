@@ -234,9 +234,24 @@ export default function OrderSuccessPage() {
             </div>
           )}
 
-          <div className="flex justify-between pt-4 border-t-2">
-            <span className="text-lg font-bold">{t('total')}</span>
-            <span className="text-lg font-bold">€{order.total_amount.toFixed(2)}</span>
+          <div className="space-y-2 pt-4 border-t">
+            {/* Subtotal */}
+            <div className="flex justify-between text-muted-foreground">
+              <span>{t('subtotal')}</span>
+              <span>€{order.items?.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0).toFixed(2)}</span>
+            </div>
+            
+            {/* Shipping Cost */}
+            <div className="flex justify-between text-muted-foreground">
+              <span>{t('shippingCost')}</span>
+              <span>€{(order.metadata?.shipping_cost ?? 0).toFixed(2)}</span>
+            </div>
+            
+            {/* Total */}
+            <div className="flex justify-between pt-2 border-t">
+              <span className="text-lg font-bold">{t('total')}</span>
+              <span className="text-lg font-bold">€{order.total_amount.toFixed(2)}</span>
+            </div>
           </div>
 
           <div className="bg-blue-50 p-4 rounded-lg">

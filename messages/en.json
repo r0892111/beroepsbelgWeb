@@ -1190,6 +1190,8 @@
     "orderItems": "Order Items",
     "quantity": "Quantity",
     "totalPaid": "Total Paid",
+    "subtotal": "Subtotal",
+    "shippingCost": "Shipping",
     "total": "Total",
     "shippingInfo": "Shipping Information",
     "shippingAddress": "Shipping Address",
