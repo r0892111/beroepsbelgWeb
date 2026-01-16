@@ -8,7 +8,7 @@ import { useTourFavoritesContext } from '@/lib/contexts/tour-favorites-context';
 import { cn } from '@/lib/utils';
 
 interface TourFavoriteButtonProps {
-  tourId: string;
+  tourId: string | number;
   className?: string;
   size?: 'sm' | 'default' | 'lg' | 'icon';
 }

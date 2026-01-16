@@ -53,8 +53,10 @@ export function useTourFavorites() {
     };
   }, [user, fetchTourFavorites]);
 
-  const addTourFavorite = async (tourId: string) => {
+  const addTourFavorite = async (tourId: string | number) => {
     if (!user) return { error: new Error('Not authenticated') };
+
+    const tourIdStr = String(tourId);
 
     // Optimistic update
     const tempId = `temp-${Date.now()}`;
@@ -62,7 +64,7 @@ export function useTourFavorites() {
       {
         id: tempId,
         user_id: user.id,
-        tour_id: tourId,
+        tour_id: tourIdStr,
         created_at: new Date().toISOString(),
       },
       ...prev,
@@ -71,7 +73,7 @@ export function useTourFavorites() {
     // Sync with database
     const { error, data } = await supabase
       .from('tour_favorites')
-      .insert({ user_id: user.id, tour_id: tourId })
+      .insert({ user_id: user.id, tour_id: tourIdStr })
       .select()
       .single();
 
@@ -91,19 +93,21 @@ export function useTourFavorites() {
     return { error: null };
   };
 
-  const removeTourFavorite = async (tourId: string) => {
+  const removeTourFavorite = async (tourId: string | number) => {
     if (!user) return { error: new Error('Not authenticated') };
 
+    const tourIdStr = String(tourId);
+
     // Optimistic update
-    const itemToRemove = favorites.find((item) => item.tour_id === tourId);
-    setFavorites((prev) => prev.filter((item) => item.tour_id !== tourId));
+    const itemToRemove = favorites.find((item) => String(item.tour_id) === tourIdStr);
+    setFavorites((prev) => prev.filter((item) => String(item.tour_id) !== tourIdStr));
 
     // Sync with database
     const { error } = await supabase
       .from('tour_favorites')
       .delete()
       .eq('user_id', user.id)
-      .eq('tour_id', tourId);
+      .eq('tour_id', tourIdStr);
 
     if (error) {
       // Revert on error
@@ -116,8 +120,8 @@ export function useTourFavorites() {
     return { error: null };
   };
 
-  const isTourFavorite = (tourId: string) => {
-    return favorites.some((fav) => fav.tour_id === tourId);
+  const isTourFavorite = (tourId: string | number) => {
+    return favorites.some((fav) => String(fav.tour_id) === String(tourId));
   };
 
   const tourFavoritesCount = useMemo(() => favorites.length, [favorites]);

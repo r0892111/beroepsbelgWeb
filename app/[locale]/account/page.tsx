@@ -279,8 +279,9 @@ export default function AccountPage() {
   );
 
   // Compute favorite tours by filtering allTours (like favoriteProducts)
+  // Convert both to strings for comparison since tour.id may be a number and fav.tour_id is stored as string
   const favoriteTours = allTours.filter((tour) =>
-    tourFavorites.some((fav) => fav.tour_id === tour.id)
+    tourFavorites.some((fav) => String(fav.tour_id) === String(tour.id))
   );
 
   // Use cart items directly - they already have products populated from JOIN
