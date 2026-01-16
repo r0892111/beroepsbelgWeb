@@ -85,15 +85,45 @@ export default function AccountPage() {
   useEffect(() => {
     let isMounted = true;
 
+    // Slugify function matching the one in lib/api/content.ts
+    const slugify = (value: string) =>
+      value
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+
     async function loadAllTours() {
       try {
         const { data, error } = await supabase
           .from('tours_table_prod')
-          .select('id, title, city, slug, type, duration_minutes, price, image, description');
+          .select('id, title, city, type, duration_minutes, price, tour_images, description')
+          .eq('status', 'published'); // Only show published tours
 
         if (error) throw error;
         if (!isMounted) return;
-        setAllTours(data || []);
+        
+        // Map the data to include computed fields
+        const mappedTours = (data || []).map((tour: any) => {
+          // Extract image URL from tour_images JSONB array
+          let imageUrl = null;
+          if (Array.isArray(tour.tour_images) && tour.tour_images.length > 0) {
+            // Find primary image first, then fall back to first image
+            const primaryImage = tour.tour_images.find((img: any) => img.is_primary) || tour.tour_images[0];
+            imageUrl = primaryImage?.url || primaryImage?.image_url || null;
+          }
+          
+          return {
+            ...tour,
+            // Generate slug from title using same logic as getTourBySlug
+            slug: slugify(tour.title || ''),
+            // Extracted image URL
+            image: imageUrl,
+          };
+        });
+        
+        setAllTours(mappedTours);
       } catch (error) {
         console.error('Error loading tours:', error);
       } finally {
@@ -279,19 +309,10 @@ export default function AccountPage() {
   );
 
   // Compute favorite tours by filtering allTours (like favoriteProducts)
-  // Convert both to strings for comparison since tour.id may be a number and fav.tour_id is stored as string
-  console.log('Tour favorites debug:', {
-    allToursCount: allTours.length,
-    allToursIds: allTours.slice(0, 5).map(t => ({ id: t.id, type: typeof t.id })),
-    tourFavoritesCount: tourFavorites.length,
-    tourFavoriteIds: tourFavorites.map(f => ({ tour_id: f.tour_id, type: typeof f.tour_id })),
-  });
-  
+  // Both tour.id and fav.tour_id are UUIDs stored as strings
   const favoriteTours = allTours.filter((tour) =>
     tourFavorites.some((fav) => String(fav.tour_id) === String(tour.id))
   );
-  
-  console.log('Matched favorite tours:', favoriteTours.length);
 
   // Use cart items directly - they already have products populated from JOIN
   const cartTotal = cartItems.reduce((total, item) => {
