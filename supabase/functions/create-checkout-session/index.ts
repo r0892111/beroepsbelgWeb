@@ -422,7 +422,12 @@ serve(async (req: Request) => {
         language: opMaat ? 'nl' : language,
         specialRequests: opMaat ? null : (specialRequests || null),
         requestTanguy: requestTanguy,
-        amount: tour.price * numberOfPeople, // Calculate amount based on number of people for all tour types
+        // Price breakdown - store discounted amount as the main amount
+        amount: tourFinalAmount, // Discounted tour price (what customer pays for tour)
+        originalAmount: tourFullPrice, // Original price before discount
+        discountApplied: discountAmount, // Amount saved from discount
+        tanguyCost: requestTanguy ? TANGUY_COST : 0, // Tanguy cost if requested
+        extraHourCost: hasExtraHour ? EXTRA_HOUR_COST : 0, // Extra hour cost if selected
         currency: 'eur',
         isContacted: false,
         upsellProducts: upsellProducts.length > 0 ? upsellProducts : undefined, // Store upsell products in invitee
@@ -641,7 +646,12 @@ serve(async (req: Request) => {
           language: opMaat ? 'nl' : language,
           specialRequests: opMaat ? null : (specialRequests || null),
           requestTanguy: requestTanguy,
-          amount: tour.price * numberOfPeople,
+          // Price breakdown - store discounted amount as the main amount
+          amount: tourFinalAmount, // Discounted tour price (what customer pays for tour)
+          originalAmount: tourFullPrice, // Original price before discount
+          discountApplied: discountAmount, // Amount saved from discount
+          tanguyCost: requestTanguy ? TANGUY_COST : 0, // Tanguy cost if requested
+          extraHourCost: hasExtraHour ? EXTRA_HOUR_COST : 0, // Extra hour cost if selected
           currency: 'eur',
           isContacted: false,
           upsellProducts: upsellProducts.length > 0 ? upsellProducts : undefined,
