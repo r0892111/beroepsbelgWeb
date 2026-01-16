@@ -142,7 +142,7 @@ const webshopItems: WebshopItem[] = [
     Category: 'Book',
     'Price (EUR)': '45.00',
     Description: 'Luxueus salontafelboek over de bewogen geschiedenis van de Antwerpse Handelsbeurs – van gloriejaren als handelscentrum en feestlocatie tot de recente renovatie – rijk geïllustreerd en beschreven door Tanguy Ottomer.',
-    'Additional Info': 'Hardcover; ±250 blz; tweetalige editie NL & ENG; verschenen nov 2024; (gesigneerde exemplaren beschikbaar)',
+    'Additional Info': 'Hardcover; ±250 blz; tweetalige editie NL & ENG; verschenen nov 2026; (gesigneerde exemplaren beschikbaar)',
     uuid: '8aae10e6-3694-4800-8258-0429709e53b6'
   },
   {
