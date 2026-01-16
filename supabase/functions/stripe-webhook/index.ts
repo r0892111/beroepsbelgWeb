@@ -506,10 +506,13 @@ async function handleEvent(event: Stripe.Event) {
                 price: (item.amount_total ?? 0) / 100,
               });
             } else {
+              // Calculate unit price (amount_total is already the line total, so divide by quantity)
+              const quantity = item.quantity ?? 1;
+              const unitPrice = ((item.amount_total ?? 0) / 100) / quantity;
               productItems.push({
                 title: itemNameStr || 'Product',
-                quantity: item.quantity ?? 1,
-                price: (item.amount_total ?? 0) / 100,
+                quantity: quantity,
+                price: unitPrice,
               });
             }
           }

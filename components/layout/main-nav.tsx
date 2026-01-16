@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useCartContext } from '@/lib/contexts/cart-context';
 import { useFavoritesContext } from '@/lib/contexts/favorites-context';
+import { useTourFavoritesContext } from '@/lib/contexts/tour-favorites-context';
 import { useState, useEffect } from 'react';
 import { CartSheet } from '@/components/webshop/cart-sheet';
 
@@ -23,6 +24,8 @@ export function MainNav({ locale }: MainNavProps) {
   const { user, profile } = useAuth();
   const { cartCount } = useCartContext();
   const { favoritesCount } = useFavoritesContext();
+  const { tourFavoritesCount } = useTourFavoritesContext();
+  const totalFavoritesCount = favoritesCount + tourFavoritesCount;
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -147,7 +150,7 @@ export function MainNav({ locale }: MainNavProps) {
                   style={{ backgroundColor: 'rgba(61, 213, 152, 0.1)' }}
                 />
               </Button>
-              {favoritesCount > 0 && (
+              {totalFavoritesCount > 0 && (
                 <span
                   className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold text-white animate-pulse"
                   style={{
@@ -156,7 +159,7 @@ export function MainNav({ locale }: MainNavProps) {
                   }}
                   suppressHydrationWarning
                 >
-                  {favoritesCount}
+                  {totalFavoritesCount}
                 </span>
               )}
             </Link>
@@ -203,7 +206,7 @@ export function MainNav({ locale }: MainNavProps) {
                     >
                       <Heart className="h-4 w-4" />
                       {t('favorites')}
-                      {favoritesCount > 0 && (
+                      {totalFavoritesCount > 0 && (
                         <span
                           className="ml-auto flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold text-white"
                           style={{
@@ -212,7 +215,7 @@ export function MainNav({ locale }: MainNavProps) {
                           }}
                           suppressHydrationWarning
                         >
-                          {favoritesCount}
+                          {totalFavoritesCount}
                         </span>
                       )}
                     </Link>
