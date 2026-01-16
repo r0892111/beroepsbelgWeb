@@ -184,11 +184,9 @@ export default function OpMaatFormPage() {
         throw new Error('Failed to fetch updated booking');
       }
 
-      // Trigger webhook with entire booking
-      const webhookUrl = 'https://alexfinit.app.n8n.cloud/webhook/f84e268c-f325-4820-b0b4-c3ed9b5fc56c';
-      
+      // Trigger webhook via API route (to avoid CORS issues)
       try {
-        await fetch(webhookUrl, {
+        const webhookResponse = await fetch('/api/op-maat-webhook', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -200,6 +198,11 @@ export default function OpMaatFormPage() {
             submittedAt: new Date().toISOString(),
           }),
         });
+
+        if (!webhookResponse.ok) {
+          const errorData = await webhookResponse.json().catch(() => ({}));
+          console.error('Webhook error:', errorData);
+        }
       } catch (webhookError) {
         // Don't fail if webhook fails, just log it
         console.error('Webhook error:', webhookError);
