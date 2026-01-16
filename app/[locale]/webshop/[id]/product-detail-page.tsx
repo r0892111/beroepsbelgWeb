@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { Heart, ShoppingCart, Book, Gamepad2, Package, ArrowLeft, Share2 } from 'lucide-react';
+import { Heart, ShoppingCart, Book, Gamepad2, Package, ArrowLeft, Share2, Gift } from 'lucide-react';
 import { Product } from '@/lib/data/types';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useFavoritesContext } from '@/lib/contexts/favorites-context';
@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { getProductPlaceholder } from '@/lib/utils/placeholder-images';
 import { ProductImageGallery } from '@/components/webshop/product-image-gallery';
 import { ProductShareButtons } from '@/components/webshop/product-share-buttons';
+import { GiftCardAmountSelector } from '@/components/webshop/giftcard-amount-selector';
 import { supabase } from '@/lib/supabase/client';
 import type { ProductImage } from '@/lib/data/types';
 import type { Locale } from '@/lib/data/types';
@@ -36,6 +37,10 @@ export function ProductDetailPage({ product, locale }: ProductDetailPageProps) {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [productImages, setProductImages] = useState<ProductImage[]>([]);
   const [loadingImages, setLoadingImages] = useState(false);
+  
+  // Check if this is a gift card product
+  const isGiftCard = product.category === 'GiftCard' || 
+    (product as any).stripe_product_id === 'prod_TnrjY3dpMoUw4G';
 
   // Fetch product images when page loads
   useEffect(() => {
@@ -110,6 +115,8 @@ export function ProductDetailPage({ product, locale }: ProductDetailPageProps) {
         return <Gamepad2 className="h-5 w-5" />;
       case 'Merchandise':
         return <Package className="h-5 w-5" />;
+      case 'GiftCard':
+        return <Gift className="h-5 w-5" />;
       default:
         return null;
     }
@@ -181,7 +188,13 @@ export function ProductDetailPage({ product, locale }: ProductDetailPageProps) {
                   {product.title[locale]}
                 </h1>
                 <div className="flex items-center gap-3 mb-6">
-                  <p className="text-3xl font-bold text-[#0d1117]">€{product.price.toFixed(2)}</p>
+                  {isGiftCard ? (
+                    <p className="text-2xl font-bold text-[var(--primary-base)]">
+                      €10 - €200+
+                    </p>
+                  ) : (
+                    <p className="text-3xl font-bold text-[#0d1117]">€{product.price.toFixed(2)}</p>
+                  )}
                   {product.label && (
                     <span className="rounded-full bg-[#92F0B1] px-3 py-1 text-xs font-semibold text-[#0d1117]">
                       {product.label}
@@ -208,29 +221,36 @@ export function ProductDetailPage({ product, locale }: ProductDetailPageProps) {
                 )}
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-2 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={handleToggleFavorite}
-                  className={`gap-2 ${isFavorite(product.uuid) ? 'text-red-500 border-red-500' : ''}`}
-                >
-                  <Heart className={`h-4 w-4 ${isFavorite(product.uuid) ? 'fill-current' : ''}`} />
-                  {isFavorite(product.uuid) ? t('inFavorites') : t('addToFavorites')}
-                </Button>
-                <Button
-                  onClick={handleAddToCart}
-                  disabled={isAddingToCart}
-                  className="flex-1 gap-2"
-                  style={{
-                    backgroundColor: 'var(--primary-base)',
-                    color: 'white',
-                    boxShadow: 'var(--shadow-small)'
-                  }}
-                >
-                  <ShoppingCart className="h-4 w-4" />
-                  {tAuth('addToCart')}
-                </Button>
-              </div>
+              {/* Gift Card Amount Selector or Regular Add to Cart */}
+              {isGiftCard ? (
+                <div className="pt-4">
+                  <GiftCardAmountSelector productUuid={product.uuid} />
+                </div>
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-2 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={handleToggleFavorite}
+                    className={`gap-2 ${isFavorite(product.uuid) ? 'text-red-500 border-red-500' : ''}`}
+                  >
+                    <Heart className={`h-4 w-4 ${isFavorite(product.uuid) ? 'fill-current' : ''}`} />
+                    {isFavorite(product.uuid) ? t('inFavorites') : t('addToFavorites')}
+                  </Button>
+                  <Button
+                    onClick={handleAddToCart}
+                    disabled={isAddingToCart}
+                    className="flex-1 gap-2"
+                    style={{
+                      backgroundColor: 'var(--primary-base)',
+                      color: 'white',
+                      boxShadow: 'var(--shadow-small)'
+                    }}
+                  >
+                    <ShoppingCart className="h-4 w-4" />
+                    {tAuth('addToCart')}
+                  </Button>
+                </div>
+              )}
 
               {/* Share Section */}
               <div className="pt-6 border-t border-gray-200 mt-6">

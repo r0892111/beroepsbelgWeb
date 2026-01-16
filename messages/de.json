@@ -633,7 +633,9 @@
     "processing": "Verarbeitung...",
     "proceedToPayment": "Weiter zur Zahlung",
     "required": "*",
-    "total": "Gesamt"
+    "total": "Gesamt",
+    "digitalDelivery": "Digitale Lieferung",
+    "giftCardNoShipping": "Geschenkkarten werden per E-Mail geliefert - keine Lieferadresse erforderlich!"
   },
   "booking": {
     "title": "Tour Buchen",
@@ -1158,6 +1160,20 @@
     "helpMessage": "Wenn Sie Probleme hatten oder Fragen haben, zögern Sie bitte nicht, unser Support-Team zu kontaktieren.",
     "browseTours": "Touren durchsuchen",
     "contactUs": "Kontaktieren Sie uns"
+  },
+  "giftcard": {
+    "selectAmount": "Wählen Sie einen Betrag",
+    "orCustomAmount": "Oder geben Sie einen eigenen Betrag ein",
+    "minimumAmount": "Mindestbetrag ist 10€",
+    "minimumAmountNote": "Minimum 10€",
+    "giftCardValue": "Geschenkkarten-Wert",
+    "noShipping": "Digitale Lieferung - keine Versandkosten",
+    "adding": "Wird hinzugefügt...",
+    "addToCartButton": "€{amount} Geschenkkarte hinzufügen",
+    "addedToCart": "Geschenkkarte zum Warenkorb hinzugefügt!",
+    "failedToAdd": "Geschenkkarte konnte nicht hinzugefügt werden",
+    "title": "Geschenkkarte",
+    "description": "Verschenken Sie einen einzigartigen Stadtspaziergang!"
   },
   "orderSuccess": {
     "loading": "Bestelldetails werden geladen...",

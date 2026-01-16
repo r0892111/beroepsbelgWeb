@@ -702,7 +702,9 @@
     "processing": "Verwerken...",
     "proceedToPayment": "Doorgaan naar betaling",
     "required": "*",
-    "total": "Totaal"
+    "total": "Totaal",
+    "digitalDelivery": "Digitale Levering",
+    "giftCardNoShipping": "Cadeaubonnen worden per e-mail geleverd - geen verzendadres nodig!"
   },
   "booking": {
     "onlineDiscount": "10% korting bij online boeken",
@@ -1238,6 +1240,20 @@
     "helpMessage": "Als u problemen heeft ondervonden of vragen heeft, aarzel dan niet om contact op te nemen met ons support team.",
     "browseTours": "Bekijk tours",
     "contactUs": "Neem contact op"
+  },
+  "giftcard": {
+    "selectAmount": "Kies een bedrag",
+    "orCustomAmount": "Of voer een eigen bedrag in",
+    "minimumAmount": "Minimum bedrag is €10",
+    "minimumAmountNote": "Minimum €10",
+    "giftCardValue": "Waarde cadeaubon",
+    "noShipping": "Digitale levering - geen verzendkosten",
+    "adding": "Toevoegen...",
+    "addToCartButton": "Voeg cadeaubon van €{amount} toe",
+    "addedToCart": "Cadeaubon toegevoegd aan winkelwagen!",
+    "failedToAdd": "Kon cadeaubon niet toevoegen",
+    "title": "Cadeaubon",
+    "description": "Geef het cadeau van een unieke stadswandeling!"
   },
   "orderSuccess": {
     "loading": "Bestelling laden...",

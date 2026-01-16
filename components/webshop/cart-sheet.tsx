@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Minus, Plus, Trash2, CreditCard, ArrowRight } from 'lucide-react';
+import { ShoppingCart, Minus, Plus, Trash2, CreditCard, ArrowRight, Gift } from 'lucide-react';
 import { useCartContext } from '@/lib/contexts/cart-context';
 import { CheckoutDialog } from './checkout-dialog';
 import Image from 'next/image';
@@ -20,6 +20,33 @@ export function CartSheet() {
   const { cartItems, cartCount, updateQuantity, removeFromCart, loading, refetch } = useCartContext();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [giftCardAmounts, setGiftCardAmounts] = useState<Record<string, number>>({});
+
+  // Load gift card amounts from sessionStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = sessionStorage.getItem('giftCardAmounts');
+      if (stored) {
+        setGiftCardAmounts(JSON.parse(stored));
+      }
+    }
+  }, [sheetOpen]);
+
+  // Helper to check if a product is a gift card
+  const isGiftCard = (product: any) => {
+    return product?.category === 'GiftCard' || 
+           product?.Category === 'GiftCard' ||
+           product?.stripe_product_id === 'prod_TnrjY3dpMoUw4G';
+  };
+
+  // Helper to get the price for an item (custom for gift cards)
+  const getItemPrice = (item: any) => {
+    const product = item.products;
+    if (isGiftCard(product)) {
+      return giftCardAmounts[item.product_id] || 0;
+    }
+    return product?.price || 0;
+  };
 
   // Refetch cart when sheet opens
   const handleSheetOpenChange = (open: boolean) => {
@@ -31,7 +58,7 @@ export function CartSheet() {
   };
 
   const totalAmount = cartItems.reduce((sum, item) => {
-    return sum + (item.products?.price || 0) * item.quantity;
+    return sum + getItemPrice(item) * item.quantity;
   }, 0);
 
   const handleCheckout = () => {
@@ -81,42 +108,57 @@ export function CartSheet() {
                 <div className="flex-1 overflow-y-auto space-y-4 pr-2 mb-4">
                   {cartItems.map((item) => {
                     const product = item.products;
+                    const itemIsGiftCard = isGiftCard(product);
+                    const itemPrice = getItemPrice(item);
                     return (
                       <div key={item.id} className="flex gap-4 py-4 border-b">
                           <div className="relative w-20 h-20 flex-shrink-0">
-                            <Image
-                            src={product?.image || getProductPlaceholder((product as any)?.Category || (product as any)?.category || 'Book')}
-                            alt={(product as any)?.Name || (product as any)?.title_nl || (product as any)?.title_en || 'Product'}
-                              fill
-                              className="object-cover rounded"
-                            unoptimized
-                            />
+                            {itemIsGiftCard ? (
+                              <div className="w-full h-full bg-gradient-to-br from-[var(--primary-base)] to-[var(--primary-dark)] rounded flex items-center justify-center">
+                                <Gift className="h-8 w-8 text-white" />
+                              </div>
+                            ) : (
+                              <Image
+                                src={product?.image || getProductPlaceholder((product as any)?.Category || (product as any)?.category || 'Book')}
+                                alt={(product as any)?.Name || (product as any)?.title_nl || (product as any)?.title_en || 'Product'}
+                                fill
+                                className="object-cover rounded"
+                                unoptimized
+                              />
+                            )}
                           </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-sm mb-1">
-                            {(product as any)?.Name || (product as any)?.title_nl || (product as any)?.title_en || (product as any)?.title_fr || (product as any)?.title_de || 'Product'}
+                            {itemIsGiftCard 
+                              ? `Cadeaubon €${itemPrice.toFixed(2)}`
+                              : ((product as any)?.Name || (product as any)?.title_nl || (product as any)?.title_en || (product as any)?.title_fr || (product as any)?.title_de || 'Product')
+                            }
                           </h4>
                           <p className="text-sm text-muted-foreground">
-                            €{(product?.price || 0).toFixed(2)}
+                            €{itemPrice.toFixed(2)}
                           </p>
                           <div className="flex items-center gap-2 mt-2">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => updateQuantity(item.product_id, Math.max(0, item.quantity - 1))}
-                            >
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <span className="text-sm w-8 text-center">{item.quantity}</span>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
+                            {!itemIsGiftCard && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() => updateQuantity(item.product_id, Math.max(0, item.quantity - 1))}
+                                >
+                                  <Minus className="h-3 w-3" />
+                                </Button>
+                                <span className="text-sm w-8 text-center">{item.quantity}</span>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
+                                >
+                                  <Plus className="h-3 w-3" />
+                                </Button>
+                              </>
+                            )}
                             <Button
                               variant="ghost"
                               size="icon"
@@ -129,7 +171,7 @@ export function CartSheet() {
                         </div>
                         <div className="text-right flex-shrink-0">
                           <p className="font-medium text-sm">
-                            €{((product?.price || 0) * item.quantity).toFixed(2)}
+                            €{(itemPrice * item.quantity).toFixed(2)}
                           </p>
                         </div>
                       </div>

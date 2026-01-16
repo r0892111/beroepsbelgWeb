@@ -26,7 +26,7 @@ serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
 
     const {
-      items, // Array of { productId, quantity }
+      items, // Array of { productId, quantity, customPrice?, isGiftCard? }
       customerName,
       customerEmail,
       customerPhone,
@@ -34,6 +34,7 @@ serve(async (req: Request) => {
       billingAddress,
       userId,
       locale = 'nl',
+      isGiftCardOnly = false,
     } = await req.json()
 
     // Validate required fields
@@ -43,7 +44,8 @@ serve(async (req: Request) => {
     if (!customerName || !customerEmail) {
       throw new Error('Customer name and email are required')
     }
-    if (!shippingAddress) {
+    // Shipping address only required for non-gift-card orders
+    if (!isGiftCardOnly && !shippingAddress) {
       throw new Error('Shipping address is required')
     }
 
@@ -84,10 +86,28 @@ serve(async (req: Request) => {
         continue
       }
 
-      const priceValue = parseFloat(product['Price (EUR)']?.toString().replace(',', '.') || '0')
       const quantity = item.quantity || 1
+      const isGiftCard = item.isGiftCard || product.stripe_product_id === 'prod_TnrjY3dpMoUw4G'
+      
+      // Use custom price for gift cards, otherwise use product price
+      let priceValue: number
+      if (isGiftCard && item.customPrice && item.customPrice >= 10) {
+        priceValue = item.customPrice
+      } else {
+        priceValue = parseFloat(product['Price (EUR)']?.toString().replace(',', '.') || '0')
+      }
 
-      if (product.stripe_price_id) {
+      // For gift cards with custom price, always use price_data (not existing stripe_price_id)
+      if (isGiftCard && item.customPrice) {
+        lineItems.push({
+          price_data: {
+            currency: 'eur',
+            product: product.stripe_product_id, // Use existing Stripe product
+            unit_amount: Math.round(priceValue * 100),
+          },
+          quantity: quantity,
+        })
+      } else if (product.stripe_price_id) {
         // Use existing Stripe price
         lineItems.push({
           price: product.stripe_price_id,
@@ -119,6 +139,7 @@ serve(async (req: Request) => {
         quantity: quantity,
         total: itemTotal,
         image: product.product_images?.[0] || null,
+        isGiftCard,
       })
 
       console.log('Added product to checkout:', {
@@ -126,6 +147,8 @@ serve(async (req: Request) => {
         price: priceValue,
         quantity: quantity,
         hasStripePrice: !!product.stripe_price_id,
+        isGiftCard,
+        customPrice: item.customPrice,
       })
     }
 
@@ -133,23 +156,27 @@ serve(async (req: Request) => {
       throw new Error('No valid products to checkout')
     }
 
-    // Calculate shipping cost
+    // Calculate shipping cost - no shipping for gift card only orders
     const FREIGHT_COST_BE = 7.50
     const FREIGHT_COST_INTERNATIONAL = 14.99
-    const isBelgium = shippingAddress.country === 'België' || shippingAddress.country === 'Belgium'
-    const shippingCost = isBelgium ? FREIGHT_COST_BE : FREIGHT_COST_INTERNATIONAL
+    let shippingCost = 0
 
-    // Add shipping as a line item
-    lineItems.push({
-      price_data: {
-        currency: 'eur',
-        product_data: {
-          name: isBelgium ? 'Verzendkosten (België)' : 'Verzendkosten (Internationaal)',
+    if (!isGiftCardOnly) {
+      const isBelgium = shippingAddress?.country === 'België' || shippingAddress?.country === 'Belgium'
+      shippingCost = isBelgium ? FREIGHT_COST_BE : FREIGHT_COST_INTERNATIONAL
+
+      // Add shipping as a line item only for physical products
+      lineItems.push({
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: isBelgium ? 'Verzendkosten (België)' : 'Verzendkosten (Internationaal)',
+          },
+          unit_amount: Math.round(shippingCost * 100),
         },
-        unit_amount: Math.round(shippingCost * 100),
-      },
-      quantity: 1,
-    })
+        quantity: 1,
+      })
+    }
 
     const totalAmount = subtotal + shippingCost
 
@@ -161,7 +188,8 @@ serve(async (req: Request) => {
     })
 
     // Create Stripe checkout session
-    const session = await stripe.checkout.sessions.create({
+    // Skip shipping address collection for gift card only orders
+    const sessionConfig: any = {
       payment_method_types: ['card', 'bancontact', 'ideal'],
       line_items: lineItems,
       mode: 'payment',
@@ -170,17 +198,24 @@ serve(async (req: Request) => {
       cancel_url: `${req.headers.get('origin')}/${locale}/webshop`,
       customer_email: customerEmail,
       metadata: {
-        order_type: 'webshop',
+        order_type: isGiftCardOnly ? 'giftcard' : 'webshop',
         customerName,
         customerPhone: customerPhone || '',
         userId: userId || '',
         locale,
         itemCount: orderItems.length.toString(),
+        isGiftCardOnly: isGiftCardOnly.toString(),
       },
-      shipping_address_collection: {
+    }
+
+    // Only collect shipping address for physical products
+    if (!isGiftCardOnly) {
+      sessionConfig.shipping_address_collection = {
         allowed_countries: ['BE', 'NL', 'FR', 'DE', 'LU', 'GB', 'ES', 'IT', 'PT', 'AT', 'CH'],
-      },
-    })
+      }
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionConfig)
 
     console.log('Created Stripe checkout session:', session.id)
 
