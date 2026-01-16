@@ -1243,17 +1243,21 @@
   },
   "giftcard": {
     "selectAmount": "Kies een bedrag",
+    "selectAmountDescription": "Kies de waarde voor je cadeaubon",
     "orCustomAmount": "Of voer een eigen bedrag in",
-    "minimumAmount": "Minimum bedrag is €10",
-    "minimumAmountNote": "Minimum €10",
+    "customAmount": "Aangepast bedrag",
+    "minimumAmount": "Minimum bedrag is €25",
+    "minimumAmountNote": "Minimum €25",
     "giftCardValue": "Waarde cadeaubon",
     "noShipping": "Digitale levering - geen verzendkosten",
     "adding": "Toevoegen...",
     "addToCartButton": "Voeg cadeaubon van €{amount} toe",
+    "addToCartWithAmount": "Voeg cadeaubon toe",
     "addedToCart": "Cadeaubon toegevoegd aan winkelwagen!",
     "failedToAdd": "Kon cadeaubon niet toevoegen",
     "title": "Cadeaubon",
-    "description": "Geef het cadeau van een unieke stadswandeling!"
+    "description": "Geef het cadeau van een unieke stadswandeling!",
+    "dragToSelect": "Sleep om je bedrag te kiezen"
   },
   "orderSuccess": {
     "loading": "Bestelling laden...",

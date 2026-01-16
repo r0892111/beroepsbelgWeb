@@ -14,6 +14,7 @@ import { useFavoritesContext } from '@/lib/contexts/favorites-context';
 import { useCartContext } from '@/lib/contexts/cart-context';
 import { toast } from 'sonner';
 import { getProductPlaceholder } from '@/lib/utils/placeholder-images';
+import { GiftCardDialog } from './giftcard-dialog';
 
 interface ProductCardProps {
   product: Product;
@@ -28,6 +29,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const { isFavorite, addFavorite, removeFavorite } = useFavoritesContext();
   const { addToCart } = useCartContext();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [giftCardDialogOpen, setGiftCardDialogOpen] = useState(false);
 
   const handleToggleFavorite = async () => {
     if (!user) {
@@ -135,7 +137,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 className="mt-2 font-bold text-lg"
                 style={{ color: 'var(--primary-base)' }}
               >
-                {isGiftCard ? '€10 - €200+' : `€${product.price.toFixed(2)}`}
+                {isGiftCard ? '€25 - €10.000' : `€${product.price.toFixed(2)}`}
               </CardDescription>
             </div>
             <Button
@@ -212,19 +214,19 @@ export function ProductCard({ product }: ProductCardProps) {
           </Button>
           {isGiftCard ? (
             <Button
-              asChild
               className="w-full gap-2 transition-all duration-300 h-auto min-h-10 py-2 whitespace-normal text-center sm:whitespace-nowrap"
               style={{
                 backgroundColor: 'var(--primary-base)',
                 color: 'white',
                 boxShadow: 'var(--shadow-small)'
               }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                setGiftCardDialogOpen(true);
+              }}
             >
-              <Link href={`/${locale}/webshop/${product.uuid}`}>
-                <Gift className="h-4 w-4 flex-shrink-0" />
-                Kies bedrag
-              </Link>
+              <Gift className="h-4 w-4 flex-shrink-0" />
+              Kies bedrag
             </Button>
           ) : (
             <Button
@@ -246,6 +248,15 @@ export function ProductCard({ product }: ProductCardProps) {
           )}
         </CardFooter>
       </Card>
+
+      {/* Gift Card Amount Dialog */}
+      {isGiftCard && (
+        <GiftCardDialog
+          open={giftCardDialogOpen}
+          onOpenChange={setGiftCardDialogOpen}
+          productUuid={product.uuid}
+        />
+      )}
     </>
   );
 }

@@ -1175,17 +1175,21 @@
   },
   "giftcard": {
     "selectAmount": "Select an amount",
+    "selectAmountDescription": "Choose the value for your gift card",
     "orCustomAmount": "Or enter a custom amount",
-    "minimumAmount": "Minimum amount is €10",
-    "minimumAmountNote": "Minimum €10",
+    "customAmount": "Custom Amount",
+    "minimumAmount": "Minimum amount is €25",
+    "minimumAmountNote": "Minimum €25",
     "giftCardValue": "Gift Card Value",
     "noShipping": "Digital delivery - no shipping costs",
     "adding": "Adding...",
     "addToCartButton": "Add €{amount} Gift Card to Cart",
+    "addToCartWithAmount": "Add Gift Card",
     "addedToCart": "Gift card added to cart!",
     "failedToAdd": "Failed to add gift card",
     "title": "Gift Card",
-    "description": "Give the gift of a unique city walk!"
+    "description": "Give the gift of a unique city walk!",
+    "dragToSelect": "Drag to select your amount"
   },
   "orderSuccess": {
     "loading": "Loading order details...",

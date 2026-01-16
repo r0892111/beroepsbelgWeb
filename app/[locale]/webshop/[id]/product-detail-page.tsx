@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import { getProductPlaceholder } from '@/lib/utils/placeholder-images';
 import { ProductImageGallery } from '@/components/webshop/product-image-gallery';
 import { ProductShareButtons } from '@/components/webshop/product-share-buttons';
-import { GiftCardAmountSelector } from '@/components/webshop/giftcard-amount-selector';
+import { GiftCardDialog } from '@/components/webshop/giftcard-dialog';
 import { supabase } from '@/lib/supabase/client';
 import type { ProductImage } from '@/lib/data/types';
 import type { Locale } from '@/lib/data/types';
@@ -37,6 +37,7 @@ export function ProductDetailPage({ product, locale }: ProductDetailPageProps) {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [productImages, setProductImages] = useState<ProductImage[]>([]);
   const [loadingImages, setLoadingImages] = useState(false);
+  const [giftCardDialogOpen, setGiftCardDialogOpen] = useState(false);
   
   // Check if this is a gift card product
   const isGiftCard = product.category === 'GiftCard' || 
@@ -190,7 +191,7 @@ export function ProductDetailPage({ product, locale }: ProductDetailPageProps) {
                 <div className="flex items-center gap-3 mb-6">
                   {isGiftCard ? (
                     <p className="text-2xl font-bold text-[var(--primary-base)]">
-                      €10 - €200+
+                      €25 - €10.000
                     </p>
                   ) : (
                     <p className="text-3xl font-bold text-[#0d1117]">€{product.price.toFixed(2)}</p>
@@ -221,10 +222,21 @@ export function ProductDetailPage({ product, locale }: ProductDetailPageProps) {
                 )}
               </div>
 
-              {/* Gift Card Amount Selector or Regular Add to Cart */}
+              {/* Gift Card Add to Cart or Regular Add to Cart */}
               {isGiftCard ? (
-                <div className="pt-4">
-                  <GiftCardAmountSelector productUuid={product.uuid} />
+                <div className="flex flex-col gap-4 pt-4">
+                  <Button
+                    onClick={() => setGiftCardDialogOpen(true)}
+                    className="w-full h-14 text-lg gap-2"
+                    style={{
+                      backgroundColor: 'var(--primary-base)',
+                      color: 'white',
+                      boxShadow: 'var(--shadow-small)'
+                    }}
+                  >
+                    <Gift className="h-5 w-5" />
+                    Kies bedrag & Voeg toe
+                  </Button>
                 </div>
               ) : (
                 <div className="flex flex-col sm:flex-row gap-2 pt-4">
@@ -267,6 +279,15 @@ export function ProductDetailPage({ product, locale }: ProductDetailPageProps) {
           </div>
         </div>
       </div>
+
+      {/* Gift Card Amount Dialog */}
+      {isGiftCard && (
+        <GiftCardDialog
+          open={giftCardDialogOpen}
+          onOpenChange={setGiftCardDialogOpen}
+          productUuid={product.uuid}
+        />
+      )}
     </div>
   );
 }
