@@ -1404,28 +1404,87 @@ export default function B2BQuotePage() {
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <h2 className="text-2xl font-serif font-bold text-navy mb-6">{t('step4')}</h2>
 
-                {/* Order summary */}
+                {/* Order summary with pricing */}
                 <div className="p-6 rounded-lg" style={{ backgroundColor: 'white', border: '2px solid var(--brass)' }}>
                   <h3 className="font-semibold text-navy mb-4">{t('summaryTitle')}</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="font-medium text-navy">{selectedTour?.title}</div>
+                  <div className="space-y-3 text-sm">
+                    {/* Tour info */}
+                    <div className="font-medium text-navy text-base">{selectedTour?.title}</div>
                     <div className="text-muted-foreground">
                       {t('participants', { count: numPeople, plural: numPeople > 1 ? 's' : '' })} • {selectedDate} om {selectedTimeSlot}
                     </div>
-                    {Object.keys(selectedUpsell).length > 0 && (
-                      <div className="pt-2 space-y-1" style={{ borderTop: '1px solid #e5e7eb' }}>
-                        <div className="font-medium text-navy">Extra producten:</div>
-                        {Object.entries(selectedUpsell).map(([productId, quantity]) => {
-                          const product = products.find(p => p.uuid === productId);
-                          if (!product || quantity === 0) return null;
-                          return (
-                            <div key={productId} className="text-muted-foreground text-sm">
-                              {product.title.nl} × {quantity}
-                            </div>
-                          );
-                        })}
+                    
+                    {/* Pricing breakdown */}
+                    <div className="pt-3 space-y-2" style={{ borderTop: '1px solid #e5e7eb' }}>
+                      <div className="font-semibold text-navy">Geschatte prijsopgave:</div>
+                      
+                      {/* Tour price */}
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">
+                          Tour ({numPeople} {numPeople === 1 ? 'persoon' : 'personen'})
+                        </span>
+                        <span className="font-medium">
+                          €{((selectedTour?.price || 0) * numPeople).toFixed(2)}
+                        </span>
                       </div>
-                    )}
+                      
+                      {/* Tanguy option */}
+                      {requestTanguy && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Tanguy Ottomer als gids</span>
+                          <span className="font-medium">€125.00</span>
+                        </div>
+                      )}
+                      
+                      {/* Extra hour */}
+                      {extraHour && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Extra uur (+1 uur)</span>
+                          <span className="font-medium">€150.00</span>
+                        </div>
+                      )}
+                      
+                      {/* Upsell products */}
+                      {Object.keys(selectedUpsell).length > 0 && (
+                        <div className="pt-2 space-y-1" style={{ borderTop: '1px solid #e5e7eb' }}>
+                          <div className="font-medium text-navy">Extra producten:</div>
+                          {Object.entries(selectedUpsell).map(([productId, quantity]) => {
+                            const product = products.find(p => p.uuid === productId);
+                            if (!product || quantity === 0) return null;
+                            const itemTotal = (product.price || 0) * quantity;
+                            return (
+                              <div key={productId} className="flex justify-between">
+                                <span className="text-muted-foreground">
+                                  {product.title.nl} × {quantity}
+                                </span>
+                                <span className="font-medium">€{itemTotal.toFixed(2)}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      
+                      {/* Total */}
+                      <div className="pt-3 flex justify-between" style={{ borderTop: '2px solid var(--brass)' }}>
+                        <span className="font-bold text-navy text-base">Geschat Totaal</span>
+                        <span className="font-bold text-lg" style={{ color: 'var(--brass)' }}>
+                          €{(() => {
+                            const tourTotal = (selectedTour?.price || 0) * numPeople;
+                            const tanguyCost = requestTanguy ? 125 : 0;
+                            const extraHourCost = extraHour ? 150 : 0;
+                            const upsellTotal = Object.entries(selectedUpsell).reduce((sum, [productId, quantity]) => {
+                              const product = products.find(p => p.uuid === productId);
+                              return sum + ((product?.price || 0) * quantity);
+                            }, 0);
+                            return (tourTotal + tanguyCost + extraHourCost + upsellTotal).toFixed(2);
+                          })()}
+                        </span>
+                      </div>
+                      
+                      <p className="text-xs text-muted-foreground italic pt-2">
+                        * Dit is een geschatte prijs. De definitieve offerte kan afwijken op basis van specifieke wensen.
+                      </p>
+                    </div>
                   </div>
                 </div>
 
