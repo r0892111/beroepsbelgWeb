@@ -35,7 +35,6 @@ export function CartSheet() {
   // Helper to check if a product is a gift card
   const isGiftCard = (product: any) => {
     return product?.category === 'GiftCard' || 
-           product?.Category === 'GiftCard' ||
            product?.stripe_product_id === 'prod_TnrjY3dpMoUw4G';
   };
 

@@ -3,12 +3,13 @@
  * Provides category-specific placeholder images for products
  */
 
-export const getProductPlaceholder = (category: 'Book' | 'Merchandise' | 'Game' | string): string => {
+export const getProductPlaceholder = (category: 'Book' | 'Merchandise' | 'Game' | 'GiftCard' | string): string => {
   // Using placeholder.com with category-specific colors and text
   const placeholders: Record<string, string> = {
     Book: 'https://placehold.co/600x800/1BDD95/FFFFFF?text=Book',
     Merchandise: 'https://placehold.co/600x800/1a3628/FFFFFF?text=Merchandise',
     Game: 'https://placehold.co/600x800/F0F0EB/1a3628?text=Game',
+    GiftCard: 'https://placehold.co/600x800/1BDD95/FFFFFF?text=Gift+Card',
   };
 
   return placeholders[category] || 'https://placehold.co/600x800/E5E5E5/666666?text=Product';
@@ -19,12 +20,13 @@ export const getProductPlaceholder = (category: 'Book' | 'Merchandise' | 'Game' 
  * Alternative to external placeholder service
  */
 export const generatePlaceholderDataURL = (
-  category: 'Book' | 'Merchandise' | 'Game' | string
+  category: 'Book' | 'Merchandise' | 'Game' | 'GiftCard' | string
 ): string => {
   const configs: Record<string, { bg: string; fg: string; text: string }> = {
     Book: { bg: '#1BDD95', fg: '#FFFFFF', text: 'Book' },
     Merchandise: { bg: '#1a3628', fg: '#FFFFFF', text: 'Merch' },
     Game: { bg: '#F0F0EB', fg: '#1a3628', text: 'Game' },
+    GiftCard: { bg: '#1BDD95', fg: '#FFFFFF', text: 'Gift Card' },
   };
 
   const config = configs[category] || { bg: '#E5E5E5', fg: '#666666', text: 'Product' };
