@@ -420,7 +420,7 @@ export async function getProducts(): Promise<Product[]> {
   // Fetch product images to get primary images
   const productImagesMap = await getProductImages();
 
-  const categoryOptions: Product['category'][] = ['Book', 'Merchandise', 'Game'];
+  const categoryOptions: Product['category'][] = ['Book', 'Merchandise', 'Game', 'GiftCard'];
 
   const products = (data || []).map((row: Record<string, any>) => {
     const rawName = typeof row.Name === 'string' ? row.Name.trim() : '';
@@ -432,6 +432,8 @@ export async function getProducts(): Promise<Product[]> {
       : 'Book') as Product['category'];
     const description = typeof row.Description === 'string' ? row.Description.trim() : '';
     const additionalInfo = typeof row['Additional Info'] === 'string' ? row['Additional Info'].trim() : '';
+    const stripeProductId = typeof row.stripe_product_id === 'string' ? row.stripe_product_id : undefined;
+    const isGiftcard = row.is_giftcard === true;
 
     const titleRecord = {
       nl: rawName,
@@ -483,6 +485,8 @@ export async function getProducts(): Promise<Product[]> {
       image: imageUrl, // Use primary image from database if available
       displayOrder: typeof row.display_order === 'number' ? row.display_order : undefined,
       categoryDisplayOrder: typeof row.category_display_order === 'number' ? row.category_display_order : undefined,
+      stripe_product_id: stripeProductId,
+      is_giftcard: isGiftcard,
     } satisfies Product;
   });
 
@@ -511,7 +515,7 @@ export async function getProductById(uuid: string): Promise<Product | null> {
   // Fetch product images to get primary images
   const productImagesMap = await getProductImages();
 
-  const categoryOptions: Product['category'][] = ['Book', 'Merchandise', 'Game'];
+  const categoryOptions: Product['category'][] = ['Book', 'Merchandise', 'Game', 'GiftCard'];
 
   const row = data;
   const rawName = typeof row.Name === 'string' ? row.Name.trim() : '';
@@ -523,6 +527,8 @@ export async function getProductById(uuid: string): Promise<Product | null> {
     : 'Book') as Product['category'];
   const description = typeof row.Description === 'string' ? row.Description.trim() : '';
   const additionalInfo = typeof row['Additional Info'] === 'string' ? row['Additional Info'].trim() : '';
+  const stripeProductId = typeof row.stripe_product_id === 'string' ? row.stripe_product_id : undefined;
+  const isGiftcard = row.is_giftcard === true;
 
   const titleRecord = {
     nl: rawName,
@@ -574,6 +580,8 @@ export async function getProductById(uuid: string): Promise<Product | null> {
     image: imageUrl,
     displayOrder: typeof row.display_order === 'number' ? row.display_order : undefined,
     categoryDisplayOrder: typeof row.category_display_order === 'number' ? row.category_display_order : undefined,
+    stripe_product_id: stripeProductId,
+    is_giftcard: isGiftcard,
   } satisfies Product;
 }
 
