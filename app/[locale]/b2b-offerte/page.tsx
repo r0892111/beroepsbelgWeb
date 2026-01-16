@@ -70,7 +70,7 @@ export default function B2BQuotePage() {
   };
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [step, setStep] = useState<'select' | 'contact' | 'upsell' | 'opmaat' | 'payment' | 'success'>('select');
+  const [step, setStep] = useState<'select' | 'contact' | 'upsell' | 'payment' | 'success'>('select');
   const [cities, setCities] = useState<City[]>([]);
   const [tours, setTours] = useState<Tour[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -391,10 +391,6 @@ export default function B2BQuotePage() {
     setStep('upsell');
   };
 
-  const goToOpMaat = () => {
-    setStep('opmaat');
-  };
-
   const goToPayment = () => {
     setStep('payment');
   };
@@ -476,14 +472,11 @@ export default function B2BQuotePage() {
             country: data.country || null,
             additionalInfo: data.additionalInfo || null,
             upsellProducts: upsellProducts, // Already in standardized format {n, p, q}
-            // Op maat specific answers (only for op maat tours)
+            // Op maat answers will be collected separately via /op-maat-form page
             opMaatAnswers: tourIsOpMaat ? {
-              startEnd: opMaatAnswers.startEnd,
-              cityPart: opMaatAnswers.cityPart,
-              subjects: opMaatAnswers.subjects,
-              specialWishes: opMaatAnswers.specialWishes,
-              extraHour: extraHour,
+              extraHour: extraHour, // Only save extra hour preference now
             } : null,
+            isOpMaat: tourIsOpMaat, // Flag to indicate this is an op maat tour
             requestTanguy: requestTanguy,
             durationMinutes: actualDuration, // Include actual duration in booking
           }),
@@ -694,7 +687,7 @@ export default function B2BQuotePage() {
     );
   }
 
-  const stepNumber = step === 'select' ? 1 : step === 'contact' ? 2 : step === 'upsell' ? 3 : step === 'opmaat' ? 4 : 5;
+  const stepNumber = step === 'select' ? 1 : step === 'contact' ? 2 : step === 'upsell' ? 3 : 4;
 
   return (
     <div className="min-h-screen bg-[#F9F9F7]">
@@ -1297,14 +1290,8 @@ export default function B2BQuotePage() {
                     type="button" 
                     onClick={() => {
                       // Check if tour is op maat to determine next step
-                      const tourIsOpMaat = selectedTour?.op_maat === true || 
-                                          (typeof selectedTour?.op_maat === 'string' && selectedTour.op_maat === 'true') || 
-                                          (typeof selectedTour?.op_maat === 'number' && selectedTour.op_maat === 1);
-                      if (tourIsOpMaat) {
-                        setStep('opmaat');
-                      } else {
-                        setStep('payment');
-                      }
+                      // All tours go directly to payment step (op maat form is sent separately after booking)
+                      setStep('payment');
                     }} 
                     className="flex-1 btn-primary"
                   >
@@ -1314,92 +1301,7 @@ export default function B2BQuotePage() {
               </div>
             )}
 
-            {/* Step 4: Op Maat Questions (only for op maat tours) */}
-            {step === 'opmaat' && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="text-center">
-                  <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full" style={{ backgroundColor: 'var(--brass-light)' }}>
-                    <FileText className="h-8 w-8" style={{ color: 'var(--brass)' }} />
-                  </div>
-                  <h2 className="text-2xl font-serif font-bold text-navy mb-2">Help ons je perfecte tour samen te stellen</h2>
-                  <p className="text-muted-foreground">Beantwoord de volgende vragen om je op maat tour te personaliseren</p>
-                </div>
-
-                <div className="space-y-6">
-                  <div>
-                    <Label htmlFor="startEnd" className="text-base font-semibold mb-2 block">
-                      Waar wil je starten en eindigen?
-                    </Label>
-                    <Textarea
-                      id="startEnd"
-                      placeholder="Bijvoorbeeld: Start bij Centraal Station, eindig bij het stadhuis..."
-                      value={opMaatAnswers.startEnd}
-                      onChange={(e) => setOpMaatAnswers(prev => ({ ...prev, startEnd: e.target.value }))}
-                      className="min-h-[100px]"
-                      rows={4}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="cityPart" className="text-base font-semibold mb-2 block">
-                      Welk deel van de stad wil je beter leren kennen?
-                    </Label>
-                    <Textarea
-                      id="cityPart"
-                      placeholder="Bijvoorbeeld: De historische binnenstad, de moderne wijk, de markten..."
-                      value={opMaatAnswers.cityPart}
-                      onChange={(e) => setOpMaatAnswers(prev => ({ ...prev, cityPart: e.target.value }))}
-                      className="min-h-[100px]"
-                      rows={4}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="subjects" className="text-base font-semibold mb-2 block">
-                      Welke onderwerpen wil je in de tour zien?
-                    </Label>
-                    <Textarea
-                      id="subjects"
-                      placeholder="Bijvoorbeeld: Architectuur, geschiedenis, lokale cultuur, eten en drinken..."
-                      value={opMaatAnswers.subjects}
-                      onChange={(e) => setOpMaatAnswers(prev => ({ ...prev, subjects: e.target.value }))}
-                      className="min-h-[100px]"
-                      rows={4}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="specialWishes" className="text-base font-semibold mb-2 block">
-                      Zijn er nog speciale wensen?
-                    </Label>
-                    <Textarea
-                      id="specialWishes"
-                      placeholder="Bijvoorbeeld: Toegankelijkheid, specifieke interesses, voorkeuren..."
-                      value={opMaatAnswers.specialWishes}
-                      onChange={(e) => setOpMaatAnswers(prev => ({ ...prev, specialWishes: e.target.value }))}
-                      className="min-h-[100px]"
-                      rows={4}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-3">
-                  <Button type="button" onClick={() => setStep('upsell')} variant="outline" className="flex-1">
-                    ← Terug
-                  </Button>
-                  <Button 
-                    type="button" 
-                    onClick={() => setStep('payment')} 
-                    className="flex-1 btn-primary"
-                    disabled={!opMaatAnswers.startEnd.trim() || !opMaatAnswers.cityPart.trim() || !opMaatAnswers.subjects.trim()}
-                  >
-                    Verder →
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Step 5: Confirm Quote Request */}
+            {/* Step 4: Confirm Quote Request */}
             {step === 'payment' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <h2 className="text-2xl font-serif font-bold text-navy mb-6">{t('step4')}</h2>
@@ -1495,13 +1397,7 @@ export default function B2BQuotePage() {
                 <div className="flex gap-3">
                   <Button 
                     type="button" 
-                    onClick={() => {
-                      // Check if tour is op maat to determine back step
-                      const tourIsOpMaat = selectedTour?.op_maat === true || 
-                                          (typeof selectedTour?.op_maat === 'string' && selectedTour.op_maat === 'true') || 
-                                          (typeof selectedTour?.op_maat === 'number' && selectedTour.op_maat === 1);
-                      setStep(tourIsOpMaat ? 'opmaat' : 'upsell');
-                    }} 
+                    onClick={() => setStep('upsell')} 
                     variant="outline" 
                     className="flex-1"
                   >
