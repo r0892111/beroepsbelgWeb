@@ -280,9 +280,18 @@ export default function AccountPage() {
 
   // Compute favorite tours by filtering allTours (like favoriteProducts)
   // Convert both to strings for comparison since tour.id may be a number and fav.tour_id is stored as string
+  console.log('Tour favorites debug:', {
+    allToursCount: allTours.length,
+    allToursIds: allTours.slice(0, 5).map(t => ({ id: t.id, type: typeof t.id })),
+    tourFavoritesCount: tourFavorites.length,
+    tourFavoriteIds: tourFavorites.map(f => ({ tour_id: f.tour_id, type: typeof f.tour_id })),
+  });
+  
   const favoriteTours = allTours.filter((tour) =>
     tourFavorites.some((fav) => String(fav.tour_id) === String(tour.id))
   );
+  
+  console.log('Matched favorite tours:', favoriteTours.length);
 
   // Use cart items directly - they already have products populated from JOIN
   const cartTotal = cartItems.reduce((total, item) => {
