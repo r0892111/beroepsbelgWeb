@@ -14,23 +14,26 @@ import { useTranslations } from 'next-intl';
 interface Booking {
   id: string;
   tour_id: string;
-  customer_name: string;
-  customer_email: string;
-  customer_phone: string;
-  booking_date: string;
-  time_slot: string;
-  group_size: number;
-  total_price: number;
+  tour_datetime: string;
+  tour_end: string;
   status: string;
-  language: string;
-  notes: string;
+  city: string;
+  invitees: Array<{
+    name: string;
+    email: string;
+    phone: string;
+    numberOfPeople: number;
+    language: string;
+    opMaatAnswers?: {
+      startEnd?: string;
+      cityPart?: string;
+      subjects?: string;
+      specialWishes?: string;
+      extraHour?: boolean;
+    };
+    [key: string]: any;
+  }>;
   created_at: string;
-  op_maat_answers?: {
-    startEnd?: string;
-    cityPart?: string;
-    subjects?: string;
-    specialWishes?: string;
-  };
   [key: string]: any;
 }
 
@@ -72,9 +75,9 @@ export default function OpMaatFormPage() {
       }
 
       try {
-        // Fetch booking
+        // Fetch booking from tourbooking table (used by B2B quote flow)
         const { data: bookingData, error: bookingError } = await supabase
-          .from('tour_bookings')
+          .from('tourbooking')
           .select('*')
           .eq('id', bookingId)
           .single();
@@ -88,13 +91,14 @@ export default function OpMaatFormPage() {
 
         setBooking(bookingData);
 
-        // Pre-fill form if op_maat_answers already exist
-        if (bookingData.op_maat_answers) {
+        // Pre-fill form if op_maat_answers already exist in invitees
+        const mainInvitee = bookingData.invitees?.[0];
+        if (mainInvitee?.opMaatAnswers) {
           setFormData({
-            startEnd: bookingData.op_maat_answers.startEnd || '',
-            cityPart: bookingData.op_maat_answers.cityPart || '',
-            subjects: bookingData.op_maat_answers.subjects || '',
-            specialWishes: bookingData.op_maat_answers.specialWishes || '',
+            startEnd: mainInvitee.opMaatAnswers.startEnd || '',
+            cityPart: mainInvitee.opMaatAnswers.cityPart || '',
+            subjects: mainInvitee.opMaatAnswers.subjects || '',
+            specialWishes: mainInvitee.opMaatAnswers.specialWishes || '',
           });
         }
 
@@ -126,16 +130,40 @@ export default function OpMaatFormPage() {
     setError(null);
 
     try {
-      // Update booking with op maat answers
+      // First fetch the current booking to get existing invitees
+      const { data: currentBooking, error: fetchCurrentError } = await supabase
+        .from('tourbooking')
+        .select('*')
+        .eq('id', bookingId)
+        .single();
+
+      if (fetchCurrentError || !currentBooking) {
+        console.error('Error fetching current booking:', fetchCurrentError);
+        throw new Error('Failed to fetch booking');
+      }
+
+      // Update the invitees array with op maat answers
+      const updatedInvitees = currentBooking.invitees?.map((invitee: any, index: number) => {
+        if (index === 0) { // Update the first invitee (main contact)
+          return {
+            ...invitee,
+            opMaatAnswers: {
+              ...(invitee.opMaatAnswers || {}),
+              startEnd: formData.startEnd,
+              cityPart: formData.cityPart,
+              subjects: formData.subjects,
+              specialWishes: formData.specialWishes,
+            },
+          };
+        }
+        return invitee;
+      }) || [];
+
+      // Update booking with op maat answers in invitees
       const { error: updateError } = await supabase
-        .from('tour_bookings')
+        .from('tourbooking')
         .update({
-          op_maat_answers: {
-            startEnd: formData.startEnd,
-            cityPart: formData.cityPart,
-            subjects: formData.subjects,
-            specialWishes: formData.specialWishes,
-          },
+          invitees: updatedInvitees,
         })
         .eq('id', bookingId);
 
@@ -146,7 +174,7 @@ export default function OpMaatFormPage() {
 
       // Fetch the updated booking for the webhook
       const { data: updatedBooking, error: fetchError } = await supabase
-        .from('tour_bookings')
+        .from('tourbooking')
         .select('*')
         .eq('id', bookingId)
         .single();
@@ -255,19 +283,29 @@ export default function OpMaatFormPage() {
             <CardContent className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-gray-500">{t('name') || 'Naam'}:</span>
-                <p className="font-medium">{booking.customer_name}</p>
+                <p className="font-medium">{booking.invitees?.[0]?.name || '-'}</p>
               </div>
               <div>
                 <span className="text-gray-500">{t('date') || 'Datum'}:</span>
-                <p className="font-medium">{new Date(booking.booking_date).toLocaleDateString('nl-BE')}</p>
+                <p className="font-medium">
+                  {booking.tour_datetime 
+                    ? new Date(booking.tour_datetime).toLocaleDateString('nl-BE')
+                    : '-'
+                  }
+                </p>
               </div>
               <div>
                 <span className="text-gray-500">{t('time') || 'Tijd'}:</span>
-                <p className="font-medium">{booking.time_slot}</p>
+                <p className="font-medium">
+                  {booking.tour_datetime 
+                    ? new Date(booking.tour_datetime).toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' })
+                    : '-'
+                  }
+                </p>
               </div>
               <div>
                 <span className="text-gray-500">{t('groupSize') || 'Groepsgrootte'}:</span>
-                <p className="font-medium">{booking.group_size} {t('persons') || 'personen'}</p>
+                <p className="font-medium">{booking.invitees?.[0]?.numberOfPeople || 1} {t('persons') || 'personen'}</p>
               </div>
             </CardContent>
           </Card>
