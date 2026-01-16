@@ -45,3 +45,4 @@ supabase/config.local.toml
 *.db-journal
 supabase/.env
 supabase/.env.localeigent/
+eigent/
