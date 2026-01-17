@@ -1467,7 +1467,7 @@ export default function BookingDetailPage() {
         <Card className="border-dashed">
           <CardContent className="py-4">
             <div className="flex flex-wrap items-center gap-3">
-              {/* COMMENTED OUT: Send to Guide Assignment button - keeping code for future use
+              {/* Send to Guide Assignment - triggers n8n webhook to start guide assignment workflow */}
               {!booking.guide_id && (
                 <Button
                   onClick={triggerGuideAssignment}
@@ -1483,7 +1483,6 @@ export default function BookingDetailPage() {
                   {triggeringGuideAssignment ? 'Sending...' : 'Send to Guide Assignment'}
                 </Button>
               )}
-              */}
               {booking.deal_id && !isLocalStories && (
                 <Button variant="outline" size="sm" asChild className="gap-2">
                   <a
