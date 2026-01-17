@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ShareButtons } from '@/components/ui/share-buttons';
 import type { Blog } from '@/lib/data/types';
 import type { Locale } from '@/i18n';
 import MarkdownRenderer from '@/components/blog/markdown-renderer';
@@ -95,13 +96,21 @@ export default function BlogDetailClientPage({ blog, locale }: BlogDetailClientP
           {excerpt && (
             <p className="text-xl text-gray-600 mb-4">{stripMarkdown(excerpt)}</p>
           )}
-          <div className="flex items-center gap-4 text-sm text-gray-500">
+          <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
             {blog.author && (
               <span>{t('author')}: {blog.author}</span>
             )}
             {blog.published_at && (
               <span>{t('publishedOn')} {format(new Date(blog.published_at), 'PPP')}</span>
             )}
+          </div>
+          {/* Share Buttons */}
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-500">{t('share')}</span>
+            <ShareButtons
+              shareUrl={typeof window !== 'undefined' ? window.location.href : `/${locale}/blog/${blog.slug}`}
+              shareTitle={title}
+            />
           </div>
         </div>
 

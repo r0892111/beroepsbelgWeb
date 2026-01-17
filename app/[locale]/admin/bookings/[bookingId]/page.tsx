@@ -218,6 +218,13 @@ export default function BookingDetailPage() {
   const [sendInfoToGuideOpen, setSendInfoToGuideOpen] = useState(false);
   const [infoMessage, setInfoMessage] = useState('');
   const [sendingInfo, setSendingInfo] = useState(false);
+  const [deliveryMethod, setDeliveryMethod] = useState<'email' | 'whatsapp' | 'both'>('email');
+
+  // Reassign guide state
+  const [reassignGuideDialogOpen, setReassignGuideDialogOpen] = useState(false);
+  const [selectedReassignGuide, setSelectedReassignGuide] = useState<number | null>(null);
+  const [reassignMessage, setReassignMessage] = useState('');
+  const [reassigningGuide, setReassigningGuide] = useState(false);
 
   // Edit invitee state
   const [editInviteeDialogOpen, setEditInviteeDialogOpen] = useState(false);
@@ -235,6 +242,7 @@ export default function BookingDetailPage() {
     language: 'nl',
     specialRequests: '',
   });
+  const [editCustomLanguage, setEditCustomLanguage] = useState('');
 
   // Delete invitee state
   const [deleteInviteeDialogOpen, setDeleteInviteeDialogOpen] = useState(false);
@@ -247,6 +255,34 @@ export default function BookingDetailPage() {
   } | null>(null);
 
   const STATUS_OPTIONS = ['pending', 'payment_completed', 'pending_guide_confirmation', 'confirmed', 'completed', 'cancelled'];
+  const LANGUAGE_OPTIONS = [
+    { value: 'nl', label: 'Dutch (NL)' },
+    { value: 'en', label: 'English (EN)' },
+    { value: 'fr', label: 'French (FR)' },
+    { value: 'de', label: 'German (DE)' },
+    { value: 'es', label: 'Spanish (ES)' },
+    { value: 'it', label: 'Italian (IT)' },
+    { value: 'pt', label: 'Portuguese (PT)' },
+    { value: 'zh', label: 'Chinese (ZH)' },
+    { value: 'ja', label: 'Japanese (JA)' },
+    { value: 'ko', label: 'Korean (KO)' },
+    { value: 'ar', label: 'Arabic (AR)' },
+    { value: 'ru', label: 'Russian (RU)' },
+    { value: 'pl', label: 'Polish (PL)' },
+    { value: 'tr', label: 'Turkish (TR)' },
+    { value: 'hi', label: 'Hindi (HI)' },
+    { value: 'el', label: 'Greek (EL)' },
+    { value: 'sv', label: 'Swedish (SV)' },
+    { value: 'no', label: 'Norwegian (NO)' },
+    { value: 'da', label: 'Danish (DA)' },
+    { value: 'fi', label: 'Finnish (FI)' },
+    { value: 'cs', label: 'Czech (CS)' },
+    { value: 'hu', label: 'Hungarian (HU)' },
+    { value: 'ro', label: 'Romanian (RO)' },
+    { value: 'he', label: 'Hebrew (HE)' },
+    { value: 'th', label: 'Thai (TH)' },
+    { value: 'other', label: 'Other (Custom)' },
+  ];
 
   useEffect(() => {
     if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
@@ -921,20 +957,27 @@ export default function BookingDetailPage() {
       isLocalStories,
     });
     const inv = invitee as Invitee & LocalStoriesBooking;
+    const invLanguage = inv.language || 'nl';
+    // Check if language is a known option or a custom one
+    const isKnownLanguage = LANGUAGE_OPTIONS.some(opt => opt.value === invLanguage);
     setEditInviteeForm({
       name: inv.name || inv.customer_name || '',
       email: inv.email || inv.customer_email || '',
       phone: inv.phone || inv.customer_phone || '',
       numberOfPeople: inv.numberOfPeople || inv.amnt_of_people || 1,
-      language: inv.language || 'nl',
+      language: isKnownLanguage ? invLanguage : 'other',
       specialRequests: inv.specialRequests || '',
     });
+    setEditCustomLanguage(isKnownLanguage ? '' : invLanguage);
     setEditInviteeDialogOpen(true);
   };
 
   // Handle edit invitee
   const handleEditInvitee = async () => {
     if (!editInviteeTarget || !booking) return;
+
+    // Use custom language if "other" is selected
+    const finalLanguage = editInviteeForm.language === 'other' ? editCustomLanguage : editInviteeForm.language;
 
     setEditingInvitee(true);
     try {
@@ -963,7 +1006,7 @@ export default function BookingDetailPage() {
                 email: editInviteeForm.email,
                 phone: editInviteeForm.phone,
                 numberOfPeople: editInviteeForm.numberOfPeople,
-                language: editInviteeForm.language,
+                language: finalLanguage,
                 specialRequests: editInviteeForm.specialRequests,
               };
             }
@@ -986,7 +1029,7 @@ export default function BookingDetailPage() {
             email: editInviteeForm.email,
             phone: editInviteeForm.phone,
             numberOfPeople: editInviteeForm.numberOfPeople,
-            language: editInviteeForm.language,
+            language: finalLanguage,
             specialRequests: editInviteeForm.specialRequests,
           };
         }
@@ -1129,6 +1172,7 @@ export default function BookingDetailPage() {
           clientPhones,
           clientNames,
           isLocalStories: tour?.local_stories || false,
+          deliveryMethod: deliveryMethod,
         }),
       });
 
@@ -1191,6 +1235,7 @@ export default function BookingDetailPage() {
           clientPhones,
           clientNames,
           isLocalStories: tour?.local_stories || false,
+          deliveryMethod: deliveryMethod,
         }),
       });
 
@@ -1206,6 +1251,64 @@ export default function BookingDetailPage() {
       toast.error('Failed to send info to guide');
     } finally {
       setSendingInfo(false);
+    }
+  };
+
+  // Get guides filtered by booking city
+  const getGuidesByCity = (): Guide[] => {
+    if (!booking?.city) return Array.from(allGuides.values());
+    return Array.from(allGuides.values()).filter(guide => {
+      if (!guide.cities) return false;
+      return guide.cities.some(city =>
+        city.toLowerCase() === booking.city?.toLowerCase()
+      );
+    });
+  };
+
+  // Handle guide reassignment
+  const handleReassignGuide = async () => {
+    if (!booking || !selectedReassignGuide) return;
+
+    setReassigningGuide(true);
+    try {
+      const newGuide = allGuides.get(selectedReassignGuide);
+      if (!newGuide) throw new Error('Guide not found');
+
+      // Update the booking with the new guide
+      const { error: updateError } = await supabase
+        .from('tourbooking')
+        .update({ guide_id: selectedReassignGuide })
+        .eq('id', booking.id);
+
+      if (updateError) throw new Error('Failed to update booking');
+
+      // Call the guide reassignment webhook
+      await fetch('https://alexfinit.app.n8n.cloud/webhook/guide-reassignment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingId: booking.id,
+          newGuideId: selectedReassignGuide,
+          guideName: newGuide.name,
+          guideEmail: newGuide.Email,
+          guidePhone: newGuide.phonenumber,
+          message: reassignMessage.trim(),
+          tourName: tour?.title || 'Tour',
+          tourDate: booking.tour_datetime,
+          city: booking.city,
+        }),
+      });
+
+      toast.success('Guide reassigned successfully!');
+      setReassignGuideDialogOpen(false);
+      setSelectedReassignGuide(null);
+      setReassignMessage('');
+      void fetchBookingDetails();
+    } catch (err) {
+      console.error('Error reassigning guide:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to reassign guide');
+    } finally {
+      setReassigningGuide(false);
     }
   };
 
@@ -1897,15 +2000,25 @@ export default function BookingDetailPage() {
                         <p className="text-xs text-muted-foreground">Confirmed Guide</p>
                       </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
-                      onClick={() => setCancelDialogOpen(true)}
-                    >
-                      <XCircle className="h-4 w-4 mr-1" />
-                      Cancel
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setReassignGuideDialogOpen(true)}
+                      >
+                        <Users className="h-4 w-4 mr-1" />
+                        {guide ? 'Reassign' : 'Assign'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                        onClick={() => setCancelDialogOpen(true)}
+                      >
+                        <XCircle className="h-4 w-4 mr-1" />
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
@@ -1925,14 +2038,24 @@ export default function BookingDetailPage() {
                   )}
                 </>
               ) : (
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
-                    <AlertCircle className="h-5 w-5 text-amber-500" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
+                      <AlertCircle className="h-5 w-5 text-amber-500" />
+                    </div>
+                    <div>
+                      <p className="font-medium">No guide assigned</p>
+                      <p className="text-xs text-muted-foreground">Awaiting assignment</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">No guide assigned</p>
-                    <p className="text-xs text-muted-foreground">Awaiting assignment</p>
-                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setReassignGuideDialogOpen(true)}
+                  >
+                    <Users className="h-4 w-4 mr-1" />
+                    Assign
+                  </Button>
                 </div>
               )}
 
@@ -2419,11 +2542,10 @@ export default function BookingDetailPage() {
                   <SelectTrigger className="bg-white">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="nl">Dutch (NL)</SelectItem>
-                    <SelectItem value="en">English (EN)</SelectItem>
-                    <SelectItem value="fr">French (FR)</SelectItem>
-                    <SelectItem value="de">German (DE)</SelectItem>
+                  <SelectContent className="max-h-60">
+                    {LANGUAGE_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -2774,18 +2896,28 @@ export default function BookingDetailPage() {
                   <Label htmlFor="editLanguage">Language</Label>
                   <Select
                     value={editInviteeForm.language}
-                    onValueChange={(value) => setEditInviteeForm({ ...editInviteeForm, language: value })}
+                    onValueChange={(value) => {
+                      setEditInviteeForm({ ...editInviteeForm, language: value });
+                      if (value !== 'other') setEditCustomLanguage('');
+                    }}
                   >
                     <SelectTrigger id="editLanguage" className="bg-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="nl">Dutch</SelectItem>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="fr">French</SelectItem>
-                      <SelectItem value="de">German</SelectItem>
+                    <SelectContent className="max-h-60">
+                      {LANGUAGE_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                  {editInviteeForm.language === 'other' && (
+                    <Input
+                      placeholder="Enter custom language..."
+                      value={editCustomLanguage}
+                      onChange={(e) => setEditCustomLanguage(e.target.value)}
+                      className="bg-white mt-2"
+                    />
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="editRequests">Special Requests</Label>
@@ -3009,6 +3141,45 @@ export default function BookingDetailPage() {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label>Delivery Method</Label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="deliveryMethod"
+                    value="email"
+                    checked={deliveryMethod === 'email'}
+                    onChange={() => setDeliveryMethod('email')}
+                    className="h-4 w-4"
+                  />
+                  <span className="text-sm">Email</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="deliveryMethod"
+                    value="whatsapp"
+                    checked={deliveryMethod === 'whatsapp'}
+                    onChange={() => setDeliveryMethod('whatsapp')}
+                    className="h-4 w-4"
+                  />
+                  <span className="text-sm">WhatsApp</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="deliveryMethod"
+                    value="both"
+                    checked={deliveryMethod === 'both'}
+                    onChange={() => setDeliveryMethod('both')}
+                    className="h-4 w-4"
+                  />
+                  <span className="text-sm">Both</span>
+                </label>
+              </div>
+            </div>
+
             <div className="bg-muted/50 rounded-lg p-3 text-sm">
               <p className="text-xs text-muted-foreground mb-2">Will be sent to:</p>
               {tour?.local_stories ? (
@@ -3041,6 +3212,7 @@ export default function BookingDetailPage() {
               onClick={() => {
                 setSendInfoToClientOpen(false);
                 setInfoMessage('');
+                setDeliveryMethod('email');
               }}
               disabled={sendingInfo}
             >
@@ -3076,7 +3248,7 @@ export default function BookingDetailPage() {
               Send Info to Guide
             </DialogTitle>
             <DialogDescription>
-              Send extra information to the assigned guide via email
+              Send extra information to the assigned guide
             </DialogDescription>
           </DialogHeader>
 
@@ -3090,6 +3262,45 @@ export default function BookingDetailPage() {
                 placeholder="Enter the information you want to send to the guide..."
                 className="min-h-[120px] bg-white"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Delivery Method</Label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="guideDeliveryMethod"
+                    value="email"
+                    checked={deliveryMethod === 'email'}
+                    onChange={() => setDeliveryMethod('email')}
+                    className="h-4 w-4"
+                  />
+                  <span className="text-sm">Email</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="guideDeliveryMethod"
+                    value="whatsapp"
+                    checked={deliveryMethod === 'whatsapp'}
+                    onChange={() => setDeliveryMethod('whatsapp')}
+                    className="h-4 w-4"
+                  />
+                  <span className="text-sm">WhatsApp</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="guideDeliveryMethod"
+                    value="both"
+                    checked={deliveryMethod === 'both'}
+                    onChange={() => setDeliveryMethod('both')}
+                    className="h-4 w-4"
+                  />
+                  <span className="text-sm">Both</span>
+                </label>
+              </div>
             </div>
 
             <div className="bg-muted/50 rounded-lg p-3 text-sm">
@@ -3115,6 +3326,7 @@ export default function BookingDetailPage() {
               onClick={() => {
                 setSendInfoToGuideOpen(false);
                 setInfoMessage('');
+                setDeliveryMethod('email');
               }}
               disabled={sendingInfo}
             >
@@ -3135,6 +3347,86 @@ export default function BookingDetailPage() {
                   <Send className="h-4 w-4 mr-2" />
                   Send to Guide
                 </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reassign Guide Dialog */}
+      <Dialog open={reassignGuideDialogOpen} onOpenChange={setReassignGuideDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              {guide ? 'Assign Different Guide' : 'Assign Guide'}
+            </DialogTitle>
+            <DialogDescription>
+              Select a new guide for this booking and add a message to notify them.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Select Guide {booking?.city && `(${booking.city})`}</Label>
+              <Select
+                value={selectedReassignGuide?.toString() || ''}
+                onValueChange={(v) => setSelectedReassignGuide(parseInt(v))}
+              >
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder="Choose a guide..." />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {getGuidesByCity().map((g) => (
+                    <SelectItem key={g.id} value={g.id.toString()}>
+                      <div className="flex items-center gap-2">
+                        <span>{g.name || `Guide #${g.id}`}</span>
+                        {g.tours_done !== null && (
+                          <span className="text-xs text-muted-foreground">
+                            ({g.tours_done} tours)
+                          </span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Message to Guide (optional)</Label>
+              <Textarea
+                value={reassignMessage}
+                onChange={(e) => setReassignMessage(e.target.value)}
+                placeholder="Add any notes or context for the new guide..."
+                className="min-h-[100px] bg-white"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setReassignGuideDialogOpen(false);
+                setSelectedReassignGuide(null);
+                setReassignMessage('');
+              }}
+              disabled={reassigningGuide}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleReassignGuide}
+              disabled={reassigningGuide || !selectedReassignGuide}
+            >
+              {reassigningGuide ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Assigning...
+                </>
+              ) : (
+                'Assign Guide'
               )}
             </Button>
           </DialogFooter>

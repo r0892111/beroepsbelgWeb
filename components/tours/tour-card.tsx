@@ -7,7 +7,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useTranslations } from 'next-intl';
-import { Bike, Clock } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { getTourPlaceholder } from '@/lib/utils/placeholder-images';
 import { TourBookingButton } from './tour-booking-button';
 import { TourFavoriteButton } from './tour-favorite-button';
@@ -70,10 +70,9 @@ export function TourCard({ tour, locale }: TourCardProps) {
     return tour.description; // Default to Dutch
   };
 
-  // Calculate discounted price (10% discount for online bookings)
-  const discountRate = 0.9; // 10% discount = 90% of original price
+  // Use base price (no discount)
   const originalPrice = tour.price || 0;
-  const discountedPrice = originalPrice * discountRate;
+  const discountedPrice = originalPrice;
 
   // Get image URL - use primary image if available, otherwise use placeholder
   const imageUrl = tour.image || getTourPlaceholder(tour.type, tour.city);
@@ -84,12 +83,10 @@ export function TourCard({ tour, locale }: TourCardProps) {
     (imageUrl && /\.(mp4|webm|mov)$/i.test(imageUrl));
 
   // Format duration
-  const formatDuration = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours > 0 && mins > 0) return `${hours}h ${mins}min`;
-    if (hours > 0) return `${hours}h`;
-    return `${mins}min`;
+  const formatDuration = (minutes: number): string => {
+    const hours = minutes / 60;
+    // Remove trailing .0 for whole hours
+    return hours % 1 === 0 ? `${hours}h` : `${hours.toFixed(1)}h`;
   };
 
   return (
@@ -142,19 +139,6 @@ export function TourCard({ tour, locale }: TourCardProps) {
             {t('localStoriesTag')}
           </div>
         )}
-        {/* Show bike icon if biking is in tour_types */}
-        {tour.tour_types?.some(t => t === 'biking' || (typeof t === 'object' && t.nl?.toLowerCase().includes('fiets'))) && (
-            <div
-              className="absolute top-3 right-12 rounded-full p-2"
-              style={{
-                backgroundColor: 'var(--primary-base)',
-                color: 'white',
-                boxShadow: 'var(--shadow-medium)'
-              }}
-            >
-              <Bike className="h-5 w-5" />
-            </div>
-          )}
         {/* Favorite button */}
         {tour.id && (
           <div className="absolute top-3 right-3">
@@ -263,29 +247,9 @@ export function TourCard({ tour, locale }: TourCardProps) {
               >
                 €{discountedPrice.toFixed(2)}
               </span>
-              {originalPrice > discountedPrice && (
-                <>
-                  <span
-                    className="text-sm line-through"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    €{originalPrice.toFixed(2)}
-                  </span>
-                  <Badge
-                    variant="secondary"
-                    className="text-xs"
-                    style={{
-                      backgroundColor: 'var(--brass)',
-                      color: 'white',
-                    }}
-                  >
-                    -10%
-                  </Badge>
-                </>
-              )}
             </div>
             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              {tBooking('onlineDiscount')}
+              {tBooking('perPerson')}
             </p>
           </div>
         ) : (

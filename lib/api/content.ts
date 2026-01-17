@@ -1,6 +1,7 @@
 import { supabaseServer } from '@/lib/supabase/server';
 import type { Locale, City, Tour, Product, FaqItem, PressLink, ProductImage, TourImage, Lecture, LectureImage, LectureBooking, Press, NewsletterSubscription, Blog, BlogImage, TourTypeEntry } from '@/lib/data/types';
 import { PREDEFINED_TOUR_TYPES } from '@/lib/data/types';
+import { buildLocalizedRecord } from '@/lib/utils';
 
 export type LocalTourBooking = {
   id: string;
@@ -435,43 +436,38 @@ export async function getProducts(): Promise<Product[]> {
     const stripeProductId = typeof row.stripe_product_id === 'string' ? row.stripe_product_id : undefined;
     const isGiftcard = row.is_giftcard === true;
 
-    const titleRecord = {
+    // Build localized records with fallback logic (NL->NL, EN->EN/NL, FR->FR/EN/NL, DE->DE/EN/NL)
+    const titleRecord = buildLocalizedRecord({
       nl: rawName,
-      en: rawName,
-      fr: rawName,
-      de: rawName,
-    };
+      en: row.name_en,
+      fr: row.name_fr,
+      de: row.name_de,
+    });
 
-    const descriptionRecord = description
-      ? {
-          nl: description,
-          en: description,
-          fr: description,
-          de: description,
-        }
-      : {
-          nl: '',
-          en: '',
-          fr: '',
-          de: '',
-        };
+    const descriptionRecord = buildLocalizedRecord({
+      nl: description,
+      en: row.description_en,
+      fr: row.description_fr,
+      de: row.description_de,
+    });
 
-    const additionalInfoRecord = additionalInfo
-      ? {
+    const additionalInfoRecord = additionalInfo || row.additional_info_en || row.additional_info_fr || row.additional_info_de
+      ? buildLocalizedRecord({
           nl: additionalInfo,
-          en: additionalInfo,
-          fr: additionalInfo,
-          de: additionalInfo,
-        }
+          en: row.additional_info_en,
+          fr: row.additional_info_fr,
+          de: row.additional_info_de,
+        })
       : undefined;
 
     // Get primary image from product_images if available
     const productImages = productImagesMap[row.uuid] || [];
     // Find primary image first, then fall back to first image, then undefined
-    const primaryImage = productImages.length > 0 
+    const primaryImage = productImages.length > 0
       ? (productImages.find((img) => img.is_primary) || productImages[0])
       : null;
     const imageUrl = primaryImage?.image_url || undefined;
+    const primaryMediaType = primaryImage?.media_type || 'image';
 
     return {
       slug,
@@ -483,6 +479,7 @@ export async function getProducts(): Promise<Product[]> {
       additionalInfo: additionalInfoRecord,
       label: undefined,
       image: imageUrl, // Use primary image from database if available
+      primaryMediaType, // Type of primary media (image or video)
       displayOrder: typeof row.display_order === 'number' ? row.display_order : undefined,
       categoryDisplayOrder: typeof row.category_display_order === 'number' ? row.category_display_order : undefined,
       stripe_product_id: stripeProductId,
@@ -530,43 +527,38 @@ export async function getProductById(uuid: string): Promise<Product | null> {
   const stripeProductId = typeof row.stripe_product_id === 'string' ? row.stripe_product_id : undefined;
   const isGiftcard = row.is_giftcard === true;
 
-  const titleRecord = {
+  // Build localized records with fallback logic (NL->NL, EN->EN/NL, FR->FR/EN/NL, DE->DE/EN/NL)
+  const titleRecord = buildLocalizedRecord({
     nl: rawName,
-    en: rawName,
-    fr: rawName,
-    de: rawName,
-  };
+    en: row.name_en,
+    fr: row.name_fr,
+    de: row.name_de,
+  });
 
-  const descriptionRecord = description
-    ? {
-        nl: description,
-        en: description,
-        fr: description,
-        de: description,
-      }
-    : {
-        nl: '',
-        en: '',
-        fr: '',
-        de: '',
-      };
+  const descriptionRecord = buildLocalizedRecord({
+    nl: description,
+    en: row.description_en,
+    fr: row.description_fr,
+    de: row.description_de,
+  });
 
-  const additionalInfoRecord = additionalInfo
-    ? {
+  const additionalInfoRecord = additionalInfo || row.additional_info_en || row.additional_info_fr || row.additional_info_de
+    ? buildLocalizedRecord({
         nl: additionalInfo,
-        en: additionalInfo,
-        fr: additionalInfo,
-        de: additionalInfo,
-      }
+        en: row.additional_info_en,
+        fr: row.additional_info_fr,
+        de: row.additional_info_de,
+      })
     : undefined;
 
   // Get primary image from product_images if available
   const productImages = productImagesMap[row.uuid] || [];
   // Find primary image first, then fall back to first image, then undefined
-  const primaryImage = productImages.length > 0 
+  const primaryImage = productImages.length > 0
     ? (productImages.find((img) => img.is_primary) || productImages[0])
     : null;
   const imageUrl = primaryImage?.image_url || undefined;
+  const primaryMediaType = primaryImage?.media_type || 'image';
 
   return {
     slug: productSlug,
@@ -578,6 +570,7 @@ export async function getProductById(uuid: string): Promise<Product | null> {
     additionalInfo: additionalInfoRecord,
     label: undefined,
     image: imageUrl,
+    primaryMediaType, // Type of primary media (image or video)
     displayOrder: typeof row.display_order === 'number' ? row.display_order : undefined,
     categoryDisplayOrder: typeof row.category_display_order === 'number' ? row.category_display_order : undefined,
     stripe_product_id: stripeProductId,
@@ -663,18 +656,32 @@ export async function getProductImages(): Promise<Record<string, ProductImage[]>
     (data || []).forEach((row: any) => {
       const productUuid = row.uuid;
       const imagesJson = row.product_images;
-      
+
       if (imagesJson && Array.isArray(imagesJson)) {
-        imagesMap[productUuid] = imagesJson.map((img: any, index: number) => ({
-          id: img.id || `${productUuid}-${index}`, // Generate ID if not present
-          product_uuid: productUuid,
-          image_url: img.url || img.image_url,
-          is_primary: img.is_primary || false,
-          sort_order: img.sort_order !== undefined ? img.sort_order : index,
-          storage_folder_name: img.storage_folder_name || undefined,
-          created_at: img.created_at,
-          updated_at: img.updated_at,
-        })).sort((a, b) => a.sort_order - b.sort_order);
+        imagesMap[productUuid] = imagesJson
+          .map((img: any, index: number) => {
+            // Get URL from either field name
+            const rawUrl = img.url || img.image_url;
+            // Validate URL - filter out invalid values like "undefined", "null", empty strings
+            const imageUrl = rawUrl && typeof rawUrl === 'string' && rawUrl.trim() !== '' && rawUrl !== 'undefined' && rawUrl !== 'null'
+              ? rawUrl.trim()
+              : null;
+
+            return {
+              id: img.id || `${productUuid}-${index}`,
+              product_uuid: productUuid,
+              image_url: imageUrl,
+              is_primary: img.is_primary || false,
+              sort_order: img.sort_order !== undefined ? img.sort_order : index,
+              media_type: img.media_type || 'image', // Default to 'image' for backward compatibility
+              storage_folder_name: img.storage_folder_name || undefined,
+              created_at: img.created_at,
+              updated_at: img.updated_at,
+            };
+          })
+          // Filter out images with invalid URLs and narrow the type
+          .filter((img): img is typeof img & { image_url: string } => img.image_url !== null)
+          .sort((a, b) => a.sort_order - b.sort_order);
       } else {
         imagesMap[productUuid] = [];
       }

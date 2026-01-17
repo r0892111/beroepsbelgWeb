@@ -559,6 +559,65 @@ async function handleEvent(event: Stripe.Event) {
         return;
       }
 
+      // Check if this is a lecture payment link from admin panel
+      if (metadata?.isLecturePayment === 'true' && metadata?.bookingId) {
+        console.info(`Processing lecture payment for booking ${metadata.bookingId}, session ${sessionId}`);
+
+        const bookingId = metadata.bookingId;
+        const customerEmail = session.customer_email;
+        const customerName = metadata.customerName || 'Customer';
+        const lectureName = metadata.lectureName || 'Lecture';
+        const numberOfPeople = parseInt(metadata.numberOfPeople || '1', 10);
+        const amountPaid = (session.amount_total || 0) / 100; // Convert from cents to euros
+
+        // Update lecture_bookings status to confirmed
+        const { error: updateError } = await supabase
+          .from('lecture_bookings')
+          .update({
+            status: 'confirmed',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', bookingId);
+
+        if (updateError) {
+          console.error(`Lecture payment: Failed to update booking ${bookingId}`, updateError);
+        } else {
+          console.info(`Lecture payment: Updated booking ${bookingId} status to confirmed`);
+        }
+
+        // Call N8N webhook to send lecture payment confirmation
+        const n8nLecturePaymentConfirmationWebhook = 'https://alexfinit.app.n8n.cloud/webhook/lecture-payment-completed';
+
+        try {
+          console.info('[N8N] Calling lecture payment confirmation webhook');
+
+          const res = await fetch(n8nLecturePaymentConfirmationWebhook, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              bookingId,
+              customerEmail,
+              customerName,
+              lectureName,
+              numberOfPeople,
+              amountPaid,
+              stripeSessionId: sessionId,
+              paymentStatus: 'completed',
+              paidAt: new Date().toISOString(),
+            }),
+          });
+
+          console.info('[N8N] Lecture payment webhook response', {
+            status: res.status,
+            ok: res.ok,
+          });
+        } catch (err) {
+          console.error('[N8N] Failed to call lecture payment confirmation webhook', err);
+        }
+
+        return;
+      }
+
       // If no tour booking found (no pending and no legacy), check if this is a webshop order (via metadata)
       // IMPORTANT: Only process as webshop if order_type is explicitly 'webshop' AND it's not a tour booking
       console.info(`Checking for webshop order. Metadata:`, JSON.stringify(metadata || {}));

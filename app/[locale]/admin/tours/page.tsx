@@ -1222,13 +1222,13 @@ export default function AdminToursPage() {
   // City image functions
   const openCityImageDialog = (city: CityData) => {
     setSelectedCity(city);
-    
+
     if (city.image) {
       setPhotoPreview(city.image);
     } else {
       setPhotoPreview(null);
     }
-    
+
     setPhotoFile(null);
     setCityImageDialogOpen(true);
   };
@@ -1327,10 +1327,12 @@ export default function AdminToursPage() {
         photoUrl = photoPreview;
       }
 
-      // Update cities table directly
+      // Update cities table with image
       const { error } = await supabase
         .from('cities')
-        .update({ image: photoUrl })
+        .update({
+          image: photoUrl,
+        })
         .eq('slug', selectedCity.slug);
 
       if (error) throw error;
@@ -2665,17 +2667,18 @@ export default function AdminToursPage() {
                       fill
                       className="object-cover"
                     />
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="absolute right-2 top-2"
-                      onClick={() => {
-                        setPhotoFile(null);
-                        setPhotoPreview(null);
-                      }}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                    <div className="absolute right-2 top-2 flex gap-1">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          setPhotoFile(null);
+                          setPhotoPreview(null);
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center space-y-4">

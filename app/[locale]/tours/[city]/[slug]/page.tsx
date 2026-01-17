@@ -1,7 +1,7 @@
 import { type Locale, locales } from '@/i18n';
 import { getTourBySlug } from '@/lib/api/content';
 import { Badge } from '@/components/ui/badge';
-import { Share2, MapPin, Clock, Languages, Bike, Sparkles } from 'lucide-react';
+import { Share2, MapPin, Clock, Languages, Sparkles } from 'lucide-react';
 import type { Metadata } from 'next';
 import { TouristTripJsonLd } from '@/components/seo/json-ld';
 import Link from 'next/link';
@@ -79,20 +79,10 @@ export async function generateMetadata({ params }: TourDetailPageProps): Promise
 }
 
 // Format duration from minutes to readable string
-const formatDuration = (minutes: number, t: any) => {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  if (hours > 0 && mins > 0) {
-    const hourText = hours === 1 ? t('hour') : t('hours');
-    const minText = mins === 1 ? t('minute') : t('minutes');
-    return `${hours} ${hourText} ${mins} ${minText}`;
-  }
-  if (hours > 0) {
-    const hourText = hours === 1 ? t('hour') : t('hours');
-    return `${hours} ${hourText}`;
-  }
-  const minText = mins === 1 ? t('minute') : t('minutes');
-  return `${mins} ${minText}`;
+const formatDuration = (minutes: number): string => {
+  const hours = minutes / 60;
+  // Remove trailing .0 for whole hours
+  return hours % 1 === 0 ? `${hours}h` : `${hours.toFixed(1)}h`;
 };
 
 export default async function TourDetailPage({ params }: TourDetailPageProps) {
@@ -183,10 +173,9 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
     return tour.description; // Default to Dutch
   };
 
-  // Calculate discounted price (10% discount for online bookings)
-  const discountRate = 0.9;
+  // Use base price (no discount)
   const originalPrice = tour.price || 0;
-  const discountedPrice = originalPrice * discountRate;
+  const discountedPrice = originalPrice;
 
   // Format city name for display (capitalize first letter of each word)
   const cityDisplayName = city
@@ -231,18 +220,16 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
                 {tour.tour_types && tour.tour_types.length > 0 && (
                   <>
                     {tour.tour_types.map((tourType, index) => {
-                      const isBiking = tourType === 'biking' || (typeof tourType === 'object' && tourType.nl?.toLowerCase().includes('fiets'));
                       return (
                         <Badge
                           key={`type-${index}`}
-                          className="text-sm px-2 py-1 flex items-center gap-1"
+                          className="text-sm px-2 py-1"
                           style={{
                             backgroundColor: '#1BDD95',
                             color: 'white',
                             border: 'none',
                           }}
                         >
-                          {isBiking && <Bike className="h-4 w-4" />}
                           {getTourTypeText(tourType)}
                         </Badge>
                       );
@@ -290,21 +277,9 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
                   <p className="text-3xl font-serif font-bold" style={{ color: 'var(--brass)' }}>
                     €{discountedPrice.toFixed(2)}
                   </p>
-                  <span className="text-xl line-through" style={{ color: 'var(--text-muted)' }}>
-                    €{originalPrice.toFixed(2)}
-                  </span>
-                  <Badge
-                    className="text-sm"
-                    style={{
-                      backgroundColor: 'var(--brass)',
-                      color: 'white',
-                    }}
-                  >
-                    -10%
-                  </Badge>
                 </div>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                  {tBooking('onlineDiscount')}
+                  {tBooking('perPerson')}
                 </p>
               </div>
             )}
@@ -386,7 +361,7 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
               <Clock className="mt-1 h-5 w-5 flex-shrink-0" style={{ color: 'var(--brass)' }} />
               <div>
                 <p className="font-semibold text-navy mb-1">{tTour('duration')}</p>
-                <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>{formatDuration(tour.durationMinutes, t)}</p>
+                <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>{formatDuration(tour.durationMinutes)}</p>
               </div>
             </div>
             {tour.languages.length > 0 && (

@@ -42,6 +42,16 @@ interface Product {
   "Price (EUR)": string;
   Description: string;
   "Additional Info": string | null;
+  // Multi-language fields
+  name_en?: string | null;
+  name_fr?: string | null;
+  name_de?: string | null;
+  description_en?: string | null;
+  description_fr?: string | null;
+  description_de?: string | null;
+  additional_info_en?: string | null;
+  additional_info_fr?: string | null;
+  additional_info_de?: string | null;
   stripe_product_id?: string | null;
   stripe_price_id?: string | null;
   display_order?: number | null;
@@ -56,6 +66,16 @@ interface ProductFormData {
   "Price (EUR)": string;
   Description: string;
   "Additional Info": string;
+  // Multi-language fields
+  name_en: string;
+  name_fr: string;
+  name_de: string;
+  description_en: string;
+  description_fr: string;
+  description_de: string;
+  additional_info_en: string;
+  additional_info_fr: string;
+  additional_info_de: string;
 }
 
 const CATEGORY_OPTIONS = ['Book', 'Merchandise', 'Game'];
@@ -95,7 +115,19 @@ export default function AdminProductsPage() {
     "Price (EUR)": '0',
     Description: '',
     "Additional Info": '',
+    name_en: '',
+    name_fr: '',
+    name_de: '',
+    description_en: '',
+    description_fr: '',
+    description_de: '',
+    additional_info_en: '',
+    additional_info_fr: '',
+    additional_info_de: '',
   });
+
+  // Active language tab in form
+  const [formLanguageTab, setFormLanguageTab] = useState<'nl' | 'en' | 'fr' | 'de'>('nl');
 
   useEffect(() => {
     if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
@@ -149,7 +181,17 @@ export default function AdminProductsPage() {
       "Price (EUR)": '0',
       Description: '',
       "Additional Info": '',
+      name_en: '',
+      name_fr: '',
+      name_de: '',
+      description_en: '',
+      description_fr: '',
+      description_de: '',
+      additional_info_en: '',
+      additional_info_fr: '',
+      additional_info_de: '',
     });
+    setFormLanguageTab('nl');
     setDialogOpen(true);
   };
 
@@ -161,7 +203,17 @@ export default function AdminProductsPage() {
       "Price (EUR)": product["Price (EUR)"] || '0',
       Description: product.Description || '',
       "Additional Info": product["Additional Info"] || '',
+      name_en: product.name_en || '',
+      name_fr: product.name_fr || '',
+      name_de: product.name_de || '',
+      description_en: product.description_en || '',
+      description_fr: product.description_fr || '',
+      description_de: product.description_de || '',
+      additional_info_en: product.additional_info_en || '',
+      additional_info_fr: product.additional_info_fr || '',
+      additional_info_de: product.additional_info_de || '',
     });
+    setFormLanguageTab('nl');
     setDialogOpen(true);
   };
 
@@ -176,6 +228,16 @@ export default function AdminProductsPage() {
         "Price (EUR)": formData["Price (EUR)"],
         Description: formData.Description,
         "Additional Info": formData["Additional Info"] || null,
+        // Multi-language fields
+        name_en: formData.name_en || null,
+        name_fr: formData.name_fr || null,
+        name_de: formData.name_de || null,
+        description_en: formData.description_en || null,
+        description_fr: formData.description_fr || null,
+        description_de: formData.description_de || null,
+        additional_info_en: formData.additional_info_en || null,
+        additional_info_fr: formData.additional_info_fr || null,
+        additional_info_de: formData.additional_info_de || null,
       };
 
       if (editingProduct) {
@@ -1183,20 +1245,7 @@ export default function AdminProductsPage() {
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name */}
-            <div>
-              <Label htmlFor="Name" className="text-navy font-semibold">Product Name*</Label>
-              <Input
-                id="Name"
-                value={formData.Name}
-                onChange={(e) => setFormData({ ...formData, Name: e.target.value })}
-                required
-                className="bg-white"
-                placeholder="e.g., Antwerpen Zwart Wit"
-              />
-            </div>
-
-            {/* Category and Price */}
+            {/* Category and Price - Always visible */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="Category" className="text-navy font-semibold">Category*</Label>
@@ -1232,32 +1281,170 @@ export default function AdminProductsPage() {
               </div>
             </div>
 
-            {/* Description */}
-            <div>
-              <Label htmlFor="Description" className="text-navy font-semibold">Description*</Label>
-              <Textarea
-                id="Description"
-                rows={4}
-                value={formData.Description}
-                onChange={(e) => setFormData({ ...formData, Description: e.target.value })}
-                required
-                className="bg-white"
-                placeholder="Product description..."
-              />
-            </div>
+            {/* Language Tabs for Name, Description, Additional Info */}
+            <Tabs value={formLanguageTab} onValueChange={(value) => setFormLanguageTab(value as 'nl' | 'en' | 'fr' | 'de')} className="w-full">
+              <TabsList className="mb-4">
+                <TabsTrigger value="nl">Nederlands (NL)*</TabsTrigger>
+                <TabsTrigger value="en">English (EN)</TabsTrigger>
+                <TabsTrigger value="fr">Francais (FR)</TabsTrigger>
+                <TabsTrigger value="de">Deutsch (DE)</TabsTrigger>
+              </TabsList>
 
-            {/* Additional Info */}
-            <div>
-              <Label htmlFor="Additional Info" className="text-navy font-semibold">Additional Info (optional)</Label>
-              <Textarea
-                id="Additional Info"
-                rows={3}
-                value={formData["Additional Info"]}
-                onChange={(e) => setFormData({ ...formData, "Additional Info": e.target.value })}
-                className="bg-white"
-                placeholder="Additional product information..."
-              />
-            </div>
+              {/* Dutch (Primary) */}
+              <TabsContent value="nl" className="space-y-4">
+                <div>
+                  <Label htmlFor="Name" className="text-navy font-semibold">Product Name (NL)*</Label>
+                  <Input
+                    id="Name"
+                    value={formData.Name}
+                    onChange={(e) => setFormData({ ...formData, Name: e.target.value })}
+                    required
+                    className="bg-white"
+                    placeholder="e.g., Antwerpen Zwart Wit"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="Description" className="text-navy font-semibold">Description (NL)*</Label>
+                  <Textarea
+                    id="Description"
+                    rows={4}
+                    value={formData.Description}
+                    onChange={(e) => setFormData({ ...formData, Description: e.target.value })}
+                    required
+                    className="bg-white"
+                    placeholder="Product description in Dutch..."
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="Additional Info" className="text-navy font-semibold">Additional Info (NL)</Label>
+                  <Textarea
+                    id="Additional Info"
+                    rows={3}
+                    value={formData["Additional Info"]}
+                    onChange={(e) => setFormData({ ...formData, "Additional Info": e.target.value })}
+                    className="bg-white"
+                    placeholder="Additional product information in Dutch..."
+                  />
+                </div>
+              </TabsContent>
+
+              {/* English */}
+              <TabsContent value="en" className="space-y-4">
+                <div>
+                  <Label htmlFor="name_en" className="text-navy font-semibold">Product Name (EN)</Label>
+                  <Input
+                    id="name_en"
+                    value={formData.name_en}
+                    onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
+                    className="bg-white"
+                    placeholder="e.g., Antwerp Black & White"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Leave empty to use Dutch version</p>
+                </div>
+                <div>
+                  <Label htmlFor="description_en" className="text-navy font-semibold">Description (EN)</Label>
+                  <Textarea
+                    id="description_en"
+                    rows={4}
+                    value={formData.description_en}
+                    onChange={(e) => setFormData({ ...formData, description_en: e.target.value })}
+                    className="bg-white"
+                    placeholder="Product description in English..."
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Leave empty to use Dutch version</p>
+                </div>
+                <div>
+                  <Label htmlFor="additional_info_en" className="text-navy font-semibold">Additional Info (EN)</Label>
+                  <Textarea
+                    id="additional_info_en"
+                    rows={3}
+                    value={formData.additional_info_en}
+                    onChange={(e) => setFormData({ ...formData, additional_info_en: e.target.value })}
+                    className="bg-white"
+                    placeholder="Additional product information in English..."
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Leave empty to use Dutch version</p>
+                </div>
+              </TabsContent>
+
+              {/* French */}
+              <TabsContent value="fr" className="space-y-4">
+                <div>
+                  <Label htmlFor="name_fr" className="text-navy font-semibold">Product Name (FR)</Label>
+                  <Input
+                    id="name_fr"
+                    value={formData.name_fr}
+                    onChange={(e) => setFormData({ ...formData, name_fr: e.target.value })}
+                    className="bg-white"
+                    placeholder="e.g., Anvers Noir et Blanc"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Leave empty to use English or Dutch version</p>
+                </div>
+                <div>
+                  <Label htmlFor="description_fr" className="text-navy font-semibold">Description (FR)</Label>
+                  <Textarea
+                    id="description_fr"
+                    rows={4}
+                    value={formData.description_fr}
+                    onChange={(e) => setFormData({ ...formData, description_fr: e.target.value })}
+                    className="bg-white"
+                    placeholder="Product description in French..."
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Leave empty to use English or Dutch version</p>
+                </div>
+                <div>
+                  <Label htmlFor="additional_info_fr" className="text-navy font-semibold">Additional Info (FR)</Label>
+                  <Textarea
+                    id="additional_info_fr"
+                    rows={3}
+                    value={formData.additional_info_fr}
+                    onChange={(e) => setFormData({ ...formData, additional_info_fr: e.target.value })}
+                    className="bg-white"
+                    placeholder="Additional product information in French..."
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Leave empty to use English or Dutch version</p>
+                </div>
+              </TabsContent>
+
+              {/* German */}
+              <TabsContent value="de" className="space-y-4">
+                <div>
+                  <Label htmlFor="name_de" className="text-navy font-semibold">Product Name (DE)</Label>
+                  <Input
+                    id="name_de"
+                    value={formData.name_de}
+                    onChange={(e) => setFormData({ ...formData, name_de: e.target.value })}
+                    className="bg-white"
+                    placeholder="e.g., Antwerpen Schwarz und Weiss"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Leave empty to use English or Dutch version</p>
+                </div>
+                <div>
+                  <Label htmlFor="description_de" className="text-navy font-semibold">Description (DE)</Label>
+                  <Textarea
+                    id="description_de"
+                    rows={4}
+                    value={formData.description_de}
+                    onChange={(e) => setFormData({ ...formData, description_de: e.target.value })}
+                    className="bg-white"
+                    placeholder="Product description in German..."
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Leave empty to use English or Dutch version</p>
+                </div>
+                <div>
+                  <Label htmlFor="additional_info_de" className="text-navy font-semibold">Additional Info (DE)</Label>
+                  <Textarea
+                    id="additional_info_de"
+                    rows={3}
+                    value={formData.additional_info_de}
+                    onChange={(e) => setFormData({ ...formData, additional_info_de: e.target.value })}
+                    className="bg-white"
+                    placeholder="Additional product information in German..."
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Leave empty to use English or Dutch version</p>
+                </div>
+              </TabsContent>
+            </Tabs>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>

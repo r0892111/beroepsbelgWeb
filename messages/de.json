@@ -118,6 +118,7 @@
     "copyright": "© 2026 Beroepsbelg. Alle Rechte vorbehalten.",
     "allRightsReserved": "Alle Rechte vorbehalten",
     "terms": "Bedingungen",
+    "cookieSettings": "Cookie-Einstellungen",
     "newsletter": {
       "firstName": "Vorname",
       "lastName": "Nachname",
@@ -132,11 +133,16 @@
     }
   },
   "cookie": {
-    "message": "Wir verwenden Cookies, um Ihre Erfahrung zu verbessern.",
+    "message": "Wir verwenden Cookies, um sicherzustellen, dass die Website ordnungsgemäß funktioniert und um Ihre Erfahrung zu verbessern.",
+    "customizeMessage": "Wählen Sie, welche Cookies Sie zulassen möchten. Essenzielle Cookies sind für die Grundfunktionalität erforderlich.",
+    "learnMore": "Mehr erfahren",
     "acceptAll": "Alle akzeptieren",
+    "essentialOnly": "Nur essenzielle",
     "customize": "Anpassen",
-    "functional": "Funktionale Cookies",
-    "tracking": "Tracking-Cookies",
+    "essential": "Essenzielle Cookies",
+    "essentialDesc": "Erforderlich für Authentifizierung und Spracheinstellungen. Können nicht deaktiviert werden.",
+    "payment": "Zahlungs-Cookies",
+    "paymentDesc": "Erforderlich für sichere Zahlungsabwicklung über Stripe.",
     "save": "Einstellungen speichern",
     "back": "Zurück"
   },
@@ -211,7 +217,9 @@
     "orContinueWithEmail": "Oder mit E-Mail fortfahren",
     "failedGoogleSignIn": "Anmeldung mit Google fehlgeschlagen",
     "couldNotLoadProducts": "Produkte konnten nicht geladen werden",
-    "tryAgain": "Erneut versuchen"
+    "tryAgain": "Erneut versuchen",
+    "shippingAddress": "Lieferadresse",
+    "orderItems": "Bestellte Artikel"
   },
   "forms": {
     "name": "Name",
@@ -661,7 +669,10 @@
     "onlineDiscount": "10% Rabatt bei Online-Buchung",
     "originalPrice": "Ursprünglicher Preis",
     "discountedPrice": "Reduzierter Preis",
-    "youSave": "Sie sparen"
+    "youSave": "Sie sparen",
+    "tanguyFee": "Gebühr für Tanguy als persönlichen Reiseführer",
+    "tanguyFeeLineItem": "Gebühr für Tanguy als persönlicher Reiseführer",
+    "extraHourLineItem": "Zusätzliche Stunde"
   },
   "product": {
     "description": "Beschreibung",
@@ -761,6 +772,7 @@
     "title": "Werden Sie ein BeroepsBelg-Führer",
     "becomeGuide": "Werden Sie ein BeroepsBelg-Führer",
     "joinTeam": "Treten Sie unserem Team bei und teilen Sie Ihre Leidenschaft für belgische Kultur",
+    "shareOpportunity": "Diese Stelle teilen",
     "whyJoinUs": "Warum bei uns arbeiten?",
     "introduction1": "Sind Sie leidenschaftlich für Geschichte, Architektur und das Erzählen von Geschichten? Möchten Sie Teil eines dynamischen Teams sein, das Belgien auf einzigartige Weise präsentiert?",
     "introduction2": "Wir suchen immer enthusiastische Führer, die unsere Mission teilen, Besuchern und Einheimischen ein bereicherndes Erlebnis zu bieten.",
@@ -992,17 +1004,6 @@
             "duration": "1 Jahr"
           }
         },
-        "analytics": {
-          "title": "Analyse-Cookies (Google Analytics 4)",
-          "row1": {
-            "function": "Unterscheidet einzigartige Besucher",
-            "duration": "2 Jahre"
-          },
-          "row2": {
-            "function": "Behält den Sitzungsstatus bei",
-            "duration": "2 Jahre"
-          }
-        },
         "payment": {
           "title": "Zahlungs-Cookies (Stripe)",
           "row1": {
@@ -1159,6 +1160,21 @@
     "description": "Ihre Buchung wurde nicht abgeschlossen. Es wurden keine Gebühren erhoben.",
     "helpMessage": "Wenn Sie Probleme hatten oder Fragen haben, zögern Sie bitte nicht, unser Support-Team zu kontaktieren.",
     "browseTours": "Touren durchsuchen",
+    "contactUs": "Kontaktieren Sie uns"
+  },
+  "lecturePaymentSuccess": {
+    "title": "Zahlung erfolgreich!",
+    "description": "Vielen Dank für Ihre Zahlung für den Vortrag. Sie erhalten in Kürze eine Bestätigungs-E-Mail.",
+    "whatsNext": "Was kommt als Nächstes?",
+    "nextSteps": "Sie erhalten eine Bestätigungs-E-Mail mit allen Details zu Ihrem Vortrag. Wir freuen uns darauf, Sie zu begrüßen!",
+    "returnHome": "Zurück zur Startseite",
+    "viewLecture": "Vortrag ansehen"
+  },
+  "lecturePaymentCancelled": {
+    "title": "Zahlung storniert",
+    "description": "Ihre Zahlung für den Vortrag wurde nicht abgeschlossen. Es wurden keine Gebühren erhoben.",
+    "helpMessage": "Wenn Sie Probleme hatten oder Fragen haben, zögern Sie bitte nicht, unser Support-Team zu kontaktieren.",
+    "viewLecture": "Vortrag ansehen",
     "contactUs": "Kontaktieren Sie uns"
   },
   "opMaatForm": {
@@ -1321,7 +1337,8 @@
     "noPosts": "Keine Blog-Beiträge gefunden.",
     "backToBlog": "Zurück zum Blog",
     "relatedPosts": "Verwandte Beiträge",
-    "featured": "Empfohlen"
+    "featured": "Empfohlen",
+    "share": "Teilen"
   },
   "search": {
     "title": "Suchergebnisse",

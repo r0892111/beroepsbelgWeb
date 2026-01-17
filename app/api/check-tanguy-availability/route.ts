@@ -22,8 +22,9 @@ function getSupabaseServer() {
 }
 
 async function getGoogleAccessToken(): Promise<string | null> {
+  console.log('[getGoogleAccessToken] Starting...');
   const supabase = getSupabaseServer();
-  
+
   // Get admin profile with Google tokens
   const { data: adminProfile, error: profileError } = await supabase
     .from('profiles')
@@ -34,9 +35,10 @@ async function getGoogleAccessToken(): Promise<string | null> {
     .single();
 
   if (profileError || !adminProfile) {
-    console.error('Failed to get admin profile:', profileError?.message || 'No admin found with Google tokens');
+    console.error('[getGoogleAccessToken] Failed to get admin profile:', profileError?.message || 'No admin found with Google tokens');
     return null;
   }
+  console.log('[getGoogleAccessToken] Found admin profile:', adminProfile.id);
 
   // If we have a valid access token, use it
   if (adminProfile.google_access_token) {
@@ -49,8 +51,10 @@ async function getGoogleAccessToken(): Promise<string | null> {
     const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+      console.error('[getGoogleAccessToken] Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET');
       return null;
     }
+    console.log('[getGoogleAccessToken] Refreshing token...');
 
     try {
       const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -90,8 +94,10 @@ async function getGoogleAccessToken(): Promise<string | null> {
 }
 
 export async function POST(request: NextRequest) {
+  console.log('[check-tanguy-availability] POST request received');
   try {
     const { date, time, durationMinutes = 120 } = await request.json();
+    console.log('[check-tanguy-availability] Request params:', { date, time, durationMinutes });
 
     if (!date || !time) {
       return NextResponse.json(
@@ -228,8 +234,10 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
+    console.error('[check-tanguy-availability] Error:', error?.message || error);
+    console.error('[check-tanguy-availability] Stack:', error?.stack);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', message: error?.message || 'Unknown error' },
       { status: 500 }
     );
   }

@@ -8,12 +8,10 @@ interface TourUpsellCardProps {
 }
 
 export function TourUpsellCard({ tour, locale }: TourUpsellCardProps) {
-  const formatDuration = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours > 0 && mins > 0) return `${hours}h ${mins}min`;
-    if (hours > 0) return `${hours}h`;
-    return `${mins}min`;
+  const formatDuration = (minutes: number): string => {
+    const hours = minutes / 60;
+    // Remove trailing .0 for whole hours
+    return hours % 1 === 0 ? `${hours}h` : `${hours.toFixed(1)}h`;
   };
 
   return (

@@ -1,8 +1,63 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import type { Locale } from '@/i18n';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+
+/**
+ * Get a localized field value with fallback logic.
+ * Fallback chain:
+ * - NL: NL only
+ * - EN: EN -> NL
+ * - FR: FR -> EN -> NL
+ * - DE: DE -> EN -> NL
+ *
+ * @param fields - Object with locale keys (nl, en, fr, de) and their values
+ * @param locale - The desired locale
+ * @returns The localized value with fallback applied
+ */
+export function getLocalizedField(
+  fields: { nl?: string | null; en?: string | null; fr?: string | null; de?: string | null },
+  locale: Locale
+): string {
+  const nl = fields.nl || '';
+  const en = fields.en || '';
+  const fr = fields.fr || '';
+  const de = fields.de || '';
+
+  switch (locale) {
+    case 'nl':
+      return nl;
+    case 'en':
+      return en || nl;
+    case 'fr':
+      return fr || en || nl;
+    case 'de':
+      return de || en || nl;
+    default:
+      return nl;
+  }
+}
+
+/**
+ * Build a Record<Locale, string> with fallback values applied.
+ * This is useful for building product/content records where each locale
+ * should have a value (falling back to other languages if not available).
+ *
+ * @param fields - Object with locale keys (nl, en, fr, de) and their values
+ * @returns Record<Locale, string> with fallbacks applied
+ */
+export function buildLocalizedRecord(
+  fields: { nl?: string | null; en?: string | null; fr?: string | null; de?: string | null }
+): Record<Locale, string> {
+  const nl = fields.nl || '';
+  const en = fields.en || nl;
+  const fr = fields.fr || en || nl;
+  const de = fields.de || en || nl;
+
+  return { nl, en, fr, de };
 }
 
 /**

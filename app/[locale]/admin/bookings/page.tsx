@@ -111,6 +111,7 @@ export default function AdminBookingsPage() {
     specialRequests: '',
     isPaid: false,
   });
+  const [customLanguage, setCustomLanguage] = useState('');
 
   // IDs dialog state
   const [idsDialogOpen, setIdsDialogOpen] = useState(false);
@@ -122,6 +123,34 @@ export default function AdminBookingsPage() {
 
   const CITY_OPTIONS = ['Antwerpen', 'Brussel', 'Brugge', 'Gent', 'Knokke-Heist', 'Leuven', 'Mechelen', 'Hasselt'];
   const STATUS_OPTIONS = ['pending', 'payment_completed', 'pending_jotform_confirmation', 'pending_guide_confirmation', 'confirmed', 'completed', 'cancelled'];
+  const LANGUAGE_OPTIONS = [
+    { value: 'nl', label: 'Dutch (NL)' },
+    { value: 'en', label: 'English (EN)' },
+    { value: 'fr', label: 'French (FR)' },
+    { value: 'de', label: 'German (DE)' },
+    { value: 'es', label: 'Spanish (ES)' },
+    { value: 'it', label: 'Italian (IT)' },
+    { value: 'pt', label: 'Portuguese (PT)' },
+    { value: 'zh', label: 'Chinese (ZH)' },
+    { value: 'ja', label: 'Japanese (JA)' },
+    { value: 'ko', label: 'Korean (KO)' },
+    { value: 'ar', label: 'Arabic (AR)' },
+    { value: 'ru', label: 'Russian (RU)' },
+    { value: 'pl', label: 'Polish (PL)' },
+    { value: 'tr', label: 'Turkish (TR)' },
+    { value: 'hi', label: 'Hindi (HI)' },
+    { value: 'el', label: 'Greek (EL)' },
+    { value: 'sv', label: 'Swedish (SV)' },
+    { value: 'no', label: 'Norwegian (NO)' },
+    { value: 'da', label: 'Danish (DA)' },
+    { value: 'fi', label: 'Finnish (FI)' },
+    { value: 'cs', label: 'Czech (CS)' },
+    { value: 'hu', label: 'Hungarian (HU)' },
+    { value: 'ro', label: 'Romanian (RO)' },
+    { value: 'he', label: 'Hebrew (HE)' },
+    { value: 'th', label: 'Thai (TH)' },
+    { value: 'other', label: 'Other (Custom)' },
+  ];
 
   useEffect(() => {
     if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
@@ -380,12 +409,14 @@ export default function AdminBookingsPage() {
 
       // Create invitee object
       const calculatedAmount = (tour.price || 0) * createForm.numberOfPeople;
+      // Use custom language if "other" is selected
+      const finalLanguage = createForm.language === 'other' ? customLanguage : createForm.language;
       const invitee: Record<string, unknown> = {
         name: createForm.customerName,
         email: createForm.customerEmail,
         phone: createForm.customerPhone,
         numberOfPeople: createForm.numberOfPeople,
-        language: createForm.language,
+        language: finalLanguage,
         specialRequests: createForm.specialRequests,
         currency: 'eur',
         isContacted: false,
@@ -1050,18 +1081,28 @@ export default function AdminBookingsPage() {
                   <Label htmlFor="language">Language</Label>
                   <Select
                     value={createForm.language}
-                    onValueChange={(value) => setCreateForm({ ...createForm, language: value })}
+                    onValueChange={(value) => {
+                      setCreateForm({ ...createForm, language: value });
+                      if (value !== 'other') setCustomLanguage('');
+                    }}
                   >
                     <SelectTrigger className="bg-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="nl">Dutch (NL)</SelectItem>
-                      <SelectItem value="en">English (EN)</SelectItem>
-                      <SelectItem value="fr">French (FR)</SelectItem>
-                      <SelectItem value="de">German (DE)</SelectItem>
+                    <SelectContent className="max-h-60">
+                      {LANGUAGE_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                  {createForm.language === 'other' && (
+                    <Input
+                      placeholder="Enter custom language..."
+                      value={customLanguage}
+                      onChange={(e) => setCustomLanguage(e.target.value)}
+                      className="bg-white mt-2"
+                    />
+                  )}
                 </div>
               </div>
               <div className="space-y-2 mt-4">

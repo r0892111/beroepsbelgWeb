@@ -156,15 +156,34 @@ export function ProductCard({ product }: ProductCardProps) {
           className="flex flex-col"
           style={{ backgroundColor: 'var(--card-content-bg)', paddingTop: '1.25rem', paddingBottom: '1rem' }}
         >
-          {/* Fixed height image container - taller than square for book covers etc */}
+          {/* Fixed height media container - taller than square for book covers etc */}
           <div className="relative w-full h-[180px] md:h-[280px] rounded-lg border border-[#1a3628]/10 mb-4 overflow-hidden bg-gray-50">
-            <Image
-              src={product.image || getProductPlaceholder(product.category)}
-              alt={product.title[locale]}
-              fill
-              className="object-contain group-hover:scale-105 transition-transform duration-300"
-              unoptimized
-            />
+            {/* Check if primary media is a video */}
+            {product.primaryMediaType === 'video' || (product.image && /\.(mp4|webm|mov)$/i.test(product.image)) ? (
+              <video
+                src={product.image && product.image.trim() !== '' ? product.image : getProductPlaceholder(product.category)}
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="metadata"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                aria-label={product.title[locale]}
+              />
+            ) : (
+              <Image
+                src={product.image && product.image.trim() !== '' ? product.image : getProductPlaceholder(product.category)}
+                alt={product.title[locale]}
+                fill
+                className="object-contain group-hover:scale-105 transition-transform duration-300"
+                unoptimized
+                onError={(e) => {
+                  // Fallback to placeholder on image load error
+                  const target = e.target as HTMLImageElement;
+                  target.src = getProductPlaceholder(product.category);
+                }}
+              />
+            )}
           </div>
           {/* Fixed height description area to ensure text alignment across cards */}
           <div className="h-[54px] md:h-[72px]">

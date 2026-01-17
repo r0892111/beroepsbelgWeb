@@ -117,12 +117,10 @@ export default function B2BQuotePage() {
   const numPeople = parseInt(numberOfPeople) || 0;
 
   // Format duration
-  const formatDuration = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours > 0 && mins > 0) return `${hours}u ${mins}min`;
-    if (hours > 0) return `${hours} uur`;
-    return `${mins} min`;
+  const formatDuration = (minutes: number): string => {
+    const hours = minutes / 60;
+    // Remove trailing .0 for whole hours
+    return hours % 1 === 0 ? `${hours}h` : `${hours.toFixed(1)}h`;
   };
 
   // Calculate actual duration (accounting for extra hour for opMaat tours)

@@ -5,10 +5,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslations } from 'next-intl';
+import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ShareButtons } from '@/components/ui/share-buttons';
 import { toast } from 'sonner';
 import { CheckCircle, Users, MapPin, Heart, Sparkles, Upload, X, FileText, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
@@ -32,6 +34,8 @@ const MAX_PHOTO_SIZE = 5 * 1024 * 1024; // 5MB
 
 export default function BecomeAGuidePage() {
   const t = useTranslations('jobs');
+  const params = useParams();
+  const locale = params.locale as string;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -217,9 +221,17 @@ export default function BecomeAGuidePage() {
           <h1 className="font-oswald text-5xl md:text-7xl text-white uppercase tracking-tight mb-4">
             {t('becomeGuide')}
           </h1>
-          <p className="font-inter text-lg md:text-xl text-white/90 max-w-2xl mx-auto">
+          <p className="font-inter text-lg md:text-xl text-white/90 max-w-2xl mx-auto mb-6">
             {t('joinTeam')}
           </p>
+          {/* Share this job opportunity */}
+          <div className="flex justify-center items-center gap-3">
+            <span className="text-sm text-white/80">{t('shareOpportunity')}</span>
+            <ShareButtons
+              shareUrl={typeof window !== 'undefined' ? window.location.href : `/${locale}/jobs/become-a-guide`}
+              shareTitle={t('becomeGuide')}
+            />
+          </div>
         </div>
       </div>
 

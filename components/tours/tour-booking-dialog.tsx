@@ -324,12 +324,10 @@ export function TourBookingDialog({
   }, [actualDuration, isLocalStories]);
 
   // Format duration for display
-  const formatDuration = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours > 0 && mins > 0) return `${hours}u ${mins}min`;
-    if (hours > 0) return `${hours} uur`;
-    return `${mins} min`;
+  const formatDuration = (minutes: number): string => {
+    const hours = minutes / 60;
+    // Remove trailing .0 for whole hours
+    return hours % 1 === 0 ? `${hours}h` : `${hours.toFixed(1)}h`;
   };
 
   // Form validation
@@ -459,18 +457,16 @@ export function TourBookingDialog({
     }
   };
 
-  // Calculate discounted price (10% discount for online bookings)
-  const discountRate = 0.9; // 10% discount = 90% of original price
-  const discountedTourPrice = tourPrice * discountRate;
+  // Use base price (no discount)
+  const discountedTourPrice = tourPrice;
 
   // Calculate total price including upsells
   const upsellTotal = products
     .filter(p => selectedUpsell[p.uuid] && selectedUpsell[p.uuid] > 0)
     .reduce((sum, p) => sum + (p.price * (selectedUpsell[p.uuid] || 0)), 0);
 
-  // Calculate tour total based on number of people (for all tour types) - using discounted price
+  // Calculate tour total based on number of people (for all tour types)
   // IMPORTANT: Use Math.round to match Stripe's cent-based rounding (avoids 1 cent discrepancies)
-  const originalTourTotal = tourPrice * formData.numberOfPeople;
   const tourTotal = Math.round(discountedTourPrice * formData.numberOfPeople * 100) / 100;
   
   // Calculate additional costs
@@ -482,7 +478,6 @@ export function TourBookingDialog({
   const shippingCost = hasUpsellProducts ? FREIGHT_COST_FREE : 0;
   
   const totalPrice = tourTotal + upsellTotal + tanguyCost + extraHourCost + shippingCost;
-  const savings = originalTourTotal - tourTotal;
   
   // Debug logging
   if (process.env.NODE_ENV === 'development') {
@@ -511,20 +506,8 @@ export function TourBookingDialog({
     >
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>{t('title')}</ResponsiveDialogTitle>
-          <ResponsiveDialogDescription className="flex flex-col gap-1">
-            <span>
-              {tourTitle} - €{discountedTourPrice.toFixed(2)} {t('perPerson')}
-              {tourPrice > discountedTourPrice && (
-                <span className="ml-2 text-sm line-through text-muted-foreground">
-                  €{tourPrice.toFixed(2)}
-                </span>
-              )}
-            </span>
-            {tourPrice > discountedTourPrice && (
-              <span className="text-xs text-green-600 font-semibold">
-                {t('onlineDiscount')} - {t('youSave')} €{((tourPrice - discountedTourPrice) * formData.numberOfPeople).toFixed(2)} total
-              </span>
-            )}
+          <ResponsiveDialogDescription>
+            {tourTitle} - €{discountedTourPrice.toFixed(2)} {t('perPerson')}
           </ResponsiveDialogDescription>
         </ResponsiveDialogHeader>
 
@@ -605,9 +588,12 @@ export function TourBookingDialog({
                         disabled={(date: Date) => {
                           const today = new Date();
                           today.setHours(0, 0, 0, 0);
+                          // Minimum booking date is 7 days from today
+                          const minDate = new Date(today);
+                          minDate.setDate(minDate.getDate() + 7);
                           const dateToCheck = new Date(date);
                           dateToCheck.setHours(0, 0, 0, 0);
-                          return dateToCheck < today;
+                          return dateToCheck < minDate;
                         }}
                       />
                     </div>
@@ -651,9 +637,12 @@ export function TourBookingDialog({
                       disabled={(date: Date) => {
                         const today = new Date();
                         today.setHours(0, 0, 0, 0);
+                        // Minimum booking date is 7 days from today
+                        const minDate = new Date(today);
+                        minDate.setDate(minDate.getDate() + 7);
                         const dateToCheck = new Date(date);
                         dateToCheck.setHours(0, 0, 0, 0);
-                        return dateToCheck < today;
+                        return dateToCheck < minDate;
                       }}
                       initialFocus
                     />
@@ -915,28 +904,25 @@ export function TourBookingDialog({
               <div className="flex flex-col gap-1 min-w-0">
                 <div className="text-lg font-bold">
                   {t('total')}: €{totalPrice.toFixed(2)}
-                  {originalTourTotal > tourTotal && (
-                    <span className="text-sm font-normal line-through text-muted-foreground ml-2">
-                      €{originalTourTotal.toFixed(2)}
-                    </span>
-                  )}
                 </div>
                 {formData.numberOfPeople > 1 && (
                   <div className="text-sm text-muted-foreground">
                     {formData.numberOfPeople} × €{discountedTourPrice.toFixed(2)} {t('perPerson')}
-                    {tourPrice > discountedTourPrice && (
-                      <span className="line-through ml-1">€{tourPrice.toFixed(2)}</span>
-                    )}
+                  </div>
+                )}
+                {formData.requestTanguy && (
+                  <div className="text-sm text-muted-foreground">
+                    + €125 {t('tanguyFeeLineItem')}
+                  </div>
+                )}
+                {opMaat && formData.extraHour && (
+                  <div className="text-sm text-muted-foreground">
+                    + €150 {t('extraHourLineItem')}
                   </div>
                 )}
                 {upsellTotal > 0 && (
                   <div className="text-sm text-muted-foreground">
                     + €{upsellTotal.toFixed(2)} extras
-                  </div>
-                )}
-                {savings > 0 && (
-                  <div className="text-xs text-green-600 font-semibold">
-                    {t('youSave')} €{savings.toFixed(2)} ({t('onlineDiscount')})
                   </div>
                 )}
               </div>

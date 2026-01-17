@@ -1405,14 +1405,16 @@ export default function AdminTourImagesPage() {
                                   className="object-cover"
                                 />
                               )}
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                className="absolute right-2 top-2"
-                                onClick={() => removeUploadFile(index)}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
+                              <div className="absolute right-2 top-2 flex gap-1">
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => removeUploadFile(index)}
+                                  title="Remove"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                           );
                         })}
