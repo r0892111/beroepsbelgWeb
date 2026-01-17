@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, BookOpen, X, Search, ArrowUp, ArrowDown, Image as ImageIcon, Upload, Trash2 as TrashIcon, Calendar as CalendarIcon, Mail, Phone, Users, MapPin, Building } from 'lucide-react';
+import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, BookOpen, X, Search, ArrowUp, ArrowDown, Image as ImageIcon, Upload, Trash2 as TrashIcon, Calendar as CalendarIcon, Mail, Phone, Users, MapPin, Building, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
@@ -40,6 +40,12 @@ export default function AdminLecturesPage() {
   const [bookingDetailOpen, setBookingDetailOpen] = useState(false);
   const [bookingSearchQuery, setBookingSearchQuery] = useState('');
   const [bookingFilterStatus, setBookingFilterStatus] = useState<string>('all');
+
+  // Payment link state
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<LectureBooking | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [sendingPaymentLink, setSendingPaymentLink] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -296,17 +302,17 @@ export default function AdminLecturesPage() {
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const files = Array.from(e.target.files).filter(file => 
+      const files = Array.from(e.target.files).filter(file =>
         file.type.startsWith('image/') && file.size <= MAX_FILE_SIZE
       );
-      
+
       if (files.length === 0) {
         toast.error('Please select valid image files (max 50MB each)');
         return;
       }
 
       setUploadFiles(prev => [...prev, ...files]);
-      
+
       // Create previews
       files.forEach(file => {
         const reader = new FileReader();
@@ -375,7 +381,7 @@ export default function AdminLecturesPage() {
 
     const updatedImages = [...lectureImages];
     [updatedImages[currentIndex], updatedImages[newIndex]] = [updatedImages[newIndex], updatedImages[currentIndex]];
-    
+
     // Update sort_order
     updatedImages.forEach((img, idx) => {
       img.sort_order = idx;
@@ -425,7 +431,7 @@ export default function AdminLecturesPage() {
 
       // Upload new images if any
       let allImages = [...lectureImages]; // Start with existing images
-      
+
       if (uploadFiles.length > 0 && lectureId) {
         setUploadingImages(true);
         try {
@@ -437,7 +443,7 @@ export default function AdminLecturesPage() {
           // Assign to const to ensure TypeScript narrows the type
           const validLectureId: string = lectureId;
           const uploadedUrls = await uploadFilesToStorage(uploadFiles, validLectureId);
-          
+
           const newImages: LectureImage[] = uploadedUrls.map((url, index) => ({
             id: `${validLectureId}-new-${Date.now()}-${index}`,
             lecture_id: validLectureId, // now guaranteed to be string
@@ -452,7 +458,7 @@ export default function AdminLecturesPage() {
           // Combine existing images with new images
           allImages = [...allImages, ...newImages];
           setLectureImages(allImages);
-          
+
           setUploadFiles([]);
           setUploadPreviews([]);
         } catch (err) {
@@ -516,7 +522,7 @@ export default function AdminLecturesPage() {
 
         if (error) throw error;
         toast.success('Lecture updated successfully');
-        
+
         // Update local state to reflect saved images
         setLectureImages(allImages);
       }
@@ -602,6 +608,74 @@ export default function AdminLecturesPage() {
         lecture.description?.toLowerCase().includes(query)
     );
   }, [lectures, searchQuery]);
+
+  // Payment link functions
+  const openPaymentDialog = (booking: LectureBooking) => {
+    setSelectedBookingForPayment(booking);
+    setPaymentAmount('');
+    setPaymentDialogOpen(true);
+  };
+
+  const handleSendPaymentLink = async () => {
+    if (!selectedBookingForPayment) return;
+
+    const amount = parseFloat(paymentAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error('Please enter a valid amount greater than 0');
+      return;
+    }
+
+    setSendingPaymentLink(true);
+
+    try {
+      // Get auth token for API request
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+
+      if (!accessToken) {
+        toast.error('Authentication required. Please log in again.');
+        return;
+      }
+
+      // Find the lecture name for this booking
+      const lecture = lectures.find(l => l.id === selectedBookingForPayment.lecture_id);
+      const lectureName = lecture?.title || 'Lecture Booking';
+
+      const response = await fetch('/api/admin/send-lecture-payment-link', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          bookingId: selectedBookingForPayment.id,
+          customerName: selectedBookingForPayment.name,
+          customerEmail: selectedBookingForPayment.email,
+          lectureName,
+          numberOfPeople: selectedBookingForPayment.number_of_people || 1,
+          amount,
+          // Pass all booking data to webhook
+          bookingData: selectedBookingForPayment,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || `Request failed with status ${response.status}`);
+      }
+
+      toast.success('Payment link sent successfully');
+      setPaymentDialogOpen(false);
+      setSelectedBookingForPayment(null);
+      setPaymentAmount('');
+    } catch (err) {
+      console.error('Failed to send payment link:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to send payment link');
+    } finally {
+      setSendingPaymentLink(false);
+    }
+  };
 
   if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
     return null;
@@ -992,7 +1066,7 @@ export default function AdminLecturesPage() {
                 {/* Image Upload Section */}
                 <div className="border-t pt-4">
                   <Label className="text-base font-semibold">Images</Label>
-                  
+
                   {/* Upload Area */}
                   <div className="mt-2">
                     <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
@@ -1214,13 +1288,15 @@ export default function AdminLecturesPage() {
                 {filteredBookings.map((booking) => (
                   <div
                     key={booking.id}
-                    onClick={() => {
-                      setSelectedBooking(booking);
-                      setBookingDetailOpen(true);
-                    }}
-                    className="flex items-center justify-between p-4 bg-white border rounded-lg hover:bg-gray-50 hover:border-primary cursor-pointer transition-colors"
+                    className="flex items-center justify-between p-4 bg-white border rounded-lg hover:bg-gray-50 hover:border-primary transition-colors"
                   >
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div
+                      onClick={() => {
+                        setSelectedBooking(booking);
+                        setBookingDetailOpen(true);
+                      }}
+                      className="flex items-center gap-4 flex-1 min-w-0 cursor-pointer"
+                    >
                       <div className="font-medium text-lg truncate">{booking.name}</div>
                       <div className="text-sm text-muted-foreground truncate hidden sm:block">
                         {booking.email || booking.phone || '-'}
@@ -1246,6 +1322,19 @@ export default function AdminLecturesPage() {
                         {booking.created_at && format(new Date(booking.created_at), 'MMM d, yyyy')}
                       </div>
                     </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="ml-4 flex-shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openPaymentDialog(booking);
+                      }}
+                      title="Send Payment Link"
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Payment Link
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -1262,7 +1351,7 @@ export default function AdminLecturesPage() {
                 Complete booking information
               </DialogDescription>
             </DialogHeader>
-            
+
             {selectedBooking && (
               <div className="space-y-6 mt-4">
                 {/* Status Update */}
@@ -1376,6 +1465,20 @@ export default function AdminLecturesPage() {
                   </div>
                 )}
 
+                {/* Send Payment Link Button */}
+                <div className="pt-4 border-t">
+                  <Button
+                    onClick={() => {
+                      setBookingDetailOpen(false);
+                      openPaymentDialog(selectedBooking);
+                    }}
+                    className="w-full"
+                  >
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Send Payment Link
+                  </Button>
+                </div>
+
                 {/* Timestamps */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
                   <div>
@@ -1395,8 +1498,70 @@ export default function AdminLecturesPage() {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Payment Link Dialog */}
+        <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Send Payment Link</DialogTitle>
+              <DialogDescription>
+                Send a payment link to {selectedBookingForPayment?.name}
+              </DialogDescription>
+            </DialogHeader>
+
+            {selectedBookingForPayment && (
+              <div className="space-y-4 py-4">
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Name:</span>
+                    <span className="font-medium">{selectedBookingForPayment.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Email:</span>
+                    <span className="font-medium">{selectedBookingForPayment.email || '-'}</span>
+                  </div>
+                  {selectedBookingForPayment.number_of_people && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Number of People:</span>
+                      <span className="font-medium">{selectedBookingForPayment.number_of_people}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="payment-amount">Payment Amount (EUR)</Label>
+                  <Input
+                    id="payment-amount"
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    placeholder="Enter amount"
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setPaymentDialogOpen(false)}
+                disabled={sendingPaymentLink}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSendPaymentLink}
+                disabled={sendingPaymentLink || !paymentAmount}
+              >
+                {sendingPaymentLink ? 'Sending...' : 'Send Payment Link'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
 }
-

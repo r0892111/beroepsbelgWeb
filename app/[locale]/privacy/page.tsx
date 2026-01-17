@@ -187,35 +187,6 @@ export default async function PrivacyPage({ params }: PrivacyPageProps) {
                 </table>
               </div>
 
-              {/* Analytics Cookies */}
-              <h4 className="mb-3 mt-6 text-lg font-semibold text-foreground">{t('article8.section83.analytics.title')}</h4>
-              <div className="mb-6 overflow-x-auto">
-                <table className="w-full border-collapse border border-gray-300 text-sm">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="border border-gray-300 px-4 py-2 text-left font-semibold">{t('article8.section83.headers.name')}</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left font-semibold">{t('article8.section83.headers.origin')}</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left font-semibold">{t('article8.section83.headers.function')}</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left font-semibold">{t('article8.section83.headers.duration')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2 font-mono text-xs">_ga</td>
-                      <td className="border border-gray-300 px-4 py-2">google.com</td>
-                      <td className="border border-gray-300 px-4 py-2">{t('article8.section83.analytics.row1.function')}</td>
-                      <td className="border border-gray-300 px-4 py-2">{t('article8.section83.analytics.row1.duration')}</td>
-                    </tr>
-                    <tr className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2 font-mono text-xs">_ga_*</td>
-                      <td className="border border-gray-300 px-4 py-2">google.com</td>
-                      <td className="border border-gray-300 px-4 py-2">{t('article8.section83.analytics.row2.function')}</td>
-                      <td className="border border-gray-300 px-4 py-2">{t('article8.section83.analytics.row2.duration')}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
               {/* Payment Cookies */}
               <h4 className="mb-3 mt-6 text-lg font-semibold text-foreground">{t('article8.section83.payment.title')}</h4>
               <div className="mb-6 overflow-x-auto">

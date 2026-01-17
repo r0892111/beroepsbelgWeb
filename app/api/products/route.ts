@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getProducts } from '@/lib/api/content';
 
+// Disable caching to ensure fresh data on every request
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   try {
     const products = await getProducts();

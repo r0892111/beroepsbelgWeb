@@ -13,6 +13,7 @@ import { Facebook, Instagram, Linkedin, Search } from 'lucide-react';
 import { type Locale } from '@/i18n';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import { openCookieBanner } from '@/components/layout/cookie-banner';
 
 // Custom TikTok Icon
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -331,6 +332,13 @@ export function Footer({ locale }: FooterProps) {
              <Link href={`/${locale}/disclaimer`} className="hover:underline underline-offset-4">{t('terms')}</Link>
              <span>|</span>
              <Link href={`/${locale}/privacy`} className="hover:underline underline-offset-4">{t('privacy')}</Link>
+             <span>|</span>
+             <button
+               onClick={openCookieBanner}
+               className="hover:underline underline-offset-4"
+             >
+               {t('cookieSettings')}
+             </button>
           </div>
         </div>
       </div>

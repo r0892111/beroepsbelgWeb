@@ -67,6 +67,7 @@ export type Product = {
   additionalInfo?: Record<Locale, string>;
   label?: string;
   image?: string;
+  primaryMediaType?: 'image' | 'video'; // Type of primary media (image or video)
   displayOrder?: number; // Global display order (lower numbers appear first)
   categoryDisplayOrder?: number; // Per-category display order (lower numbers appear first within category)
   stripe_product_id?: string; // Stripe product ID (for gift cards etc.)
@@ -79,6 +80,7 @@ export type ProductImage = {
   image_url: string;
   is_primary: boolean;
   sort_order: number;
+  media_type?: 'image' | 'video'; // Defaults to 'image' for backward compatibility
   storage_folder_name?: string;
   created_at?: string;
   updated_at?: string;

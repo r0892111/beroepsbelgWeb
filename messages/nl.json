@@ -182,6 +182,7 @@
     "copyright": "© 2026 Beroepsbelg. Alle rechten voorbehouden.",
     "allRightsReserved": "Alle rechten voorbehouden",
     "terms": "Voorwaarden",
+    "cookieSettings": "Cookie-instellingen",
     "newsletter": {
       "firstName": "Voornaam",
       "lastName": "Achternaam",
@@ -196,12 +197,17 @@
     }
   },
   "cookie": {
-    "message": "We gebruiken cookies om uw ervaring te verbeteren.",
-    "acceptAll": "Accepteer alle",
+    "message": "Wij gebruiken cookies om de website goed te laten werken en uw ervaring te verbeteren.",
+    "customizeMessage": "Kies welke cookies u wilt toestaan. Essentiële cookies zijn nodig voor de basisfunctionaliteit.",
+    "learnMore": "Meer informatie",
+    "acceptAll": "Alles accepteren",
+    "essentialOnly": "Alleen essentieel",
     "customize": "Aanpassen",
-    "functional": "Functionele cookies",
-    "tracking": "Tracking cookies",
-    "save": "Instellingen opslaan",
+    "essential": "Essentiële cookies",
+    "essentialDesc": "Noodzakelijk voor authenticatie en taalinstellingen. Kunnen niet worden uitgeschakeld.",
+    "payment": "Betalingscookies",
+    "paymentDesc": "Nodig voor veilige betalingsverwerking via Stripe.",
+    "save": "Voorkeuren opslaan",
     "back": "Terug"
   },
   "auth": {
@@ -275,7 +281,9 @@
     "orContinueWithEmail": "Of doorgaan met e-mail",
     "failedGoogleSignIn": "Inloggen met Google mislukt",
     "couldNotLoadProducts": "Kon de producten niet laden",
-    "tryAgain": "Probeer opnieuw"
+    "tryAgain": "Probeer opnieuw",
+    "shippingAddress": "Verzendadres",
+    "orderItems": "Bestelde artikelen"
   },
   "forms": {
     "name": "Naam",
@@ -730,7 +738,10 @@
     "total": "Totaal",
     "processing": "Verwerken...",
     "proceedToPayment": "Doorgaan naar betaling",
-    "bookNow": "Boek nu"
+    "bookNow": "Boek nu",
+    "tanguyFee": "voor Tanguy als persoonlijke gids",
+    "tanguyFeeLineItem": "Kosten voor Tanguy als persoonlijke gids",
+    "extraHourLineItem": "Extra uur"
   },
   "product": {
     "description": "Beschrijving",
@@ -814,7 +825,8 @@
     "noPosts": "Geen blogposts gevonden.",
     "backToBlog": "Terug naar Blog",
     "relatedPosts": "Gerelateerde Berichten",
-    "featured": "Uitgelicht"
+    "featured": "Uitgelicht",
+    "share": "Delen"
   },
   "contact": {
     "title": "Contact",
@@ -841,6 +853,7 @@
     "title": "Word een BeroepsBelg gids",
     "becomeGuide": "Word een BeroepsBelg Gids",
     "joinTeam": "Word lid van ons team en deel je passie voor de Belgische cultuur",
+    "shareOpportunity": "Deel deze vacature",
     "whyJoinUs": "Waarom bij ons werken?",
     "introduction1": "Ben je gepassioneerd door geschiedenis, architectuur en het vertellen van verhalen? Wil je deel uitmaken van een dynamisch team dat België op een unieke manier in de schijnwerpers zet?",
     "introduction2": "We zijn altijd op zoek naar enthousiaste gidsen die onze missie delen om bezoekers en locals een verrijkende ervaring te bieden.",
@@ -1072,17 +1085,6 @@
             "duration": "1 jaar"
           }
         },
-        "analytics": {
-          "title": "Analytics cookies (Google Analytics 4)",
-          "row1": {
-            "function": "Onderscheidt unieke bezoekers",
-            "duration": "2 jaar"
-          },
-          "row2": {
-            "function": "Bewaart sessiestatus",
-            "duration": "2 jaar"
-          }
-        },
         "payment": {
           "title": "Betalingscookies (Stripe)",
           "row1": {
@@ -1239,6 +1241,21 @@
     "description": "Uw boeking is niet voltooid. Er zijn geen kosten in rekening gebracht.",
     "helpMessage": "Als u problemen heeft ondervonden of vragen heeft, aarzel dan niet om contact op te nemen met ons support team.",
     "browseTours": "Bekijk tours",
+    "contactUs": "Neem contact op"
+  },
+  "lecturePaymentSuccess": {
+    "title": "Betaling geslaagd!",
+    "description": "Bedankt voor uw betaling voor de lezing. U ontvangt binnenkort een bevestigingsmail.",
+    "whatsNext": "Wat nu?",
+    "nextSteps": "U ontvangt een bevestigingsmail met alle details van uw lezing. We kijken ernaar uit u te verwelkomen!",
+    "returnHome": "Terug naar home",
+    "viewLecture": "Bekijk lezing"
+  },
+  "lecturePaymentCancelled": {
+    "title": "Betaling geannuleerd",
+    "description": "Uw betaling voor de lezing is niet voltooid. Er zijn geen kosten in rekening gebracht.",
+    "helpMessage": "Als u problemen heeft ondervonden of vragen heeft, aarzel dan niet om contact op te nemen met ons support team.",
+    "viewLecture": "Bekijk lezing",
     "contactUs": "Neem contact op"
   },
   "opMaatForm": {

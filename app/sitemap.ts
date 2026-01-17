@@ -5,6 +5,7 @@ import { getCities, getTours, getProducts, getBlogs } from '@/lib/api/content';
 const BASE_URL = 'https://beroepsbelg.be';
 
 // Static pages that exist for all locales
+// Note: Excludes private/transactional pages (admin, auth, booking flow, order flow, etc.)
 const STATIC_PAGES = [
   '', // homepage
   '/tours',

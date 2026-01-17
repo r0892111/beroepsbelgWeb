@@ -118,6 +118,7 @@
     "copyright": "© 2026 Beroepsbelg. Tous droits réservés.",
     "allRightsReserved": "Tous droits réservés",
     "terms": "Conditions",
+    "cookieSettings": "Paramètres des cookies",
     "newsletter": {
       "firstName": "Prénom",
       "lastName": "Nom de famille",
@@ -132,12 +133,17 @@
     }
   },
   "cookie": {
-    "message": "Nous utilisons des cookies pour améliorer votre expérience.",
+    "message": "Nous utilisons des cookies pour assurer le bon fonctionnement du site et améliorer votre expérience.",
+    "customizeMessage": "Choisissez les cookies que vous souhaitez autoriser. Les cookies essentiels sont nécessaires au fonctionnement de base.",
+    "learnMore": "En savoir plus",
     "acceptAll": "Tout accepter",
+    "essentialOnly": "Essentiels uniquement",
     "customize": "Personnaliser",
-    "functional": "Cookies fonctionnels",
-    "tracking": "Cookies de suivi",
-    "save": "Enregistrer les paramètres",
+    "essential": "Cookies essentiels",
+    "essentialDesc": "Nécessaires pour l'authentification et les paramètres de langue. Ne peuvent pas être désactivés.",
+    "payment": "Cookies de paiement",
+    "paymentDesc": "Nécessaires pour le traitement sécurisé des paiements via Stripe.",
+    "save": "Enregistrer les préférences",
     "back": "Retour"
   },
   "auth": {
@@ -211,7 +217,9 @@
     "orContinueWithEmail": "Ou continuer avec e-mail",
     "failedGoogleSignIn": "Échec de la connexion avec Google",
     "couldNotLoadProducts": "Impossible de charger les produits",
-    "tryAgain": "Réessayer"
+    "tryAgain": "Réessayer",
+    "shippingAddress": "Adresse de livraison",
+    "orderItems": "Articles commandés"
   },
   "forms": {
     "name": "Nom",
@@ -661,7 +669,10 @@
     "onlineDiscount": "10% de réduction pour les réservations en ligne",
     "originalPrice": "Prix original",
     "discountedPrice": "Prix réduit",
-    "youSave": "Vous économisez"
+    "youSave": "Vous économisez",
+    "tanguyFee": "frais pour Tanguy comme guide personnel",
+    "tanguyFeeLineItem": "Frais pour Tanguy comme guide personnel",
+    "extraHourLineItem": "Heure supplémentaire"
   },
   "product": {
     "description": "Description",
@@ -745,7 +756,8 @@
     "noPosts": "Aucun article de blog trouvé.",
     "backToBlog": "Retour au blog",
     "relatedPosts": "Articles connexes",
-    "featured": "À la une"
+    "featured": "À la une",
+    "share": "Partager"
   },
   "contact": {
     "title": "Contact",
@@ -772,6 +784,7 @@
     "title": "Devenez un guide BeroepsBelg",
     "becomeGuide": "Devenez un Guide BeroepsBelg",
     "joinTeam": "Rejoignez notre équipe et partagez votre passion pour la culture belge",
+    "shareOpportunity": "Partager cette opportunité",
     "whyJoinUs": "Pourquoi nous rejoindre ?",
     "introduction1": "Êtes-vous passionné par l'histoire, l'architecture et la narration ? Voulez-vous faire partie d'une équipe dynamique qui met la Belgique en valeur de manière unique ?",
     "introduction2": "Nous recherchons toujours des guides enthousiastes qui partagent notre mission d'offrir aux visiteurs et aux habitants une expérience enrichissante.",
@@ -1003,17 +1016,6 @@
             "duration": "1 an"
           }
         },
-        "analytics": {
-          "title": "Cookies analytiques (Google Analytics 4)",
-          "row1": {
-            "function": "Distingue les visiteurs uniques",
-            "duration": "2 ans"
-          },
-          "row2": {
-            "function": "Maintient l'état de la session",
-            "duration": "2 ans"
-          }
-        },
         "payment": {
           "title": "Cookies de paiement (Stripe)",
           "row1": {
@@ -1170,6 +1172,21 @@
     "description": "Votre réservation n'a pas été complétée. Aucun frais n'a été prélevé.",
     "helpMessage": "Si vous avez rencontré des problèmes ou avez des questions, n'hésitez pas à contacter notre équipe de support.",
     "browseTours": "Parcourir les tours",
+    "contactUs": "Nous contacter"
+  },
+  "lecturePaymentSuccess": {
+    "title": "Paiement réussi !",
+    "description": "Merci pour votre paiement pour la conférence. Vous recevrez bientôt un e-mail de confirmation.",
+    "whatsNext": "Et maintenant ?",
+    "nextSteps": "Vous recevrez un e-mail de confirmation avec tous les détails de votre conférence. Nous avons hâte de vous accueillir !",
+    "returnHome": "Retour à l'accueil",
+    "viewLecture": "Voir la conférence"
+  },
+  "lecturePaymentCancelled": {
+    "title": "Paiement annulé",
+    "description": "Votre paiement pour la conférence n'a pas été complété. Aucun frais n'a été prélevé.",
+    "helpMessage": "Si vous avez rencontré des problèmes ou avez des questions, n'hésitez pas à contacter notre équipe de support.",
+    "viewLecture": "Voir la conférence",
     "contactUs": "Nous contacter"
   },
   "opMaatForm": {

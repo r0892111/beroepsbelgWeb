@@ -118,6 +118,7 @@
     "copyright": "© 2026 Beroepsbelg. All rights reserved.",
     "allRightsReserved": "All rights reserved",
     "terms": "Terms",
+    "cookieSettings": "Cookie Settings",
     "newsletter": {
       "firstName": "First Name",
       "lastName": "Last Name",
@@ -132,12 +133,17 @@
     }
   },
   "cookie": {
-    "message": "We use cookies to improve your experience.",
+    "message": "We use cookies to ensure the website functions properly and to improve your experience.",
+    "customizeMessage": "Choose which cookies you want to allow. Essential cookies are required for basic functionality.",
+    "learnMore": "Learn more",
     "acceptAll": "Accept all",
+    "essentialOnly": "Essential only",
     "customize": "Customize",
-    "functional": "Functional cookies",
-    "tracking": "Tracking cookies",
-    "save": "Save settings",
+    "essential": "Essential cookies",
+    "essentialDesc": "Required for authentication and language settings. Cannot be disabled.",
+    "payment": "Payment cookies",
+    "paymentDesc": "Required for secure payment processing via Stripe.",
+    "save": "Save preferences",
     "back": "Back"
   },
   "auth": {
@@ -211,7 +217,9 @@
     "orContinueWithEmail": "Or continue with email",
     "failedGoogleSignIn": "Failed to sign in with Google",
     "couldNotLoadProducts": "Could not load products",
-    "tryAgain": "Try again"
+    "tryAgain": "Try again",
+    "shippingAddress": "Shipping Address",
+    "orderItems": "Order Items"
   },
   "forms": {
     "name": "Name",
@@ -662,7 +670,10 @@
     "onlineDiscount": "10% discount for online bookings",
     "originalPrice": "Original price",
     "discountedPrice": "Discounted price",
-    "youSave": "You save"
+    "youSave": "You save",
+    "tanguyFee": "fee for Tanguy as personal guide",
+    "tanguyFeeLineItem": "Fee for Tanguy as personal guide",
+    "extraHourLineItem": "Extra hour"
   },
   "product": {
     "description": "Description",
@@ -746,7 +757,8 @@
     "noPosts": "No blog posts found.",
     "backToBlog": "Back to Blog",
     "relatedPosts": "Related Posts",
-    "featured": "Featured"
+    "featured": "Featured",
+    "share": "Share"
   },
   "contact": {
     "title": "Contact",
@@ -773,6 +785,7 @@
     "title": "Become a BeroepsBelg guide",
     "becomeGuide": "Become a BeroepsBelg Guide",
     "joinTeam": "Join our team and share your passion for Belgian culture",
+    "shareOpportunity": "Share this opportunity",
     "whyJoinUs": "Why join us?",
     "introduction1": "Are you passionate about history, architecture and storytelling? Do you want to be part of a dynamic team that showcases Belgium in a unique way?",
     "introduction2": "We are always looking for enthusiastic guides who share our mission to provide visitors and locals with an enriching experience.",
@@ -1004,17 +1017,6 @@
             "duration": "1 year"
           }
         },
-        "analytics": {
-          "title": "Analytics Cookies (Google Analytics 4)",
-          "row1": {
-            "function": "Distinguishes unique visitors",
-            "duration": "2 years"
-          },
-          "row2": {
-            "function": "Maintains session state",
-            "duration": "2 years"
-          }
-        },
         "payment": {
           "title": "Payment Cookies (Stripe)",
           "row1": {
@@ -1171,6 +1173,21 @@
     "description": "Your booking was not completed. No charges have been made.",
     "helpMessage": "If you experienced any issues or have questions, please don't hesitate to contact our support team.",
     "browseTours": "Browse Tours",
+    "contactUs": "Contact Us"
+  },
+  "lecturePaymentSuccess": {
+    "title": "Payment Successful!",
+    "description": "Thank you for your payment for the lecture. You will receive a confirmation email shortly.",
+    "whatsNext": "What's Next?",
+    "nextSteps": "You will receive a confirmation email with all the details of your lecture. We look forward to welcoming you!",
+    "returnHome": "Return Home",
+    "viewLecture": "View Lecture"
+  },
+  "lecturePaymentCancelled": {
+    "title": "Payment Cancelled",
+    "description": "Your payment for the lecture was not completed. No charges have been made.",
+    "helpMessage": "If you experienced any issues or have questions, please don't hesitate to contact our support team.",
+    "viewLecture": "View Lecture",
     "contactUs": "Contact Us"
   },
   "opMaatForm": {

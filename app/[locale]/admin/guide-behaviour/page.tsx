@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Home, LogOut, RefreshCw, Search, Star, BarChart3, TrendingUp, AlertTriangle, CheckCircle2, Image as ImageIcon, Users, ArrowUpDown, ArrowUp, ArrowDown, Table2 } from 'lucide-react';
+import { Home, LogOut, RefreshCw, Search, Star, BarChart3, TrendingUp, AlertTriangle, CheckCircle2, Image as ImageIcon, Users, ArrowUpDown, ArrowUp, ArrowDown, Table2, X } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase/client';
@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer, ScatterChart, Scatter, PieChart, Pie, Cell } from 'recharts';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 // Configurable thresholds
 const WATCHLIST_THRESHOLDS = {
@@ -67,6 +68,18 @@ export default function AdminGuideBehaviourPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [activeView, setActiveView] = useState<'table' | 'charts'>('table');
 
+  // Popup state for guide detail view
+  const [selectedGuide, setSelectedGuide] = useState<GuideWithMetrics | null>(null);
+  const [popupOpen, setPopupOpen] = useState(false);
+  const [allBookings, setAllBookings] = useState<Array<{
+    guide_id: number;
+    picturesUploaded: boolean | null;
+    pictureCount: number | null;
+    isCustomerDetailsRequested: boolean | null;
+    status: string | null;
+    tour_datetime: string | null;
+  }>>([]);
+
   useEffect(() => {
     if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
       router.push(`/${locale}`);
@@ -92,7 +105,7 @@ export default function AdminGuideBehaviourPage() {
       // Fetch all bookings with guide_id to calculate metrics
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('tourbooking')
-        .select('guide_id, picturesUploaded, pictureCount, isCustomerDetailsRequested, status')
+        .select('guide_id, picturesUploaded, pictureCount, isCustomerDetailsRequested, status, tour_datetime')
         .not('guide_id', 'is', null);
 
       if (bookingsError) {
@@ -183,6 +196,16 @@ export default function AdminGuideBehaviourPage() {
       });
 
       setGuides(guidesWithMetrics);
+
+      // Store all bookings for date-filtered calculations in popup
+      setAllBookings((bookingsData || []).map(b => ({
+        guide_id: b.guide_id,
+        picturesUploaded: b.picturesUploaded,
+        pictureCount: b.pictureCount,
+        isCustomerDetailsRequested: b.isCustomerDetailsRequested,
+        status: b.status,
+        tour_datetime: b.tour_datetime,
+      })));
 
       // Update guides_temp table with calculated metrics
       // This ensures all calculable fields are properly filled from booking data
@@ -1109,12 +1132,12 @@ export default function AdminGuideBehaviourPage() {
                       </TableHeader>
                       <TableBody>
                         {filteredAndSortedGuides.map((guide) => (
-                          <TableRow 
+                          <TableRow
                             key={guide.id}
-                            className="cursor-pointer hover:bg-muted/50"
+                            className="cursor-pointer hover:bg-[#1BDD95]/10 transition-colors"
                             onClick={() => {
-                              // Navigate to guide detail if exists, otherwise could show drawer
-                              router.push(`/${locale}/admin/guides`);
+                              setSelectedGuide(guide);
+                              setPopupOpen(true);
                             }}
                           >
                             <TableCell>
@@ -1492,6 +1515,124 @@ export default function AdminGuideBehaviourPage() {
           </>
         )}
       </div>
+
+      {/* Spotify Wrapped-style Guide Detail Popup */}
+      <Dialog open={popupOpen} onOpenChange={setPopupOpen}>
+        <DialogContent className="max-w-2xl p-0 overflow-hidden border-0 bg-transparent">
+          {selectedGuide && (
+            <div className="relative rounded-lg overflow-hidden">
+              {/* Gradient Background */}
+              <div className="absolute inset-0 bg-gradient-to-br from-[#0a1628] via-[#1a2d4a] to-[#1BDD95]/30" />
+
+              {/* Content */}
+              <div className="relative z-10 p-8">
+                {/* Close button override for dark theme */}
+                <button
+                  onClick={() => setPopupOpen(false)}
+                  className="absolute right-4 top-4 rounded-full p-2 bg-white/10 hover:bg-white/20 transition-colors"
+                >
+                  <X className="h-5 w-5 text-white" />
+                </button>
+
+                {/* Profile Section */}
+                <div className="flex flex-col items-center mb-8">
+                  {selectedGuide.profile_picture ? (
+                    <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-[#1BDD95] shadow-lg shadow-[#1BDD95]/30 mb-4">
+                      <Image
+                        src={selectedGuide.profile_picture}
+                        alt={selectedGuide.name || 'Guide'}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-32 h-32 rounded-full bg-white/10 flex items-center justify-center border-4 border-[#1BDD95] mb-4">
+                      <Users className="h-16 w-16 text-white/50" />
+                    </div>
+                  )}
+                  <h2 className="text-3xl font-bold text-white mb-2">
+                    {selectedGuide.name || 'Unnamed Guide'}
+                  </h2>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {selectedGuide.status.map((status) => (
+                      <span key={status}>{getStatusBadge(status)}</span>
+                    ))}
+                  </div>
+                  {selectedGuide.is_favourite && (
+                    <div className="flex items-center gap-1 mt-2 text-yellow-400">
+                      <Star className="h-5 w-5 fill-yellow-400" />
+                      <span className="text-sm font-medium">Favourite Guide</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {/* Tours Done */}
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+                    <div className="text-5xl font-bold text-[#1BDD95] mb-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      {(selectedGuide.tours_done ?? 0).toLocaleString()}
+                    </div>
+                    <div className="text-white/70 text-sm font-medium uppercase tracking-wide">
+                      Tours Done
+                    </div>
+                  </div>
+
+                  {/* Photos Taken */}
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+                    <div className="text-5xl font-bold text-[#1BDD95] mb-2 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
+                      {(selectedGuide.photos_taken_amount ?? 0).toLocaleString()}
+                    </div>
+                    <div className="text-white/70 text-sm font-medium uppercase tracking-wide">
+                      Photos Taken
+                    </div>
+                  </div>
+
+                  {/* Photo Moments */}
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+                    <div className="text-5xl font-bold text-[#1BDD95] mb-2 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
+                      {(selectedGuide.photos_taken_frequency ?? 0).toLocaleString()}
+                    </div>
+                    <div className="text-white/70 text-sm font-medium uppercase tracking-wide">
+                      Photo Moments
+                    </div>
+                  </div>
+
+                  {/* Photos Per Tour */}
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+                    <div className="text-5xl font-bold text-white mb-2 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300">
+                      {selectedGuide.photos_per_tour.toFixed(1)}
+                    </div>
+                    <div className="text-white/70 text-sm font-medium uppercase tracking-wide">
+                      Photos / Tour
+                    </div>
+                  </div>
+
+                  {/* Client Info Requests */}
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+                    <div className="text-5xl font-bold text-amber-400 mb-2 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-400">
+                      {(selectedGuide.requested_client_info ?? 0).toLocaleString()}
+                    </div>
+                    <div className="text-white/70 text-sm font-medium uppercase tracking-wide">
+                      Client Info Requests
+                    </div>
+                  </div>
+
+                  {/* Denied Assignments */}
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+                    <div className="text-5xl font-bold text-rose-400 mb-2 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500">
+                      {(selectedGuide.denied_assignment ?? 0).toLocaleString()}
+                    </div>
+                    <div className="text-white/70 text-sm font-medium uppercase tracking-wide">
+                      Denied Assignments
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

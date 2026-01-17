@@ -53,7 +53,7 @@ serve(async (req: Request) => {
     const FREIGHT_COST_BE = 7.50;
     const FREIGHT_COST_INTERNATIONAL = 14.99;
     const FREIGHT_COST_FREE = 0; // Free for tour bookings with upsell products
-    const TANGUY_COST = 125; // Tanguy button cost
+    const TANGUY_COST = 125; // Fee for Tanguy as personal guide
     const EXTRA_HOUR_COST = 150; // Extra hour cost
 
     // Log received booking data for debugging
@@ -99,37 +99,31 @@ serve(async (req: Request) => {
     }
 
     const finalNumberOfPeople = numberOfPeople; // Use actual number of people for all tour types
-    // Calculate discount for online bookings (10% discount, applies to tours only, not upsell products)
-    const discountRate = 0.9; // 10% discount = 90% of original price
-    const discountedPrice = tour.price * discountRate;
     const tourTitle = tour.title_nl || tour.title_en || 'Tour'
     // For op_maat tours, bookingDate is empty, so don't include it in description
-    const description = opMaat 
-      ? 'Op Maat Tour' 
+    const description = opMaat
+      ? 'Op Maat Tour'
       : `${finalNumberOfPeople} person(s) - ${bookingDate && bookingDate.trim() ? bookingDate : 'Date to be determined'}`;
 
-    // Calculate tour amounts
-    const tourFullPrice = tour.price * finalNumberOfPeople;
-    const discountAmount = tourFullPrice * 0.1; // 10% discount on tour only
-    const tourFinalAmount = tourFullPrice - discountAmount;
-    const amount = Math.round(tourFinalAmount * 100); // Use discounted price
-    
-    // Build line items: tour (with discount applied) + upsell products
-    // Tour line item: use discounted price, discount info will be in description and metadata
+    // Calculate tour amounts (no discount)
+    const tourFinalAmount = tour.price * finalNumberOfPeople;
+    const amount = Math.round(tourFinalAmount * 100);
+
+    // Build line items: tour + upsell products
     const lineItems: any[] = [
       {
         price_data: {
           currency: 'eur',
           product_data: {
             name: tourTitle,
-            description: `${description} (10% online discount applied)`,
+            description: description,
           },
-          unit_amount: amount, // Discounted price for all people
+          unit_amount: amount,
         },
         quantity: 1, // Quantity is 1 because unit_amount already includes the total for all people
       },
     ];
-    
+
     console.log('Tour line item added:', {
       name: tourTitle,
       description: description,
@@ -137,12 +131,8 @@ serve(async (req: Request) => {
       unit_amount_euros: (amount / 100).toFixed(2),
       quantity: 1,
       numberOfPeople: finalNumberOfPeople,
-      originalPrice: tour.price,
-      discountedPrice: discountedPrice,
-      discountApplied: '10%',
+      pricePerPerson: tour.price,
       calculated_total: tourFinalAmount,
-      original_total: tourFullPrice,
-      savings: discountAmount,
     });
 
     // Add upsell products as line items (standardized format: {n: name, p: price, q: quantity})
@@ -200,7 +190,7 @@ serve(async (req: Request) => {
         price_data: {
           currency: 'eur',
           product_data: {
-            name: 'Tanguy Button',
+            name: 'Fee for Tanguy as personal guide',
           },
           unit_amount: Math.round(TANGUY_COST * 100), // Convert to cents
         },
