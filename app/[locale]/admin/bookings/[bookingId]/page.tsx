@@ -1467,6 +1467,7 @@ export default function BookingDetailPage() {
         <Card className="border-dashed">
           <CardContent className="py-4">
             <div className="flex flex-wrap items-center gap-3">
+              {/* COMMENTED OUT: Send to Guide Assignment button - keeping code for future use
               {!booking.guide_id && (
                 <Button
                   onClick={triggerGuideAssignment}
@@ -1482,6 +1483,7 @@ export default function BookingDetailPage() {
                   {triggeringGuideAssignment ? 'Sending...' : 'Send to Guide Assignment'}
                 </Button>
               )}
+              */}
               {booking.deal_id && !isLocalStories && (
                 <Button variant="outline" size="sm" asChild className="gap-2">
                   <a
@@ -2001,6 +2003,7 @@ export default function BookingDetailPage() {
                       </div>
                     </div>
                     <div className="flex gap-2">
+                      {/* COMMENTED OUT: Reassign button - keeping code for future use
                       <Button
                         variant="outline"
                         size="sm"
@@ -2009,6 +2012,7 @@ export default function BookingDetailPage() {
                         <Users className="h-4 w-4 mr-1" />
                         {guide ? 'Reassign' : 'Assign'}
                       </Button>
+                      */}
                       <Button
                         variant="outline"
                         size="sm"
@@ -2048,6 +2052,7 @@ export default function BookingDetailPage() {
                       <p className="text-xs text-muted-foreground">Awaiting assignment</p>
                     </div>
                   </div>
+                  {/* COMMENTED OUT: Assign button - keeping code for future use
                   <Button
                     variant="outline"
                     size="sm"
@@ -2056,6 +2061,7 @@ export default function BookingDetailPage() {
                     <Users className="h-4 w-4 mr-1" />
                     Assign
                   </Button>
+                  */}
                 </div>
               )}
 
@@ -3353,7 +3359,7 @@ export default function BookingDetailPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Reassign Guide Dialog */}
+      {/* COMMENTED OUT: Reassign Guide Dialog - keeping code for future use
       <Dialog open={reassignGuideDialogOpen} onOpenChange={setReassignGuideDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -3432,6 +3438,7 @@ export default function BookingDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      */}
     </div>
   );
 }
