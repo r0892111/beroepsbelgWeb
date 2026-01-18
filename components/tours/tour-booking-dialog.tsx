@@ -417,6 +417,7 @@ export function TourBookingDialog({
           // User fills out form later via email link to /op-maat-form page
           opMaatAnswers: null,
           durationMinutes: actualDuration, // Include actual duration in booking
+          extraHour: opMaat ? formData.extraHour : false, // Pass extra hour flag for opMaat tours
           // For local stories: pass existing tourbooking ID if available
           existingTourBookingId: isLocalStories ? (existingTourBookingId || null) : null,
         }),
