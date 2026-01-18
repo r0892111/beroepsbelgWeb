@@ -79,14 +79,7 @@ export function TourBookingDialog({
   const [selectedUpsell, setSelectedUpsell] = useState<Record<string, number>>({});
   const [showUpsellDialog, setShowUpsellDialog] = useState(false);
   const [showAddressDialog, setShowAddressDialog] = useState(false);
-  const [showOpMaatDialog, setShowOpMaatDialog] = useState(false);
   const [showAllProducts, setShowAllProducts] = useState(false);
-  const [opMaatAnswers, setOpMaatAnswers] = useState({
-    startEnd: '',
-    cityPart: '',
-    subjects: '',
-    specialWishes: '',
-  });
 
   const [addressData, setAddressData] = useState({
     fullName: '',
@@ -443,7 +436,6 @@ export function TourBookingDialog({
       // Close dialogs and redirect to Stripe
       setShowUpsellDialog(false);
       setShowAddressDialog(false);
-      setShowOpMaatDialog(false);
       window.location.href = url;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -1440,130 +1432,7 @@ export function TourBookingDialog({
           </ResponsiveDialogFooter>
       </ResponsiveDialog>
 
-      {/* Op Maat Questions Dialog */}
-      <ResponsiveDialog 
-        open={showOpMaatDialog} 
-        onOpenChange={(isOpen) => {
-          setShowOpMaatDialog(isOpen);
-        }}
-        className="sm:max-w-[700px]"
-        style={{ zIndex: 70 }}
-      >
-          <ResponsiveDialogHeader>
-            <ResponsiveDialogTitle className="flex items-center gap-2">
-              <div className="p-2 rounded-lg" style={{ backgroundColor: 'var(--primary-base)', color: 'white' }}>
-                <FileText className="h-5 w-5" />
-              </div>
-              Help ons je perfecte tour samen te stellen
-            </ResponsiveDialogTitle>
-            <ResponsiveDialogDescription>
-              Beantwoord de volgende vragen om je op maat tour te personaliseren
-            </ResponsiveDialogDescription>
-          </ResponsiveDialogHeader>
-
-          <div className="space-y-6">
-            <div>
-              <Label htmlFor="startEnd" className="text-base font-semibold mb-2 block">
-                Waar wil je starten en eindigen?
-              </Label>
-              <Textarea
-                id="startEnd"
-                placeholder="Bijvoorbeeld: Start bij Centraal Station, eindig bij het stadhuis..."
-                value={opMaatAnswers.startEnd}
-                onChange={(e) => setOpMaatAnswers(prev => ({ ...prev, startEnd: e.target.value }))}
-                className="min-h-[100px]"
-                rows={4}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="cityPart" className="text-base font-semibold mb-2 block">
-                Welk deel van de stad wil je beter leren kennen?
-              </Label>
-              <Textarea
-                id="cityPart"
-                placeholder="Bijvoorbeeld: De historische binnenstad, de moderne wijk, de markten..."
-                value={opMaatAnswers.cityPart}
-                onChange={(e) => setOpMaatAnswers(prev => ({ ...prev, cityPart: e.target.value }))}
-                className="min-h-[100px]"
-                rows={4}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="subjects" className="text-base font-semibold mb-2 block">
-                Welke onderwerpen wil je in de tour zien?
-              </Label>
-              <Textarea
-                id="subjects"
-                placeholder="Bijvoorbeeld: Architectuur, geschiedenis, lokale cultuur, eten en drinken..."
-                value={opMaatAnswers.subjects}
-                onChange={(e) => setOpMaatAnswers(prev => ({ ...prev, subjects: e.target.value }))}
-                className="min-h-[100px]"
-                rows={4}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="specialWishes" className="text-base font-semibold mb-2 block">
-                Zijn er nog speciale wensen?
-              </Label>
-              <Textarea
-                id="specialWishes"
-                placeholder="Bijvoorbeeld: Toegankelijkheid, specifieke interesses, voorkeuren..."
-                value={opMaatAnswers.specialWishes}
-                onChange={(e) => setOpMaatAnswers(prev => ({ ...prev, specialWishes: e.target.value }))}
-                className="min-h-[100px]"
-                rows={4}
-              />
-            </div>
-          </div>
-
-          {error && (
-            <div className="rounded-md bg-red-50 p-3 text-sm text-red-800 border border-red-200">
-              {error}
-            </div>
-          )}
-
-          <ResponsiveDialogFooter className="flex-col sm:flex-row gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                // Check if we came from address dialog (has upsell products)
-                const hasUpsellProducts = upsellTotal > 0;
-                if (hasUpsellProducts) {
-                  setShowOpMaatDialog(false);
-                  setShowAddressDialog(true);
-                } else {
-                  setShowOpMaatDialog(false);
-                  setShowUpsellDialog(true);
-                }
-              }}
-              className="w-full sm:w-auto"
-            >
-              ← Terug
-            </Button>
-            <Button
-              type="button"
-              onClick={proceedToCheckout}
-              disabled={loading || !opMaatAnswers.startEnd.trim() || !opMaatAnswers.cityPart.trim() || !opMaatAnswers.subjects.trim()}
-              className="w-full sm:w-auto"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Verwerken...
-                </>
-              ) : (
-                <>
-                  Doorgaan naar betaling
-                  {upsellTotal > 0 && ` (€${totalPrice.toFixed(2)})`}
-                </>
-              )}
-            </Button>
-          </ResponsiveDialogFooter>
-      </ResponsiveDialog>
+      {/* Op Maat personalization form removed - users fill it out after booking via email link */}
     </>
   );
 }
