@@ -98,7 +98,7 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
         // Fetch cities from database
         const { data: citiesData, error: citiesError } = await supabase
           .from('cities')
-          .select('id, slug, name_nl, name_en, name_fr, name_de, teaser_nl, teaser_en, teaser_fr, teaser_de, image, status, display_order')
+          .select('id, slug, name_nl, name_en, name_fr, name_de, teaser_nl, teaser_en, teaser_fr, teaser_de, homepage_tagline_nl, homepage_tagline_en, homepage_tagline_fr, homepage_tagline_de, homepage_description_nl, homepage_description_en, homepage_description_fr, homepage_description_de, image, status, display_order')
           .eq('status', 'live')
           .order('display_order', { ascending: true, nullsFirst: false });
 
@@ -131,16 +131,18 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
         // Map database cities to component format
         const mappedCities: CityData[] = (citiesData || []).map((city: any) => {
           const cityName = city[`name_${locale}`] || city.name_nl || '';
-          const cityTeaser = city[`teaser_${locale}`] || city.teaser_nl || '';
-          
+          // Use homepage-specific fields, fallback to teaser if not set
+          const cityTagline = city[`homepage_tagline_${locale}`] || city.homepage_tagline_nl || city[`teaser_${locale}`] || city.teaser_nl || '';
+          const cityDescription = city[`homepage_description_${locale}`] || city.homepage_description_nl || city[`teaser_${locale}`] || city.teaser_nl || '';
+
           // Use city_images photo if available, otherwise fall back to cities.image
           const photoUrl = imagesMap[city.id]?.photoUrl || city.image || '';
 
           return {
             id: city.slug || city.id, // Use slug for routing, fallback to id
             name: cityName,
-            tagline: cityTeaser, // Using teaser as tagline
-            description: cityTeaser, // Using teaser as description (can be updated if there's a separate description field)
+            tagline: cityTagline, // Homepage tagline from database
+            description: cityDescription, // Homepage description from database
             photoUrl: photoUrl,
             sketchUrl: undefined, // Sketch URLs can be added to database if needed
           };
@@ -379,7 +381,7 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.1 }}
-                  className="text-3xl md:text-5xl lg:text-[65px] xl:text-[80px] leading-[0.95] text-neutral-900 font-oswald font-bold tracking-tight uppercase text-center w-full"
+                  className="text-2xl md:text-4xl lg:text-[50px] xl:text-[60px] leading-[0.95] text-neutral-900 font-oswald font-bold tracking-tight uppercase text-center w-full"
                   suppressHydrationWarning
                 >
                   {activeCity.name}
@@ -403,7 +405,7 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
               className="text-lg md:text-2xl font-inter font-light text-neutral-800 mt-4 lg:mt-6 mb-6 md:mb-8 lg:border-l-4 lg:border-white lg:pl-6 tracking-wide"
               suppressHydrationWarning
             >
-              {t(`${activeCity.id}.tagline`)}
+              {activeCity.tagline}
             </motion.p>
 
             <motion.p
@@ -414,7 +416,7 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
               className="text-base md:text-lg text-neutral-800 leading-relaxed max-w-md mx-auto lg:mx-0 mb-4 md:mb-8 lg:mb-8 font-inter"
               suppressHydrationWarning
             >
-              {t(`${activeCity.id}.description`)}
+              {activeCity.description}
             </motion.p>
           </div>
 

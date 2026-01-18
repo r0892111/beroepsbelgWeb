@@ -59,6 +59,7 @@ export function ProductDetailPage({ product, locale }: ProductDetailPageProps) {
               image_url: img.url || img.image_url,
               is_primary: img.is_primary || false,
               sort_order: img.sort_order !== undefined ? img.sort_order : index,
+              media_type: img.media_type || undefined,
               storage_folder_name: img.storage_folder_name || undefined,
               created_at: img.created_at,
               updated_at: img.updated_at,
