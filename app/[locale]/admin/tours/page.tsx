@@ -158,6 +158,14 @@ interface CityData {
   teaser_en: string | null;
   teaser_fr: string | null;
   teaser_de: string | null;
+  homepage_tagline_nl: string | null;
+  homepage_tagline_en: string | null;
+  homepage_tagline_fr: string | null;
+  homepage_tagline_de: string | null;
+  homepage_description_nl: string | null;
+  homepage_description_en: string | null;
+  homepage_description_fr: string | null;
+  homepage_description_de: string | null;
   cta_text_nl: string | null;
   cta_text_en: string | null;
   cta_text_fr: string | null;
@@ -210,6 +218,14 @@ export default function AdminToursPage() {
     teaser_en: null,
     teaser_fr: null,
     teaser_de: null,
+    homepage_tagline_nl: null,
+    homepage_tagline_en: null,
+    homepage_tagline_fr: null,
+    homepage_tagline_de: null,
+    homepage_description_nl: null,
+    homepage_description_en: null,
+    homepage_description_fr: null,
+    homepage_description_de: null,
     cta_text_nl: null,
     cta_text_en: null,
     cta_text_fr: null,
@@ -1108,6 +1124,14 @@ export default function AdminToursPage() {
         teaser_en: city.teaser_en,
         teaser_fr: city.teaser_fr,
         teaser_de: city.teaser_de,
+        homepage_tagline_nl: city.homepage_tagline_nl,
+        homepage_tagline_en: city.homepage_tagline_en,
+        homepage_tagline_fr: city.homepage_tagline_fr,
+        homepage_tagline_de: city.homepage_tagline_de,
+        homepage_description_nl: city.homepage_description_nl,
+        homepage_description_en: city.homepage_description_en,
+        homepage_description_fr: city.homepage_description_fr,
+        homepage_description_de: city.homepage_description_de,
         cta_text_nl: city.cta_text_nl,
         cta_text_en: city.cta_text_en,
         cta_text_fr: city.cta_text_fr,
@@ -1134,6 +1158,14 @@ export default function AdminToursPage() {
         teaser_en: null,
         teaser_fr: null,
         teaser_de: null,
+        homepage_tagline_nl: null,
+        homepage_tagline_en: null,
+        homepage_tagline_fr: null,
+        homepage_tagline_de: null,
+        homepage_description_nl: null,
+        homepage_description_en: null,
+        homepage_description_fr: null,
+        homepage_description_de: null,
         cta_text_nl: null,
         cta_text_en: null,
         cta_text_fr: null,
@@ -1468,6 +1500,14 @@ export default function AdminToursPage() {
                       teaser_en: null,
                       teaser_fr: null,
                       teaser_de: null,
+                      homepage_tagline_nl: null,
+                      homepage_tagline_en: null,
+                      homepage_tagline_fr: null,
+                      homepage_tagline_de: null,
+                      homepage_description_nl: null,
+                      homepage_description_en: null,
+                      homepage_description_fr: null,
+                      homepage_description_de: null,
                       cta_text_nl: null,
                       cta_text_en: null,
                       cta_text_fr: null,
@@ -1506,6 +1546,14 @@ export default function AdminToursPage() {
                       teaser_en: null,
                       teaser_fr: null,
                       teaser_de: null,
+                      homepage_tagline_nl: null,
+                      homepage_tagline_en: null,
+                      homepage_tagline_fr: null,
+                      homepage_tagline_de: null,
+                      homepage_description_nl: null,
+                      homepage_description_en: null,
+                      homepage_description_fr: null,
+                      homepage_description_de: null,
                       cta_text_nl: null,
                       cta_text_en: null,
                       cta_text_fr: null,
@@ -2468,50 +2516,160 @@ export default function AdminToursPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="city-teaser-nl" className="text-navy font-semibold">Teaser (NL)*</Label>
-                <Textarea
-                  id="city-teaser-nl"
-                  value={cityFormData.teaser_nl || ''}
-                  onChange={(e) => setCityFormData({ ...cityFormData, teaser_nl: e.target.value || null })}
-                  required
-                  rows={3}
-                  className="bg-white"
-                />
+            {/* Tours Page Section */}
+            <div className="border-t pt-4 mt-2">
+              <h4 className="text-sm font-bold text-navy mb-3 flex items-center gap-2">
+                <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs">TOURS PAGE</span>
+                Teaser Text (shown on city cards on /tours page)
+              </h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="city-teaser-nl" className="text-navy font-semibold">Teaser (NL)*</Label>
+                  <Textarea
+                    id="city-teaser-nl"
+                    value={cityFormData.teaser_nl || ''}
+                    onChange={(e) => setCityFormData({ ...cityFormData, teaser_nl: e.target.value || null })}
+                    required
+                    rows={3}
+                    className="bg-white"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="city-teaser-en" className="text-navy font-semibold">Teaser (EN)*</Label>
+                  <Textarea
+                    id="city-teaser-en"
+                    value={cityFormData.teaser_en || ''}
+                    onChange={(e) => setCityFormData({ ...cityFormData, teaser_en: e.target.value || null })}
+                    required
+                    rows={3}
+                    className="bg-white"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="city-teaser-fr" className="text-navy font-semibold">Teaser (FR)*</Label>
+                  <Textarea
+                    id="city-teaser-fr"
+                    value={cityFormData.teaser_fr || ''}
+                    onChange={(e) => setCityFormData({ ...cityFormData, teaser_fr: e.target.value || null })}
+                    required
+                    rows={3}
+                    className="bg-white"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="city-teaser-de" className="text-navy font-semibold">Teaser (DE)*</Label>
+                  <Textarea
+                    id="city-teaser-de"
+                    value={cityFormData.teaser_de || ''}
+                    onChange={(e) => setCityFormData({ ...cityFormData, teaser_de: e.target.value || null })}
+                    required
+                    rows={3}
+                    className="bg-white"
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="city-teaser-en" className="text-navy font-semibold">Teaser (EN)*</Label>
-                <Textarea
-                  id="city-teaser-en"
-                  value={cityFormData.teaser_en || ''}
-                  onChange={(e) => setCityFormData({ ...cityFormData, teaser_en: e.target.value || null })}
-                  required
-                  rows={3}
-                  className="bg-white"
-                />
+            </div>
+
+            {/* Homepage Section */}
+            <div className="border-t pt-4 mt-2">
+              <h4 className="text-sm font-bold text-navy mb-3 flex items-center gap-2">
+                <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs">HOMEPAGE</span>
+                Tagline (short text shown on homepage city wheel)
+              </h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="city-homepage-tagline-nl" className="text-navy font-semibold">Tagline (NL)</Label>
+                  <Input
+                    id="city-homepage-tagline-nl"
+                    value={cityFormData.homepage_tagline_nl || ''}
+                    onChange={(e) => setCityFormData({ ...cityFormData, homepage_tagline_nl: e.target.value || null })}
+                    className="bg-white"
+                    placeholder="e.g., De hoofdstad van België"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="city-homepage-tagline-en" className="text-navy font-semibold">Tagline (EN)</Label>
+                  <Input
+                    id="city-homepage-tagline-en"
+                    value={cityFormData.homepage_tagline_en || ''}
+                    onChange={(e) => setCityFormData({ ...cityFormData, homepage_tagline_en: e.target.value || null })}
+                    className="bg-white"
+                    placeholder="e.g., The capital of Belgium"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="city-homepage-tagline-fr" className="text-navy font-semibold">Tagline (FR)</Label>
+                  <Input
+                    id="city-homepage-tagline-fr"
+                    value={cityFormData.homepage_tagline_fr || ''}
+                    onChange={(e) => setCityFormData({ ...cityFormData, homepage_tagline_fr: e.target.value || null })}
+                    className="bg-white"
+                    placeholder="e.g., La capitale de la Belgique"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="city-homepage-tagline-de" className="text-navy font-semibold">Tagline (DE)</Label>
+                  <Input
+                    id="city-homepage-tagline-de"
+                    value={cityFormData.homepage_tagline_de || ''}
+                    onChange={(e) => setCityFormData({ ...cityFormData, homepage_tagline_de: e.target.value || null })}
+                    className="bg-white"
+                    placeholder="e.g., Die Hauptstadt Belgiens"
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="city-teaser-fr" className="text-navy font-semibold">Teaser (FR)*</Label>
-                <Textarea
-                  id="city-teaser-fr"
-                  value={cityFormData.teaser_fr || ''}
-                  onChange={(e) => setCityFormData({ ...cityFormData, teaser_fr: e.target.value || null })}
-                  required
-                  rows={3}
-                  className="bg-white"
-                />
-              </div>
-              <div>
-                <Label htmlFor="city-teaser-de" className="text-navy font-semibold">Teaser (DE)*</Label>
-                <Textarea
-                  id="city-teaser-de"
-                  value={cityFormData.teaser_de || ''}
-                  onChange={(e) => setCityFormData({ ...cityFormData, teaser_de: e.target.value || null })}
-                  required
-                  rows={3}
-                  className="bg-white"
-                />
+            </div>
+
+            <div className="mt-2">
+              <h4 className="text-sm font-bold text-navy mb-3 flex items-center gap-2">
+                <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs">HOMEPAGE</span>
+                Description (longer text shown on homepage city wheel)
+              </h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="city-homepage-desc-nl" className="text-navy font-semibold">Description (NL)</Label>
+                  <Textarea
+                    id="city-homepage-desc-nl"
+                    value={cityFormData.homepage_description_nl || ''}
+                    onChange={(e) => setCityFormData({ ...cityFormData, homepage_description_nl: e.target.value || null })}
+                    rows={3}
+                    className="bg-white"
+                    placeholder="Langere beschrijving voor de homepage..."
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="city-homepage-desc-en" className="text-navy font-semibold">Description (EN)</Label>
+                  <Textarea
+                    id="city-homepage-desc-en"
+                    value={cityFormData.homepage_description_en || ''}
+                    onChange={(e) => setCityFormData({ ...cityFormData, homepage_description_en: e.target.value || null })}
+                    rows={3}
+                    className="bg-white"
+                    placeholder="Longer description for the homepage..."
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="city-homepage-desc-fr" className="text-navy font-semibold">Description (FR)</Label>
+                  <Textarea
+                    id="city-homepage-desc-fr"
+                    value={cityFormData.homepage_description_fr || ''}
+                    onChange={(e) => setCityFormData({ ...cityFormData, homepage_description_fr: e.target.value || null })}
+                    rows={3}
+                    className="bg-white"
+                    placeholder="Description plus longue pour la page d'accueil..."
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="city-homepage-desc-de" className="text-navy font-semibold">Description (DE)</Label>
+                  <Textarea
+                    id="city-homepage-desc-de"
+                    value={cityFormData.homepage_description_de || ''}
+                    onChange={(e) => setCityFormData({ ...cityFormData, homepage_description_de: e.target.value || null })}
+                    rows={3}
+                    className="bg-white"
+                    placeholder="Längere Beschreibung für die Homepage..."
+                  />
+                </div>
               </div>
             </div>
 
