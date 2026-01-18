@@ -68,6 +68,7 @@ interface Invitee {
   isPaid?: boolean;
   pendingPaymentPeople?: number;
   pendingPaymentAmount?: number;
+  pricePerPerson?: number; // Custom price per person (if set during booking creation)
   paymentLinksSent?: Array<{
     sentAt: string;
     numberOfPeople: number;
@@ -142,6 +143,15 @@ interface LocalStoriesBooking {
   deal_id: string | null;
   invoice_id: string | null;
   created_at: string | null;
+}
+
+interface TeamLeaderDeal {
+  id: string;
+  title: string;
+  reference: string | null;
+  status: string;
+  value: number | null;
+  currency: string;
 }
 
 export default function BookingDetailPage() {
@@ -241,8 +251,14 @@ export default function BookingDetailPage() {
     numberOfPeople: 1,
     language: 'nl',
     specialRequests: '',
+    dealId: '',
   });
   const [editCustomLanguage, setEditCustomLanguage] = useState('');
+
+  // TeamLeader deals state
+  const [teamleaderDeals, setTeamleaderDeals] = useState<TeamLeaderDeal[]>([]);
+  const [loadingDeals, setLoadingDeals] = useState(false);
+  const [dealsError, setDealsError] = useState<string | null>(null);
 
   // Delete invitee state
   const [deleteInviteeDialogOpen, setDeleteInviteeDialogOpen] = useState(false);
@@ -253,6 +269,10 @@ export default function BookingDetailPage() {
     isLocalStories: boolean;
     name: string;
   } | null>(null);
+
+  // Delete booking state
+  const [deleteBookingDialogOpen, setDeleteBookingDialogOpen] = useState(false);
+  const [deletingBooking, setDeletingBooking] = useState(false);
 
   const STATUS_OPTIONS = ['pending', 'payment_completed', 'pending_guide_confirmation', 'confirmed', 'completed', 'cancelled'];
   const LANGUAGE_OPTIONS = [
@@ -289,6 +309,38 @@ export default function BookingDetailPage() {
       router.push(`/${locale}`);
     }
   }, [user, profile, router, locale]);
+
+  // Fetch TeamLeader deals
+  const fetchTeamleaderDeals = async () => {
+    setLoadingDeals(true);
+    setDealsError(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setDealsError('Not authenticated');
+        return;
+      }
+
+      const response = await fetch('/api/admin/teamleader-deals', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch deals');
+      }
+
+      const data = await response.json();
+      setTeamleaderDeals(data.deals || []);
+    } catch (err) {
+      console.error('Error fetching TeamLeader deals:', err);
+      setDealsError(err instanceof Error ? err.message : 'Failed to load deals');
+    } finally {
+      setLoadingDeals(false);
+    }
+  };
 
   const fetchBookingDetails = async () => {
     setLoading(true);
@@ -676,7 +728,8 @@ export default function BookingDetailPage() {
     customerEmail: string,
     numberOfPeople: number,
     localBookingId?: string,
-    presetAmount?: number
+    presetAmount?: number,
+    inviteePricePerPerson?: number // Custom price per person from invitee (if set during booking creation)
   ) => {
     setPaymentLinkTarget({
       customerName,
@@ -688,8 +741,10 @@ export default function BookingDetailPage() {
     if (presetAmount !== undefined) {
       setPaymentLinkAmount(presetAmount);
     } else {
-      const basePrice = tour?.price || 0;
-      setPaymentLinkAmount(basePrice * numberOfPeople);
+      // Use invitee's custom price if set, otherwise use tour's default price
+      const basePrice = inviteePricePerPerson ?? tour?.price ?? 0;
+      const calculatedAmount = Math.round(basePrice * numberOfPeople * 100) / 100;
+      setPaymentLinkAmount(calculatedAmount);
     }
     setPaymentLinkDialogOpen(true);
   };
@@ -967,8 +1022,11 @@ export default function BookingDetailPage() {
       numberOfPeople: inv.numberOfPeople || inv.amnt_of_people || 1,
       language: isKnownLanguage ? invLanguage : 'other',
       specialRequests: inv.specialRequests || '',
+      dealId: inv.deal_id || (isLocalStories ? '' : booking?.deal_id || ''),
     });
     setEditCustomLanguage(isKnownLanguage ? '' : invLanguage);
+    // Fetch deals when opening the dialog
+    void fetchTeamleaderDeals();
     setEditInviteeDialogOpen(true);
   };
 
@@ -982,15 +1040,20 @@ export default function BookingDetailPage() {
     setEditingInvitee(true);
     try {
       if (editInviteeTarget.isLocalStories && editInviteeTarget.localBookingId) {
-        // Update local_tours_bookings entry
+        // Update local_tours_bookings entry (including deal_id for Local Stories)
+        const localUpdateData: Record<string, unknown> = {
+          customer_name: editInviteeForm.name,
+          customer_email: editInviteeForm.email,
+          customer_phone: editInviteeForm.phone,
+          amnt_of_people: editInviteeForm.numberOfPeople,
+        };
+
+        // Add deal_id (or set to null if cleared)
+        localUpdateData.deal_id = editInviteeForm.dealId || null;
+
         const { error: localError } = await supabase
           .from('local_tours_bookings')
-          .update({
-            customer_name: editInviteeForm.name,
-            customer_email: editInviteeForm.email,
-            customer_phone: editInviteeForm.phone,
-            amnt_of_people: editInviteeForm.numberOfPeople,
-          })
+          .update(localUpdateData)
           .eq('id', editInviteeTarget.localBookingId);
 
         if (localError) throw new Error('Failed to update local booking');
@@ -1034,9 +1097,17 @@ export default function BookingDetailPage() {
           };
         }
 
+        // Update invitees array and deal_id (for regular bookings, deal_id is at booking level)
+        const updateData: Record<string, unknown> = { invitees: updatedInvitees };
+
+        // Update deal_id for regular bookings (not Local Stories)
+        if (!tour?.local_stories) {
+          updateData.deal_id = editInviteeForm.dealId || null;
+        }
+
         const { error: updateError } = await supabase
           .from('tourbooking')
-          .update({ invitees: updatedInvitees })
+          .update(updateData)
           .eq('id', booking.id);
 
         if (updateError) throw new Error('Failed to update booking');
@@ -1121,6 +1192,45 @@ export default function BookingDetailPage() {
       toast.error(err instanceof Error ? err.message : 'Failed to delete invitee');
     } finally {
       setDeletingInvitee(false);
+    }
+  };
+
+  // Handle delete entire booking
+  const handleDeleteBooking = async () => {
+    if (!booking) return;
+
+    setDeletingBooking(true);
+    try {
+      // If Local Stories, first delete all local_tours_bookings entries
+      if (tour?.local_stories) {
+        const { error: localError } = await supabase
+          .from('local_tours_bookings')
+          .delete()
+          .eq('booking_id', booking.id);
+
+        if (localError) {
+          console.error('Error deleting local tours bookings:', localError);
+          // Continue anyway - we still want to delete the main booking
+        }
+      }
+
+      // Delete the main booking
+      const { error: deleteError } = await supabase
+        .from('tourbooking')
+        .delete()
+        .eq('id', booking.id);
+
+      if (deleteError) throw new Error('Failed to delete booking');
+
+      toast.success('Booking deleted successfully');
+      // Navigate back to bookings list
+      router.push(`/${locale}/admin/bookings`);
+    } catch (err) {
+      console.error('Error deleting booking:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to delete booking');
+    } finally {
+      setDeletingBooking(false);
+      setDeleteBookingDialogOpen(false);
     }
   };
 
@@ -1546,6 +1656,16 @@ export default function BookingDetailPage() {
                 <User className="h-4 w-4" />
                 Send Info to Guide
               </Button>
+              {/* Delete Booking Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 bg-red-50 border-red-200 text-red-700 hover:bg-red-100 ml-auto"
+                onClick={() => setDeleteBookingDialogOpen(true)}
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete Booking
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -1768,7 +1888,9 @@ export default function BookingDetailPage() {
                                     lb.customer_name || '',
                                     lb.customer_email || '',
                                     lb.amnt_of_people || 1,
-                                    lb.id
+                                    lb.id,
+                                    undefined, // no preset amount
+                                    matchingInvitee?.pricePerPerson // use custom price if set
                                   )}
                                 >
                                   <CreditCard className="h-3 w-3" />
@@ -1920,7 +2042,10 @@ export default function BookingDetailPage() {
                               onClick={() => openPaymentLinkDialog(
                                 inv.name || '',
                                 inv.email || '',
-                                inv.numberOfPeople || 1
+                                inv.numberOfPeople || 1,
+                                undefined, // no local booking id
+                                undefined, // no preset amount
+                                inv.pricePerPerson // use custom price if set
                               )}
                             >
                               <CreditCard className="h-3 w-3" />
@@ -2679,7 +2804,10 @@ export default function BookingDetailPage() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Calculated: €{tour?.price || 0} × {paymentLinkTarget.numberOfPeople} = €{(tour?.price || 0) * paymentLinkTarget.numberOfPeople}
+                  Default tour price: €{(tour?.price || 0).toFixed(2)} × {paymentLinkTarget.numberOfPeople} = €{((tour?.price || 0) * paymentLinkTarget.numberOfPeople).toFixed(2)}
+                  {paymentLinkAmount !== (tour?.price || 0) * paymentLinkTarget.numberOfPeople && (
+                    <span className="text-amber-600 ml-1">(custom amount)</span>
+                  )}
                 </p>
               </div>
 
@@ -2936,6 +3064,60 @@ export default function BookingDetailPage() {
                 </div>
               </>
             )}
+            {/* TeamLeader Deal Selection - shown for both Local Stories and regular bookings */}
+            <div className="space-y-2 border-t pt-4 mt-4">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="editDealId">
+                  TeamLeader Deal
+                  {editInviteeTarget?.isLocalStories && (
+                    <span className="text-xs text-muted-foreground ml-1">- for this invitee</span>
+                  )}
+                </Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void fetchTeamleaderDeals()}
+                  disabled={loadingDeals}
+                  className="h-6 text-xs"
+                >
+                  {loadingDeals ? <RefreshCw className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                </Button>
+              </div>
+              <Select
+                value={editInviteeForm.dealId || 'none'}
+                onValueChange={(value) => setEditInviteeForm({ ...editInviteeForm, dealId: value === 'none' ? '' : value })}
+              >
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder={loadingDeals ? 'Loading deals...' : 'Select a deal (optional)'} />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  <SelectItem value="none">No deal linked</SelectItem>
+                  {teamleaderDeals.map((deal) => (
+                    <SelectItem key={deal.id} value={deal.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{deal.title}</span>
+                        {deal.reference && (
+                          <span className="text-xs text-muted-foreground">({deal.reference})</span>
+                        )}
+                        {deal.value && (
+                          <span className="text-xs text-muted-foreground">€{deal.value.toFixed(2)}</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {dealsError && (
+                <p className="text-xs text-red-500">{dealsError}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {editInviteeTarget?.isLocalStories
+                  ? 'Link this invitee to a TeamLeader CRM deal.'
+                  : 'Link this booking to a TeamLeader CRM deal.'
+                }
+              </p>
+            </div>
           </div>
 
           <DialogFooter>
@@ -3021,6 +3203,64 @@ export default function BookingDetailPage() {
                 <>
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Booking Dialog */}
+      <Dialog open={deleteBookingDialogOpen} onOpenChange={setDeleteBookingDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              Delete Entire Booking
+            </DialogTitle>
+            <DialogDescription>
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-3">
+            <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+              <p className="text-sm text-red-800 font-medium">
+                Warning: This will permanently delete:
+              </p>
+              <ul className="text-sm text-red-700 mt-2 list-disc list-inside space-y-1">
+                <li>The booking record</li>
+                {tour?.local_stories && <li>All associated Local Stories invitees</li>}
+                <li>All invitee information</li>
+              </ul>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Are you absolutely sure you want to delete booking #{booking.id}?
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteBookingDialogOpen(false)}
+              disabled={deletingBooking}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteBooking}
+              disabled={deletingBooking}
+            >
+              {deletingBooking ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Booking
                 </>
               )}
             </Button>
