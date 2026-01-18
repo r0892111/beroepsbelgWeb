@@ -420,14 +420,9 @@ export function TourBookingDialog({
             postalCode: addressData.postalCode,
             country: addressData.country,
           } : null,
-          // Op maat specific answers
-          opMaatAnswers: opMaat ? {
-            startEnd: opMaatAnswers.startEnd,
-            cityPart: opMaatAnswers.cityPart,
-            subjects: opMaatAnswers.subjects,
-            specialWishes: opMaatAnswers.specialWishes,
-            extraHour: formData.extraHour,
-          } : null,
+          // Op maat personalization - NOT collected during checkout
+          // User fills out form later via email link to /op-maat-form page
+          opMaatAnswers: null,
           durationMinutes: actualDuration, // Include actual duration in booking
           // For local stories: pass existing tourbooking ID if available
           existingTourBookingId: isLocalStories ? (existingTourBookingId || null) : null,
@@ -1251,12 +1246,9 @@ export function TourBookingDialog({
                   // Show address dialog for shipping
                   setShowUpsellDialog(false);
                   setShowAddressDialog(true);
-                } else if (opMaat) {
-                  // If op maat tour, show op maat questions dialog first
-                  setShowUpsellDialog(false);
-                  setShowOpMaatDialog(true);
                 } else {
-                  // No upsell products, proceed directly to checkout
+                  // No upsell products or op maat questions, proceed directly to checkout
+                  // Op maat personalization form will be filled out later via email link
                   proceedToCheckout();
                 }
               }}
@@ -1427,14 +1419,9 @@ export function TourBookingDialog({
 
                 setError(null);
 
-                // If op maat tour, show op maat questions dialog next
-                if (opMaat) {
-                  setShowAddressDialog(false);
-                  setShowOpMaatDialog(true);
-                } else {
-                  // Proceed to checkout with address data
-                  proceedToCheckout();
-                }
+                // Proceed to checkout with address data
+                // For op maat tours, personalization form will be filled later via email link
+                proceedToCheckout();
               }}
               disabled={loading}
               className="w-full sm:w-auto"
