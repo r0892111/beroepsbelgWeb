@@ -1,3 +1,4 @@
+
 -- SQL inserts to test the aftercare-start edge function
 -- These inserts create tourbookings that match the aftercare criteria:
 -- 1. status = 'accepted'

@@ -1166,7 +1166,8 @@
     "customerName": "Name",
     "email": "Email",
     "purchasedProducts": "Purchased Products",
-    "priceBreakdown": "Price Breakdown"
+    "priceBreakdown": "Price Breakdown",
+    "extraHour": "Extra hour"
   },
   "bookingCancelled": {
     "title": "Booking Cancelled",

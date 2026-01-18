@@ -1234,7 +1234,8 @@
     "customerName": "Naam",
     "email": "E-mail",
     "purchasedProducts": "Gekochte producten",
-    "priceBreakdown": "Prijsoverzicht"
+    "priceBreakdown": "Prijsoverzicht",
+    "extraHour": "Extra uur"
   },
   "bookingCancelled": {
     "title": "Boeking geannuleerd",
