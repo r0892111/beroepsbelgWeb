@@ -63,6 +63,17 @@ interface CreateBookingForm {
   language: string;
   specialRequests: string;
   isPaid: boolean;
+  customPrice: string; // Custom price per person (empty = use tour's default price)
+  dealId: string; // TeamLeader deal ID (optional)
+}
+
+interface TeamLeaderDeal {
+  id: string;
+  title: string;
+  reference: string | null;
+  status: string;
+  value: number | null;
+  currency: string;
 }
 
 interface Guide {
@@ -107,11 +118,18 @@ export default function AdminBookingsPage() {
     customerEmail: '',
     customerPhone: '',
     numberOfPeople: 1,
+    customPrice: '',
     language: 'nl',
     specialRequests: '',
     isPaid: false,
+    dealId: '',
   });
   const [customLanguage, setCustomLanguage] = useState('');
+
+  // TeamLeader deals state
+  const [teamleaderDeals, setTeamleaderDeals] = useState<TeamLeaderDeal[]>([]);
+  const [loadingDeals, setLoadingDeals] = useState(false);
+  const [dealsError, setDealsError] = useState<string | null>(null);
 
   // IDs dialog state
   const [idsDialogOpen, setIdsDialogOpen] = useState(false);
@@ -349,10 +367,44 @@ export default function AdminBookingsPage() {
       customerEmail: '',
       customerPhone: '',
       numberOfPeople: 1,
+      customPrice: '',
       language: 'nl',
       specialRequests: '',
       isPaid: false,
+      dealId: '',
     });
+  };
+
+  // Fetch TeamLeader deals
+  const fetchTeamleaderDeals = async () => {
+    setLoadingDeals(true);
+    setDealsError(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setDealsError('Not authenticated');
+        return;
+      }
+
+      const response = await fetch('/api/admin/teamleader-deals', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch deals');
+      }
+
+      const data = await response.json();
+      setTeamleaderDeals(data.deals || []);
+    } catch (err) {
+      console.error('Error fetching TeamLeader deals:', err);
+      setDealsError(err instanceof Error ? err.message : 'Failed to load deals');
+    } finally {
+      setLoadingDeals(false);
+    }
   };
 
   // Get selected tour info
@@ -408,7 +460,9 @@ export default function AdminBookingsPage() {
       const tourDatetime = `${createForm.date}T${createForm.time}:00`;
 
       // Create invitee object
-      const calculatedAmount = (tour.price || 0) * createForm.numberOfPeople;
+      // Use custom price if provided, otherwise use tour's default price
+      const pricePerPerson = createForm.customPrice ? parseFloat(createForm.customPrice) : (tour.price || 0);
+      const calculatedAmount = Math.round(pricePerPerson * createForm.numberOfPeople * 100) / 100; // Round to nearest cent
       // Use custom language if "other" is selected
       const finalLanguage = createForm.language === 'other' ? customLanguage : createForm.language;
       const invitee: Record<string, unknown> = {
@@ -421,6 +475,7 @@ export default function AdminBookingsPage() {
         currency: 'eur',
         isContacted: false,
         isPaid: createForm.isPaid,
+        pricePerPerson: Math.round(pricePerPerson * 100) / 100, // Store the price per person (custom or default) for payment links
       };
 
       // Only set amount if customer has already paid
@@ -428,19 +483,27 @@ export default function AdminBookingsPage() {
       if (createForm.isPaid) {
         invitee.amount = calculatedAmount;
       }
-      // If not paid, just don't set amount - the blue "Send Payment Link" button will show
+      // If not paid, pricePerPerson is used to calculate the amount when sending payment link
 
       // Create tourbooking entry
+      // For non-Local Stories tours, include deal_id directly in tourbooking
+      const tourbookingData: Record<string, unknown> = {
+        tour_id: createForm.tourId,
+        tour_datetime: tourDatetime,
+        city: tour.city,
+        status: createForm.isPaid ? 'payment_completed' : 'pending',
+        invitees: [invitee],
+        booking_type: 'B2C',
+      };
+
+      // Add deal_id for regular bookings (not Local Stories)
+      if (createForm.dealId && !tour.local_stories) {
+        tourbookingData.deal_id = createForm.dealId;
+      }
+
       const { data: newBooking, error: bookingError } = await supabase
         .from('tourbooking')
-        .insert({
-          tour_id: createForm.tourId,
-          tour_datetime: tourDatetime,
-          city: tour.city,
-          status: createForm.isPaid ? 'payment_completed' : 'pending',
-          invitees: [invitee],
-          booking_type: 'B2C',
-        })
+        .insert(tourbookingData)
         .select('id')
         .single();
 
@@ -452,20 +515,27 @@ export default function AdminBookingsPage() {
 
       // If Local Stories tour, also create local_tours_bookings entry
       if (tour.local_stories && newBooking) {
+        const localBookingData: Record<string, unknown> = {
+          tour_id: createForm.tourId,
+          booking_date: createForm.date,
+          booking_time: `${createForm.time}:00`,
+          is_booked: true,
+          status: 'booked',
+          customer_name: createForm.customerName,
+          customer_email: createForm.customerEmail,
+          customer_phone: createForm.customerPhone,
+          booking_id: newBooking.id,
+          amnt_of_people: createForm.numberOfPeople,
+        };
+
+        // Add deal_id for Local Stories (per-invitee)
+        if (createForm.dealId) {
+          localBookingData.deal_id = createForm.dealId;
+        }
+
         const { error: localError } = await supabase
           .from('local_tours_bookings')
-          .insert({
-            tour_id: createForm.tourId,
-            booking_date: createForm.date,
-            booking_time: `${createForm.time}:00`,
-            is_booked: true,
-            status: 'booked',
-            customer_name: createForm.customerName,
-            customer_email: createForm.customerEmail,
-            customer_phone: createForm.customerPhone,
-            booking_id: newBooking.id,
-            amnt_of_people: createForm.numberOfPeople,
-          });
+          .insert(localBookingData);
 
         if (localError) {
           console.error('Error creating local tours booking:', localError);
@@ -961,7 +1031,12 @@ export default function AdminBookingsPage() {
       {/* Create Booking Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={(open) => {
         setCreateDialogOpen(open);
-        if (!open) resetCreateForm();
+        if (open) {
+          // Fetch TeamLeader deals when dialog opens
+          void fetchTeamleaderDeals();
+        } else {
+          resetCreateForm();
+        }
       }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -1000,12 +1075,108 @@ export default function AdminBookingsPage() {
               </Select>
               {selectedTour && (
                 <p className="text-xs text-muted-foreground">
-                  Base price: €{selectedTour.price || 0} per person
+                  Default price: €{(selectedTour.price || 0).toFixed(2)} per person
                   {selectedTour.local_stories && ' • This is a Local Stories tour'}
                   {selectedTour.op_maat && ' • This is a Custom (Op Maat) tour'}
                 </p>
               )}
             </div>
+
+            {/* Custom Price Override */}
+            {selectedTour && (
+              <div className="space-y-2">
+                <Label htmlFor="customPrice">Custom Price per Person (optional)</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">€</span>
+                  <Input
+                    id="customPrice"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={createForm.customPrice}
+                    onChange={(e) => setCreateForm({ ...createForm, customPrice: e.target.value })}
+                    placeholder={(selectedTour.price || 0).toFixed(2)}
+                    className="bg-white w-32"
+                  />
+                  <span className="text-sm text-muted-foreground">per person</span>
+                  {createForm.customPrice && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setCreateForm({ ...createForm, customPrice: '' })}
+                      className="text-xs"
+                    >
+                      Reset to default
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Leave empty to use the tour&apos;s default price. Enter a custom price to override.
+                </p>
+              </div>
+            )}
+
+            {/* TeamLeader Deal Selection */}
+            {selectedTour && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="dealId">
+                    Link to TeamLeader Deal (optional)
+                    {selectedTour.local_stories && (
+                      <span className="text-xs text-muted-foreground ml-1">- for this invitee</span>
+                    )}
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void fetchTeamleaderDeals()}
+                    disabled={loadingDeals}
+                    className="h-6 text-xs gap-1"
+                  >
+                    <RefreshCw className={`h-3 w-3 ${loadingDeals ? 'animate-spin' : ''}`} />
+                    {loadingDeals ? 'Loading...' : 'Refresh'}
+                  </Button>
+                </div>
+                <Select
+                  value={createForm.dealId}
+                  onValueChange={(value) => setCreateForm({ ...createForm, dealId: value === 'none' ? '' : value })}
+                >
+                  <SelectTrigger className="bg-white">
+                    <SelectValue placeholder={loadingDeals ? 'Loading deals...' : teamleaderDeals.length === 0 ? 'No deals found - click Refresh' : 'Select a deal (optional)'} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    <SelectItem value="none">No deal linked</SelectItem>
+                    {teamleaderDeals.map((deal) => (
+                      <SelectItem key={deal.id} value={deal.id}>
+                        <div className="flex items-center gap-2">
+                          <span>{deal.title}</span>
+                          {deal.reference && (
+                            <span className="text-xs text-muted-foreground">({deal.reference})</span>
+                          )}
+                          {deal.value && (
+                            <span className="text-xs text-muted-foreground">€{deal.value.toFixed(2)}</span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {dealsError && (
+                  <p className="text-xs text-red-500">{dealsError}</p>
+                )}
+                {teamleaderDeals.length === 0 && !loadingDeals && !dealsError && (
+                  <p className="text-xs text-amber-600">No deals loaded yet. Click Refresh to load deals from TeamLeader.</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  {selectedTour.local_stories
+                    ? 'Link this invitee to a TeamLeader CRM deal. Additional invitees can have different deals.'
+                    : 'Link this booking to an existing TeamLeader CRM deal.'
+                  }
+                </p>
+              </div>
+            )}
 
             {/* Date and Time */}
             <div className="grid grid-cols-2 gap-4">
@@ -1138,21 +1309,33 @@ export default function AdminBookingsPage() {
             </div>
 
             {/* Price Summary */}
-            {selectedTour && (
-              <div className="border-t pt-4">
-                <h4 className="text-sm font-medium mb-2">Price Summary</h4>
-                <div className="bg-muted/50 rounded-lg p-3 space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span>Base price × {createForm.numberOfPeople} {createForm.numberOfPeople === 1 ? 'person' : 'people'}</span>
-                    <span>€{(selectedTour.price || 0) * createForm.numberOfPeople}</span>
-                  </div>
-                  <div className="flex justify-between font-medium pt-1 border-t">
-                    <span>Total</span>
-                    <span>€{(selectedTour.price || 0) * createForm.numberOfPeople}</span>
+            {selectedTour && (() => {
+              const pricePerPerson = createForm.customPrice ? parseFloat(createForm.customPrice) : (selectedTour.price || 0);
+              const totalPrice = Math.round(pricePerPerson * createForm.numberOfPeople * 100) / 100;
+              const isCustomPrice = !!createForm.customPrice;
+              return (
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-medium mb-2">Price Summary</h4>
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span>
+                        {isCustomPrice ? 'Custom price' : 'Base price'} (€{pricePerPerson.toFixed(2)}) × {createForm.numberOfPeople} {createForm.numberOfPeople === 1 ? 'person' : 'people'}
+                      </span>
+                      <span>€{totalPrice.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between font-medium pt-1 border-t">
+                      <span>Total</span>
+                      <span>€{totalPrice.toFixed(2)}</span>
+                    </div>
+                    {isCustomPrice && (
+                      <p className="text-xs text-amber-600 mt-1">
+                        Using custom price instead of default (€{(selectedTour.price || 0).toFixed(2)})
+                      </p>
+                    )}
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
 
           <DialogFooter>
