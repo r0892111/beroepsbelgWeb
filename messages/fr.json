@@ -1165,7 +1165,8 @@
     "customerName": "Nom",
     "email": "E-mail",
     "purchasedProducts": "Produits achetés",
-    "priceBreakdown": "Détail du prix"
+    "priceBreakdown": "Détail du prix",
+    "extraHour": "Heure supplémentaire"
   },
   "bookingCancelled": {
     "title": "Réservation annulée",

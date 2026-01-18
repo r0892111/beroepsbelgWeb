@@ -1153,7 +1153,8 @@
     "customerName": "Name",
     "email": "E-Mail",
     "purchasedProducts": "Gekaufte Produkte",
-    "priceBreakdown": "Preisübersicht"
+    "priceBreakdown": "Preisübersicht",
+    "extraHour": "Zusätzliche Stunde"
   },
   "bookingCancelled": {
     "title": "Buchung storniert",
