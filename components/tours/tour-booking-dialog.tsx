@@ -1018,7 +1018,7 @@ export function TourBookingDialog({
             <div className="flex flex-col flex-1 min-h-0 space-y-4">
               <div className="overflow-y-auto flex-1 pr-2 -mr-2">
                 {/* Highlighted products (first 6) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
                 {products.slice(0, 6).map((product) => {
                   const quantity = selectedUpsell[product.uuid] || 0;
                   const isSelected = quantity > 0;
@@ -1032,50 +1032,54 @@ export function TourBookingDialog({
                     <div
                       key={product.uuid}
                       className={cn(
-                        "p-5 rounded-xl border-2 transition-all flex flex-col h-full",
+                        "p-4 rounded-xl border-2 transition-all flex flex-col",
                         isSelected
                           ? 'border-[var(--primary-base)] bg-[var(--primary-base)]/5 shadow-md'
                           : 'border-gray-200 hover:border-gray-300 hover:shadow-sm bg-white'
                       )}
                     >
-                      <div className="flex items-start gap-4 mb-4 flex-shrink-0">
-                        <div className="relative w-20 h-20 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
+                      {/* Product info section - fixed structure */}
+                      <div className="flex items-start gap-3 flex-1">
+                        {/* Image */}
+                        <div className="relative w-16 h-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
                           {product.image ? (
                             <Image src={product.image} alt={product.title.nl} fill className="object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
-                              <ShoppingBag className="h-8 w-8 text-gray-400" />
+                              <ShoppingBag className="h-6 w-6 text-gray-400" />
                             </div>
                           )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-base leading-tight mb-2 line-clamp-2">
+                        {/* Text content */}
+                        <div className="flex-1 min-w-0 flex flex-col">
+                          <p className="font-semibold text-sm leading-tight line-clamp-2 mb-1">
                             {product.title.nl}
                           </p>
-                          <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 mb-2">
+                          <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 w-fit mb-1">
                             {categoryLabels[product.category] || product.category}
                           </span>
-                          <p className="text-xl font-bold" style={{ color: 'var(--primary-base)' }}>
+                          <p className="text-lg font-bold mt-auto" style={{ color: 'var(--primary-base)' }}>
                             €{product.price.toFixed(2)}
                           </p>
                         </div>
                       </div>
 
-                      <div className="mt-auto pt-4 border-t border-gray-200 flex-shrink-0">
+                      {/* Button section - always at bottom */}
+                      <div className="pt-3 mt-3 border-t border-gray-200">
                         {isSelected ? (
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="text-sm font-medium text-muted-foreground">Aantal:</span>
-                            <div className="flex items-center gap-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-muted-foreground">Aantal:</span>
+                            <div className="flex items-center gap-2">
                               <Button
                                 type="button"
                                 variant="outline"
                                 size="sm"
                                 onClick={() => decrementUpsell(product.uuid)}
-                                className="h-9 w-9 p-0 rounded-full"
+                                className="h-8 w-8 p-0 rounded-full"
                               >
-                                <Minus className="h-4 w-4" />
+                                <Minus className="h-3 w-3" />
                               </Button>
-                              <span className="text-lg font-semibold min-w-[2.5rem] text-center">
+                              <span className="text-base font-semibold min-w-[1.5rem] text-center">
                                 {quantity}
                               </span>
                               <Button
@@ -1083,9 +1087,9 @@ export function TourBookingDialog({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => incrementUpsell(product.uuid)}
-                                className="h-9 w-9 p-0 rounded-full"
+                                className="h-8 w-8 p-0 rounded-full"
                               >
-                                <Plus className="h-4 w-4" />
+                                <Plus className="h-3 w-3" />
                               </Button>
                             </div>
                           </div>
@@ -1094,9 +1098,9 @@ export function TourBookingDialog({
                             type="button"
                             variant="outline"
                             onClick={() => incrementUpsell(product.uuid)}
-                            className="w-full h-9"
+                            className="w-full h-8 text-sm"
                           >
-                            <Plus className="h-4 w-4 mr-2" />
+                            <Plus className="h-3 w-3 mr-1" />
                             Toevoegen
                           </Button>
                         )}
@@ -1125,7 +1129,7 @@ export function TourBookingDialog({
                           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Meer producten</span>
                           <div className="flex-1 h-px bg-gray-200" />
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
                           {products.slice(6).map((product) => {
                             const quantity = selectedUpsell[product.uuid] || 0;
                             const isSelected = quantity > 0;
@@ -1139,50 +1143,54 @@ export function TourBookingDialog({
                               <div
                                 key={product.uuid}
                                 className={cn(
-                                  "p-5 rounded-xl border-2 transition-all flex flex-col h-full",
+                                  "p-4 rounded-xl border-2 transition-all flex flex-col",
                                   isSelected
                                     ? 'border-[var(--primary-base)] bg-[var(--primary-base)]/5 shadow-md'
                                     : 'border-gray-200 hover:border-gray-300 hover:shadow-sm bg-white'
                                 )}
                               >
-                                <div className="flex items-start gap-4 mb-4 flex-shrink-0">
-                                  <div className="relative w-20 h-20 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
+                                {/* Product info section - fixed structure */}
+                                <div className="flex items-start gap-3 flex-1">
+                                  {/* Image */}
+                                  <div className="relative w-16 h-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
                                     {product.image ? (
                                       <Image src={product.image} alt={product.title.nl} fill className="object-cover" />
                                     ) : (
                                       <div className="w-full h-full flex items-center justify-center">
-                                        <ShoppingBag className="h-8 w-8 text-gray-400" />
+                                        <ShoppingBag className="h-6 w-6 text-gray-400" />
                                       </div>
                                     )}
                                   </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-semibold text-base leading-tight mb-2 line-clamp-2">
+                                  {/* Text content */}
+                                  <div className="flex-1 min-w-0 flex flex-col">
+                                    <p className="font-semibold text-sm leading-tight line-clamp-2 mb-1">
                                       {product.title.nl}
                                     </p>
-                                    <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 mb-2">
+                                    <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 w-fit mb-1">
                                       {categoryLabels[product.category] || product.category}
                                     </span>
-                                    <p className="text-xl font-bold" style={{ color: 'var(--primary-base)' }}>
+                                    <p className="text-lg font-bold mt-auto" style={{ color: 'var(--primary-base)' }}>
                                       €{product.price.toFixed(2)}
                                     </p>
                                   </div>
                                 </div>
 
-                                <div className="mt-auto pt-4 border-t border-gray-200 flex-shrink-0">
+                                {/* Button section - always at bottom */}
+                                <div className="pt-3 mt-3 border-t border-gray-200">
                                   {isSelected ? (
-                                    <div className="flex items-center justify-between gap-3">
-                                      <span className="text-sm font-medium text-muted-foreground">Aantal:</span>
-                                      <div className="flex items-center gap-3">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-xs font-medium text-muted-foreground">Aantal:</span>
+                                      <div className="flex items-center gap-2">
                                         <Button
                                           type="button"
                                           variant="outline"
                                           size="sm"
                                           onClick={() => decrementUpsell(product.uuid)}
-                                          className="h-9 w-9 p-0 rounded-full"
+                                          className="h-8 w-8 p-0 rounded-full"
                                         >
-                                          <Minus className="h-4 w-4" />
+                                          <Minus className="h-3 w-3" />
                                         </Button>
-                                        <span className="text-lg font-semibold min-w-[2.5rem] text-center">
+                                        <span className="text-base font-semibold min-w-[1.5rem] text-center">
                                           {quantity}
                                         </span>
                                         <Button
@@ -1190,9 +1198,9 @@ export function TourBookingDialog({
                                           variant="outline"
                                           size="sm"
                                           onClick={() => incrementUpsell(product.uuid)}
-                                          className="h-9 w-9 p-0 rounded-full"
+                                          className="h-8 w-8 p-0 rounded-full"
                                         >
-                                          <Plus className="h-4 w-4" />
+                                          <Plus className="h-3 w-3" />
                                         </Button>
                                       </div>
                                     </div>
@@ -1201,9 +1209,9 @@ export function TourBookingDialog({
                                       type="button"
                                       variant="outline"
                                       onClick={() => incrementUpsell(product.uuid)}
-                                      className="w-full h-9"
+                                      className="w-full h-8 text-sm"
                                     >
-                                      <Plus className="h-4 w-4 mr-2" />
+                                      <Plus className="h-3 w-3 mr-1" />
                                       Toevoegen
                                     </Button>
                                   )}
