@@ -66,7 +66,8 @@ export default function AddToCalendarPage() {
             tour_end,
             tours_table_prod (
               title,
-              start_location
+              start_location,
+              google_maps_url
             )
           `)
           .eq('id', bookingId)
@@ -132,7 +133,7 @@ export default function AddToCalendarPage() {
   const tour: TourData | null = Array.isArray(tourData) ? tourData[0] : tourData;
   const tourTitle = tour?.title || 'Tour';
   const location = tour?.start_location || booking.city || '';
-  const details = `Booking #${booking.id}`;
+  const details = tour?.google_maps_url || '';
 
   const calendarUrl = buildGoogleCalendarUrl(
     tourTitle,
