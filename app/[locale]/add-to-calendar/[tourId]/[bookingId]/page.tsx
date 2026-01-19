@@ -123,7 +123,7 @@ export default function AddToCalendarPage() {
   }
 
   const tour = booking.tours_table_prod?.[0];
-  const tourTitle = tour?.title || 'Tour';
+  const tourTitle = booking?.tours_table_prod?.[0]?.title || tour?.title || 'Tour';
   const location = tour?.start_location || booking.city || '';
   const details = `Booking #${booking.id}`;
 
