@@ -5,6 +5,11 @@ import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { Loader2, Calendar, AlertCircle } from 'lucide-react';
 
+interface TourData {
+  title: string;
+  start_location: string | null;
+}
+
 interface BookingData {
   id: number;
   tour_id: string | null;
@@ -12,10 +17,7 @@ interface BookingData {
   city: string | null;
   tour_datetime: string | null;
   tour_end: string | null;
-  tours_table_prod: {
-    title: string;
-    start_location: string | null;
-  }[] | null;
+  tours_table_prod: TourData | TourData[] | null;
 }
 
 function formatDateForCalendar(dateString: string): string {
@@ -71,9 +73,11 @@ export default function AddToCalendarPage() {
           .single();
 
         if (fetchError || !data) {
+          console.error('Fetch error:', fetchError);
           throw new Error('Booking not found');
         }
 
+        console.log('Booking data:', JSON.stringify(data, null, 2));
         setBooking(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load booking');
@@ -122,8 +126,10 @@ export default function AddToCalendarPage() {
     );
   }
 
-  const tour = booking.tours_table_prod?.[0];
-  const tourTitle = booking?.tours_table_prod?.[0]?.title || tour?.title || 'Tour';
+  // Handle both array and object response from Supabase join
+  const tourData = booking.tours_table_prod;
+  const tour: TourData | null = Array.isArray(tourData) ? tourData[0] : tourData;
+  const tourTitle = tour?.title || 'Tour';
   const location = tour?.start_location || booking.city || '';
   const details = `Booking #${booking.id}`;
 
