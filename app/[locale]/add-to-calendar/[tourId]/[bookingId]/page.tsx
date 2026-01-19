@@ -15,7 +15,7 @@ interface BookingData {
   tours_table_prod: {
     title: string;
     startLocation: string | null;
-  } | null;
+  }[] | null;
 }
 
 function formatDateForCalendar(dateString: string): string {
@@ -122,8 +122,9 @@ export default function AddToCalendarPage() {
     );
   }
 
-  const tourTitle = booking.tours_table_prod?.title || 'Tour';
-  const location = booking.tours_table_prod?.startLocation || booking.city || '';
+  const tour = booking.tours_table_prod?.[0];
+  const tourTitle = tour?.title || 'Tour';
+  const location = tour?.startLocation || booking.city || '';
   const details = `Booking #${booking.id}`;
 
   const calendarUrl = buildGoogleCalendarUrl(
