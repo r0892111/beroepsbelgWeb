@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import Stripe from 'npm:stripe@^14.0.0'
 import { createClient } from 'npm:@supabase/supabase-js@^2.0.0'
+import { toBrusselsISO, parseBrusselsDateTime, addMinutesBrussels } from '../_shared/timezone.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -320,38 +321,40 @@ serve(async (req: Request) => {
       bookingTime,
     });
 
-    // Process date/time - try bookingDateTime first, then fall back to combining date and time
+    // Process date/time - interpret as Brussels local time and convert to ISO with timezone
+    // try bookingDateTime first, then fall back to combining date and time
     if (bookingDateTime && bookingDateTime.trim()) {
       const dateTimeStr = bookingDateTime.trim();
-      let formattedDateTime = dateTimeStr;
       if (dateTimeStr.includes('T')) {
         const [datePart, timePart] = dateTimeStr.split('T');
-        if (timePart && timePart.split(':').length === 2) {
-          formattedDateTime = `${datePart}T${timePart}:00`;
+        const timeStr = timePart.split(':').length === 2 ? timePart : timePart.substring(0, 5);
+        try {
+          const dateObj = parseBrusselsDateTime(datePart, timeStr);
+          if (!isNaN(dateObj.getTime())) {
+            tourDatetime = toBrusselsISO(dateObj);
+          }
+        } catch (e) {
+          console.error('Error parsing bookingDateTime:', e);
         }
       }
-      const dateObj = new Date(formattedDateTime);
-      if (!isNaN(dateObj.getTime())) {
-        tourDatetime = dateObj.toISOString();
-      }
     } else if (bookingDate && bookingDate.trim() && bookingTime && bookingTime.trim()) {
-      const timeWithSeconds = bookingTime.trim().split(':').length === 2
-        ? `${bookingTime.trim()}:00`
-        : bookingTime.trim();
-      const combinedDateTime = `${bookingDate.trim()}T${timeWithSeconds}`;
-      const dateObj = new Date(combinedDateTime);
-      if (!isNaN(dateObj.getTime())) {
-        tourDatetime = dateObj.toISOString();
+      try {
+        const dateObj = parseBrusselsDateTime(bookingDate.trim(), bookingTime.trim());
+        if (!isNaN(dateObj.getTime())) {
+          tourDatetime = toBrusselsISO(dateObj);
+        }
+      } catch (e) {
+        console.error('Error parsing bookingDate/bookingTime:', e);
       }
     }
 
     // Calculate tour end datetime
     let tourEndDatetime: string | null = null;
     if (tourDatetime) {
-      const startDate = new Date(tourDatetime);
-      if (!isNaN(startDate.getTime())) {
-        const endDate = new Date(startDate.getTime() + finalDurationMinutes * 60 * 1000);
-        tourEndDatetime = endDate.toISOString();
+      try {
+        tourEndDatetime = addMinutesBrussels(tourDatetime, finalDurationMinutes);
+      } catch (e) {
+        console.error('Error calculating tour end:', e);
       }
     }
 
@@ -387,9 +390,9 @@ serve(async (req: Request) => {
       customerPhone: customerPhone || null,
       userId: userId || null,
 
-      bookingDate: opMaat ? null : (bookingDate || null),
-      bookingTime: opMaat ? null : (bookingTime || null),
-      bookingDateTime: opMaat ? null : (bookingDateTime || null),
+      bookingDate: bookingDate || null,
+      bookingTime: bookingTime || null,
+      bookingDateTime: bookingDateTime || null,
       tourDatetime,
       tourEndDatetime,
       durationMinutes: finalDurationMinutes,

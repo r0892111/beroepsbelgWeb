@@ -64,7 +64,6 @@ interface GuideFormData {
 const CITY_OPTIONS = ['Antwerpen', 'Brussel', 'Brugge', 'Gent', 'Knokke-Heist', 'Leuven', 'Mechelen', 'Hasselt'];
 const LANGUAGE_OPTIONS = ['Nederlands', 'Engels', 'Frans', 'Duits', 'Spaans', 'Italiaans'];
 const TOUR_TYPE_OPTIONS = ['Walking', 'Biking', 'Bus', 'Private', 'Group'];
-const AVAILABILITY_OPTIONS = ['Available', 'Limited', 'Unavailable'];
 const PREFERENCE_OPTIONS = ['Morning', 'Afternoon', 'Evening', 'Weekend', 'Weekday'];
 const STORAGE_BUCKET = 'WebshopItemsImages';
 const STORAGE_FOLDER = 'Guide Photos';
@@ -92,7 +91,6 @@ export default function AdminGuidesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCity, setFilterCity] = useState<string>('all');
   const [filterLanguage, setFilterLanguage] = useState<string>('all');
-  const [filterAvailability, setFilterAvailability] = useState<string>('all');
 
   // Form state
   const [formData, setFormData] = useState<GuideFormData>({
@@ -443,31 +441,26 @@ export default function AdminGuidesPage() {
   const filteredGuides = guides.filter((guide) => {
     // Search filter
     const searchLower = searchQuery.toLowerCase();
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery ||
       guide.name?.toLowerCase().includes(searchLower) ||
       guide.Email?.toLowerCase().includes(searchLower) ||
       guide.phonenumber?.toLowerCase().includes(searchLower);
 
     // City filter
-    const matchesCity = filterCity === 'all' || 
+    const matchesCity = filterCity === 'all' ||
       (guide.cities && Array.isArray(guide.cities) && guide.cities.includes(filterCity));
 
     // Language filter
-    const matchesLanguage = filterLanguage === 'all' || 
+    const matchesLanguage = filterLanguage === 'all' ||
       (guide.languages && Array.isArray(guide.languages) && guide.languages.includes(filterLanguage));
 
-    // Availability filter
-    const matchesAvailability = filterAvailability === 'all' || 
-      guide.availability === filterAvailability;
-
-    return matchesSearch && matchesCity && matchesLanguage && matchesAvailability;
+    return matchesSearch && matchesCity && matchesLanguage;
   });
 
   const clearFilters = () => {
     setSearchQuery('');
     setFilterCity('all');
     setFilterLanguage('all');
-    setFilterAvailability('all');
   };
 
   if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
@@ -553,7 +546,7 @@ export default function AdminGuidesPage() {
                   variant="outline"
                   size="sm"
                   onClick={clearFilters}
-                  disabled={!searchQuery && filterCity === 'all' && filterLanguage === 'all' && filterAvailability === 'all'}
+                  disabled={!searchQuery && filterCity === 'all' && filterLanguage === 'all'}
                 >
                   <X className="h-4 w-4 mr-2" />
                   Clear
@@ -593,24 +586,9 @@ export default function AdminGuidesPage() {
                   </Select>
                 </div>
 
-                <div className="flex-1 min-w-[200px]">
-                  <Select value={filterAvailability} onValueChange={setFilterAvailability}>
-                    <SelectTrigger className="bg-white">
-                      <SelectValue placeholder="Filter by availability" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Availability</SelectItem>
-                      {AVAILABILITY_OPTIONS.map((avail) => (
-                        <SelectItem key={avail} value={avail}>
-                          {avail}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
 
-              {(searchQuery || filterCity !== 'all' || filterLanguage !== 'all' || filterAvailability !== 'all') && (
+              {(searchQuery || filterCity !== 'all' || filterLanguage !== 'all') && (
                 <div className="text-sm text-muted-foreground">
                   Showing {filteredGuides.length} of {guides.length} guides
                 </div>
@@ -637,7 +615,6 @@ export default function AdminGuidesPage() {
                       <TableHead>Cities</TableHead>
                       <TableHead>Languages</TableHead>
                       <TableHead>Tours Done</TableHead>
-                      <TableHead>Availability</TableHead>
                       <TableHead>Calendar</TableHead>
                       <TableHead>Feedback</TableHead>
                       <TableHead>Actions</TableHead>
@@ -695,19 +672,6 @@ export default function AdminGuidesPage() {
                           </div>
                         </TableCell>
                         <TableCell>{guide.tours_done || 0}</TableCell>
-                        <TableCell>
-                          <Badge
-                            className={
-                              guide.availability === 'Available'
-                                ? 'bg-green-100 text-green-800'
-                                : guide.availability === 'Limited'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-red-100 text-red-800'
-                            }
-                          >
-                            {guide.availability || 'N/A'}
-                          </Badge>
-                        </TableCell>
                         <TableCell onClick={(e) => e.stopPropagation()}>
                           {guide.google_calendar_id ? (
                             <Badge className="bg-green-100 text-green-800 flex items-center gap-1 w-fit">

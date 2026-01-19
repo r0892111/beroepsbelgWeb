@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { parseBrusselsDateTime } from '@/lib/utils/timezone';
 
 // Calendar ID from public embed URL
 // Public URL: https://calendar.google.com/calendar/embed?src=c_4ab8e279307c0e7083f815bff63cb65ce14df69f37ba5f9f4e5e8620a5b612d2%40group.calendar.google.com&ctz=Europe%2FBrussels
@@ -108,28 +109,8 @@ export async function POST(request: NextRequest) {
 
     // Parse date and time - they are in Europe/Brussels local time
     // The date string is in format 'yyyy-MM-dd' and time is in format 'HH:mm'
-    const [year, month, day] = date.split('-').map(Number);
-    const [hours, minutes] = time.split(':').map(Number);
-    
-    // Determine if we're in daylight saving time
-    // DST in Europe: last Sunday in March to last Sunday in October
-    const monthNum = parseInt(date.split('-')[1]);
-    const isDST = monthNum >= 4 && monthNum <= 9; // April-September are definitely DST
-    const brusselsOffsetHours = isDST ? 2 : 1; // UTC+2 in summer, UTC+1 in winter
-    
-    // Create date with explicit Brussels timezone offset
-    // This creates a date object representing the Brussels local time
-    // Example: "2025-12-31T14:00:00+01:00" means 14:00 Brussels time
-    const dateTimeString = `${date}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00${brusselsOffsetHours === 2 ? '+02:00' : '+01:00'}`;
-    let bookingDate = new Date(dateTimeString);
-    
-    // Verify the date was parsed correctly
-    if (isNaN(bookingDate.getTime())) {
-      // Fallback: manually calculate UTC time
-      // 14:00 Brussels (UTC+1) = 13:00 UTC, 14:00 Brussels (UTC+2) = 12:00 UTC
-      const utcHours = hours - brusselsOffsetHours;
-      bookingDate = new Date(Date.UTC(year, month - 1, day, utcHours, minutes, 0));
-    }
+    // Use centralized timezone utility for proper DST handling
+    const bookingDate = parseBrusselsDateTime(date, time);
 
     // Calculate end time (start + duration)
     const endDate = new Date(bookingDate.getTime() + durationMinutes * 60 * 1000);
