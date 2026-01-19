@@ -275,10 +275,18 @@ export function TourBookingDialog({
     });
   };
 
-  // Generate time slots between 10:00 and 18:00 based on tour duration
-  // For Local Stories tours, only show 14:00-16:00 timeslot
+  // Generate time slots based on tour type:
+  // - Local Stories tours: only show 14:00-16:00 timeslot
+  // - Op Maat tours: 30-minute intervals from 09:00 to 20:00
+  // - Regular tours: slots based on tour duration from 10:00 to 18:00
   const timeSlots = useMemo(() => {
     const slots: { value: string; label: string }[] = [];
+
+    const formatTime = (mins: number) => {
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    };
 
     // If this is a Local Stories tour, only show 14:00-16:00 slot
     if (isLocalStories) {
@@ -289,19 +297,37 @@ export function TourBookingDialog({
       return slots;
     }
 
-    // Otherwise, generate regular time slots
+    // Op Maat tours: 30-minute intervals from 09:00 to 20:00 (START times)
+    // Tours can START at 20:00 and end later (e.g., 22:00 or 23:00 with extra hour)
+    if (opMaat) {
+      const startHour = 9; // 09:00
+      const lastStartHour = 20; // Last START time is 20:00
+      const intervalMinutes = 30; // 30-minute intervals
+      const durationMinutes = actualDuration;
+
+      let currentMinutes = startHour * 60;
+      const lastStartMinutes = lastStartHour * 60;
+
+      while (currentMinutes <= lastStartMinutes) {
+        const startTime = formatTime(currentMinutes);
+        const endTime = formatTime(currentMinutes + durationMinutes);
+        slots.push({
+          value: startTime,
+          label: `${startTime} - ${endTime}`
+        });
+        currentMinutes += intervalMinutes;
+      }
+
+      return slots;
+    }
+
+    // Regular tours: generate slots based on tour duration
     const durationMinutes = actualDuration;
     const startHour = 10; // 10:00
     const endHour = 18; // 18:00
 
     let currentMinutes = startHour * 60;
     const endMinutes = endHour * 60;
-
-    const formatTime = (mins: number) => {
-      const h = Math.floor(mins / 60);
-      const m = mins % 60;
-      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-    };
 
     while (currentMinutes + durationMinutes <= endMinutes) {
       const startTime = formatTime(currentMinutes);
@@ -314,7 +340,7 @@ export function TourBookingDialog({
     }
 
     return slots;
-  }, [actualDuration, isLocalStories]);
+  }, [actualDuration, isLocalStories, opMaat]);
 
   // Format duration for display
   const formatDuration = (minutes: number): string => {
@@ -420,6 +446,9 @@ export function TourBookingDialog({
           extraHour: opMaat ? formData.extraHour : false, // Pass extra hour flag for opMaat tours
           // For local stories: pass existing tourbooking ID if available
           existingTourBookingId: isLocalStories ? (existingTourBookingId || null) : null,
+          // Weekend and evening fees
+          weekendFee: weekendFeeCost > 0,
+          eveningFee: eveningFeeCost > 0,
         }),
       });
 
@@ -460,12 +489,20 @@ export function TourBookingDialog({
   // Calculate additional costs
   const tanguyCost = formData.requestTanguy ? 125 : 0;
   const extraHourCost = formData.extraHour ? 150 : 0;
-  
+
+  // Evening fee for op_maat tours: €25 if time is after 17:00
+  const isEveningSlot = selectedTimeSlot && parseInt(selectedTimeSlot.split(':')[0], 10) >= 17;
+  const eveningFeeCost = opMaat && isEveningSlot ? 25 : 0;
+
+  // Weekend fee for ALL tours: €25 if date is Saturday (6) or Sunday (0)
+  const isWeekend = formData.bookingDate && (formData.bookingDate.getDay() === 0 || formData.bookingDate.getDay() === 6);
+  const weekendFeeCost = isWeekend ? 25 : 0;
+
   // Shipping is ALWAYS FREE for tour bookings with upsell products
   const hasUpsellProducts = upsellTotal > 0;
   const shippingCost = hasUpsellProducts ? FREIGHT_COST_FREE : 0;
-  
-  const totalPrice = tourTotal + upsellTotal + tanguyCost + extraHourCost + shippingCost;
+
+  const totalPrice = tourTotal + upsellTotal + tanguyCost + extraHourCost + eveningFeeCost + weekendFeeCost + shippingCost;
   
   // Debug logging
   if (process.env.NODE_ENV === 'development') {
@@ -908,6 +945,16 @@ export function TourBookingDialog({
                     + €150 {t('extraHourLineItem')}
                   </div>
                 )}
+                {eveningFeeCost > 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    + €25 {t('eveningFeeLineItem')}
+                  </div>
+                )}
+                {weekendFeeCost > 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    + €25 {t('weekendFeeLineItem')}
+                  </div>
+                )}
                 {upsellTotal > 0 && (
                   <div className="text-sm text-muted-foreground">
                     + €{upsellTotal.toFixed(2)} extras
@@ -1180,40 +1227,67 @@ export function TourBookingDialog({
               
               {/* Fixed summary section - always visible */}
               <div className="flex-shrink-0 pt-4 border-t border-gray-200 bg-white">
-                {upsellTotal > 0 && (
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-muted-foreground">
-                        Extra producten ({Object.values(selectedUpsell).reduce((sum, qty) => sum + qty, 0)}):
-                      </span>
-                      <span className="text-lg font-bold" style={{ color: 'var(--primary-base)' }}>
-                        €{upsellTotal.toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between pt-2 border-t">
-                      <span className="text-base font-semibold">Verzendkosten:</span>
-                      <span className="text-base font-semibold text-green-600 font-bold">
-                        GRATIS
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between pt-2 border-t">
-                      <span className="text-base font-semibold">Tour:</span>
-                      <span className="text-base font-semibold">€{tourTotal.toFixed(2)}</span>
-                    </div>
-                    <div className="flex items-center justify-between pt-2">
-                      <span className="text-lg font-bold">Totaal:</span>
-                      <span className="text-xl font-bold" style={{ color: 'var(--primary-base)' }}>
-                        €{totalPrice.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                )}
-                {upsellTotal === 0 && (
-                  <div className="flex items-center justify-between mb-4">
+                <div className="space-y-2 mb-4">
+                  {/* Tour base price */}
+                  <div className="flex items-center justify-between">
                     <span className="text-base font-semibold">Tour:</span>
                     <span className="text-base font-semibold">€{tourTotal.toFixed(2)}</span>
                   </div>
-                )}
+                  {/* Tanguy fee */}
+                  {tanguyCost > 0 && (
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>{t('tanguyFeeLineItem')}:</span>
+                      <span>€{tanguyCost.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {/* Extra hour fee */}
+                  {extraHourCost > 0 && (
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>{t('extraHourLineItem')}:</span>
+                      <span>€{extraHourCost.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {/* Weekend fee */}
+                  {weekendFeeCost > 0 && (
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>{t('weekendFeeLineItem')}:</span>
+                      <span>€{weekendFeeCost.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {/* Evening fee */}
+                  {eveningFeeCost > 0 && (
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>{t('eveningFeeLineItem')}:</span>
+                      <span>€{eveningFeeCost.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {/* Upsell products */}
+                  {upsellTotal > 0 && (
+                    <>
+                      <div className="flex items-center justify-between pt-2 border-t">
+                        <span className="text-sm font-medium text-muted-foreground">
+                          Extra producten ({Object.values(selectedUpsell).reduce((sum, qty) => sum + qty, 0)}):
+                        </span>
+                        <span className="text-lg font-bold" style={{ color: 'var(--primary-base)' }}>
+                          €{upsellTotal.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-base font-semibold">Verzendkosten:</span>
+                        <span className="text-base font-semibold text-green-600">
+                          GRATIS
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  {/* Total */}
+                  <div className="flex items-center justify-between pt-2 border-t">
+                    <span className="text-lg font-bold">Totaal:</span>
+                    <span className="text-xl font-bold" style={{ color: 'var(--primary-base)' }}>
+                      €{totalPrice.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           ) : (

@@ -65,6 +65,9 @@ interface CreateBookingForm {
   isPaid: boolean;
   customPrice: string; // Custom price per person (empty = use tour's default price)
   dealId: string; // TeamLeader deal ID (optional)
+  // Extra fees for op_maat tours
+  requestTanguy: boolean;
+  extraHour: boolean;
 }
 
 interface TeamLeaderDeal {
@@ -123,6 +126,8 @@ export default function AdminBookingsPage() {
     specialRequests: '',
     isPaid: false,
     dealId: '',
+    requestTanguy: false,
+    extraHour: false,
   });
   const [customLanguage, setCustomLanguage] = useState('');
 
@@ -169,6 +174,12 @@ export default function AdminBookingsPage() {
     { value: 'th', label: 'Thai (TH)' },
     { value: 'other', label: 'Other (Custom)' },
   ];
+
+  // Fee cost constants (same as used in create-checkout-session)
+  const TANGUY_COST = 125;
+  const EXTRA_HOUR_COST = 150;
+  const WEEKEND_FEE_COST = 25;
+  const EVENING_FEE_COST = 25;
 
   useEffect(() => {
     if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
@@ -372,6 +383,8 @@ export default function AdminBookingsPage() {
       specialRequests: '',
       isPaid: false,
       dealId: '',
+      requestTanguy: false,
+      extraHour: false,
     });
   };
 
@@ -409,6 +422,26 @@ export default function AdminBookingsPage() {
 
   // Get selected tour info
   const selectedTour = createForm.tourId ? tours.get(createForm.tourId) : null;
+
+  // Calculate fees based on selected options and date/time
+  const isWeekend = (() => {
+    if (!createForm.date) return false;
+    const date = new Date(createForm.date);
+    const day = date.getDay();
+    return day === 0 || day === 6; // Sunday = 0, Saturday = 6
+  })();
+
+  const isEvening = (() => {
+    if (!createForm.time) return false;
+    const hour = parseInt(createForm.time.split(':')[0], 10);
+    return hour >= 17;
+  })();
+
+  // Calculate fee amounts (only for op_maat tours)
+  const tanguyCost = selectedTour?.op_maat && createForm.requestTanguy ? TANGUY_COST : 0;
+  const extraHourCost = selectedTour?.op_maat && createForm.extraHour ? EXTRA_HOUR_COST : 0;
+  const weekendFeeCost = isWeekend ? WEEKEND_FEE_COST : 0;
+  const eveningFeeCost = selectedTour?.op_maat && isEvening ? EVENING_FEE_COST : 0;
 
   // Check for duplicate bookings before creating
   const checkForDuplicateBooking = async (): Promise<TourBooking | null> => {
@@ -462,7 +495,17 @@ export default function AdminBookingsPage() {
       // Create invitee object
       // Use custom price if provided, otherwise use tour's default price
       const pricePerPerson = createForm.customPrice ? parseFloat(createForm.customPrice) : (tour.price || 0);
-      const calculatedAmount = Math.round(pricePerPerson * createForm.numberOfPeople * 100) / 100; // Round to nearest cent
+      const baseTourPrice = Math.round(pricePerPerson * createForm.numberOfPeople * 100) / 100; // Round to nearest cent
+
+      // Calculate fees for this booking
+      const feeTanguyCost = tour.op_maat && createForm.requestTanguy ? TANGUY_COST : 0;
+      const feeExtraHourCost = tour.op_maat && createForm.extraHour ? EXTRA_HOUR_COST : 0;
+      const feeWeekendCost = isWeekend ? WEEKEND_FEE_COST : 0;
+      const feeEveningCost = tour.op_maat && isEvening ? EVENING_FEE_COST : 0;
+
+      // Total amount includes base price + all fees
+      const totalAmount = baseTourPrice + feeTanguyCost + feeExtraHourCost + feeWeekendCost + feeEveningCost;
+
       // Use custom language if "other" is selected
       const finalLanguage = createForm.language === 'other' ? customLanguage : createForm.language;
       const invitee: Record<string, unknown> = {
@@ -476,12 +519,21 @@ export default function AdminBookingsPage() {
         isContacted: false,
         isPaid: createForm.isPaid,
         pricePerPerson: Math.round(pricePerPerson * 100) / 100, // Store the price per person (custom or default) for payment links
+        // Store fee information
+        requestTanguy: createForm.requestTanguy,
+        hasExtraHour: createForm.extraHour,
+        weekendFee: isWeekend,
+        eveningFee: tour.op_maat && isEvening,
+        tanguyCost: feeTanguyCost,
+        extraHourCost: feeExtraHourCost,
+        weekendFeeCost: feeWeekendCost,
+        eveningFeeCost: feeEveningCost,
       };
 
       // Only set amount if customer has already paid
       // Don't set pendingPaymentPeople here - that's only for when adding extra people later
       if (createForm.isPaid) {
-        invitee.amount = calculatedAmount;
+        invitee.amount = totalAmount; // Total includes all fees
       }
       // If not paid, pricePerPerson is used to calculate the amount when sending payment link
 
@@ -1189,6 +1241,9 @@ export default function AdminBookingsPage() {
                   onChange={(e) => setCreateForm({ ...createForm, date: e.target.value })}
                   className="bg-white"
                 />
+                {createForm.date && isWeekend && (
+                  <p className="text-xs text-amber-600">Weekend fee (+€{WEEKEND_FEE_COST}) will be applied</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="time">Time *</Label>
@@ -1199,8 +1254,40 @@ export default function AdminBookingsPage() {
                   onChange={(e) => setCreateForm({ ...createForm, time: e.target.value })}
                   className="bg-white"
                 />
+                {selectedTour?.op_maat && createForm.time && isEvening && (
+                  <p className="text-xs text-amber-600">Evening fee (+€{EVENING_FEE_COST}) will be applied</p>
+                )}
               </div>
             </div>
+
+            {/* Extra Options for Op Maat Tours */}
+            {selectedTour?.op_maat && (
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-medium mb-3">Extra Options (Op Maat)</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="requestTanguy"
+                      checked={createForm.requestTanguy}
+                      onCheckedChange={(checked) => setCreateForm({ ...createForm, requestTanguy: checked === true })}
+                    />
+                    <Label htmlFor="requestTanguy" className="text-sm cursor-pointer">
+                      Request Tanguy (+€{TANGUY_COST})
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="extraHour"
+                      checked={createForm.extraHour}
+                      onCheckedChange={(checked) => setCreateForm({ ...createForm, extraHour: checked === true })}
+                    />
+                    <Label htmlFor="extraHour" className="text-sm cursor-pointer">
+                      Extra Hour (+€{EXTRA_HOUR_COST})
+                    </Label>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Customer Details */}
             <div className="border-t pt-4">
@@ -1311,8 +1398,10 @@ export default function AdminBookingsPage() {
             {/* Price Summary */}
             {selectedTour && (() => {
               const pricePerPerson = createForm.customPrice ? parseFloat(createForm.customPrice) : (selectedTour.price || 0);
-              const totalPrice = Math.round(pricePerPerson * createForm.numberOfPeople * 100) / 100;
+              const baseTourPrice = Math.round(pricePerPerson * createForm.numberOfPeople * 100) / 100;
               const isCustomPrice = !!createForm.customPrice;
+              const totalFees = tanguyCost + extraHourCost + weekendFeeCost + eveningFeeCost;
+              const grandTotal = baseTourPrice + totalFees;
               return (
                 <div className="border-t pt-4">
                   <h4 className="text-sm font-medium mb-2">Price Summary</h4>
@@ -1321,11 +1410,35 @@ export default function AdminBookingsPage() {
                       <span>
                         {isCustomPrice ? 'Custom price' : 'Base price'} (€{pricePerPerson.toFixed(2)}) × {createForm.numberOfPeople} {createForm.numberOfPeople === 1 ? 'person' : 'people'}
                       </span>
-                      <span>€{totalPrice.toFixed(2)}</span>
+                      <span>€{baseTourPrice.toFixed(2)}</span>
                     </div>
+                    {tanguyCost > 0 && (
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Tanguy</span>
+                        <span>€{tanguyCost.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {extraHourCost > 0 && (
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Extra Hour</span>
+                        <span>€{extraHourCost.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {weekendFeeCost > 0 && (
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Weekend Fee</span>
+                        <span>€{weekendFeeCost.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {eveningFeeCost > 0 && (
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Evening Fee</span>
+                        <span>€{eveningFeeCost.toFixed(2)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between font-medium pt-1 border-t">
                       <span>Total</span>
-                      <span>€{totalPrice.toFixed(2)}</span>
+                      <span>€{grandTotal.toFixed(2)}</span>
                     </div>
                     {isCustomPrice && (
                       <p className="text-xs text-amber-600 mt-1">

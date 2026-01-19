@@ -98,7 +98,8 @@
     "thinking": "Denken...",
     "typing": "Tippen...",
     "error": "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut.",
-    "close": "Chat schließen"
+    "close": "Chat schließen",
+    "welcomeMessage": "Hallo! Wobei kann ich Ihnen helfen?"
   },
   "footer": {
     "address": "Adresse",
@@ -672,7 +673,9 @@
     "youSave": "Sie sparen",
     "tanguyFee": "Gebühr für Tanguy als persönlichen Reiseführer",
     "tanguyFeeLineItem": "Gebühr für Tanguy als persönlicher Reiseführer",
-    "extraHourLineItem": "Zusätzliche Stunde"
+    "extraHourLineItem": "Zusätzliche Stunde",
+    "eveningFeeLineItem": "Abendzuschlag",
+    "weekendFeeLineItem": "Wochenendzuschlag"
   },
   "product": {
     "description": "Beschreibung",

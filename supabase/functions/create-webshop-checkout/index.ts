@@ -206,6 +206,8 @@ serve(async (req: Request) => {
         locale,
         itemCount: orderItems.length.toString(),
         isGiftCardOnly: isGiftCardOnly.toString(),
+        // Pass product IDs so webhook can include them in order items
+        productIds: JSON.stringify(orderItems.map(item => item.productId)),
       },
     }
 

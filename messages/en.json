@@ -98,7 +98,8 @@
     "thinking": "Thinking...",
     "typing": "Typing...",
     "error": "Something went wrong. Please try again.",
-    "close": "Close chat"
+    "close": "Close chat",
+    "welcomeMessage": "Hi! How may I help you?"
   },
   "footer": {
     "address": "Address",
@@ -673,7 +674,9 @@
     "youSave": "You save",
     "tanguyFee": "fee for Tanguy as personal guide",
     "tanguyFeeLineItem": "Fee for Tanguy as personal guide",
-    "extraHourLineItem": "Extra hour"
+    "extraHourLineItem": "Extra hour",
+    "eveningFeeLineItem": "Evening fee",
+    "weekendFeeLineItem": "Weekend fee"
   },
   "product": {
     "description": "Description",

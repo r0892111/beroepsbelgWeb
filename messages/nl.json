@@ -162,7 +162,8 @@
     "thinking": "Denken...",
     "typing": "Typen...",
     "error": "Er is iets misgegaan. Probeer het opnieuw.",
-    "close": "Chat sluiten"
+    "close": "Chat sluiten",
+    "welcomeMessage": "Hey! Waar kan ik je mee helpen?"
   },
   "footer": {
     "address": "Adres",
@@ -741,7 +742,9 @@
     "bookNow": "Boek nu",
     "tanguyFee": "voor Tanguy als persoonlijke gids",
     "tanguyFeeLineItem": "Kosten voor Tanguy als persoonlijke gids",
-    "extraHourLineItem": "Extra uur"
+    "extraHourLineItem": "Extra uur",
+    "eveningFeeLineItem": "Avondtoeslag",
+    "weekendFeeLineItem": "Weekendtoeslag"
   },
   "product": {
     "description": "Beschrijving",
