@@ -8,6 +8,7 @@ import { Loader2, Calendar, AlertCircle } from 'lucide-react';
 interface TourData {
   title: string;
   start_location: string | null;
+  google_maps_url: string | null;
 }
 
 interface BookingData {
