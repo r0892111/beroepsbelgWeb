@@ -1140,23 +1140,6 @@ export default function AdminGuidesPage() {
                       </Label>
                       <p className="text-base">{selectedGuide.phonenumber || 'N/A'}</p>
                     </div>
-                    <div>
-                      <Label className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        Availability
-                      </Label>
-                      <Badge
-                        className={
-                          selectedGuide.availability === 'Available'
-                            ? 'bg-green-100 text-green-800'
-                            : selectedGuide.availability === 'Limited'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
-                        }
-                      >
-                        {selectedGuide.availability || 'N/A'}
-                      </Badge>
-                    </div>
                   </CardContent>
                 </Card>
 
