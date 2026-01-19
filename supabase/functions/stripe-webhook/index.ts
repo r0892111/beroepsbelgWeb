@@ -1,6 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import Stripe from 'npm:stripe@17.7.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
+import { toBrusselsISO, parseBrusselsDateTime } from '../_shared/timezone.ts';
 
 const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
 const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')!;
@@ -217,7 +218,10 @@ async function handleEvent(event: Stripe.Event) {
           console.info(`Processing local stories booking for Saturday: ${saturdayDateStr || 'NO DATE AVAILABLE'}`);
 
           let tourbookingId: number | null = null;
-          const saturdayDateTime = saturdayDateStr ? `${saturdayDateStr}T14:00:00` : null;
+          // Convert Saturday 14:00 to Brussels timezone ISO format
+          const saturdayDateTime = saturdayDateStr
+            ? toBrusselsISO(parseBrusselsDateTime(saturdayDateStr, '14:00'))
+            : null;
 
           // Look for existing tourbooking for this Saturday
           if (saturdayDateStr) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { toBrusselsISO, addMinutesBrussels } from '@/lib/utils/timezone';
 
 function getSupabaseServer() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -68,55 +69,27 @@ export async function POST(request: NextRequest) {
     const finalDurationMinutes = durationMinutes || actualDuration;
     
 
-    // Format tour_datetime - convert dateTime to ISO string if provided
-    // IMPORTANT: Treat the date/time as Brussels local time (Europe/Brussels timezone)
-    // and convert it to UTC for storage
+    // Format tour_datetime - convert dateTime to Brussels timezone ISO string
+    // Use centralized timezone utility for proper DST handling
     let tourDatetime: string | null = null;
     if (dateTime) {
       try {
-        // If dateTime is already an ISO string with timezone, use it directly
-        // Otherwise, treat it as Brussels local time
-        let dateObj: Date;
-        if (typeof dateTime === 'string' && (dateTime.includes('+') || dateTime.includes('Z'))) {
-          // Already has timezone info
-          dateObj = new Date(dateTime);
-        } else {
-          // Treat as Brussels local time
-          const dateTimeStr = typeof dateTime === 'string' ? dateTime : dateTime.toString();
-          // Determine if it's DST (rough approximation: April-September)
-          const monthMatch = dateTimeStr.match(/(\d{4})-(\d{2})/);
-          const month = monthMatch ? parseInt(monthMatch[2], 10) : new Date().getMonth() + 1;
-          const isDST = month >= 4 && month <= 9;
-          const timezoneOffset = isDST ? '+02:00' : '+01:00';
-          
-          // Ensure format is yyyy-MM-ddTHH:mm:ss
-          let formattedDateTime = dateTimeStr;
-          if (formattedDateTime.includes('T')) {
-            const [datePart, timePart] = formattedDateTime.split('T');
-            if (timePart && timePart.split(':').length === 2) {
-              formattedDateTime = `${datePart}T${timePart}:00`;
-            }
-          }
-          
-          dateObj = new Date(`${formattedDateTime}${timezoneOffset}`);
-        }
-        
+        const dateObj = new Date(dateTime);
         if (!isNaN(dateObj.getTime())) {
-          tourDatetime = dateObj.toISOString();
+          tourDatetime = toBrusselsISO(dateObj);
         }
       } catch (e) {
-        // Ignore parsing errors
+        console.error('Error parsing dateTime:', e);
       }
     }
 
     // Calculate tour end datetime based on start time and duration
     let tourEndDatetime: string | null = null;
     if (tourDatetime) {
-      const startDate = new Date(tourDatetime);
-      if (!isNaN(startDate.getTime())) {
-        // Add duration in minutes to start time
-        const endDate = new Date(startDate.getTime() + finalDurationMinutes * 60 * 1000);
-        tourEndDatetime = endDate.toISOString();
+      try {
+        tourEndDatetime = addMinutesBrussels(tourDatetime, finalDurationMinutes);
+      } catch (e) {
+        console.error('Error calculating tour end:', e);
       }
     }
 

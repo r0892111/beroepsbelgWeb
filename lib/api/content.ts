@@ -2,6 +2,7 @@ import { supabaseServer } from '@/lib/supabase/server';
 import type { Locale, City, Tour, Product, FaqItem, PressLink, ProductImage, TourImage, Lecture, LectureImage, LectureBooking, Press, NewsletterSubscription, Blog, BlogImage, TourTypeEntry } from '@/lib/data/types';
 import { PREDEFINED_TOUR_TYPES } from '@/lib/data/types';
 import { buildLocalizedRecord } from '@/lib/utils';
+import { toBrusselsISO, parseBrusselsDateTime } from '@/lib/utils/timezone';
 
 export type LocalTourBooking = {
   id: string;
@@ -1021,24 +1022,42 @@ export async function getFaqItems(): Promise<FaqItem[]> {
 
 /**
  * Get the next available Saturdays for local tours bookings
- * Local stories tours happen every Saturday at 2 PM
+ * Local stories tours happen every Saturday at 2 PM Brussels time
  */
 function getNextSaturdays(count: number = 8): Date[] {
   const saturdays: Date[] = [];
   const today = new Date();
-  
-  // Find the next Saturday
-  const daysUntilSaturday = (6 - today.getDay() + 7) % 7 || 7;
-  const nextSaturday = new Date(today);
-  nextSaturday.setDate(today.getDate() + daysUntilSaturday);
-  nextSaturday.setHours(14, 0, 0, 0); // 2 PM
-  
+
+  // Find the next Saturday (in Brussels timezone)
+  const brusselsFormatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Brussels',
+    weekday: 'short',
+  });
+  const brusselsDay = brusselsFormatter.format(today);
+  const dayMap: { [key: string]: number } = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  const currentDayNum = dayMap[brusselsDay] ?? today.getDay();
+
+  const daysUntilSaturday = (6 - currentDayNum + 7) % 7 || 7;
+
   for (let i = 0; i < count; i++) {
-    const saturday = new Date(nextSaturday);
-    saturday.setDate(nextSaturday.getDate() + (i * 7));
+    // Calculate the date for this Saturday
+    const saturdayDate = new Date(today);
+    saturdayDate.setDate(today.getDate() + daysUntilSaturday + (i * 7));
+
+    // Get the date string in Brussels timezone
+    const dateFormatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Brussels',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    const dateStr = dateFormatter.format(saturdayDate);
+
+    // Create a Date for Saturday at 14:00 Brussels time
+    const saturday = parseBrusselsDateTime(dateStr, '14:00');
     saturdays.push(saturday);
   }
-  
+
   return saturdays;
 }
 
