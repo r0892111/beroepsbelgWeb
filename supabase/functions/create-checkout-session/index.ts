@@ -47,6 +47,8 @@ serve(async (req: Request) => {
     existingTourBookingId = null, // Existing tourbooking ID (for local stories - passed from frontend)
     durationMinutes = null, // Tour duration in minutes (will be calculated from tour data + extra hour)
     extraHour = false, // Extra hour option (150 EUR)
+    weekendFee = false, // Weekend fee (25 EUR) - applies to all tour types
+    eveningFee = false, // Evening fee (25 EUR) - only for op_maat tours when time >= 17:00
     } = await req.json()
 
     // Freight costs constants
@@ -55,6 +57,8 @@ serve(async (req: Request) => {
     const FREIGHT_COST_FREE = 0; // Free for tour bookings with upsell products
     const TANGUY_COST = 125; // Fee for Tanguy as personal guide
     const EXTRA_HOUR_COST = 150; // Extra hour cost
+    const WEEKEND_FEE_COST = 25; // Weekend surcharge (Saturday/Sunday)
+    const EVENING_FEE_COST = 25; // Evening surcharge (op_maat tours starting at 17:00 or later)
 
     // Log received booking data for debugging
     console.log('Received booking data:', {
@@ -214,6 +218,36 @@ serve(async (req: Request) => {
         quantity: 1,
       });
       console.log('Added extra hour to line items:', { cost: EXTRA_HOUR_COST });
+    }
+
+    // Add weekend fee (25 EUR) if booking is on Saturday or Sunday
+    if (weekendFee) {
+      lineItems.push({
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: 'Weekendtoeslag',
+          },
+          unit_amount: Math.round(WEEKEND_FEE_COST * 100), // Convert to cents
+        },
+        quantity: 1,
+      });
+      console.log('Added weekend fee to line items:', { cost: WEEKEND_FEE_COST });
+    }
+
+    // Add evening fee (25 EUR) for op_maat tours starting at 17:00 or later
+    if (eveningFee) {
+      lineItems.push({
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: 'Avondtoeslag',
+          },
+          unit_amount: Math.round(EVENING_FEE_COST * 100), // Convert to cents
+        },
+        quantity: 1,
+      });
+      console.log('Added evening fee to line items:', { cost: EVENING_FEE_COST });
     }
 
     // Add shipping cost (FREE for tour bookings with upsell products)
@@ -378,6 +412,14 @@ serve(async (req: Request) => {
         tourFinalAmount,
         tanguyCost: requestTanguy ? TANGUY_COST : 0,
         extraHourCost: hasExtraHour ? EXTRA_HOUR_COST : 0,
+        weekendFeeCost: weekendFee ? WEEKEND_FEE_COST : 0,
+        eveningFeeCost: eveningFee ? EVENING_FEE_COST : 0,
+        // Total amount including all fees (tour + tanguy + extra hour + weekend + evening)
+        totalAmount: tourFinalAmount
+          + (requestTanguy ? TANGUY_COST : 0)
+          + (hasExtraHour ? EXTRA_HOUR_COST : 0)
+          + (weekendFee ? WEEKEND_FEE_COST : 0)
+          + (eveningFee ? EVENING_FEE_COST : 0),
       },
     };
 

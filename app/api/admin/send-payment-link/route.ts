@@ -100,6 +100,10 @@ export async function POST(request: NextRequest) {
       numberOfPeople,
       amount, // Amount in euros
       localBookingId, // Optional: for local stories bookings
+      city,
+      tourDatetime,
+      fees, // Optional: fee data for op_maat tours
+      isExtraInvitees, // Optional: true for extra people payment links
     } = body;
 
     // Validate required fields
@@ -122,22 +126,91 @@ export async function POST(request: NextRequest) {
     // Get origin for success/cancel URLs
     const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'https://beroepsbelg.be';
 
+    // Build line items - main tour price plus any fee line items
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+
+    // Calculate base tour price (amount minus fees)
+    const tanguyCost = fees?.tanguyCost || 0;
+    const extraHourCost = fees?.extraHourCost || 0;
+    const weekendFeeCost = fees?.weekendFeeCost || 0;
+    const eveningFeeCost = fees?.eveningFeeCost || 0;
+    const totalFees = tanguyCost + extraHourCost + weekendFeeCost + eveningFeeCost;
+    const baseTourPrice = amount - totalFees;
+
+    // Main tour line item
+    lineItems.push({
+      price_data: {
+        currency: 'eur',
+        product_data: {
+          name: tourName,
+          description: `${numberOfPeople} ${numberOfPeople === 1 ? 'person' : 'people'}`,
+        },
+        unit_amount: Math.round(baseTourPrice * 100), // Convert to cents
+      },
+      quantity: 1,
+    });
+
+    // Add fee line items if present
+    if (tanguyCost > 0) {
+      lineItems.push({
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: 'Tanguy',
+            description: 'Request for Tanguy as guide',
+          },
+          unit_amount: Math.round(tanguyCost * 100),
+        },
+        quantity: 1,
+      });
+    }
+
+    if (extraHourCost > 0) {
+      lineItems.push({
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: 'Extra Hour',
+            description: 'Additional hour for the tour',
+          },
+          unit_amount: Math.round(extraHourCost * 100),
+        },
+        quantity: 1,
+      });
+    }
+
+    if (weekendFeeCost > 0) {
+      lineItems.push({
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: 'Weekend Fee',
+            description: 'Weekend booking surcharge',
+          },
+          unit_amount: Math.round(weekendFeeCost * 100),
+        },
+        quantity: 1,
+      });
+    }
+
+    if (eveningFeeCost > 0) {
+      lineItems.push({
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: 'Evening Fee',
+            description: 'Evening booking surcharge',
+          },
+          unit_amount: Math.round(eveningFeeCost * 100),
+        },
+        quantity: 1,
+      });
+    }
+
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card', 'bancontact', 'ideal'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'eur',
-            product_data: {
-              name: tourName,
-              description: `${numberOfPeople} ${numberOfPeople === 1 ? 'person' : 'people'} - Manual payment link`,
-            },
-            unit_amount: Math.round(amount * 100), // Convert to cents
-          },
-          quantity: 1,
-        },
-      ],
+      line_items: lineItems,
       mode: 'payment',
       success_url: `${origin}/booking/payment-success`,
       cancel_url: `${origin}/booking/cancelled`,
@@ -148,7 +221,20 @@ export async function POST(request: NextRequest) {
         customerName,
         numberOfPeople: numberOfPeople.toString(),
         isManualPaymentLink: 'true',
+        isExtraInvitees: isExtraInvitees ? 'true' : 'false', // Flag for extra people vs normal payment
         localBookingId: localBookingId || '',
+        city: city || '',
+        tourDatetime: tourDatetime || '',
+        // Fee data for webhook processing
+        requestTanguy: fees?.requestTanguy ? 'true' : 'false',
+        hasExtraHour: fees?.hasExtraHour ? 'true' : 'false',
+        weekendFee: fees?.weekendFee ? 'true' : 'false',
+        eveningFee: fees?.eveningFee ? 'true' : 'false',
+        tanguyCost: tanguyCost.toString(),
+        extraHourCost: extraHourCost.toString(),
+        weekendFeeCost: weekendFeeCost.toString(),
+        eveningFeeCost: eveningFeeCost.toString(),
+        totalAmount: amount.toString(),
       },
     });
 
@@ -167,11 +253,33 @@ export async function POST(request: NextRequest) {
           customerName,
           customerEmail,
           tourName,
+          tourId: tourId || null,
           numberOfPeople,
           amount,
           paymentUrl: session.url,
           bookingId,
           localBookingId: localBookingId || null,
+          city: city || null,
+          tourDatetime: tourDatetime || null,
+          extra_invitees: isExtraInvitees || false, // Flag for extra people vs normal payment
+          // Include fee data for n8n processing
+          fees: fees ? {
+            requestTanguy: fees.requestTanguy || false,
+            hasExtraHour: fees.hasExtraHour || false,
+            weekendFee: fees.weekendFee || false,
+            eveningFee: fees.eveningFee || false,
+            tanguyCost,
+            extraHourCost,
+            weekendFeeCost,
+            eveningFeeCost,
+            totalAmount: amount,
+          } : null,
+          // Also send fee breakdown separately for easier n8n access
+          tanguyCost,
+          extraHourCost,
+          weekendFeeCost,
+          eveningFeeCost,
+          baseTourPrice,
         }),
       });
       console.log('Payment link webhook sent successfully');

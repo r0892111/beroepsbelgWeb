@@ -113,6 +113,52 @@ async function handleEvent(event: Stripe.Event) {
         const bookingData = pendingBooking.booking_data;
         const tourType = pendingBooking.tour_type;
 
+        // Log the full booking data for debugging
+        console.info('Booking data from pending:', JSON.stringify({
+          tourId: bookingData?.tourId,
+          customerEmail: bookingData?.customerEmail,
+          tourType,
+          hasAmounts: !!bookingData?.amounts,
+          amounts: bookingData?.amounts,
+        }));
+
+        // Validate required booking data
+        if (!bookingData || !bookingData.tourId || !bookingData.customerEmail) {
+          console.error('Invalid booking data in pending_tour_bookings:', {
+            hasBookingData: !!bookingData,
+            hasTourId: !!bookingData?.tourId,
+            hasCustomerEmail: !!bookingData?.customerEmail,
+          });
+          // Don't delete the pending booking so we can investigate
+          return;
+        }
+
+        // Ensure amounts object exists with defaults
+        if (!bookingData.amounts) {
+          console.warn('No amounts object in bookingData, creating defaults');
+          bookingData.amounts = {
+            tourFullPrice: 0,
+            discountAmount: 0,
+            tourFinalAmount: 0,
+            tanguyCost: 0,
+            extraHourCost: 0,
+            weekendFeeCost: 0,
+            eveningFeeCost: 0,
+            totalAmount: 0,
+          };
+        }
+
+        // Ensure totalAmount exists (backwards compatibility for older pending bookings)
+        if (bookingData.amounts.totalAmount === undefined) {
+          bookingData.amounts.totalAmount =
+            (bookingData.amounts.tourFinalAmount || 0) +
+            (bookingData.amounts.tanguyCost || 0) +
+            (bookingData.amounts.extraHourCost || 0) +
+            (bookingData.amounts.weekendFeeCost || 0) +
+            (bookingData.amounts.eveningFeeCost || 0);
+          console.info('Calculated totalAmount from individual amounts:', bookingData.amounts.totalAmount);
+        }
+
         // Check if booking already exists (idempotency)
         const { data: existingBooking } = await supabase
           .from('tourbooking')
@@ -129,6 +175,7 @@ async function handleEvent(event: Stripe.Event) {
 
         let createdBookingId: number | null = null;
 
+        try {
         // Process based on tour type
         if (tourType === 'local_stories') {
           // LOCAL STORIES: Find or create shared tourbooking, append invitee, create local_tours_bookings
@@ -196,11 +243,13 @@ async function handleEvent(event: Stripe.Event) {
                 language: bookingData.language,
                 specialRequests: bookingData.specialRequests,
                 requestTanguy: bookingData.requestTanguy,
-                amount: bookingData.amounts.tourFinalAmount,
+                amount: bookingData.amounts.totalAmount || (bookingData.amounts.tourFinalAmount + (bookingData.amounts.tanguyCost || 0) + (bookingData.amounts.extraHourCost || 0) + (bookingData.amounts.weekendFeeCost || 0) + (bookingData.amounts.eveningFeeCost || 0)),
                 originalAmount: bookingData.amounts.tourFullPrice,
                 discountApplied: bookingData.amounts.discountAmount,
                 tanguyCost: bookingData.amounts.tanguyCost,
                 extraHourCost: bookingData.amounts.extraHourCost,
+                weekendFeeCost: bookingData.amounts.weekendFeeCost,
+                eveningFeeCost: bookingData.amounts.eveningFeeCost,
                 currency: 'eur',
                 isContacted: false,
                 upsellProducts: bookingData.upsellProducts,
@@ -243,11 +292,13 @@ async function handleEvent(event: Stripe.Event) {
                 language: bookingData.language,
                 specialRequests: bookingData.specialRequests,
                 requestTanguy: bookingData.requestTanguy,
-                amount: bookingData.amounts.tourFinalAmount,
+                amount: bookingData.amounts.totalAmount || (bookingData.amounts.tourFinalAmount + (bookingData.amounts.tanguyCost || 0) + (bookingData.amounts.extraHourCost || 0) + (bookingData.amounts.weekendFeeCost || 0) + (bookingData.amounts.eveningFeeCost || 0)),
                 originalAmount: bookingData.amounts.tourFullPrice,
                 discountApplied: bookingData.amounts.discountAmount,
                 tanguyCost: bookingData.amounts.tanguyCost,
                 extraHourCost: bookingData.amounts.extraHourCost,
+                weekendFeeCost: bookingData.amounts.weekendFeeCost,
+                eveningFeeCost: bookingData.amounts.eveningFeeCost,
                 currency: 'eur',
                 isContacted: false,
                 upsellProducts: bookingData.upsellProducts,
@@ -340,11 +391,13 @@ async function handleEvent(event: Stripe.Event) {
               language: bookingData.language,
               specialRequests: bookingData.specialRequests,
               requestTanguy: bookingData.requestTanguy,
-              amount: bookingData.amounts.tourFinalAmount,
+              amount: bookingData.amounts.totalAmount || (bookingData.amounts.tourFinalAmount + (bookingData.amounts.tanguyCost || 0) + (bookingData.amounts.extraHourCost || 0) + (bookingData.amounts.weekendFeeCost || 0) + (bookingData.amounts.eveningFeeCost || 0)),
               originalAmount: bookingData.amounts.tourFullPrice,
               discountApplied: bookingData.amounts.discountAmount,
               tanguyCost: bookingData.amounts.tanguyCost,
               extraHourCost: bookingData.amounts.extraHourCost,
+              weekendFeeCost: bookingData.amounts.weekendFeeCost,
+              eveningFeeCost: bookingData.amounts.eveningFeeCost,
               currency: 'eur',
               isContacted: false,
               upsellProducts: bookingData.upsellProducts,
@@ -414,6 +467,17 @@ async function handleEvent(event: Stripe.Event) {
           console.error('[N8N] Failed to call tour booking webhook', err);
         }
 
+        } catch (bookingError) {
+          console.error('Error processing tour booking:', bookingError);
+          console.error('Booking data that caused error:', JSON.stringify({
+            tourId: bookingData?.tourId,
+            tourType,
+            sessionId,
+          }));
+          // Don't delete pending booking on error so we can retry/investigate
+          return;
+        }
+
         return; // Done processing tour booking
       }
 
@@ -465,10 +529,10 @@ async function handleEvent(event: Stripe.Event) {
         const amountPaid = (session.amount_total || 0) / 100; // Convert from cents to euros
         const localBookingId = metadata.localBookingId || null;
 
-        // Fetch the booking
+        // Fetch the booking with full details
         const { data: booking, error: bookingError } = await supabase
           .from('tourbooking')
-          .select('id, invitees, tour_id')
+          .select('id, invitees, tour_id, tour_datetime, tour_end, city, request_tanguy, user_id, status')
           .eq('id', bookingId)
           .single();
 
@@ -477,8 +541,23 @@ async function handleEvent(event: Stripe.Event) {
           return;
         }
 
+        // Fetch tour info for the booking data
+        let tour: any = null;
+        if (booking.tour_id) {
+          const { data: tourData } = await supabase
+            .from('tours_table_prod')
+            .select('id, title_nl, title_en, price, duration_minutes, local_stories, city')
+            .eq('id', booking.tour_id)
+            .single();
+          if (tourData) tour = tourData;
+        }
+
+        // Find the invitee that matches the customer email
+        const invitees = (booking.invitees as any[]) || [];
+        const matchingInvitee = invitees.find((inv: any) => inv.email === customerEmail);
+
         // Update the invitee's amount and clear pending payment fields
-        const updatedInvitees = ((booking.invitees as any[]) || []).map((inv: any) => {
+        const updatedInvitees = invitees.map((inv: any) => {
           if (inv.email === customerEmail) {
             // Remove pending payment tracking since payment is complete
             const { pendingPaymentPeople, pendingPaymentAmount, ...rest } = inv;
@@ -491,16 +570,20 @@ async function handleEvent(event: Stripe.Event) {
           return inv;
         });
 
-        // Update tourbooking with new invitee data
+        // Update tourbooking with new invitee data and stripe_session_id
         const { error: updateError } = await supabase
           .from('tourbooking')
-          .update({ invitees: updatedInvitees })
+          .update({
+            invitees: updatedInvitees,
+            stripe_session_id: sessionId, // Store the payment session ID
+            status: 'payment_completed', // Update status to reflect payment
+          })
           .eq('id', bookingId);
 
         if (updateError) {
           console.error(`Manual payment link: Failed to update booking ${bookingId}`, updateError);
         } else {
-          console.info(`Manual payment link: Updated invitee payment status for booking ${bookingId}`);
+          console.info(`Manual payment link: Updated booking ${bookingId} with stripe_session_id ${sessionId} and payment status`);
         }
 
         // If this is a Local Stories booking, also update the local_tours_bookings entry
@@ -517,45 +600,110 @@ async function handleEvent(event: Stripe.Event) {
           }
         }
 
-        // Call N8N webhook to send payment confirmation email
-        const n8nPaymentConfirmationWebhook = 'https://alexfinit.app.n8n.cloud/webhook/manual-payment-completed';
+        // Reconstruct bookingData to match normal booking format
+        const tourTitle = tour?.title_nl || tour?.title_en || 'Tour';
+        const tourPrice = tour?.price || 0;
+        const numberOfPeople = matchingInvitee?.numberOfPeople || parseInt(metadata.numberOfPeople || '1', 10);
+        const isLocalStories = tour?.local_stories === true;
 
-        // Fetch tour info for the email
-        let tourTitle = 'Tour';
-        if (booking.tour_id) {
-          const { data: tour } = await supabase
-            .from('tours_table_prod')
-            .select('title')
-            .eq('id', booking.tour_id)
-            .single();
-          if (tour) tourTitle = tour.title;
+        // Calculate duration
+        let durationMinutes = tour?.duration_minutes || 120;
+        if (matchingInvitee?.extraHour || matchingInvitee?.extraHourCost > 0) {
+          durationMinutes += 60;
         }
 
-        try {
-          console.info('[N8N] Calling manual payment confirmation webhook');
+        // Check if this is an extra invitees payment (adding people to existing booking)
+        const isExtraInvitees = metadata.isExtraInvitees === 'true';
 
-          const res = await fetch(n8nPaymentConfirmationWebhook, {
+        // Reconstruct bookingData object to match normal booking format
+        const bookingData = {
+          tourId: booking.tour_id,
+          tourTitle: tourTitle,
+          tourPrice: tourPrice,
+          isLocalStories: isLocalStories,
+          isOpMaat: matchingInvitee?.opMaatAnswers ? true : false,
+
+          customerName: matchingInvitee?.name || metadata.customerName || 'Customer',
+          customerEmail: customerEmail,
+          customerPhone: matchingInvitee?.phone || null,
+          userId: booking.user_id || null,
+
+          bookingDate: booking.tour_datetime ? booking.tour_datetime.split('T')[0] : null,
+          bookingTime: booking.tour_datetime ? booking.tour_datetime.split('T')[1]?.substring(0, 5) : null,
+          bookingDateTime: booking.tour_datetime || null,
+          tourDatetime: booking.tour_datetime,
+          tourEndDatetime: booking.tour_end,
+          durationMinutes: durationMinutes,
+
+          numberOfPeople: numberOfPeople,
+          language: matchingInvitee?.language || 'nl',
+          specialRequests: matchingInvitee?.specialRequests || null,
+          requestTanguy: matchingInvitee?.requestTanguy || booking.request_tanguy || false,
+          extraHour: matchingInvitee?.extraHour || matchingInvitee?.extraHourCost > 0 || false,
+
+          citySlug: booking.city || tour?.city || null,
+
+          opMaatAnswers: matchingInvitee?.opMaatAnswers || null,
+          upsellProducts: matchingInvitee?.upsellProducts || [],
+
+          amounts: {
+            tourFullPrice: matchingInvitee?.originalAmount || (tourPrice * numberOfPeople),
+            discountAmount: matchingInvitee?.discountApplied || 0,
+            tourFinalAmount: matchingInvitee?.amount || amountPaid,
+            tanguyCost: matchingInvitee?.tanguyCost || 0,
+            extraHourCost: matchingInvitee?.extraHourCost || 0,
+            weekendFeeCost: matchingInvitee?.weekendFeeCost || 0,
+            eveningFeeCost: matchingInvitee?.eveningFeeCost || 0,
+          },
+
+          // Mark this as a manual payment link for n8n to identify
+          isManualPaymentLink: true,
+          isExtraInvitees: isExtraInvitees,
+        };
+
+        // Use different webhook URL based on whether this is extra invitees or normal payment
+        // Extra invitees don't need confirmation email (they're being added to existing booking)
+        const n8nWebhookUrl = isExtraInvitees
+          ? 'https://alexfinit.app.n8n.cloud/webhook/manual-payment-extra-invitees-completed'
+          : 'https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc';
+
+        const payload = {
+          ...session,
+          metadata: {
+            ...metadata,
+            stripe_session_id: sessionId,
+            booking_id: bookingId,
+            extra_invitees: isExtraInvitees,
+          },
+          bookingData, // Include full booking data matching normal booking format
+        };
+
+        try {
+          console.info('[N8N] Calling tour booking webhook for manual payment link', {
+            url: n8nWebhookUrl,
+            sessionId,
+            bookingId,
+            isExtraInvitees,
+          });
+
+          const res = await fetch(n8nWebhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              bookingId,
-              customerEmail,
-              customerName: metadata.customerName || 'Customer',
-              numberOfPeople: parseInt(metadata.numberOfPeople || '1', 10),
-              amountPaid,
-              tourName: tourTitle,
-              stripeSessionId: sessionId,
-              localBookingId,
-              isManualPaymentLink: true,
-            }),
+            body: JSON.stringify(payload),
           });
 
           console.info('[N8N] Manual payment webhook response', {
             status: res.status,
             ok: res.ok,
+            isExtraInvitees,
           });
+
+          if (!res.ok) {
+            const text = await res.text();
+            console.error('[N8N] Manual payment webhook error body', text);
+          }
         } catch (err) {
-          console.error('[N8N] Failed to call manual payment confirmation webhook', err);
+          console.error('[N8N] Failed to call tour booking webhook for manual payment', err);
         }
 
         return;
@@ -643,6 +791,19 @@ async function handleEvent(event: Stripe.Event) {
         const shippingItems: any[] = [];
         const productItems: any[] = [];
 
+        // Parse product IDs from metadata (passed from create-webshop-checkout)
+        let productIds: string[] = [];
+        try {
+          if (metadata?.productIds) {
+            productIds = JSON.parse(metadata.productIds);
+            console.info('Parsed product IDs from metadata:', productIds);
+          }
+        } catch (e) {
+          console.warn('Failed to parse productIds from metadata:', e);
+        }
+
+        let productIndex = 0; // Track index for matching with productIds
+
         if (fullSession.line_items?.data) {
           for (const item of fullSession.line_items.data) {
             // Extract item name from different possible locations
@@ -679,7 +840,9 @@ async function handleEvent(event: Stripe.Event) {
                 title: itemNameStr || 'Product',
                 quantity: quantity,
                 price: unitPrice,
+                productId: productIds[productIndex] || null, // Include product ID if available
               });
+              productIndex++;
             }
           }
         }
@@ -729,6 +892,7 @@ async function handleEvent(event: Stripe.Event) {
             customerPhone: metadata?.customerPhone || '',
             userId: metadata?.userId && metadata.userId.trim() !== '' ? metadata.userId : null,
             shipping_cost: shippingCost,
+            productIds: productIds, // Store product IDs for easy retrieval
           },
           total_amount: (fullSession.amount_total || 0) / 100, // In euros
           user_id: metadata?.userId && metadata.userId.trim() !== '' ? metadata.userId : null,

@@ -42,6 +42,7 @@ interface Product {
   "Price (EUR)": string;
   Description: string;
   "Additional Info": string | null;
+  status?: string | null;
   // Multi-language fields
   name_en?: string | null;
   name_fr?: string | null;
@@ -66,6 +67,7 @@ interface ProductFormData {
   "Price (EUR)": string;
   Description: string;
   "Additional Info": string;
+  status: string;
   // Multi-language fields
   name_en: string;
   name_fr: string;
@@ -79,6 +81,7 @@ interface ProductFormData {
 }
 
 const CATEGORY_OPTIONS = ['Book', 'Merchandise', 'Game'];
+const STATUS_OPTIONS = ['draft', 'published'];
 
 export default function AdminProductsPage() {
   const { user, profile, signOut } = useAuth();
@@ -99,6 +102,7 @@ export default function AdminProductsPage() {
   // Filter and search state
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -115,6 +119,7 @@ export default function AdminProductsPage() {
     "Price (EUR)": '0',
     Description: '',
     "Additional Info": '',
+    status: 'draft',
     name_en: '',
     name_fr: '',
     name_de: '',
@@ -181,6 +186,7 @@ export default function AdminProductsPage() {
       "Price (EUR)": '0',
       Description: '',
       "Additional Info": '',
+      status: 'draft',
       name_en: '',
       name_fr: '',
       name_de: '',
@@ -203,6 +209,7 @@ export default function AdminProductsPage() {
       "Price (EUR)": product["Price (EUR)"] || '0',
       Description: product.Description || '',
       "Additional Info": product["Additional Info"] || '',
+      status: product.status || 'draft',
       name_en: product.name_en || '',
       name_fr: product.name_fr || '',
       name_de: product.name_de || '',
@@ -228,6 +235,7 @@ export default function AdminProductsPage() {
         "Price (EUR)": formData["Price (EUR)"],
         Description: formData.Description,
         "Additional Info": formData["Additional Info"] || null,
+        status: formData.status,
         // Multi-language fields
         name_en: formData.name_en || null,
         name_fr: formData.name_fr || null,
@@ -485,13 +493,14 @@ export default function AdminProductsPage() {
   // Filter and search logic
   const filteredProducts = products.filter((product) => {
     const searchLower = searchQuery.toLowerCase();
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery ||
       product.Name?.toLowerCase().includes(searchLower) ||
       product.Description?.toLowerCase().includes(searchLower);
 
     const matchesCategory = filterCategory === 'all' || product.Category === filterCategory;
+    const matchesStatus = filterStatus === 'all' || product.status === filterStatus;
 
-    return matchesSearch && matchesCategory;
+    return matchesSearch && matchesCategory && matchesStatus;
   });
 
   // Group products by category for per-category ordering
@@ -794,6 +803,11 @@ export default function AdminProductsPage() {
         <TableCell>
           <Badge className="bg-blue-100 text-blue-900">{product.Category}</Badge>
         </TableCell>
+        <TableCell>
+          <Badge className={product.status === 'published' ? 'bg-green-100 text-green-900' : 'bg-yellow-100 text-yellow-900'}>
+            {product.status === 'published' ? 'Published' : 'Draft'}
+          </Badge>
+        </TableCell>
         <TableCell>€{parseFloat(product["Price (EUR)"]?.replace(',', '.') || '0').toFixed(2)}</TableCell>
         <TableCell className="text-xs">
           {product.stripe_product_id ? (
@@ -881,6 +895,7 @@ export default function AdminProductsPage() {
   const clearFilters = () => {
     setSearchQuery('');
     setFilterCategory('all');
+    setFilterStatus('all');
   };
 
   if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
@@ -979,7 +994,7 @@ export default function AdminProductsPage() {
                   variant="outline"
                   size="sm"
                   onClick={clearFilters}
-                  disabled={!searchQuery && filterCategory === 'all'}
+                  disabled={!searchQuery && filterCategory === 'all' && filterStatus === 'all'}
                 >
                   <X className="h-4 w-4 mr-2" />
                   Clear
@@ -1002,9 +1017,24 @@ export default function AdminProductsPage() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="flex-1 min-w-[200px]">
+                  <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <SelectTrigger className="bg-white">
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      {STATUS_OPTIONS.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              {(searchQuery || filterCategory !== 'all') && (
+              {(searchQuery || filterCategory !== 'all' || filterStatus !== 'all') && (
                 <div className="text-sm text-muted-foreground">
                   Showing {filteredProducts.length} of {products.length} products
                 </div>
@@ -1053,6 +1083,7 @@ export default function AdminProductsPage() {
                         <TableHead className="w-24"></TableHead>
                         <TableHead>Name</TableHead>
                         <TableHead>Category</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead>Price</TableHead>
                         <TableHead>Stripe IDs</TableHead>
                         <TableHead>UUID</TableHead>
@@ -1121,6 +1152,7 @@ export default function AdminProductsPage() {
                                     <TableHead className="w-24"></TableHead>
                                     <TableHead>Name</TableHead>
                                     <TableHead>Category</TableHead>
+                                    <TableHead>Status</TableHead>
                                     <TableHead>Price</TableHead>
                                     <TableHead>Stripe IDs</TableHead>
                                     <TableHead>UUID</TableHead>
@@ -1184,6 +1216,7 @@ export default function AdminProductsPage() {
                             <TableHead className="w-24"></TableHead>
                             <TableHead>Name</TableHead>
                             <TableHead>Category</TableHead>
+                            <TableHead>Status</TableHead>
                             <TableHead>Price</TableHead>
                             <TableHead>Order</TableHead>
                             <TableHead>Actions</TableHead>
@@ -1279,6 +1312,29 @@ export default function AdminProductsPage() {
                   placeholder="e.g., 45.00 or 45,00"
                 />
               </div>
+            </div>
+
+            {/* Status */}
+            <div>
+              <Label htmlFor="status" className="text-navy font-semibold">Status*</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => setFormData({ ...formData, status: value })}
+              >
+                <SelectTrigger className="bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_OPTIONS.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status === 'draft' ? 'Draft (not visible on website)' : 'Published (visible on website)'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Draft products are only visible in the admin panel, not on the public website.
+              </p>
             </div>
 
             {/* Language Tabs for Name, Description, Additional Info */}

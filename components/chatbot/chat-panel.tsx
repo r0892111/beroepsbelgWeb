@@ -161,7 +161,12 @@ export function ChatPanel({ messages, streamingState, onSendMessage, onClose }: 
       >
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-center">
-            <p className="text-sm text-gray-500">{t('placeholder')}</p>
+            <button
+              onClick={() => onSendMessage(t('welcomeMessage'))}
+              className="px-4 py-3 bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow text-sm text-gray-700 hover:bg-gray-50"
+            >
+              {t('welcomeMessage')}
+            </button>
           </div>
         ) : (
           <>

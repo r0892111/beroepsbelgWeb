@@ -104,6 +104,9 @@ export default function B2BQuotePage() {
     getValues,
   } = useForm<QuoteFormData>({
     resolver: zodResolver(quoteSchema),
+    defaultValues: {
+      numberOfPeople: '15',
+    },
   });
 
   const selectedCity = watch('city');

@@ -98,7 +98,8 @@
     "thinking": "Réflexion...",
     "typing": "En train de taper...",
     "error": "Une erreur s'est produite. Veuillez réessayer.",
-    "close": "Fermer le chat"
+    "close": "Fermer le chat",
+    "welcomeMessage": "Salut ! Avec quoi puis-je vous aider?"
   },
   "footer": {
     "address": "Adresse",
@@ -672,7 +673,9 @@
     "youSave": "Vous économisez",
     "tanguyFee": "frais pour Tanguy comme guide personnel",
     "tanguyFeeLineItem": "Frais pour Tanguy comme guide personnel",
-    "extraHourLineItem": "Heure supplémentaire"
+    "extraHourLineItem": "Heure supplémentaire",
+    "eveningFeeLineItem": "Supplément soirée",
+    "weekendFeeLineItem": "Supplément week-end"
   },
   "product": {
     "description": "Description",

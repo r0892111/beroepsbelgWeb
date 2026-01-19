@@ -47,10 +47,11 @@ export default function SearchPage() {
           .select('id, title, description, city, city_id, cities:city_id (slug)')
           .order('display_order', { ascending: true, nullsFirst: false });
 
-        // Fetch products
+        // Fetch products (only published)
         const { data: productsData } = await supabase
           .from('webshop_data')
           .select('uuid, Name, Description, Category')
+          .eq('status', 'published')
           .order('Name', { ascending: true });
 
         // Fetch lectures

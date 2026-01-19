@@ -82,6 +82,15 @@ interface Invitee {
     specialWishes?: string;
     extraHour?: boolean;
   };
+  // Extra fees for op_maat tours
+  requestTanguy?: boolean;
+  hasExtraHour?: boolean;
+  weekendFee?: boolean;
+  eveningFee?: boolean;
+  tanguyCost?: number;
+  extraHourCost?: number;
+  weekendFeeCost?: number;
+  eveningFeeCost?: number;
 }
 
 interface TourBooking {
@@ -205,8 +214,16 @@ export default function BookingDetailPage() {
     customerEmail: string;
     numberOfPeople: number;
     localBookingId?: string;
+    inviteeIndex?: number;
   } | null>(null);
   const [paymentLinkAmount, setPaymentLinkAmount] = useState(0);
+  const [paymentLinkFees, setPaymentLinkFees] = useState({
+    requestTanguy: false,
+    hasExtraHour: false,
+    weekendFee: false,
+    eveningFee: false,
+  });
+  const [paymentLinkIsExtraInvitees, setPaymentLinkIsExtraInvitees] = useState(false);
 
   // Add people state
   const [addPeopleDialogOpen, setAddPeopleDialogOpen] = useState(false);
@@ -221,6 +238,12 @@ export default function BookingDetailPage() {
   const [additionalPeople, setAdditionalPeople] = useState(1);
   const [sendPaymentForAdditional, setSendPaymentForAdditional] = useState(true);
   const [additionalPeoplePrice, setAdditionalPeoplePrice] = useState('');
+  const [addPeopleFees, setAddPeopleFees] = useState({
+    requestTanguy: false,
+    hasExtraHour: false,
+    weekendFee: false,
+    eveningFee: false,
+  });
   const [idsDialogOpen, setIdsDialogOpen] = useState(false);
 
   // Send info dialogs
@@ -252,6 +275,11 @@ export default function BookingDetailPage() {
     language: 'nl',
     specialRequests: '',
     dealId: '',
+    // Fee toggles for op_maat tours
+    requestTanguy: false,
+    hasExtraHour: false,
+    weekendFee: false,
+    eveningFee: false,
   });
   const [editCustomLanguage, setEditCustomLanguage] = useState('');
 
@@ -303,6 +331,12 @@ export default function BookingDetailPage() {
     { value: 'th', label: 'Thai (TH)' },
     { value: 'other', label: 'Other (Custom)' },
   ];
+
+  // Fee cost constants (same as used in create-checkout-session)
+  const TANGUY_COST = 125;
+  const EXTRA_HOUR_COST = 150;
+  const WEEKEND_FEE_COST = 25;
+  const EVENING_FEE_COST = 25;
 
   useEffect(() => {
     if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
@@ -729,21 +763,47 @@ export default function BookingDetailPage() {
     numberOfPeople: number,
     localBookingId?: string,
     presetAmount?: number,
-    inviteePricePerPerson?: number // Custom price per person from invitee (if set during booking creation)
+    inviteePricePerPerson?: number, // Custom price per person from invitee (if set during booking creation)
+    inviteeIndex?: number, // Index in invitees array to get fee data
+    inviteeFees?: { requestTanguy?: boolean; hasExtraHour?: boolean; weekendFee?: boolean; eveningFee?: boolean },
+    isExtraInvitees?: boolean // True if this is for additional people added to existing booking
   ) => {
     setPaymentLinkTarget({
       customerName,
       customerEmail,
       numberOfPeople,
       localBookingId,
+      inviteeIndex,
     });
+
+    // Set whether this is for extra invitees (additional people)
+    setPaymentLinkIsExtraInvitees(isExtraInvitees || false);
+
+    // Load fee toggles from invitee if available
+    const fees = {
+      requestTanguy: inviteeFees?.requestTanguy || false,
+      hasExtraHour: inviteeFees?.hasExtraHour || false,
+      weekendFee: inviteeFees?.weekendFee || false,
+      eveningFee: inviteeFees?.eveningFee || false,
+    };
+    setPaymentLinkFees(fees);
+
+    // Calculate fee costs
+    const isOpMaat = tour?.op_maat || false;
+    const tanguyCost = isOpMaat && fees.requestTanguy ? TANGUY_COST : 0;
+    const extraHourCost = isOpMaat && fees.hasExtraHour ? EXTRA_HOUR_COST : 0;
+    const weekendFeeCost = fees.weekendFee ? WEEKEND_FEE_COST : 0;
+    const eveningFeeCost = isOpMaat && fees.eveningFee ? EVENING_FEE_COST : 0;
+    const totalFees = tanguyCost + extraHourCost + weekendFeeCost + eveningFeeCost;
+
     // Use preset amount if provided (e.g., from pending payment), otherwise calculate
     if (presetAmount !== undefined) {
       setPaymentLinkAmount(presetAmount);
     } else {
       // Use invitee's custom price if set, otherwise use tour's default price
       const basePrice = inviteePricePerPerson ?? tour?.price ?? 0;
-      const calculatedAmount = Math.round(basePrice * numberOfPeople * 100) / 100;
+      const baseTourPrice = Math.round(basePrice * numberOfPeople * 100) / 100;
+      const calculatedAmount = baseTourPrice + totalFees;
       setPaymentLinkAmount(calculatedAmount);
     }
     setPaymentLinkDialogOpen(true);
@@ -766,6 +826,13 @@ export default function BookingDetailPage() {
         headers['Authorization'] = `Bearer ${accessToken}`;
       }
 
+      // Calculate fee costs for the payment link
+      const isOpMaat = tour.op_maat || false;
+      const feeTanguyCost = isOpMaat && paymentLinkFees.requestTanguy ? TANGUY_COST : 0;
+      const feeExtraHourCost = isOpMaat && paymentLinkFees.hasExtraHour ? EXTRA_HOUR_COST : 0;
+      const feeWeekendCost = paymentLinkFees.weekendFee ? WEEKEND_FEE_COST : 0;
+      const feeEveningCost = isOpMaat && paymentLinkFees.eveningFee ? EVENING_FEE_COST : 0;
+
       const response = await fetch('/api/admin/send-payment-link', {
         method: 'POST',
         headers,
@@ -779,6 +846,20 @@ export default function BookingDetailPage() {
           numberOfPeople: paymentLinkTarget.numberOfPeople,
           amount: paymentLinkAmount,
           localBookingId: paymentLinkTarget.localBookingId,
+          isExtraInvitees: paymentLinkIsExtraInvitees, // Flag for extra people vs normal payment links
+          // Include fee data for proper webhook handling
+          city: booking.city,
+          tourDatetime: booking.tour_datetime,
+          fees: {
+            requestTanguy: paymentLinkFees.requestTanguy,
+            hasExtraHour: paymentLinkFees.hasExtraHour,
+            weekendFee: paymentLinkFees.weekendFee,
+            eveningFee: paymentLinkFees.eveningFee,
+            tanguyCost: feeTanguyCost,
+            extraHourCost: feeExtraHourCost,
+            weekendFeeCost: feeWeekendCost,
+            eveningFeeCost: feeEveningCost,
+          },
         }),
       });
 
@@ -799,7 +880,7 @@ export default function BookingDetailPage() {
             sentAt: new Date().toISOString(),
             numberOfPeople: paymentLinkTarget.numberOfPeople,
             amount: paymentLinkAmount,
-            type: 'manual',
+            type: paymentLinkIsExtraInvitees ? 'additional_people' : 'manual',
           };
 
           return {
@@ -847,6 +928,22 @@ export default function BookingDetailPage() {
     // Initialize price - use tour price if available, otherwise default to 35 for Local Stories
     const basePrice = tour?.price || (tour?.local_stories ? 35 : 0);
     setAdditionalPeoplePrice(basePrice.toString());
+    // Reset fees - auto-detect weekend based on booking date
+    const isWeekend = booking?.tour_datetime ? (() => {
+      const date = new Date(booking.tour_datetime);
+      const day = date.getDay();
+      return day === 0 || day === 6;
+    })() : false;
+    const isEvening = booking?.tour_datetime ? (() => {
+      const hour = parseInt(booking.tour_datetime.split('T')[1]?.split(':')[0] || '0', 10);
+      return hour >= 17;
+    })() : false;
+    setAddPeopleFees({
+      requestTanguy: false,
+      hasExtraHour: false,
+      weekendFee: isWeekend,
+      eveningFee: tour?.op_maat ? isEvening : false,
+    });
     setAddPeopleDialogOpen(true);
   };
 
@@ -857,7 +954,16 @@ export default function BookingDetailPage() {
     setAddingPeople(true);
     try {
       const pricePerPerson = parseFloat(additionalPeoplePrice) || 0;
-      const totalAmount = pricePerPerson * additionalPeople;
+      const baseAmount = pricePerPerson * additionalPeople;
+      // Calculate fee costs for op_maat tours
+      const feeCosts = tour?.op_maat && sendPaymentForAdditional ? {
+        tanguyCost: addPeopleFees.requestTanguy ? TANGUY_COST : 0,
+        extraHourCost: addPeopleFees.hasExtraHour ? EXTRA_HOUR_COST : 0,
+        weekendFeeCost: addPeopleFees.weekendFee ? WEEKEND_FEE_COST : 0,
+        eveningFeeCost: addPeopleFees.eveningFee ? EVENING_FEE_COST : 0,
+      } : { tanguyCost: 0, extraHourCost: 0, weekendFeeCost: 0, eveningFeeCost: 0 };
+      const totalFees = feeCosts.tanguyCost + feeCosts.extraHourCost + feeCosts.weekendFeeCost + feeCosts.eveningFeeCost;
+      const totalAmount = baseAmount + totalFees;
 
       if (addPeopleTarget.localBookingId) {
         // Local Stories: Update local_tours_bookings entry
@@ -947,6 +1053,19 @@ export default function BookingDetailPage() {
             numberOfPeople: additionalPeople,
             amount: totalAmount,
             localBookingId: addPeopleTarget.localBookingId,
+            city: booking.city,
+            tourDatetime: booking.tour_datetime,
+            isExtraInvitees: true, // Flag for extra people payment links
+            fees: tour?.op_maat ? {
+              requestTanguy: addPeopleFees.requestTanguy,
+              hasExtraHour: addPeopleFees.hasExtraHour,
+              weekendFee: addPeopleFees.weekendFee,
+              eveningFee: addPeopleFees.eveningFee,
+              tanguyCost: feeCosts.tanguyCost,
+              extraHourCost: feeCosts.extraHourCost,
+              weekendFeeCost: feeCosts.weekendFeeCost,
+              eveningFeeCost: feeCosts.eveningFeeCost,
+            } : undefined,
           }),
         });
 
@@ -1023,6 +1142,11 @@ export default function BookingDetailPage() {
       language: isKnownLanguage ? invLanguage : 'other',
       specialRequests: inv.specialRequests || '',
       dealId: inv.deal_id || (isLocalStories ? '' : booking?.deal_id || ''),
+      // Load existing fee values from invitee
+      requestTanguy: inv.requestTanguy || false,
+      hasExtraHour: inv.hasExtraHour || false,
+      weekendFee: inv.weekendFee || false,
+      eveningFee: inv.eveningFee || false,
     });
     setEditCustomLanguage(isKnownLanguage ? '' : invLanguage);
     // Fetch deals when opening the dialog
@@ -1086,6 +1210,13 @@ export default function BookingDetailPage() {
         const updatedInvitees = [...(booking.invitees || [])];
         const existingInvitee = updatedInvitees[editInviteeTarget.index];
         if (existingInvitee) {
+          // Calculate fee costs based on toggles (for op_maat tours)
+          const isOpMaat = tour?.op_maat || false;
+          const tanguyCost = isOpMaat && editInviteeForm.requestTanguy ? TANGUY_COST : 0;
+          const extraHourCost = isOpMaat && editInviteeForm.hasExtraHour ? EXTRA_HOUR_COST : 0;
+          const weekendFeeCost = editInviteeForm.weekendFee ? WEEKEND_FEE_COST : 0;
+          const eveningFeeCost = isOpMaat && editInviteeForm.eveningFee ? EVENING_FEE_COST : 0;
+
           updatedInvitees[editInviteeTarget.index] = {
             ...existingInvitee,
             name: editInviteeForm.name,
@@ -1094,6 +1225,15 @@ export default function BookingDetailPage() {
             numberOfPeople: editInviteeForm.numberOfPeople,
             language: finalLanguage,
             specialRequests: editInviteeForm.specialRequests,
+            // Store fee toggles and calculated costs
+            requestTanguy: editInviteeForm.requestTanguy,
+            hasExtraHour: editInviteeForm.hasExtraHour,
+            weekendFee: editInviteeForm.weekendFee,
+            eveningFee: editInviteeForm.eveningFee,
+            tanguyCost,
+            extraHourCost,
+            weekendFeeCost,
+            eveningFeeCost,
           };
         }
 
@@ -1811,7 +1951,11 @@ export default function BookingDetailPage() {
                                       lb.customer_email || '',
                                       matchingInvitee.pendingPaymentPeople || 1,
                                       lb.id,
-                                      matchingInvitee.pendingPaymentAmount
+                                      matchingInvitee.pendingPaymentAmount,
+                                      undefined, // inviteePricePerPerson
+                                      undefined, // inviteeIndex
+                                      undefined, // inviteeFees
+                                      true // isExtraInvitees - this is for additional people
                                     )}
                                   >
                                     <CreditCard className="h-3 w-3" />
@@ -1890,7 +2034,10 @@ export default function BookingDetailPage() {
                                     lb.amnt_of_people || 1,
                                     lb.id,
                                     undefined, // no preset amount
-                                    matchingInvitee?.pricePerPerson // use custom price if set
+                                    matchingInvitee?.pricePerPerson, // use custom price if set
+                                    undefined, // inviteeIndex
+                                    undefined, // inviteeFees
+                                    false // isExtraInvitees - this is a normal payment link
                                   )}
                                 >
                                   <CreditCard className="h-3 w-3" />
@@ -2002,7 +2149,11 @@ export default function BookingDetailPage() {
                                   inv.email || '',
                                   inv.pendingPaymentPeople || 1,
                                   undefined,
-                                  inv.pendingPaymentAmount
+                                  inv.pendingPaymentAmount,
+                                  inv.pricePerPerson,
+                                  index,
+                                  { requestTanguy: inv.requestTanguy, hasExtraHour: inv.hasExtraHour, weekendFee: inv.weekendFee, eveningFee: inv.eveningFee },
+                                  true // isExtraInvitees - this is for additional people
                                 )}
                               >
                                 <CreditCard className="h-3 w-3" />
@@ -2045,7 +2196,10 @@ export default function BookingDetailPage() {
                                 inv.numberOfPeople || 1,
                                 undefined, // no local booking id
                                 undefined, // no preset amount
-                                inv.pricePerPerson // use custom price if set
+                                inv.pricePerPerson, // use custom price if set
+                                index,
+                                { requestTanguy: inv.requestTanguy, hasExtraHour: inv.hasExtraHour, weekendFee: inv.weekendFee, eveningFee: inv.eveningFee },
+                                false // isExtraInvitees - this is a normal payment link
                               )}
                             >
                               <CreditCard className="h-3 w-3" />
@@ -2789,8 +2943,94 @@ export default function BookingDetailPage() {
                 </div>
               </div>
 
+              {/* Extra Fees Section - only for op_maat tours */}
+              {tour?.op_maat && (
+                <div className="space-y-3 border rounded-lg p-3">
+                  <Label className="text-sm font-medium">Extra Fees (Op Maat)</Label>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="paymentTanguy"
+                        checked={paymentLinkFees.requestTanguy}
+                        onCheckedChange={(checked) => {
+                          const newFees = { ...paymentLinkFees, requestTanguy: checked === true };
+                          setPaymentLinkFees(newFees);
+                          // Recalculate amount
+                          const baseTourPrice = (tour?.price || 0) * paymentLinkTarget.numberOfPeople;
+                          const totalFees = (newFees.requestTanguy ? TANGUY_COST : 0) +
+                            (newFees.hasExtraHour ? EXTRA_HOUR_COST : 0) +
+                            (newFees.weekendFee ? WEEKEND_FEE_COST : 0) +
+                            (newFees.eveningFee ? EVENING_FEE_COST : 0);
+                          setPaymentLinkAmount(baseTourPrice + totalFees);
+                        }}
+                      />
+                      <Label htmlFor="paymentTanguy" className="text-sm cursor-pointer">
+                        Request Tanguy (+€{TANGUY_COST})
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="paymentExtraHour"
+                        checked={paymentLinkFees.hasExtraHour}
+                        onCheckedChange={(checked) => {
+                          const newFees = { ...paymentLinkFees, hasExtraHour: checked === true };
+                          setPaymentLinkFees(newFees);
+                          const baseTourPrice = (tour?.price || 0) * paymentLinkTarget.numberOfPeople;
+                          const totalFees = (newFees.requestTanguy ? TANGUY_COST : 0) +
+                            (newFees.hasExtraHour ? EXTRA_HOUR_COST : 0) +
+                            (newFees.weekendFee ? WEEKEND_FEE_COST : 0) +
+                            (newFees.eveningFee ? EVENING_FEE_COST : 0);
+                          setPaymentLinkAmount(baseTourPrice + totalFees);
+                        }}
+                      />
+                      <Label htmlFor="paymentExtraHour" className="text-sm cursor-pointer">
+                        Extra Hour (+€{EXTRA_HOUR_COST})
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="paymentWeekendFee"
+                        checked={paymentLinkFees.weekendFee}
+                        onCheckedChange={(checked) => {
+                          const newFees = { ...paymentLinkFees, weekendFee: checked === true };
+                          setPaymentLinkFees(newFees);
+                          const baseTourPrice = (tour?.price || 0) * paymentLinkTarget.numberOfPeople;
+                          const totalFees = (newFees.requestTanguy ? TANGUY_COST : 0) +
+                            (newFees.hasExtraHour ? EXTRA_HOUR_COST : 0) +
+                            (newFees.weekendFee ? WEEKEND_FEE_COST : 0) +
+                            (newFees.eveningFee ? EVENING_FEE_COST : 0);
+                          setPaymentLinkAmount(baseTourPrice + totalFees);
+                        }}
+                      />
+                      <Label htmlFor="paymentWeekendFee" className="text-sm cursor-pointer">
+                        Weekend Fee (+€{WEEKEND_FEE_COST})
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="paymentEveningFee"
+                        checked={paymentLinkFees.eveningFee}
+                        onCheckedChange={(checked) => {
+                          const newFees = { ...paymentLinkFees, eveningFee: checked === true };
+                          setPaymentLinkFees(newFees);
+                          const baseTourPrice = (tour?.price || 0) * paymentLinkTarget.numberOfPeople;
+                          const totalFees = (newFees.requestTanguy ? TANGUY_COST : 0) +
+                            (newFees.hasExtraHour ? EXTRA_HOUR_COST : 0) +
+                            (newFees.weekendFee ? WEEKEND_FEE_COST : 0) +
+                            (newFees.eveningFee ? EVENING_FEE_COST : 0);
+                          setPaymentLinkAmount(baseTourPrice + totalFees);
+                        }}
+                      />
+                      <Label htmlFor="paymentEveningFee" className="text-sm cursor-pointer">
+                        Evening Fee (+€{EVENING_FEE_COST})
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2">
-                <Label htmlFor="paymentAmount">Amount (EUR)</Label>
+                <Label htmlFor="paymentAmount">Total Amount (EUR)</Label>
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">€</span>
                   <Input
@@ -2803,11 +3043,49 @@ export default function BookingDetailPage() {
                     className="bg-white"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Default tour price: €{(tour?.price || 0).toFixed(2)} × {paymentLinkTarget.numberOfPeople} = €{((tour?.price || 0) * paymentLinkTarget.numberOfPeople).toFixed(2)}
-                  {paymentLinkAmount !== (tour?.price || 0) * paymentLinkTarget.numberOfPeople && (
-                    <span className="text-amber-600 ml-1">(custom amount)</span>
+                {/* Price breakdown */}
+                <div className="bg-muted/50 rounded-lg p-2 space-y-1 text-xs">
+                  <div className="flex justify-between">
+                    <span>Base tour price (€{(tour?.price || 0).toFixed(2)} × {paymentLinkTarget.numberOfPeople})</span>
+                    <span>€{((tour?.price || 0) * paymentLinkTarget.numberOfPeople).toFixed(2)}</span>
+                  </div>
+                  {paymentLinkFees.requestTanguy && (
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Tanguy</span>
+                      <span>€{TANGUY_COST.toFixed(2)}</span>
+                    </div>
                   )}
+                  {paymentLinkFees.hasExtraHour && (
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Extra Hour</span>
+                      <span>€{EXTRA_HOUR_COST.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {paymentLinkFees.weekendFee && (
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Weekend Fee</span>
+                      <span>€{WEEKEND_FEE_COST.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {paymentLinkFees.eveningFee && (
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Evening Fee</span>
+                      <span>€{EVENING_FEE_COST.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-medium pt-1 border-t">
+                    <span>Calculated total</span>
+                    <span>€{(
+                      (tour?.price || 0) * paymentLinkTarget.numberOfPeople +
+                      (paymentLinkFees.requestTanguy ? TANGUY_COST : 0) +
+                      (paymentLinkFees.hasExtraHour ? EXTRA_HOUR_COST : 0) +
+                      (paymentLinkFees.weekendFee ? WEEKEND_FEE_COST : 0) +
+                      (paymentLinkFees.eveningFee ? EVENING_FEE_COST : 0)
+                    ).toFixed(2)}</span>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  You can override the total amount manually if needed.
                 </p>
               </div>
 
@@ -2908,11 +3186,52 @@ export default function BookingDetailPage() {
                 New total: {addPeopleTarget.currentPeople + additionalPeople} people
               </p>
 
-              <div className="bg-muted/50 rounded-lg p-3">
+              <div className="bg-muted/50 rounded-lg p-3 space-y-1">
                 <p className="text-xs text-muted-foreground mb-1">Payment for additional people</p>
-                <p className="font-medium">
-                  €{((parseFloat(additionalPeoplePrice) || 0) * additionalPeople).toFixed(2)} ({additionalPeople} × €{parseFloat(additionalPeoplePrice) || 0})
-                </p>
+                <div className="flex justify-between text-sm">
+                  <span>Base ({additionalPeople} × €{parseFloat(additionalPeoplePrice) || 0})</span>
+                  <span>€{((parseFloat(additionalPeoplePrice) || 0) * additionalPeople).toFixed(2)}</span>
+                </div>
+                {tour?.op_maat && sendPaymentForAdditional && (
+                  <>
+                    {addPeopleFees.requestTanguy && (
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Tanguy</span>
+                        <span>€{TANGUY_COST.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {addPeopleFees.hasExtraHour && (
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Extra Hour</span>
+                        <span>€{EXTRA_HOUR_COST.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {addPeopleFees.weekendFee && (
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Weekend Fee</span>
+                        <span>€{WEEKEND_FEE_COST.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {addPeopleFees.eveningFee && (
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Evening Fee</span>
+                        <span>€{EVENING_FEE_COST.toFixed(2)}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+                <div className="flex justify-between font-medium pt-1 border-t">
+                  <span>Total</span>
+                  <span>€{(
+                    (parseFloat(additionalPeoplePrice) || 0) * additionalPeople +
+                    (tour?.op_maat && sendPaymentForAdditional ? (
+                      (addPeopleFees.requestTanguy ? TANGUY_COST : 0) +
+                      (addPeopleFees.hasExtraHour ? EXTRA_HOUR_COST : 0) +
+                      (addPeopleFees.weekendFee ? WEEKEND_FEE_COST : 0) +
+                      (addPeopleFees.eveningFee ? EVENING_FEE_COST : 0)
+                    ) : 0)
+                  ).toFixed(2)}</span>
+                </div>
               </div>
 
               <div className="flex items-center space-x-2">
@@ -2925,6 +3244,55 @@ export default function BookingDetailPage() {
                   Send payment link to {addPeopleTarget.customerEmail}
                 </Label>
               </div>
+
+              {/* Extra Fees Section - only for op_maat tours when sending payment link */}
+              {tour?.op_maat && sendPaymentForAdditional && (
+                <div className="space-y-3 border rounded-lg p-3">
+                  <Label className="text-sm font-medium">Extra Fees (Op Maat)</Label>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="addPeopleTanguy"
+                        checked={addPeopleFees.requestTanguy}
+                        onCheckedChange={(checked) => setAddPeopleFees({ ...addPeopleFees, requestTanguy: checked === true })}
+                      />
+                      <Label htmlFor="addPeopleTanguy" className="text-sm cursor-pointer">
+                        Request Tanguy (+€{TANGUY_COST})
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="addPeopleExtraHour"
+                        checked={addPeopleFees.hasExtraHour}
+                        onCheckedChange={(checked) => setAddPeopleFees({ ...addPeopleFees, hasExtraHour: checked === true })}
+                      />
+                      <Label htmlFor="addPeopleExtraHour" className="text-sm cursor-pointer">
+                        Extra Hour (+€{EXTRA_HOUR_COST})
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="addPeopleWeekendFee"
+                        checked={addPeopleFees.weekendFee}
+                        onCheckedChange={(checked) => setAddPeopleFees({ ...addPeopleFees, weekendFee: checked === true })}
+                      />
+                      <Label htmlFor="addPeopleWeekendFee" className="text-sm cursor-pointer">
+                        Weekend Fee (+€{WEEKEND_FEE_COST})
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="addPeopleEveningFee"
+                        checked={addPeopleFees.eveningFee}
+                        onCheckedChange={(checked) => setAddPeopleFees({ ...addPeopleFees, eveningFee: checked === true })}
+                      />
+                      <Label htmlFor="addPeopleEveningFee" className="text-sm cursor-pointer">
+                        Evening Fee (+€{EVENING_FEE_COST})
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -3063,6 +3431,67 @@ export default function BookingDetailPage() {
                   />
                 </div>
               </>
+            )}
+            {/* Extra Fees Section - only for op_maat tours */}
+            {tour?.op_maat && !editInviteeTarget?.isLocalStories && (
+              <div className="space-y-3 border-t pt-4 mt-4">
+                <Label className="text-sm font-medium">Extra Fees (Op Maat)</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="editRequestTanguy"
+                      checked={editInviteeForm.requestTanguy}
+                      onCheckedChange={(checked) => setEditInviteeForm({ ...editInviteeForm, requestTanguy: checked === true })}
+                    />
+                    <Label htmlFor="editRequestTanguy" className="text-sm cursor-pointer">
+                      Request Tanguy (+€{TANGUY_COST})
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="editExtraHour"
+                      checked={editInviteeForm.hasExtraHour}
+                      onCheckedChange={(checked) => setEditInviteeForm({ ...editInviteeForm, hasExtraHour: checked === true })}
+                    />
+                    <Label htmlFor="editExtraHour" className="text-sm cursor-pointer">
+                      Extra Hour (+€{EXTRA_HOUR_COST})
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="editWeekendFee"
+                      checked={editInviteeForm.weekendFee}
+                      onCheckedChange={(checked) => setEditInviteeForm({ ...editInviteeForm, weekendFee: checked === true })}
+                    />
+                    <Label htmlFor="editWeekendFee" className="text-sm cursor-pointer">
+                      Weekend Fee (+€{WEEKEND_FEE_COST})
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="editEveningFee"
+                      checked={editInviteeForm.eveningFee}
+                      onCheckedChange={(checked) => setEditInviteeForm({ ...editInviteeForm, eveningFee: checked === true })}
+                    />
+                    <Label htmlFor="editEveningFee" className="text-sm cursor-pointer">
+                      Evening Fee (+€{EVENING_FEE_COST})
+                    </Label>
+                  </div>
+                </div>
+                {(editInviteeForm.requestTanguy || editInviteeForm.hasExtraHour || editInviteeForm.weekendFee || editInviteeForm.eveningFee) && (
+                  <div className="bg-muted/50 rounded-lg p-2 text-sm">
+                    <span className="text-muted-foreground">Total fees: </span>
+                    <span className="font-medium">
+                      €{(
+                        (editInviteeForm.requestTanguy ? TANGUY_COST : 0) +
+                        (editInviteeForm.hasExtraHour ? EXTRA_HOUR_COST : 0) +
+                        (editInviteeForm.weekendFee ? WEEKEND_FEE_COST : 0) +
+                        (editInviteeForm.eveningFee ? EVENING_FEE_COST : 0)
+                      ).toFixed(2)}
+                    </span>
+                  </div>
+                )}
+              </div>
             )}
             {/* TeamLeader Deal Selection - shown for both Local Stories and regular bookings */}
             <div className="space-y-2 border-t pt-4 mt-4">

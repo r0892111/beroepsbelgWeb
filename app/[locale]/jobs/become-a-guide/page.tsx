@@ -41,6 +41,8 @@ export default function BecomeAGuidePage() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [cvPreview, setCvPreview] = useState<string | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [cvError, setCvError] = useState(false);
+  const [photoError, setPhotoError] = useState(false);
 
   const {
     register,
@@ -74,6 +76,7 @@ export default function BecomeAGuidePage() {
 
     setCvFile(file);
     setCvPreview(file.name);
+    setCvError(false);
   };
 
   const handlePhotoFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,6 +94,7 @@ export default function BecomeAGuidePage() {
     }
 
     setPhotoFile(file);
+    setPhotoError(false);
     const reader = new FileReader();
     reader.onloadend = () => {
       setPhotoPreview(reader.result as string);
@@ -138,13 +142,28 @@ export default function BecomeAGuidePage() {
   };
 
   const onSubmit = async (data: JobApplicationData) => {
+    // Validate required file uploads
+    let hasErrors = false;
+    if (!cvFile) {
+      setCvError(true);
+      hasErrors = true;
+    }
+    if (!photoFile) {
+      setPhotoError(true);
+      hasErrors = true;
+    }
+    if (hasErrors) {
+      toast.error(t('filesRequired') || 'Please upload both your CV and photo');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       let cvUrl: string | null = null;
       let photoUrl: string | null = null;
 
-      // Upload CV if provided
+      // Upload CV
       if (cvFile) {
         try {
           cvUrl = await uploadFile(cvFile, `cv_${data.email.replace(/[^a-zA-Z0-9]/g, '_')}`);
@@ -412,7 +431,7 @@ export default function BecomeAGuidePage() {
                   htmlFor="cv"
                   className="block font-oswald text-sm uppercase tracking-wider font-semibold text-neutral-700 mb-2"
                 >
-                  {t('cvLabel') || 'CV (PDF)'}
+                  {t('cvLabel') || 'CV (PDF)'}*
                 </label>
                 {!cvFile ? (
                   <div className="relative min-h-[60px]">
@@ -421,7 +440,7 @@ export default function BecomeAGuidePage() {
                       type="file"
                       accept="application/pdf"
                       onChange={handleCvFileSelect}
-                      className="w-full px-4 py-5 border-2 border-neutral-200 rounded-lg font-inter focus:border-[#1BDD95] focus:ring-0 transition-colors file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#1BDD95] file:text-white hover:file:bg-[#14BE82] h-auto"
+                      className={`w-full px-4 py-5 border-2 rounded-lg font-inter focus:border-[#1BDD95] focus:ring-0 transition-colors file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#1BDD95] file:text-white hover:file:bg-[#14BE82] h-auto ${cvError ? 'border-red-500' : 'border-neutral-200'}`}
                     />
                   </div>
                 ) : (
@@ -439,6 +458,7 @@ export default function BecomeAGuidePage() {
                     </Button>
                   </div>
                 )}
+                {cvError && <p className="mt-1 text-sm text-red-600">{t('required')}</p>}
                 <p className="mt-1 text-xs text-neutral-500 font-inter">Maximum file size: 10MB</p>
               </div>
 
@@ -448,7 +468,7 @@ export default function BecomeAGuidePage() {
                   htmlFor="photo"
                   className="block font-oswald text-sm uppercase tracking-wider font-semibold text-neutral-700 mb-2"
                 >
-                  {t('photoLabel') || 'Photo'}
+                  {t('photoLabel') || 'Photo'}*
                 </label>
                 {!photoFile ? (
                   <div className="relative min-h-[60px]">
@@ -457,7 +477,7 @@ export default function BecomeAGuidePage() {
                       type="file"
                       accept="image/*"
                       onChange={handlePhotoFileSelect}
-                      className="w-full px-4 py-5 border-2 border-neutral-200 rounded-lg font-inter focus:border-[#1BDD95] focus:ring-0 transition-colors file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#1BDD95] file:text-white hover:file:bg-[#14BE82] h-auto"
+                      className={`w-full px-4 py-5 border-2 rounded-lg font-inter focus:border-[#1BDD95] focus:ring-0 transition-colors file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#1BDD95] file:text-white hover:file:bg-[#14BE82] h-auto ${photoError ? 'border-red-500' : 'border-neutral-200'}`}
                     />
                   </div>
                 ) : (
@@ -484,6 +504,7 @@ export default function BecomeAGuidePage() {
                     </Button>
                   </div>
                 )}
+                {photoError && <p className="mt-1 text-sm text-red-600">{t('required')}</p>}
                 <p className="mt-1 text-xs text-neutral-500 font-inter">Maximum file size: 5MB</p>
               </div>
 

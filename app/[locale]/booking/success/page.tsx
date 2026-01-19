@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import Image from 'next/image';
+import { CheckCircle2, Loader2, Sparkles, Calendar, Users, Globe, Mail, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from 'next-intl';
 import { TourUpsellCard } from '@/components/upsells/tour-upsell-card';
 import { ProductUpsellCard } from '@/components/upsells/product-upsell-card';
-import type { Tour, Product, Locale } from '@/lib/data/types';
+import type { Tour, Product, Locale, TourImage } from '@/lib/data/types';
 
 export default function BookingSuccessPage() {
   const t = useTranslations('bookingSuccess');
@@ -25,6 +26,8 @@ export default function BookingSuccessPage() {
   const [purchasedUpsellProducts, setPurchasedUpsellProducts] = useState<Product[]>([]);
   const [isOpMaat, setIsOpMaat] = useState(false);
   const [jotFormUrl, setJotFormUrl] = useState<string>('');
+  const [tourImage, setTourImage] = useState<string | null>(null);
+  const [tourMediaType, setTourMediaType] = useState<'image' | 'video'>('image');
 
   // Note: JotForm embed handler removed to avoid CORS issues
   // URL parameters are sufficient for pre-filling form fields
@@ -147,10 +150,10 @@ export default function BookingSuccessPage() {
               stripeSessionId: localBookingData.stripe_session_id,
             });
 
-            // Fetch tour data
+            // Fetch tour data including image
             if (localBookingData.tour_id) {
               const tourResponse = await fetch(
-                `${supabaseUrl}/rest/v1/tours_table_prod?id=eq.${localBookingData.tour_id}&select=title,op_maat,local_stories`,
+                `${supabaseUrl}/rest/v1/tours_table_prod?id=eq.${localBookingData.tour_id}&select=title,op_maat,local_stories,tour_images`,
                 {
                   headers: {
                     'apikey': supabaseAnonKey || '',
@@ -158,14 +161,36 @@ export default function BookingSuccessPage() {
                   },
                 }
               );
-              
+
               if (tourResponse.ok) {
                 const tourData = await tourResponse.json();
+                console.log('Local stories - Tour data from tours_table_prod:', tourData);
                 if (tourData && tourData.length > 0) {
                   tourTitle = tourData[0].title;
-                  tourOpMaat = tourData[0].op_maat === true || 
-                               tourData[0].op_maat === 'true' || 
+                  tourOpMaat = tourData[0].op_maat === true ||
+                               tourData[0].op_maat === 'true' ||
                                tourData[0].op_maat === 1;
+
+                  // Get primary image/video from tour_images
+                  const tourImages = tourData[0].tour_images;
+                  console.log('Local stories - Tour images array:', tourImages);
+                  if (tourImages && Array.isArray(tourImages) && tourImages.length > 0) {
+                    // Sort: is_primary=true first, then by sort_order
+                    const sortedImages = [...tourImages].sort((a: any, b: any) => {
+                      if (a.is_primary === true && b.is_primary !== true) return -1;
+                      if (a.is_primary !== true && b.is_primary === true) return 1;
+                      return (a.sort_order || 0) - (b.sort_order || 0);
+                    });
+                    const primaryMedia = sortedImages[0];
+                    console.log('Local stories - Selected primary media:', primaryMedia);
+                    if (primaryMedia && primaryMedia.url) {
+                      setTourImage(primaryMedia.url);
+                      setTourMediaType(primaryMedia.media_type === 'video' ? 'video' : 'image');
+                      console.log('Local stories - Set image to:', primaryMedia.url, 'type:', primaryMedia.media_type);
+                    }
+                  } else {
+                    console.log('Local stories - No tour_images found for tour');
+                  }
                 }
               }
             }
@@ -211,15 +236,16 @@ export default function BookingSuccessPage() {
           if (bookingResponse.ok) {
             const bookingResponseData = await bookingResponse.json();
             console.log('Regular booking data:', bookingResponseData);
-            
+
             if (bookingResponseData && bookingResponseData.length > 0) {
               booking = bookingResponseData[0];
               invitee = booking.invitees?.[0];
 
-              // Fetch the tour data separately
+              // Fetch the tour data to get images
               if (booking.tour_id) {
+                console.log('Fetching tour data for tour_id:', booking.tour_id);
                 const tourResponse = await fetch(
-                  `${supabaseUrl}/rest/v1/tours_table_prod?id=eq.${booking.tour_id}&select=title,op_maat,local_stories`,
+                  `${supabaseUrl}/rest/v1/tours_table_prod?id=eq.${booking.tour_id}&select=title,op_maat,local_stories,tour_images`,
                   {
                     headers: {
                       'apikey': supabaseAnonKey || '',
@@ -227,16 +253,42 @@ export default function BookingSuccessPage() {
                     },
                   }
                 );
-                
+
                 if (tourResponse.ok) {
                   const tourData = await tourResponse.json();
+                  console.log('Tour data from tours_table_prod:', tourData);
                   if (tourData && tourData.length > 0) {
                     tourTitle = tourData[0].title;
-                    tourOpMaat = tourData[0].op_maat === true || 
-                                 tourData[0].op_maat === 'true' || 
+                    tourOpMaat = tourData[0].op_maat === true ||
+                                 tourData[0].op_maat === 'true' ||
                                  tourData[0].op_maat === 1;
+
+                    // Get primary image/video from tour_images
+                    const tourImages = tourData[0].tour_images;
+                    console.log('Tour images array:', tourImages);
+                    if (tourImages && Array.isArray(tourImages) && tourImages.length > 0) {
+                      // Sort: is_primary=true first, then by sort_order
+                      const sortedImages = [...tourImages].sort((a: any, b: any) => {
+                        if (a.is_primary === true && b.is_primary !== true) return -1;
+                        if (a.is_primary !== true && b.is_primary === true) return 1;
+                        return (a.sort_order || 0) - (b.sort_order || 0);
+                      });
+                      const primaryMedia = sortedImages[0];
+                      console.log('Selected primary media:', primaryMedia);
+                      if (primaryMedia && primaryMedia.url) {
+                        setTourImage(primaryMedia.url);
+                        setTourMediaType(primaryMedia.media_type === 'video' ? 'video' : 'image');
+                        console.log('Set tour image to:', primaryMedia.url, 'type:', primaryMedia.media_type);
+                      }
+                    } else {
+                      console.log('No tour_images found for tour');
+                    }
                   }
+                } else {
+                  console.log('Tour fetch failed:', tourResponse.status, await tourResponse.text());
                 }
+              } else {
+                console.log('No tour_id on booking');
               }
             }
           }
@@ -281,6 +333,8 @@ export default function BookingSuccessPage() {
               discountApplied: invitee?.discountApplied || 0,
               tanguyCost: invitee?.tanguyCost || 0,
               extraHourCost: invitee?.extraHourCost || 0,
+              weekendFeeCost: invitee?.weekendFeeCost || 0,
+              eveningFeeCost: invitee?.eveningFeeCost || 0,
               booking_date: bookingDate,
               booking_time: localBookingData.booking_time || '14:00:00',
               tour_datetime: bookingDate,
@@ -315,50 +369,14 @@ export default function BookingSuccessPage() {
               discountApplied: invitee?.discountApplied || 0,
               tanguyCost: invitee?.tanguyCost || 0,
               extraHourCost: invitee?.extraHourCost || 0,
+              weekendFeeCost: invitee?.weekendFeeCost || 0,
+              eveningFeeCost: invitee?.eveningFeeCost || 0,
               booking_date: booking.tour_datetime,
               upsell_products: upsellProducts,
               is_local_stories: false,
             };
-          } else {
-            // No booking found - check if payment is still processing
-            console.log('No booking found yet for session:', sessionId);
-
-            // Check if there's a pending booking (payment still processing)
-            const pendingResponse = await fetch(
-              `${supabaseUrl}/rest/v1/pending_tour_bookings?stripe_session_id=eq.${sessionId}&select=*`,
-              {
-                headers: {
-                  'apikey': supabaseAnonKey || '',
-                  'Authorization': `Bearer ${supabaseAnonKey}`,
-                },
-              }
-            );
-
-            if (pendingResponse.ok) {
-              const pendingData = await pendingResponse.json();
-              if (pendingData && pendingData.length > 0) {
-                // Pending booking exists - payment is processing
-                console.log('Found pending booking, payment processing...', { retryCount });
-                setProcessingPayment(true);
-
-                if (retryCount < MAX_RETRIES) {
-                  // Wait and retry
-                  await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-                  return fetchBooking(retryCount + 1);
-                } else {
-                  console.error('Max retries reached, booking still processing');
-                  setLoading(false);
-                  return false;
-                }
-              }
-            }
-
-            // No pending booking either - genuine not found
-            console.error('No booking found for session:', sessionId);
-            setLoading(false);
-            return false;
           }
-            
+
           console.log('Setting booking data for JotForm pre-fill:', {
             bookingId: bookingData.id,
             opMaat: opMaatValue,
@@ -495,7 +513,44 @@ export default function BookingSuccessPage() {
           setLoading(false);
           return true;
         } else {
-          console.error('No booking found for session:', sessionId);
+          // No booking found - check if payment is still processing
+          console.log('No booking found yet for session:', sessionId, { retryCount });
+
+          // Check if there's a pending booking (payment still processing)
+          const pendingResponse = await fetch(
+            `${supabaseUrl}/rest/v1/pending_tour_bookings?stripe_session_id=eq.${sessionId}&select=*`,
+            {
+              headers: {
+                'apikey': supabaseAnonKey || '',
+                'Authorization': `Bearer ${supabaseAnonKey}`,
+              },
+            }
+          );
+
+          let hasPendingBooking = false;
+          if (pendingResponse.ok) {
+            const pendingData = await pendingResponse.json();
+            hasPendingBooking = pendingData && pendingData.length > 0;
+            if (hasPendingBooking) {
+              console.log('Found pending booking, payment processing...', { retryCount });
+            }
+          }
+
+          // Retry if we haven't exceeded max retries
+          // Retry even if no pending booking found (webhook might have processed very fast)
+          if (retryCount < MAX_RETRIES) {
+            setProcessingPayment(true);
+            console.log('Retrying to find booking...', { retryCount, hasPendingBooking });
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+            return fetchBooking(retryCount + 1);
+          }
+
+          // Max retries reached
+          if (hasPendingBooking) {
+            console.error('Max retries reached, booking still processing');
+          } else {
+            console.error('No booking found for session after all retries:', sessionId);
+          }
           setLoading(false);
           return false;
         }
@@ -602,11 +657,9 @@ export default function BookingSuccessPage() {
     return (
       <div className="container mx-auto px-4 py-16">
         <Card className="max-w-2xl mx-auto">
-          <CardHeader>
-            <CardTitle>{t('notFoundTitle')}</CardTitle>
-            <CardDescription>{t('notFoundDescription')}</CardDescription>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="pt-8 text-center">
+            <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: 'Montserrat, sans-serif' }}>{t('notFoundTitle')}</h2>
+            <p className="text-muted-foreground mb-6">{t('notFoundDescription')}</p>
             <Button asChild>
               <Link href="/">{t('returnHome')}</Link>
             </Button>
@@ -616,204 +669,332 @@ export default function BookingSuccessPage() {
     );
   }
 
+  console.log('=== RENDER DEBUG ===');
+  console.log('tourImage:', tourImage);
+  console.log('tourMediaType:', tourMediaType);
+
   return (
-    <div className="container mx-auto px-4 py-16">
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-            <CheckCircle2 className="h-10 w-10 text-green-600" />
-          </div>
-          <CardTitle className="text-2xl">{t('title')}</CardTitle>
-          <CardDescription>
-            {t('description')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-4">
-            <div className="flex justify-between border-b pb-2">
-              <span className="font-medium">{t('tour')}</span>
-              <span className="text-muted-foreground">{booking.tour_title || t('tour')}</span>
-            </div>
-            <div className="flex justify-between border-b pb-2">
-              <span className="font-medium">{t('date')}</span>
-              <span className="text-muted-foreground">
-                {(() => {
-                  // Use booking_date if available, otherwise fall back to tour_datetime
-                  const dateValue = booking.booking_date || booking.tour_datetime;
-                  
-                  if (!dateValue) {
-                    return isOpMaat ? t('dateToBeDetermined') || 'Datum wordt bepaald' : t('noDate') || 'Geen datum';
-                  }
-                  
-                  const dateObj = new Date(dateValue);
-                  
-                  // Check if date is valid (not NaN and not epoch date)
-                  if (isNaN(dateObj.getTime()) || dateObj.getTime() === 0) {
-                    return isOpMaat ? t('dateToBeDetermined') || 'Datum wordt bepaald' : t('noDate') || 'Geen datum';
-                  }
-                  
-                  return dateObj.toLocaleDateString('nl-BE', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  });
-                })()}
-              </span>
-            </div>
-            <div className="flex justify-between border-b pb-2">
-              <span className="font-medium">{t('numberOfPeople')}</span>
-              <span className="text-muted-foreground">{booking.number_of_people}</span>
-            </div>
-            <div className="flex justify-between border-b pb-2">
-              <span className="font-medium">{t('language')}</span>
-              <span className="text-muted-foreground uppercase">{booking.language}</span>
-            </div>
-            <div className="flex justify-between border-b pb-2">
-              <span className="font-medium">{t('customerName')}</span>
-              <span className="text-muted-foreground">{booking.customer_name}</span>
-            </div>
-            <div className="flex justify-between border-b pb-2">
-              <span className="font-medium">{t('email')}</span>
-              <span className="text-muted-foreground">{booking.customer_email}</span>
-            </div>
-            {/* Price breakdown section */}
-            <div className="pt-4 border-t space-y-2">
-              <p className="font-medium mb-3 text-base">{t('priceBreakdown') || 'Prijsoverzicht'}:</p>
-              
-              {/* Tour price (discounted) */}
-              <div className="flex justify-between items-center py-1">
-                <span className="text-sm text-muted-foreground">
-                  {booking.tour_title} ({booking.number_of_people} {booking.number_of_people > 1 ? 'personen' : 'persoon'})
-                  {booking.discountApplied > 0 && (
-                    <span className="text-green-600 text-xs ml-1">(10% korting)</span>
-                  )}
-                </span>
-                <span className="font-medium text-sm">
-                  €{(parseFloat(booking.amount) || 0).toFixed(2)}
-                </span>
-              </div>
-
-              {/* Tanguy cost if applicable */}
-              {booking.tanguyCost > 0 && (
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-sm text-muted-foreground">Tanguy</span>
-                  <span className="font-medium text-sm">€{(parseFloat(booking.tanguyCost) || 0).toFixed(2)}</span>
-                </div>
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-base)' }}>
+      {/* Hero Section with Tour Image */}
+      <div className="relative w-full h-[280px] md:h-[360px]">
+        <div className="absolute inset-0 overflow-hidden">
+          {tourImage ? (
+            <>
+              {tourMediaType === 'video' ? (
+                <video
+                  src={tourImage}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              ) : (
+                <Image
+                  src={tourImage}
+                  alt={booking.tour_title || 'Tour'}
+                  fill
+                  className="object-cover"
+                  priority
+                />
               )}
-
-              {/* Extra hour cost if applicable */}
-              {booking.extraHourCost > 0 && (
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-sm text-muted-foreground">{t('extraHour') || 'Extra uur'}</span>
-                  <span className="font-medium text-sm">€{(parseFloat(booking.extraHourCost) || 0).toFixed(2)}</span>
-                </div>
-              )}
-
-              {/* Upsell products */}
-                  {purchasedUpsellProducts.map((product: any, index) => {
-                    const quantity = product.quantity || 1;
-                    const totalPrice = product.price * quantity;
-                    return (
-                      <div key={product.uuid || index} className="flex justify-between items-center py-1">
-                        <span className="text-sm text-muted-foreground">
-                          {product.title[locale]} {quantity > 1 && <span className="text-xs">(x{quantity})</span>}
-                        </span>
-                        <span className="font-medium text-sm">
-                          €{totalPrice.toFixed(2)}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-            <div className="flex justify-between pt-4 border-t">
-              <span className="text-lg font-bold">{t('totalPaid')}</span>
-              <span className="text-lg font-bold">
-                €{(() => {
-                  // Calculate total: tour amount + upsell products + tanguy + extra hour
-                  const tourAmount = parseFloat(booking.amount) || 0;
-                  const tanguyCost = parseFloat(booking.tanguyCost) || 0;
-                  const extraHourCost = parseFloat(booking.extraHourCost) || 0;
-                  const upsellTotal = purchasedUpsellProducts.reduce((sum, product: any) => {
-                    const quantity = product.quantity || 1;
-                    const price = parseFloat(String(product.price)) || 0;
-                    return sum + (price * quantity);
-                  }, 0);
-                  const totalAmount = tourAmount + tanguyCost + extraHourCost + upsellTotal;
-                  return totalAmount.toFixed(2);
-                })()}
-              </span>
-            </div>
-          </div>
-
-          {booking.special_requests && (
-            <div className="rounded-lg bg-muted p-4">
-              <p className="text-sm font-medium mb-1">{t('specialRequests')}</p>
-              <p className="text-sm text-muted-foreground">{booking.special_requests}</p>
-            </div>
-          )}
-
-
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <p className="text-sm text-blue-900">
-              <strong>{t('whatsNext')}</strong>
-              <br />
-              {t('nextSteps')}
-            </p>
-          </div>
-
-          <div className="flex gap-4">
-            <Button asChild className="flex-1">
-              <Link href="/">{t('returnHome')}</Link>
-            </Button>
-            <Button asChild variant="outline" className="flex-1">
-              <Link href="/tours">{t('browseTours')}</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {(relatedTours.length > 0 || featuredProducts.length > 0) && (
-        <div className="mt-16 max-w-6xl mx-auto">
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 mb-3">
-              <Sparkles className="w-5 h-5" style={{ color: 'var(--primary-base)' }} />
-              <h2 className="text-2xl md:text-3xl font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'Montserrat, sans-serif' }}>
-                Discover More
-              </h2>
-            </div>
-            <p className="text-lg" style={{ color: 'var(--text-tertiary)' }}>
-              Continue your journey with more tours and exclusive items
-            </p>
-          </div>
-
-          {relatedTours.length > 0 && (
-            <div className="mb-12">
-              <h3 className="text-xl font-semibold mb-6" style={{ color: 'var(--text-primary)' }}>
-                More Tours You'll Love
-              </h3>
-              <div className="grid md:grid-cols-3 gap-6">
-                {relatedTours.map((tour) => (
-                  <TourUpsellCard key={tour.id} tour={tour} locale={locale} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {featuredProducts.length > 0 && (
-            <div>
-              <h3 className="text-xl font-semibold mb-6" style={{ color: 'var(--text-primary)' }}>
-                Take Home a Memory
-              </h3>
-              <div className="grid md:grid-cols-3 gap-6">
-                {featuredProducts.map((product) => (
-                  <ProductUpsellCard key={product.uuid} product={product} locale={locale} />
-                ))}
-              </div>
-            </div>
+              {/* Gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/70" />
+            </>
+          ) : (
+            <div
+              className="absolute inset-0"
+              style={{ background: 'linear-gradient(135deg, #1BDD95 0%, #17C683 50%, #14A86E 100%)' }}
+            />
           )}
         </div>
-      )}
+
+        {/* Success badge at bottom edge of hero */}
+        <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center px-4 translate-y-1/2 z-20">
+          <div
+            className="mb-4 flex h-20 w-20 items-center justify-center rounded-full"
+            style={{ backgroundColor: 'rgba(27, 221, 149, 0.9)', boxShadow: '0 0 30px rgba(27, 221, 149, 0.5)' }}
+          >
+            <CheckCircle2 className="h-12 w-12 text-white" />
+          </div>
+          <div className="bg-white rounded-xl px-8 py-6 shadow-lg">
+            <h1
+              className="text-3xl md:text-4xl font-bold text-center text-black"
+              style={{ fontFamily: 'Montserrat, sans-serif' }}
+            >
+              {t('title')}
+            </h1>
+            <p className="mt-2 text-lg text-neutral-700 text-center max-w-md">
+              {t('description')}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 mt-32 md:mt-40 relative z-10 pb-16">
+        {/* Main Content Card */}
+        <Card
+          className="max-w-2xl mx-auto overflow-hidden"
+          style={{ boxShadow: 'var(--shadow-large)' }}
+        >
+          <CardContent className="p-0">
+            {/* Tour Title Banner */}
+            <div
+              className="px-6 py-5"
+              style={{ backgroundColor: 'var(--bg-light)', borderBottom: '1px solid var(--border-light)' }}
+            >
+              <h2
+                className="text-xl md:text-2xl font-bold"
+                style={{ fontFamily: 'Montserrat, sans-serif', color: 'var(--text-primary)' }}
+              >
+                {booking.tour_title || t('tour')}
+              </h2>
+            </div>
+
+            {/* Booking Details Grid */}
+            <div className="px-6 py-6 space-y-4">
+              {/* Key info cards */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg p-4" style={{ backgroundColor: 'var(--bg-light)' }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Calendar className="h-4 w-4" style={{ color: 'var(--primary-base)' }} />
+                    <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('date')}</span>
+                  </div>
+                  <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
+                    {(() => {
+                      const dateValue = booking.booking_date || booking.tour_datetime;
+                      if (!dateValue) {
+                        return isOpMaat ? t('dateToBeDetermined') || 'TBD' : t('noDate') || '-';
+                      }
+                      const dateObj = new Date(dateValue);
+                      if (isNaN(dateObj.getTime()) || dateObj.getTime() === 0) {
+                        return isOpMaat ? t('dateToBeDetermined') || 'TBD' : t('noDate') || '-';
+                      }
+                      return dateObj.toLocaleDateString(locale === 'en' ? 'en-GB' : 'nl-BE', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      });
+                    })()}
+                  </p>
+                </div>
+                <div className="rounded-lg p-4" style={{ backgroundColor: 'var(--bg-light)' }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Users className="h-4 w-4" style={{ color: 'var(--primary-base)' }} />
+                    <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('numberOfPeople')}</span>
+                  </div>
+                  <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{booking.number_of_people}</p>
+                </div>
+                <div className="rounded-lg p-4" style={{ backgroundColor: 'var(--bg-light)' }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Globe className="h-4 w-4" style={{ color: 'var(--primary-base)' }} />
+                    <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('language')}</span>
+                  </div>
+                  <p className="font-semibold text-sm uppercase" style={{ color: 'var(--text-primary)' }}>{booking.language}</p>
+                </div>
+                <div className="rounded-lg p-4" style={{ backgroundColor: 'var(--bg-light)' }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <User className="h-4 w-4" style={{ color: 'var(--primary-base)' }} />
+                    <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('customerName')}</span>
+                  </div>
+                  <p className="font-semibold text-sm truncate" style={{ color: 'var(--text-primary)' }}>{booking.customer_name}</p>
+                </div>
+              </div>
+
+              {/* Email */}
+              <div className="rounded-lg p-4" style={{ backgroundColor: 'var(--bg-light)' }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <Mail className="h-4 w-4" style={{ color: 'var(--primary-base)' }} />
+                  <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('email')}</span>
+                </div>
+                <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{booking.customer_email}</p>
+              </div>
+
+              {/* Price breakdown section */}
+              <div className="pt-4 border-t space-y-2" style={{ borderColor: 'var(--border-light)' }}>
+                <p className="font-semibold mb-3 text-base" style={{ color: 'var(--text-primary)' }}>{t('priceBreakdown') || 'Price Overview'}:</p>
+
+                {/* Tour base price */}
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                    {booking.tour_title} ({booking.number_of_people} {booking.number_of_people > 1 ? 'personen' : 'persoon'})
+                    {booking.discountApplied > 0 && (
+                      <span className="text-xs ml-1" style={{ color: 'var(--primary-base)' }}>(10% korting)</span>
+                    )}
+                  </span>
+                  <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
+                    €{(() => {
+                      const totalAmount = parseFloat(booking.amount) || 0;
+                      const tanguyCost = parseFloat(booking.tanguyCost) || 0;
+                      const extraHourCost = parseFloat(booking.extraHourCost) || 0;
+                      const weekendFeeCost = parseFloat(booking.weekendFeeCost) || 0;
+                      const eveningFeeCost = parseFloat(booking.eveningFeeCost) || 0;
+                      const baseTourPrice = totalAmount - tanguyCost - extraHourCost - weekendFeeCost - eveningFeeCost;
+                      return baseTourPrice.toFixed(2);
+                    })()}
+                  </span>
+                </div>
+
+                {/* Tanguy cost if applicable */}
+                {booking.tanguyCost > 0 && (
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Tanguy</span>
+                    <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>€{(parseFloat(booking.tanguyCost) || 0).toFixed(2)}</span>
+                  </div>
+                )}
+
+                {/* Extra hour cost if applicable */}
+                {booking.extraHourCost > 0 && (
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('extraHour') || 'Extra uur'}</span>
+                    <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>€{(parseFloat(booking.extraHourCost) || 0).toFixed(2)}</span>
+                  </div>
+                )}
+
+                {/* Weekend fee if applicable */}
+                {booking.weekendFeeCost > 0 && (
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('weekendFee') || 'Weekendtoeslag'}</span>
+                    <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>€{(parseFloat(booking.weekendFeeCost) || 0).toFixed(2)}</span>
+                  </div>
+                )}
+
+                {/* Evening fee if applicable */}
+                {booking.eveningFeeCost > 0 && (
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('eveningFee') || 'Avondtoeslag'}</span>
+                    <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>€{(parseFloat(booking.eveningFeeCost) || 0).toFixed(2)}</span>
+                  </div>
+                )}
+
+                {/* Upsell products */}
+                {purchasedUpsellProducts.map((product: any, index) => {
+                  const quantity = product.quantity || 1;
+                  const totalPrice = product.price * quantity;
+                  return (
+                    <div key={product.uuid || index} className="flex justify-between items-center py-1">
+                      <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                        {product.title[locale]} {quantity > 1 && <span className="text-xs">(x{quantity})</span>}
+                      </span>
+                      <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
+                        €{totalPrice.toFixed(2)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Total */}
+              <div
+                className="flex justify-between items-center pt-4 mt-2 border-t"
+                style={{ borderColor: 'var(--border-light)' }}
+              >
+                <span className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{t('totalPaid')}</span>
+                <span className="text-xl font-bold" style={{ color: 'var(--primary-base)' }}>
+                  €{(() => {
+                    const totalAmount = parseFloat(booking.amount) || 0;
+                    const upsellTotal = purchasedUpsellProducts.reduce((sum, product: any) => {
+                      const quantity = product.quantity || 1;
+                      const price = parseFloat(String(product.price)) || 0;
+                      return sum + (price * quantity);
+                    }, 0);
+                    return (totalAmount + upsellTotal).toFixed(2);
+                  })()}
+                </span>
+              </div>
+            </div>
+
+            {/* Special requests */}
+            {booking.special_requests && (
+              <div className="px-6 pb-4">
+                <div className="rounded-lg p-4" style={{ backgroundColor: 'var(--bg-light)' }}>
+                  <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('specialRequests')}</p>
+                  <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{booking.special_requests}</p>
+                </div>
+              </div>
+            )}
+
+            {/* What's next section */}
+            <div className="px-6 pb-6">
+              <div
+                className="rounded-lg p-4"
+                style={{ backgroundColor: 'rgba(27, 221, 149, 0.1)', border: '1px solid rgba(27, 221, 149, 0.2)' }}
+              >
+                <p className="text-sm" style={{ color: 'var(--text-primary)' }}>
+                  <strong style={{ color: 'var(--primary-dark)' }}>{t('whatsNext')}</strong>
+                  <br />
+                  <span style={{ color: 'var(--text-secondary)' }}>{t('nextSteps')}</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div
+              className="px-6 py-5 flex gap-3"
+              style={{ backgroundColor: 'var(--bg-light)', borderTop: '1px solid var(--border-light)' }}
+            >
+              <Button
+                asChild
+                className="flex-1"
+                style={{ backgroundColor: 'var(--primary-base)', color: 'white' }}
+              >
+                <Link href="/">{t('returnHome')}</Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="flex-1"
+                style={{ borderColor: 'var(--primary-base)', color: 'var(--primary-base)' }}
+              >
+                <Link href="/tours">{t('browseTours')}</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Upsells Section */}
+        {(relatedTours.length > 0 || featuredProducts.length > 0) && (
+          <div className="mt-16 max-w-6xl mx-auto">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 mb-3">
+                <Sparkles className="w-5 h-5" style={{ color: 'var(--primary-base)' }} />
+                <h2 className="text-2xl md:text-3xl font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'Montserrat, sans-serif' }}>
+                  Discover More
+                </h2>
+              </div>
+              <p className="text-lg" style={{ color: 'var(--text-tertiary)' }}>
+                Continue your journey with more tours and exclusive items
+              </p>
+            </div>
+
+            {relatedTours.length > 0 && (
+              <div className="mb-12">
+                <h3 className="text-xl font-semibold mb-6" style={{ color: 'var(--text-primary)' }}>
+                  More Tours You&apos;ll Love
+                </h3>
+                <div className="grid md:grid-cols-3 gap-6">
+                  {relatedTours.map((tour) => (
+                    <TourUpsellCard key={tour.id} tour={tour} locale={locale} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {featuredProducts.length > 0 && (
+              <div>
+                <h3 className="text-xl font-semibold mb-6" style={{ color: 'var(--text-primary)' }}>
+                  Take Home a Memory
+                </h3>
+                <div className="grid md:grid-cols-3 gap-6">
+                  {featuredProducts.map((product) => (
+                    <ProductUpsellCard key={product.uuid} product={product} locale={locale} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

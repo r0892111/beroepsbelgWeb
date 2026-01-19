@@ -411,6 +411,7 @@ export async function getProducts(): Promise<Product[]> {
   const { data, error } = await supabaseServer
     .from('webshop_data')
     .select('*')
+    .eq('status', 'published')
     .order('display_order', { ascending: true, nullsFirst: false })
     .order('category_display_order', { ascending: true, nullsFirst: false })
     .order('Name', { ascending: true });
@@ -495,6 +496,7 @@ export async function getProductById(uuid: string): Promise<Product | null> {
     .from('webshop_data')
     .select('*')
     .eq('uuid', uuid)
+    .eq('status', 'published')
     .single();
 
   if (error) {
