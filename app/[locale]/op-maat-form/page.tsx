@@ -142,7 +142,7 @@ export default function OpMaatFormPage() {
         throw new Error('Failed to fetch booking');
       }
 
-      // Update the invitees array with op maat answers
+      // Update the invitees array with op maat answers and tour times
       const updatedInvitees = currentBooking.invitees?.map((invitee: any, index: number) => {
         if (index === 0) { // Update the first invitee (main contact)
           return {
@@ -154,6 +154,10 @@ export default function OpMaatFormPage() {
               subjects: formData.subjects,
               specialWishes: formData.specialWishes,
             },
+            // Always update tour times from the booking (in case they were set after initial booking)
+            tourStartDatetime: currentBooking.tour_datetime || invitee.tourStartDatetime,
+            tourEndDatetime: currentBooking.tour_end || invitee.tourEndDatetime,
+            isContacted: true, 
           };
         }
         return invitee;
