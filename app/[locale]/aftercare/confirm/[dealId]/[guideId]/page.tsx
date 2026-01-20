@@ -10,12 +10,18 @@ import { toast } from 'sonner';
 
 const WEBHOOK_URL = 'https://alexfinit.app.n8n.cloud/webhook/8f09be45-a954-4903-b0a0-cbfb3fd52154';
 
+// Valid locales for the app
+const VALID_LOCALES = ['en', 'nl', 'fr', 'de'];
+const DEFAULT_LOCALE = 'en';
+
 export default function AftercareConfirmPage() {
   const params = useParams();
   const router = useRouter();
   const dealId = params.dealId as string;
   const guideId = (params.guideId as string) || ''; // Handle optional guideId
-  const locale = params.locale as string;
+  const rawLocale = params.locale as string;
+  // Default to English if locale is invalid or not in valid locales list
+  const locale = VALID_LOCALES.includes(rawLocale) ? rawLocale : DEFAULT_LOCALE;
 
   const [loading, setLoading] = useState(false);
   const [booking, setBooking] = useState<any>(null);
