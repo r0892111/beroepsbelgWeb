@@ -335,6 +335,10 @@ export default function BookingSuccessPage() {
               extraHourCost: invitee?.extraHourCost || 0,
               weekendFeeCost: invitee?.weekendFeeCost || 0,
               eveningFeeCost: invitee?.eveningFeeCost || 0,
+              // Promo code info
+              promoCode: invitee?.promoCode || null,
+              promoDiscountAmount: invitee?.promoDiscountAmount || 0,
+              promoDiscountPercent: invitee?.promoDiscountPercent || null,
               booking_date: bookingDate,
               booking_time: localBookingData.booking_time || '14:00:00',
               tour_datetime: bookingDate,
@@ -371,6 +375,10 @@ export default function BookingSuccessPage() {
               extraHourCost: invitee?.extraHourCost || 0,
               weekendFeeCost: invitee?.weekendFeeCost || 0,
               eveningFeeCost: invitee?.eveningFeeCost || 0,
+              // Promo code info
+              promoCode: invitee?.promoCode || null,
+              promoDiscountAmount: invitee?.promoDiscountAmount || 0,
+              promoDiscountPercent: invitee?.promoDiscountPercent || null,
               booking_date: booking.tour_datetime,
               upsell_products: upsellProducts,
               is_local_stories: false,
@@ -864,6 +872,21 @@ export default function BookingSuccessPage() {
                   <div className="flex justify-between items-center py-1">
                     <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('eveningFee') || 'Avondtoeslag'}</span>
                     <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>€{(parseFloat(booking.eveningFeeCost) || 0).toFixed(2)}</span>
+                  </div>
+                )}
+
+                {/* Promo code discount if applicable */}
+                {booking.promoCode && booking.promoDiscountAmount > 0 && (
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-sm" style={{ color: 'var(--primary-base)' }}>
+                      {t('promoCode') || 'Kortingscode'}: <span className="font-semibold">{booking.promoCode}</span>
+                      {booking.promoDiscountPercent && (
+                        <span className="text-xs ml-1">({booking.promoDiscountPercent}%)</span>
+                      )}
+                    </span>
+                    <span className="font-medium text-sm" style={{ color: 'var(--primary-base)' }}>
+                      -€{(parseFloat(booking.promoDiscountAmount) || 0).toFixed(2)}
+                    </span>
                   </div>
                 )}
 

@@ -1,7 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import Stripe from 'npm:stripe@17.7.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
-import { toBrusselsISO, parseBrusselsDateTime } from '../_shared/timezone.ts';
 
 const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
 const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')!;
@@ -90,6 +89,41 @@ async function handleEvent(event: Stripe.Event) {
     const { id: sessionId, mode, payment_status, metadata } = session;
 
     console.info(`Processing checkout.session.completed: ${sessionId}, mode: ${mode}, status: ${payment_status}`);
+
+    // Retrieve the session with discounts expanded to get promo code info
+    let promoCodeInfo: { code: string | null; discountAmount: number; discountPercent: number | null } = {
+      code: null,
+      discountAmount: 0,
+      discountPercent: null,
+    };
+
+    try {
+      // Retrieve the full session with line items and discounts expanded
+      const fullSession = await stripe.checkout.sessions.retrieve(sessionId, {
+        expand: ['total_details.breakdown', 'discounts.promotion_code'],
+      });
+
+      // Get discount amount from total_details
+      const discountAmountCents = fullSession.total_details?.amount_discount || 0;
+      promoCodeInfo.discountAmount = discountAmountCents / 100; // Convert to euros
+
+      // Get promo code from discounts
+      if (fullSession.discounts && fullSession.discounts.length > 0) {
+        const discount = fullSession.discounts[0] as any; // First discount
+        if (discount.promotion_code && typeof discount.promotion_code === 'object') {
+          promoCodeInfo.code = discount.promotion_code.code || null;
+        }
+        // Get discount percent from coupon if available
+        if (discount.coupon) {
+          promoCodeInfo.discountPercent = discount.coupon.percent_off || null;
+        }
+      }
+
+      console.info('Promo code info extracted:', promoCodeInfo);
+    } catch (promoError) {
+      console.error('Error retrieving promo code info:', promoError);
+      // Continue without promo code info - not critical
+    }
 
     if (mode === 'payment' && payment_status === 'paid') {
       // First, check if this is a tour booking by looking for pending_tour_bookings entry
@@ -218,10 +252,7 @@ async function handleEvent(event: Stripe.Event) {
           console.info(`Processing local stories booking for Saturday: ${saturdayDateStr || 'NO DATE AVAILABLE'}`);
 
           let tourbookingId: number | null = null;
-          // Convert Saturday 14:00 to Brussels timezone ISO format
-          const saturdayDateTime = saturdayDateStr
-            ? toBrusselsISO(parseBrusselsDateTime(saturdayDateStr, '14:00'))
-            : null;
+          const saturdayDateTime = saturdayDateStr ? `${saturdayDateStr}T14:00:00` : null;
 
           // Look for existing tourbooking for this Saturday
           if (saturdayDateStr) {
@@ -261,6 +292,10 @@ async function handleEvent(event: Stripe.Event) {
                 tourStartDatetime: bookingData.tourDatetime,
                 tourEndDatetime: bookingData.tourEndDatetime,
                 durationMinutes: bookingData.durationMinutes,
+                // Promo code info from Stripe
+                promoCode: promoCodeInfo.code,
+                promoDiscountAmount: promoCodeInfo.discountAmount,
+                promoDiscountPercent: promoCodeInfo.discountPercent,
               };
 
               const updatedInvitees = [...currentInvitees, newInvitee];
@@ -310,6 +345,10 @@ async function handleEvent(event: Stripe.Event) {
                 tourStartDatetime: bookingData.tourDatetime,
                 tourEndDatetime: bookingData.tourEndDatetime,
                 durationMinutes: bookingData.durationMinutes,
+                // Promo code info from Stripe
+                promoCode: promoCodeInfo.code,
+                promoDiscountAmount: promoCodeInfo.discountAmount,
+                promoDiscountPercent: promoCodeInfo.discountPercent,
               }],
             };
 
@@ -410,6 +449,10 @@ async function handleEvent(event: Stripe.Event) {
               tourStartDatetime: bookingData.tourDatetime,
               tourEndDatetime: bookingData.tourEndDatetime,
               durationMinutes: bookingData.durationMinutes,
+              // Promo code info from Stripe
+              promoCode: promoCodeInfo.code,
+              promoDiscountAmount: promoCodeInfo.discountAmount,
+              promoDiscountPercent: promoCodeInfo.discountPercent,
             }],
           };
 
@@ -444,6 +487,10 @@ async function handleEvent(event: Stripe.Event) {
             booking_id: createdBookingId,
           },
           bookingData, // Include full booking data
+          // Include promo code info for invoice creation
+          promoCode: promoCodeInfo.code,
+          promoDiscountAmount: promoCodeInfo.discountAmount,
+          promoDiscountPercent: promoCodeInfo.discountPercent,
         };
 
         try {
@@ -747,7 +794,6 @@ async function handleEvent(event: Stripe.Event) {
 
         const bookingId = metadata.bookingId;
         const amountPaid = (session.amount_total || 0) / 100; // Convert from cents to euros
-
         // Fetch the lecture booking with lecture details to get all customer info
         const { data: lectureBooking, error: fetchError } = await supabase
           .from('lecture_bookings')
@@ -875,16 +921,18 @@ async function handleEvent(event: Stripe.Event) {
             if (itemNameStr.toLowerCase().includes('verzendkosten') ||
                 itemNameStr.toLowerCase().includes('shipping') ||
                 itemNameStr.toLowerCase().includes('freight')) {
-              shippingCost += (item.amount_total ?? 0) / 100;
+              // Use amount_subtotal for shipping (original price, never discounted)
+              const shippingPrice = (item.amount_subtotal ?? item.amount_total ?? 0) / 100;
+              shippingCost += shippingPrice;
               shippingItems.push({
                 title: itemNameStr,
                 quantity: item.quantity ?? 1,
-                price: (item.amount_total ?? 0) / 100,
+                price: shippingPrice,
               });
             } else {
               // Calculate unit price (amount_total is already the line total, so divide by quantity)
               const quantity = item.quantity ?? 1;
-              const unitPrice = ((item.amount_total ?? 0) / 100) / quantity;
+              const unitPrice = ((item.amount_subtotal ?? item.amount_total ?? 0) / 100) / quantity; 
               productItems.push({
                 title: itemNameStr || 'Product',
                 quantity: quantity,
@@ -896,9 +944,13 @@ async function handleEvent(event: Stripe.Event) {
           }
         }
 
-        // If shipping not found in line items, calculate from totals
-        if (shippingCost === 0 && fullSession.amount_subtotal && fullSession.amount_total) {
-          shippingCost = (fullSession.amount_total - fullSession.amount_subtotal) / 100;
+        // If shipping not found in line items, try to get it from Stripe's shipping details
+        if (shippingCost === 0) {
+          // Check if Stripe has shipping in total_details (when using Stripe's shipping rates)
+          const stripeShippingAmount = (fullSession as any).total_details?.amount_shipping ?? 0;
+          if (stripeShippingAmount > 0) {
+            shippingCost = stripeShippingAmount / 100;
+          }
         }
 
         // Get shipping address from Stripe session
@@ -934,13 +986,14 @@ async function handleEvent(event: Stripe.Event) {
           customer_email: fullSession.customer_email || metadata?.customerEmail || 'unknown@guest.com',
           shipping_address: shippingAddress,
           billing_address: shippingAddress, // Use shipping as billing
-          items: productItems,
+          items: [...productItems, ...shippingItems],
           metadata: {
             customerName: metadata?.customerName || 'Guest',
             customerEmail: fullSession.customer_email || metadata?.customerEmail || 'unknown@email.com',
             customerPhone: metadata?.customerPhone || '',
             userId: metadata?.userId && metadata.userId.trim() !== '' ? metadata.userId : null,
             shipping_cost: shippingCost,
+            discount_amount: ((fullSession as any).total_details?.amount_discount ?? 0) / 100, // Discount in euros 
             productIds: productIds, // Store product IDs for easy retrieval
           },
           total_amount: (fullSession.amount_total || 0) / 100, // In euros
@@ -967,15 +1020,23 @@ async function handleEvent(event: Stripe.Event) {
           'https://alexfinit.app.n8n.cloud/webhook/efd633d1-a83c-4e58-a537-8ca171eacf66';
 
         const items = [...productItems, ...shippingItems];
+        // Calculate product subtotal (excluding shipping) from original prices
+        const productSubtotal = productItems.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+        // Get discount amount from Stripe (discount only applies to products, not shipping)
+        const discountAmount = ((fullSession as any).total_details?.amount_discount ?? 0) / 100;
 
         const payload = {
           session: fullSession,
           order: {
             checkout_session_id: sessionId,
             created_at: new Date().toISOString(),
-            amount_subtotal: fullSession.amount_subtotal,
-            amount_total: fullSession.amount_total,
-            shipping_cost: shippingCost,
+            amount_subtotal: fullSession.amount_subtotal, // Stripe's subtotal (in cents, after discount, before shipping)
+            amount_total: fullSession.amount_total, // Stripe's total (in cents)
+            // Detailed breakdown for easier processing:
+            product_subtotal: productSubtotal, // Original product prices before discount (in euros)
+            discount_amount: discountAmount, // Discount applied to products only (in euros)
+            shipping_cost: shippingCost, // Shipping cost (in euros, never discounted)
+            final_total: productSubtotal - discountAmount + shippingCost, // Final total (in euros)
             items,
           },
         };
