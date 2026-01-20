@@ -360,6 +360,7 @@ async function handleEvent(event: Stripe.Event) {
               booking_id: tourbookingId,
               amnt_of_people: bookingData.numberOfPeople,
               user_id: bookingData.userId,
+              isContacted: false,
             };
 
             // Always insert a new entry - each customer booking gets their own row
@@ -592,15 +593,42 @@ async function handleEvent(event: Stripe.Event) {
 
         // If this is a Local Stories booking, also update the local_tours_bookings entry
         if (localBookingId) {
+          // First fetch the current local booking to get existing payments array
+          const { data: localBooking } = await supabase
+            .from('local_tours_bookings')
+            .select('extra_payments_received, pending_payment_people, pending_payment_amount')
+            .eq('id', localBookingId)
+            .single();
+
+          // Build the new payment log entry
+          const paymentLogEntry = {
+            paidAt: new Date().toISOString(),
+            amount: amountPaid,
+            numberOfPeople: parseInt(metadata.numberOfPeople || '1', 10),
+            stripeSessionId: sessionId,
+            type: metadata.isExtraInvitees === 'true' ? 'extra_people' : 'manual',
+          };
+
+          // Append to existing payments array
+          const existingPayments = (localBooking?.extra_payments_received as any[]) || [];
+          const updatedPayments = [...existingPayments, paymentLogEntry];
+
           const { error: localUpdateError } = await supabase
             .from('local_tours_bookings')
-            .update({ stripe_session_id: sessionId })
+            .update({
+              stripe_session_id: sessionId,
+              // Clear pending payment fields since payment is complete
+              pending_payment_people: null,
+              pending_payment_amount: null,
+              // Log the payment
+              extra_payments_received: updatedPayments,
+            })
             .eq('id', localBookingId);
 
           if (localUpdateError) {
             console.error(`Manual payment link: Failed to update local_tours_bookings ${localBookingId}`, localUpdateError);
           } else {
-            console.info(`Manual payment link: Updated local_tours_bookings ${localBookingId} with stripe_session_id`);
+            console.info(`Manual payment link: Updated local_tours_bookings ${localBookingId} - cleared pending payment, logged payment of €${amountPaid}`);
           }
         }
 
@@ -718,11 +746,27 @@ async function handleEvent(event: Stripe.Event) {
         console.info(`Processing lecture payment for booking ${metadata.bookingId}, session ${sessionId}`);
 
         const bookingId = metadata.bookingId;
-        const customerEmail = session.customer_email;
-        const customerName = metadata.customerName || 'Customer';
-        const lectureName = metadata.lectureName || 'Lecture';
-        const numberOfPeople = parseInt(metadata.numberOfPeople || '1', 10);
         const amountPaid = (session.amount_total || 0) / 100; // Convert from cents to euros
+
+        // Fetch the lecture booking with lecture details to get all customer info
+        const { data: lectureBooking, error: fetchError } = await supabase
+          .from('lecture_bookings')
+          .select('*, lectures(title)')
+          .eq('id', bookingId)
+          .single();
+
+        if (fetchError || !lectureBooking) {
+          console.error(`Lecture payment: Failed to fetch booking ${bookingId}`, fetchError);
+          return;
+        }
+
+        // Use data from the database (more reliable than metadata)
+        // Column names: name, phone, email, number_of_people
+        const customerEmail = lectureBooking.email || session.customer_email;
+        const customerName = lectureBooking.name || metadata.customerName || 'Customer';
+        const customerPhone = lectureBooking.phone || null;
+        const lectureName = (lectureBooking.lectures as any)?.title || metadata.lectureName || 'Lecture';
+        const numberOfPeople = lectureBooking.number_of_people || parseInt(metadata.numberOfPeople || '1', 10);
 
         // Update lecture_bookings status to confirmed
         const { error: updateError } = await supabase
@@ -752,6 +796,7 @@ async function handleEvent(event: Stripe.Event) {
               bookingId,
               customerEmail,
               customerName,
+              customerPhone,
               lectureName,
               numberOfPeople,
               amountPaid,

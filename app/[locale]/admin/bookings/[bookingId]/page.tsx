@@ -152,6 +152,15 @@ interface LocalStoriesBooking {
   deal_id: string | null;
   invoice_id: string | null;
   created_at: string | null;
+  pending_payment_people: number | null;
+  pending_payment_amount: number | null;
+  extra_payments_received: Array<{
+    paidAt: string;
+    amount: number;
+    numberOfPeople: number;
+    stripeSessionId: string;
+    type: string;
+  }> | null;
 }
 
 interface TeamLeaderDeal {
@@ -215,6 +224,7 @@ export default function BookingDetailPage() {
     numberOfPeople: number;
     localBookingId?: string;
     inviteeIndex?: number;
+    pricePerPerson: number;
   } | null>(null);
   const [paymentLinkAmount, setPaymentLinkAmount] = useState(0);
   const [paymentLinkFees, setPaymentLinkFees] = useState({
@@ -768,19 +778,17 @@ export default function BookingDetailPage() {
     inviteeFees?: { requestTanguy?: boolean; hasExtraHour?: boolean; weekendFee?: boolean; eveningFee?: boolean },
     isExtraInvitees?: boolean // True if this is for additional people added to existing booking
   ) => {
-    setPaymentLinkTarget({
-      customerName,
-      customerEmail,
-      numberOfPeople,
-      localBookingId,
-      inviteeIndex,
-    });
-
     // Set whether this is for extra invitees (additional people)
     setPaymentLinkIsExtraInvitees(isExtraInvitees || false);
 
-    // Load fee toggles from invitee if available
-    const fees = {
+    // Always reset fee toggles to false for pending payments (fees were already included in preset amount)
+    // For non-pending payments, load from invitee if available
+    const fees = presetAmount !== undefined ? {
+      requestTanguy: false,
+      hasExtraHour: false,
+      weekendFee: false,
+      eveningFee: false,
+    } : {
       requestTanguy: inviteeFees?.requestTanguy || false,
       hasExtraHour: inviteeFees?.hasExtraHour || false,
       weekendFee: inviteeFees?.weekendFee || false,
@@ -788,21 +796,38 @@ export default function BookingDetailPage() {
     };
     setPaymentLinkFees(fees);
 
-    // Calculate fee costs
-    const isOpMaat = tour?.op_maat || false;
-    const tanguyCost = isOpMaat && fees.requestTanguy ? TANGUY_COST : 0;
-    const extraHourCost = isOpMaat && fees.hasExtraHour ? EXTRA_HOUR_COST : 0;
-    const weekendFeeCost = fees.weekendFee ? WEEKEND_FEE_COST : 0;
-    const eveningFeeCost = isOpMaat && fees.eveningFee ? EVENING_FEE_COST : 0;
-    const totalFees = tanguyCost + extraHourCost + weekendFeeCost + eveningFeeCost;
+    // For pending payments, calculate pricePerPerson from stored amount so breakdown matches
+    // Otherwise use invitee's custom price or tour's default price
+    let pricePerPerson: number;
+    if (presetAmount !== undefined && numberOfPeople > 0) {
+      // Back-calculate price per person from stored total (fees already included, now reset to 0)
+      pricePerPerson = Math.round((presetAmount / numberOfPeople) * 100) / 100;
+    } else {
+      pricePerPerson = inviteePricePerPerson ?? tour?.price ?? 0;
+    }
 
-    // Use preset amount if provided (e.g., from pending payment), otherwise calculate
+    setPaymentLinkTarget({
+      customerName,
+      customerEmail,
+      numberOfPeople,
+      localBookingId,
+      inviteeIndex,
+      pricePerPerson,
+    });
+
+    // Use preset amount if provided, otherwise calculate
     if (presetAmount !== undefined) {
       setPaymentLinkAmount(presetAmount);
     } else {
-      // Use invitee's custom price if set, otherwise use tour's default price
-      const basePrice = inviteePricePerPerson ?? tour?.price ?? 0;
-      const baseTourPrice = Math.round(basePrice * numberOfPeople * 100) / 100;
+      // Calculate fee costs
+      const isOpMaat = tour?.op_maat || false;
+      const tanguyCost = isOpMaat && fees.requestTanguy ? TANGUY_COST : 0;
+      const extraHourCost = isOpMaat && fees.hasExtraHour ? EXTRA_HOUR_COST : 0;
+      const weekendFeeCost = fees.weekendFee ? WEEKEND_FEE_COST : 0;
+      const eveningFeeCost = isOpMaat && fees.eveningFee ? EVENING_FEE_COST : 0;
+      const totalFees = tanguyCost + extraHourCost + weekendFeeCost + eveningFeeCost;
+
+      const baseTourPrice = Math.round(pricePerPerson * numberOfPeople * 100) / 100;
       const calculatedAmount = baseTourPrice + totalFees;
       setPaymentLinkAmount(calculatedAmount);
     }
@@ -869,7 +894,18 @@ export default function BookingDetailPage() {
         throw new Error(data.error || 'Failed to send payment link');
       }
 
-      // Log the payment link and clear pending payment fields
+      // For local_stories: clear pending payment from local_tours_bookings
+      if (paymentLinkTarget.localBookingId) {
+        await supabase
+          .from('local_tours_bookings')
+          .update({
+            pending_payment_people: null,
+            pending_payment_amount: null,
+          })
+          .eq('id', paymentLinkTarget.localBookingId);
+      }
+
+      // Log the payment link and clear pending payment fields from invitees
       const updatedInvitees = (booking.invitees || []).map((inv) => {
         if (inv.email === paymentLinkTarget.customerEmail) {
           const { pendingPaymentPeople, pendingPaymentAmount, ...rest } = inv as Record<string, unknown>;
@@ -966,39 +1002,28 @@ export default function BookingDetailPage() {
       const totalAmount = baseAmount + totalFees;
 
       if (addPeopleTarget.localBookingId) {
-        // Local Stories: Update local_tours_bookings entry
+        // Local Stories: Update local_tours_bookings entry directly
+        // Find current local booking to accumulate pending payment
+        const currentLocalBooking = localStoriesBookings.find(lb => lb.id === addPeopleTarget.localBookingId);
+        const currentPendingPeople = currentLocalBooking?.pending_payment_people || 0;
+        const currentPendingAmount = currentLocalBooking?.pending_payment_amount || 0;
+
+        const updateData: Record<string, unknown> = {
+          amnt_of_people: addPeopleTarget.currentPeople + additionalPeople,
+        };
+
+        // Track pending payment directly on local_tours_bookings if not sending payment link
+        if (!sendPaymentForAdditional && totalAmount > 0) {
+          updateData.pending_payment_people = currentPendingPeople + additionalPeople;
+          updateData.pending_payment_amount = currentPendingAmount + totalAmount;
+        }
+
         const { error: localError } = await supabase
           .from('local_tours_bookings')
-          .update({
-            amnt_of_people: addPeopleTarget.currentPeople + additionalPeople,
-          })
+          .update(updateData)
           .eq('id', addPeopleTarget.localBookingId);
 
         if (localError) throw new Error('Failed to update local booking');
-
-        // Also update the invitees array in tourbooking (find matching email)
-        const updatedInvitees = (booking.invitees || []).map((inv) => {
-          if (inv.email === addPeopleTarget.customerEmail) {
-            const updateData: Record<string, unknown> = {
-              ...inv,
-              numberOfPeople: (inv.numberOfPeople || 0) + additionalPeople,
-            };
-
-            // Track pending payment if not sending payment link (accumulate with existing)
-            if (!sendPaymentForAdditional && totalAmount > 0) {
-              updateData.pendingPaymentPeople = ((inv.pendingPaymentPeople as number) || 0) + additionalPeople;
-              updateData.pendingPaymentAmount = ((inv.pendingPaymentAmount as number) || 0) + totalAmount;
-            }
-
-            return updateData;
-          }
-          return inv;
-        });
-
-        await supabase
-          .from('tourbooking')
-          .update({ invitees: updatedInvitees })
-          .eq('id', booking.id);
 
       } else if (addPeopleTarget.inviteeIndex !== undefined) {
         // Normal/Custom: Update invitees array
@@ -1934,51 +1959,59 @@ export default function BookingDetailPage() {
                             <p>{lb.customer_phone || 'N/A'}</p>
                           </div>
                         </div>
-                        {/* Check for pending payment in invitees array */}
-                        {(() => {
-                          const matchingInvitee = allInvitees.find(inv => inv.email === lb.customer_email);
-                          if (matchingInvitee?.pendingPaymentPeople) {
-                            return (
-                              <div className="mt-2 p-2 rounded-lg bg-amber-50 border border-amber-200">
-                                <div className="flex items-center justify-between gap-2">
-                                  <p className="text-xs text-amber-700">
-                                    <span className="font-medium">{matchingInvitee.pendingPaymentPeople} {matchingInvitee.pendingPaymentPeople === 1 ? 'person was' : 'people were'} added</span>, but no payment link was sent (€{(matchingInvitee.pendingPaymentAmount || 0).toFixed(2)})
-                                  </p>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-6 gap-1 text-amber-700 border-amber-300 hover:bg-amber-100"
-                                    onClick={() => openPaymentLinkDialog(
-                                      lb.customer_name || '',
-                                      lb.customer_email || '',
-                                      matchingInvitee.pendingPaymentPeople || 1,
-                                      lb.id,
-                                      matchingInvitee.pendingPaymentAmount,
-                                      undefined, // inviteePricePerPerson
-                                      undefined, // inviteeIndex
-                                      undefined, // inviteeFees
-                                      true // isExtraInvitees - this is for additional people
-                                    )}
-                                  >
-                                    <CreditCard className="h-3 w-3" />
-                                    <span className="text-xs">Send Now</span>
-                                  </Button>
-                                </div>
-                              </div>
-                            );
-                          }
-                          return null;
-                        })()}
-                        {/* Payment links sent log */}
+                        {/* Check for pending payment directly on local_tours_bookings */}
+                        {lb.pending_payment_people && lb.pending_payment_people > 0 && (
+                          <div className="mt-2 p-2 rounded-lg bg-amber-50 border border-amber-200">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-xs text-amber-700">
+                                <span className="font-medium">{lb.pending_payment_people} {lb.pending_payment_people === 1 ? 'person was' : 'people were'} added</span>, but no payment link was sent (€{(lb.pending_payment_amount || 0).toFixed(2)})
+                              </p>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-6 gap-1 text-amber-700 border-amber-300 hover:bg-amber-100"
+                                onClick={() => openPaymentLinkDialog(
+                                  lb.customer_name || '',
+                                  lb.customer_email || '',
+                                  lb.pending_payment_people || 1,
+                                  lb.id,
+                                  lb.pending_payment_amount || undefined,
+                                  undefined, // inviteePricePerPerson
+                                  undefined, // inviteeIndex
+                                  undefined, // inviteeFees
+                                  true // isExtraInvitees - this is for additional people
+                                )}
+                              >
+                                <CreditCard className="h-3 w-3" />
+                                <span className="text-xs">Send Now</span>
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                        {/* Extra payments received log (for additional people) */}
+                        {lb.extra_payments_received && lb.extra_payments_received.length > 0 && (
+                          <div className="mt-2 p-2 rounded-lg bg-green-50 border border-green-200">
+                            <p className="text-xs text-green-700 font-medium mb-1">Extra payments received:</p>
+                            <div className="space-y-1">
+                              {lb.extra_payments_received.map((payment, paymentIndex) => (
+                                <p key={paymentIndex} className="text-xs text-green-600">
+                                  • {format(new Date(payment.paidAt), 'dd/MM/yyyy HH:mm')} - {payment.numberOfPeople} {payment.numberOfPeople === 1 ? 'person' : 'people'} for €{payment.amount.toFixed(2)}
+                                  {payment.type === 'extra_people' && ' (extra people)'}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {/* Payment links sent log (legacy - from invitees array) */}
                         {(() => {
                           const matchingInvitee = allInvitees.find(inv => inv.email === lb.customer_email);
                           if (matchingInvitee?.paymentLinksSent && matchingInvitee.paymentLinksSent.length > 0) {
                             return (
-                              <div className="mt-2 p-2 rounded-lg bg-green-50 border border-green-200">
-                                <p className="text-xs text-green-700 font-medium mb-1">Payment links sent:</p>
+                              <div className="mt-2 p-2 rounded-lg bg-blue-50 border border-blue-200">
+                                <p className="text-xs text-blue-700 font-medium mb-1">Payment links sent:</p>
                                 <div className="space-y-1">
                                   {matchingInvitee.paymentLinksSent.map((log, logIndex) => (
-                                    <p key={logIndex} className="text-xs text-green-600">
+                                    <p key={logIndex} className="text-xs text-blue-600">
                                       • {format(new Date(log.sentAt), 'dd/MM/yyyy HH:mm')} - {log.numberOfPeople} {log.numberOfPeople === 1 ? 'person' : 'people'} for €{log.amount.toFixed(2)}
                                       {log.type === 'additional_people' && ' (additional)'}
                                     </p>
@@ -2957,8 +2990,8 @@ export default function BookingDetailPage() {
                         onCheckedChange={(checked) => {
                           const newFees = { ...paymentLinkFees, requestTanguy: checked === true };
                           setPaymentLinkFees(newFees);
-                          // Recalculate amount
-                          const baseTourPrice = (tour?.price || 0) * paymentLinkTarget.numberOfPeople;
+                          // Recalculate amount using custom price
+                          const baseTourPrice = paymentLinkTarget.pricePerPerson * paymentLinkTarget.numberOfPeople;
                           const totalFees = (newFees.requestTanguy ? TANGUY_COST : 0) +
                             (newFees.hasExtraHour ? EXTRA_HOUR_COST : 0) +
                             (newFees.weekendFee ? WEEKEND_FEE_COST : 0) +
@@ -2977,7 +3010,7 @@ export default function BookingDetailPage() {
                         onCheckedChange={(checked) => {
                           const newFees = { ...paymentLinkFees, hasExtraHour: checked === true };
                           setPaymentLinkFees(newFees);
-                          const baseTourPrice = (tour?.price || 0) * paymentLinkTarget.numberOfPeople;
+                          const baseTourPrice = paymentLinkTarget.pricePerPerson * paymentLinkTarget.numberOfPeople;
                           const totalFees = (newFees.requestTanguy ? TANGUY_COST : 0) +
                             (newFees.hasExtraHour ? EXTRA_HOUR_COST : 0) +
                             (newFees.weekendFee ? WEEKEND_FEE_COST : 0) +
@@ -2996,7 +3029,7 @@ export default function BookingDetailPage() {
                         onCheckedChange={(checked) => {
                           const newFees = { ...paymentLinkFees, weekendFee: checked === true };
                           setPaymentLinkFees(newFees);
-                          const baseTourPrice = (tour?.price || 0) * paymentLinkTarget.numberOfPeople;
+                          const baseTourPrice = paymentLinkTarget.pricePerPerson * paymentLinkTarget.numberOfPeople;
                           const totalFees = (newFees.requestTanguy ? TANGUY_COST : 0) +
                             (newFees.hasExtraHour ? EXTRA_HOUR_COST : 0) +
                             (newFees.weekendFee ? WEEKEND_FEE_COST : 0) +
@@ -3015,7 +3048,7 @@ export default function BookingDetailPage() {
                         onCheckedChange={(checked) => {
                           const newFees = { ...paymentLinkFees, eveningFee: checked === true };
                           setPaymentLinkFees(newFees);
-                          const baseTourPrice = (tour?.price || 0) * paymentLinkTarget.numberOfPeople;
+                          const baseTourPrice = paymentLinkTarget.pricePerPerson * paymentLinkTarget.numberOfPeople;
                           const totalFees = (newFees.requestTanguy ? TANGUY_COST : 0) +
                             (newFees.hasExtraHour ? EXTRA_HOUR_COST : 0) +
                             (newFees.weekendFee ? WEEKEND_FEE_COST : 0) +
@@ -3048,8 +3081,8 @@ export default function BookingDetailPage() {
                 {/* Price breakdown */}
                 <div className="bg-muted/50 rounded-lg p-2 space-y-1 text-xs">
                   <div className="flex justify-between">
-                    <span>Base tour price (€{(tour?.price || 0).toFixed(2)} × {paymentLinkTarget.numberOfPeople})</span>
-                    <span>€{((tour?.price || 0) * paymentLinkTarget.numberOfPeople).toFixed(2)}</span>
+                    <span>Base tour price (€{paymentLinkTarget.pricePerPerson.toFixed(2)} × {paymentLinkTarget.numberOfPeople})</span>
+                    <span>€{(paymentLinkTarget.pricePerPerson * paymentLinkTarget.numberOfPeople).toFixed(2)}</span>
                   </div>
                   {paymentLinkFees.requestTanguy && (
                     <div className="flex justify-between text-muted-foreground">
@@ -3078,7 +3111,7 @@ export default function BookingDetailPage() {
                   <div className="flex justify-between font-medium pt-1 border-t">
                     <span>Calculated total</span>
                     <span>€{(
-                      (tour?.price || 0) * paymentLinkTarget.numberOfPeople +
+                      paymentLinkTarget.pricePerPerson * paymentLinkTarget.numberOfPeople +
                       (paymentLinkFees.requestTanguy ? TANGUY_COST : 0) +
                       (paymentLinkFees.hasExtraHour ? EXTRA_HOUR_COST : 0) +
                       (paymentLinkFees.weekendFee ? WEEKEND_FEE_COST : 0) +

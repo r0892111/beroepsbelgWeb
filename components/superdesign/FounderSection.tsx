@@ -10,6 +10,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 
 export function FounderSection() {
   const t = useTranslations('founder');
@@ -50,10 +51,16 @@ export function FounderSection() {
             className="bg-[#1BDD95] rounded-2xl p-8 md:p-10"
           >
             <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
-              {/* Placeholder round image */}
+              {/* Founder photo */}
               <div className="flex-shrink-0">
-                <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-white/20 border-2 border-white/40 flex items-center justify-center">
-                  <span className="text-white/60 text-xs uppercase tracking-wider">Photo</span>
+                <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-2 border-white/40 overflow-hidden relative">
+                  <Image
+                    src="https://rwrfobawfbfsggczofao.supabase.co/storage/v1/object/public/Tour%20Photos/Antwerpen%20op%20Maat/tanguy_headshot.jpg"
+                    alt="Tanguy Ottomer"
+                    fill
+                    className="object-cover scale-125"
+                    unoptimized
+                  />
                 </div>
               </div>
 

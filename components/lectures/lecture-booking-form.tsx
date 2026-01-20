@@ -43,19 +43,33 @@ export function LectureBookingForm({ open, onOpenChange, lectureId, lectureTitle
       newErrors.name = tBooking('nameMinLength');
     }
 
-    // At least one of phone or email is required
-    if (!formData.phone.trim() && !formData.email.trim()) {
-      newErrors.contact = tBooking('contactRequired');
+    // Phone is required
+    if (!formData.phone.trim()) {
+      newErrors.phone = tBooking('phoneRequired');
     }
 
-    // Email format validation if provided
-    if (formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+    // Email is required
+    if (!formData.email.trim()) {
+      newErrors.email = tBooking('emailRequired');
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
       newErrors.email = tBooking('emailInvalid');
     }
 
-    // Number of people validation if provided
-    if (formData.number_of_people && (isNaN(Number(formData.number_of_people)) || Number(formData.number_of_people) < 1)) {
+    // Preferred date is required
+    if (!formData.preferred_date) {
+      newErrors.preferred_date = tBooking('preferredDateRequired');
+    }
+
+    // Number of people is required
+    if (!formData.number_of_people) {
+      newErrors.number_of_people = tBooking('numberOfPeopleRequired');
+    } else if (isNaN(Number(formData.number_of_people)) || Number(formData.number_of_people) < 1) {
       newErrors.number_of_people = tBooking('numberOfPeopleInvalid');
+    }
+
+    // Location description is required
+    if (!formData.location_description.trim()) {
+      newErrors.location_description = tBooking('locationDescriptionRequired');
     }
 
     setErrors(newErrors);
@@ -169,21 +183,27 @@ export function LectureBookingForm({ open, onOpenChange, lectureId, lectureTitle
             {/* Phone and Email */}
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <Label htmlFor="phone">{tBooking('phone')}</Label>
+                <Label htmlFor="phone">
+                  {tBooking('phone')} <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="phone"
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => {
                     setFormData({ ...formData, phone: e.target.value });
-                    if (errors.contact) setErrors({ ...errors, contact: '' });
+                    if (errors.phone) setErrors({ ...errors, phone: '' });
                   }}
+                  required
                   className="mt-1"
                   placeholder="+32 494 25 41 59"
                 />
+                {errors.phone && <p className="text-sm text-red-500 mt-1">{errors.phone}</p>}
               </div>
               <div>
-                <Label htmlFor="email">{tBooking('email')}</Label>
+                <Label htmlFor="email">
+                  {tBooking('email')} <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="email"
                   type="email"
@@ -191,31 +211,39 @@ export function LectureBookingForm({ open, onOpenChange, lectureId, lectureTitle
                   onChange={(e) => {
                     setFormData({ ...formData, email: e.target.value });
                     if (errors.email) setErrors({ ...errors, email: '' });
-                    if (errors.contact) setErrors({ ...errors, contact: '' });
                   }}
+                  required
                   className="mt-1"
                   placeholder="your.email@example.com"
                 />
                 {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email}</p>}
               </div>
             </div>
-            {errors.contact && <p className="text-sm text-red-500">{errors.contact}</p>}
 
             {/* Preferred Date */}
             <div>
-              <Label htmlFor="preferred_date">{tBooking('preferredDate')}</Label>
+              <Label htmlFor="preferred_date">
+                {tBooking('preferredDate')} <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="preferred_date"
                 type="date"
                 value={formData.preferred_date}
-                onChange={(e) => setFormData({ ...formData, preferred_date: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, preferred_date: e.target.value });
+                  if (errors.preferred_date) setErrors({ ...errors, preferred_date: '' });
+                }}
+                required
                 className="mt-1"
               />
+              {errors.preferred_date && <p className="text-sm text-red-500 mt-1">{errors.preferred_date}</p>}
             </div>
 
             {/* Number of People */}
             <div>
-              <Label htmlFor="number_of_people">{tBooking('numberOfPeople')}</Label>
+              <Label htmlFor="number_of_people">
+                {tBooking('numberOfPeople')} <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="number_of_people"
                 type="number"
@@ -225,6 +253,7 @@ export function LectureBookingForm({ open, onOpenChange, lectureId, lectureTitle
                   setFormData({ ...formData, number_of_people: e.target.value });
                   if (errors.number_of_people) setErrors({ ...errors, number_of_people: '' });
                 }}
+                required
                 className="mt-1"
                 placeholder="e.g., 25"
               />
@@ -233,15 +262,22 @@ export function LectureBookingForm({ open, onOpenChange, lectureId, lectureTitle
 
             {/* Location Description */}
             <div>
-              <Label htmlFor="location_description">{tBooking('locationDescription')}</Label>
+              <Label htmlFor="location_description">
+                {tBooking('locationDescription')} <span className="text-red-500">*</span>
+              </Label>
               <Textarea
                 id="location_description"
                 value={formData.location_description}
-                onChange={(e) => setFormData({ ...formData, location_description: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, location_description: e.target.value });
+                  if (errors.location_description) setErrors({ ...errors, location_description: '' });
+                }}
+                required
                 rows={4}
                 className="mt-1"
                 placeholder={tBooking('locationDescription')}
               />
+              {errors.location_description && <p className="text-sm text-red-500 mt-1">{errors.location_description}</p>}
             </div>
 
             {/* Needs Room Provided */}

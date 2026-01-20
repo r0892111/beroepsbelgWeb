@@ -263,16 +263,30 @@ const ProductCard = ({
         className="flex flex-col"
         style={{ backgroundColor: 'var(--card-content-bg)', paddingTop: '1.25rem', paddingBottom: '1rem' }}
       >
-        {/* Fixed height image container - taller than square for book covers etc */}
+        {/* Fixed height media container - taller than square for book covers etc */}
         <div className="relative w-full h-[180px] md:h-[280px] rounded-lg border border-[#1a3628]/10 mb-4 overflow-hidden bg-gray-50">
           {product.image ? (
-            <Image
-              src={product.image}
-              alt={product.title}
-              fill
-              className="object-contain group-hover:scale-105 transition-transform duration-300"
-              unoptimized
-            />
+            // Check if primary media is a video
+            /\.(mp4|webm|mov)$/i.test(product.image) ? (
+              <video
+                src={product.image}
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="metadata"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                aria-label={product.title}
+              />
+            ) : (
+              <Image
+                src={product.image}
+                alt={product.title}
+                fill
+                className="object-contain group-hover:scale-105 transition-transform duration-300"
+                unoptimized
+              />
+            )
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-400">
               <span className="text-xs uppercase tracking-wider">No Image</span>
