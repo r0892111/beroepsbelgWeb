@@ -212,6 +212,7 @@ export async function POST(request: NextRequest) {
       payment_method_types: ['card', 'bancontact', 'ideal'],
       line_items: lineItems,
       mode: 'payment',
+      invoice_creation: { enabled: true }, // Enable invoice creation for all sessions
       success_url: `${origin}/booking/payment-success`,
       cancel_url: `${origin}/booking/cancelled`,
       customer_email: customerEmail,

@@ -195,6 +195,7 @@ serve(async (req: Request) => {
       line_items: lineItems,
       mode: 'payment',
       allow_promotion_codes: true,
+      invoice_creation: { enabled: true }, // Enable invoice creation for all sessions
       success_url: `${req.headers.get('origin')}/${locale}/order/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get('origin')}/${locale}/webshop`,
       customer_email: customerEmail,
@@ -206,8 +207,6 @@ serve(async (req: Request) => {
         locale,
         itemCount: orderItems.length.toString(),
         isGiftCardOnly: isGiftCardOnly.toString(),
-
-
       },
     }
 
