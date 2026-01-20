@@ -1718,12 +1718,14 @@ export default function BookingDetailPage() {
           <CardContent className="py-4">
             <div className="flex flex-wrap items-center gap-3">
               {/* Send to Guide Assignment - triggers n8n webhook to start guide assignment workflow */}
+              {/* Disabled when status is 'pending' (payment not yet completed) */}
               {!booking.guide_id && (
                 <Button
                   onClick={triggerGuideAssignment}
-                  disabled={triggeringGuideAssignment}
+                  disabled={triggeringGuideAssignment || booking.status === 'pending'}
                   size="sm"
                   className="gap-2"
+                  title={booking.status === 'pending' ? 'Payment must be completed before assigning a guide' : undefined}
                 >
                   {triggeringGuideAssignment ? (
                     <RefreshCw className="h-4 w-4 animate-spin" />
