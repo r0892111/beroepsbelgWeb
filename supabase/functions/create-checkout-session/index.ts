@@ -301,6 +301,7 @@ serve(async (req: Request) => {
       line_items: lineItems,
       mode: 'payment',
       allow_promotion_codes: true, // Allow customers to enter promo codes
+      invoice_creation: { enabled: true }, // Enable invoice creation for all sessions
       success_url: `${req.headers.get('origin')}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get('origin')}/booking/cancelled`,
       customer_email: customerEmail,

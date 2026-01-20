@@ -98,9 +98,9 @@ async function handleEvent(event: Stripe.Event) {
     };
 
     try {
-      // Retrieve the full session with line items and discounts expanded
+      // Retrieve the full session with discounts expanded (promotion_code for code name, coupon for percent)
       const fullSession = await stripe.checkout.sessions.retrieve(sessionId, {
-        expand: ['total_details.breakdown', 'discounts.promotion_code'],
+        expand: ['total_details.breakdown', 'discounts.promotion_code', 'discounts.promotion_code.coupon'],
       });
 
       // Get discount amount from total_details
@@ -112,10 +112,10 @@ async function handleEvent(event: Stripe.Event) {
         const discount = fullSession.discounts[0] as any; // First discount
         if (discount.promotion_code && typeof discount.promotion_code === 'object') {
           promoCodeInfo.code = discount.promotion_code.code || null;
-        }
-        // Get discount percent from coupon if available
-        if (discount.coupon) {
-          promoCodeInfo.discountPercent = discount.coupon.percent_off || null;
+          // Get discount percent from coupon inside promotion_code
+          if (discount.promotion_code.coupon) {
+            promoCodeInfo.discountPercent = discount.promotion_code.coupon.percent_off || null;
+          }
         }
       }
 
@@ -878,7 +878,7 @@ async function handleEvent(event: Stripe.Event) {
 
         // Retrieve full session with line items, shipping details, and discounts
         const fullSession = await stripe.checkout.sessions.retrieve(sessionId, {
-          expand: ['line_items', 'line_items.data.price.product', 'discounts.promotion_code'],
+          expand: ['line_items', 'line_items.data.price.product', 'discounts.promotion_code', 'discounts.promotion_code.coupon'],
         });
 
         // Extract promo code info for webshop orders
@@ -889,9 +889,10 @@ async function handleEvent(event: Stripe.Event) {
           const discount = fullSession.discounts[0] as any;
           if (discount.promotion_code && typeof discount.promotion_code === 'object') {
             webshopPromoCode = discount.promotion_code.code || null;
-          }
-          if (discount.coupon) {
-            webshopPromoDiscountPercent = discount.coupon.percent_off || null;
+            // Get discount percent from coupon inside promotion_code
+            if (discount.promotion_code.coupon) {
+              webshopPromoDiscountPercent = discount.promotion_code.coupon.percent_off || null;
+            }
           }
         }
         console.info('Webshop promo code info:', { webshopPromoCode, webshopPromoDiscountPercent });
