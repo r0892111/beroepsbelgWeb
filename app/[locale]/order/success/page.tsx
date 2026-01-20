@@ -514,6 +514,20 @@ export default function OrderSuccessPage() {
                     €{(order.metadata?.shipping_cost ?? 0).toFixed(2)}
                   </span>
                 </div>
+                {/* Promo code discount if applicable */}
+                {order.metadata?.promoCode && order.metadata?.discount_amount > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm" style={{ color: 'var(--primary-base)' }}>
+                      {t('promoCode') || 'Kortingscode'}: <span className="font-semibold">{order.metadata.promoCode}</span>
+                      {order.metadata.promoDiscountPercent && (
+                        <span className="text-xs ml-1">({order.metadata.promoDiscountPercent}%)</span>
+                      )}
+                    </span>
+                    <span className="font-medium text-sm" style={{ color: 'var(--primary-base)' }}>
+                      -€{(order.metadata.discount_amount).toFixed(2)}
+                    </span>
+                  </div>
+                )}
                 <div
                   className="flex justify-between items-center pt-3 mt-2 border-t"
                   style={{ borderColor: 'var(--border-light)' }}
