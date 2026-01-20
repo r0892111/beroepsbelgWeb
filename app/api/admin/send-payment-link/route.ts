@@ -213,6 +213,9 @@ export async function POST(request: NextRequest) {
       line_items: lineItems,
       mode: 'payment',
       invoice_creation: { enabled: true }, // Enable invoice creation for all sessions
+      payment_intent_data: {
+        receipt_email: customerEmail, // Send receipt to customer
+      },
       success_url: `${origin}/booking/payment-success`,
       cancel_url: `${origin}/booking/cancelled`,
       customer_email: customerEmail,
