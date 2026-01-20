@@ -93,7 +93,7 @@ export default async function ToursPage({ params }: ToursPageProps) {
           {cities.map((city) => (
             <div
               key={city.slug}
-              className="group flex h-full flex-col bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2"
+              className="group flex h-full flex-col bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300"
             >
               {city.image && (
                 <div className="relative h-64 w-full overflow-hidden">
@@ -101,7 +101,7 @@ export default async function ToursPage({ params }: ToursPageProps) {
                     src={city.image}
                     alt={city.name[locale]}
                     fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                 </div>
               )}
@@ -116,9 +116,9 @@ export default async function ToursPage({ params }: ToursPageProps) {
                   {city.status === 'live' ? (
                     <Link
                       href={`/${locale}/tours/${city.slug}`}
-                      className="group/btn relative w-full inline-flex items-center justify-center gap-2 px-6 py-4 bg-white border-2 border-neutral-900 rounded-full text-neutral-900 font-oswald font-bold text-sm uppercase tracking-widest overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+                      className="group/btn relative w-full inline-flex items-center justify-center gap-2 px-6 py-4 bg-white border-2 border-neutral-900 rounded-full text-neutral-900 font-oswald font-bold text-sm uppercase tracking-widest overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
                     >
-                      <div className="absolute inset-0 bg-[#1BDD95] translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
+                      <div className="absolute inset-0 bg-[#1BDD95] translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300 ease-out" />
                       <span className="relative z-10 group-hover/btn:text-white transition-colors duration-300">
                         {city.ctaText?.[locale] || t('discover')}
                       </span>

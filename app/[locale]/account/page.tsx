@@ -408,13 +408,26 @@ export default function AccountPage() {
                           onClick={() => router.push(`/${locale}/tours/${tour.city}/${tour.slug}`)}
                         >
                           <div className="relative w-full h-40 overflow-hidden">
-                            <Image
-                              src={tour.image || '/images/placeholder-tour.jpg'}
-                              alt={tour.title}
-                              fill
-                              className="object-cover"
-                              unoptimized
-                            />
+                            {tour.image && /\.(mp4|webm|mov)$/i.test(tour.image) ? (
+                              <video
+                                src={tour.image}
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                                preload="metadata"
+                                className="w-full h-full object-cover"
+                                aria-label={tour.title}
+                              />
+                            ) : (
+                              <Image
+                                src={tour.image || '/images/placeholder-tour.jpg'}
+                                alt={tour.title}
+                                fill
+                                className="object-cover"
+                                unoptimized
+                              />
+                            )}
                           </div>
                           <CardHeader className="pb-2">
                             <CardTitle className="text-lg">{tour.title}</CardTitle>
@@ -470,13 +483,26 @@ export default function AccountPage() {
                       {favoriteProducts.map((product) => (
                         <Card key={product.slug} className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden" onClick={() => handleProductClick(product)}>
                           <div className="relative w-full h-40 overflow-hidden">
-                            <Image
-                              src={product.image || getProductPlaceholder(product.category || 'Book')}
-                              alt={product.title[locale as 'nl' | 'en' | 'fr' | 'de']}
-                              fill
-                              className="object-cover"
-                              unoptimized
-                            />
+                            {product.image && /\.(mp4|webm|mov)$/i.test(product.image) ? (
+                              <video
+                                src={product.image}
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                                preload="metadata"
+                                className="w-full h-full object-cover"
+                                aria-label={product.title[locale as 'nl' | 'en' | 'fr' | 'de']}
+                              />
+                            ) : (
+                              <Image
+                                src={product.image || getProductPlaceholder(product.category || 'Book')}
+                                alt={product.title[locale as 'nl' | 'en' | 'fr' | 'de']}
+                                fill
+                                className="object-cover"
+                                unoptimized
+                              />
+                            )}
                           </div>
                           <CardHeader className="pb-2">
                             <CardTitle className="text-lg">{product.title[locale as 'nl' | 'en' | 'fr' | 'de']}</CardTitle>
@@ -549,13 +575,26 @@ export default function AccountPage() {
                           <CardContent className="flex items-center gap-4 p-6">
                             {(product?.image || product) && (
                               <div className="relative w-20 h-20 flex-shrink-0">
-                                <Image
-                                  src={product?.image || getProductPlaceholder((product as any)?.Category || (product as any)?.category || 'Book')}
-                                  alt={(product as any)?.Name || (product as any)?.title_nl || (product as any)?.title_en || 'Product'}
-                                  fill
-                                  className="object-cover rounded"
-                                  unoptimized
-                                />
+                                {product?.image && /\.(mp4|webm|mov)$/i.test(product.image) ? (
+                                  <video
+                                    src={product.image}
+                                    autoPlay
+                                    loop
+                                    muted
+                                    playsInline
+                                    preload="metadata"
+                                    className="w-full h-full object-cover rounded"
+                                    aria-label={(product as any)?.Name || (product as any)?.title_nl || 'Product'}
+                                  />
+                                ) : (
+                                  <Image
+                                    src={product?.image || getProductPlaceholder((product as any)?.Category || (product as any)?.category || 'Book')}
+                                    alt={(product as any)?.Name || (product as any)?.title_nl || (product as any)?.title_en || 'Product'}
+                                    fill
+                                    className="object-cover rounded"
+                                    unoptimized
+                                  />
+                                )}
                               </div>
                             )}
                             <div className="flex-1">

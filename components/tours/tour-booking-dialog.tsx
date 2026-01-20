@@ -494,9 +494,9 @@ export function TourBookingDialog({
   const isEveningSlot = selectedTimeSlot && parseInt(selectedTimeSlot.split(':')[0], 10) >= 17;
   const eveningFeeCost = opMaat && isEveningSlot ? 25 : 0;
 
-  // Weekend fee for ALL tours: €25 if date is Saturday (6) or Sunday (0)
+  // Weekend fee for tours (except local_stories): €25 if date is Saturday (6) or Sunday (0)
   const isWeekend = formData.bookingDate && (formData.bookingDate.getDay() === 0 || formData.bookingDate.getDay() === 6);
-  const weekendFeeCost = isWeekend ? 25 : 0;
+  const weekendFeeCost = isWeekend && !isLocalStories ? 25 : 0;
 
   // Shipping is ALWAYS FREE for tour bookings with upsell products
   const hasUpsellProducts = upsellTotal > 0;
@@ -809,7 +809,7 @@ export function TourBookingDialog({
                <div className="flex items-center gap-4">
                  <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded">
                    <Image
-                     src="/headshot_tanguy.jpg"
+                     src="https://rwrfobawfbfsggczofao.supabase.co/storage/v1/object/public/Tour%20Photos/Antwerpen%20op%20Maat/tanguy_headshot.jpg"
                      alt="Tanguy Ottomer"
                      fill
                      className="object-cover opacity-50"
@@ -828,7 +828,7 @@ export function TourBookingDialog({
                <div className="flex items-center gap-4">
                  <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded">
                    <Image
-                     src="/headshot_tanguy.jpg"
+                     src="https://rwrfobawfbfsggczofao.supabase.co/storage/v1/object/public/Tour%20Photos/Antwerpen%20op%20Maat/tanguy_headshot.jpg"
                      alt="Tanguy Ottomer"
                      fill
                      className="object-cover"
@@ -867,7 +867,7 @@ export function TourBookingDialog({
                <div className="flex items-center gap-4">
                  <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded">
                    <Image
-                     src="/headshot_tanguy.jpg"
+                     src="https://rwrfobawfbfsggczofao.supabase.co/storage/v1/object/public/Tour%20Photos/Antwerpen%20op%20Maat/tanguy_headshot.jpg"
                      alt="Tanguy Ottomer"
                      fill
                      className="object-cover opacity-50"
