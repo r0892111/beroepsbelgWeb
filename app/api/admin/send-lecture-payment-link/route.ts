@@ -140,6 +140,9 @@ export async function POST(request: NextRequest) {
       ],
       mode: 'payment',
       invoice_creation: { enabled: true }, // Enable invoice creation for all sessions
+      payment_intent_data: {
+        receipt_email: customerEmail, // Send receipt to customer
+      },
       success_url: `${origin}/lecture/payment-success`,
       cancel_url: `${origin}/lecture/cancelled`,
       customer_email: customerEmail,
