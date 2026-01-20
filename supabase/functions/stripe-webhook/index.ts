@@ -876,10 +876,25 @@ async function handleEvent(event: Stripe.Event) {
       if (metadata?.order_type === 'webshop') {
         console.info(`Processing webshop order for session: ${sessionId}`);
 
-        // Retrieve full session with line items and shipping details
+        // Retrieve full session with line items, shipping details, and discounts
         const fullSession = await stripe.checkout.sessions.retrieve(sessionId, {
-          expand: ['line_items', 'line_items.data.price.product'],
+          expand: ['line_items', 'line_items.data.price.product', 'discounts.promotion_code'],
         });
+
+        // Extract promo code info for webshop orders
+        let webshopPromoCode: string | null = null;
+        let webshopPromoDiscountPercent: number | null = null;
+
+        if (fullSession.discounts && fullSession.discounts.length > 0) {
+          const discount = fullSession.discounts[0] as any;
+          if (discount.promotion_code && typeof discount.promotion_code === 'object') {
+            webshopPromoCode = discount.promotion_code.code || null;
+          }
+          if (discount.coupon) {
+            webshopPromoDiscountPercent = discount.coupon.percent_off || null;
+          }
+        }
+        console.info('Webshop promo code info:', { webshopPromoCode, webshopPromoDiscountPercent });
 
         // Extract items from line items
         let shippingCost = 0;
@@ -993,8 +1008,11 @@ async function handleEvent(event: Stripe.Event) {
             customerPhone: metadata?.customerPhone || '',
             userId: metadata?.userId && metadata.userId.trim() !== '' ? metadata.userId : null,
             shipping_cost: shippingCost,
-            discount_amount: ((fullSession as any).total_details?.amount_discount ?? 0) / 100, // Discount in euros 
+            discount_amount: ((fullSession as any).total_details?.amount_discount ?? 0) / 100, // Discount in euros
             productIds: productIds, // Store product IDs for easy retrieval
+            // Promo code info
+            promoCode: webshopPromoCode,
+            promoDiscountPercent: webshopPromoDiscountPercent,
           },
           total_amount: (fullSession.amount_total || 0) / 100, // In euros
           user_id: metadata?.userId && metadata.userId.trim() !== '' ? metadata.userId : null,
@@ -1038,6 +1056,9 @@ async function handleEvent(event: Stripe.Event) {
             shipping_cost: shippingCost, // Shipping cost (in euros, never discounted)
             final_total: productSubtotal - discountAmount + shippingCost, // Final total (in euros)
             items,
+            // Promo code info for invoice creation
+            promoCode: webshopPromoCode,
+            promoDiscountPercent: webshopPromoDiscountPercent,
           },
         };
 
