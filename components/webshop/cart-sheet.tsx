@@ -115,6 +115,17 @@ export function CartSheet() {
                               <div className="w-full h-full bg-gradient-to-br from-[var(--primary-base)] to-[var(--primary-dark)] rounded flex items-center justify-center">
                                 <Gift className="h-8 w-8 text-white" />
                               </div>
+                            ) : product?.image && /\.(mp4|webm|mov)$/i.test(product.image) ? (
+                              <video
+                                src={product.image}
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                                preload="metadata"
+                                className="w-full h-full object-cover rounded"
+                                aria-label={(product as any)?.Name || (product as any)?.title_nl || 'Product'}
+                              />
                             ) : (
                               <Image
                                 src={product?.image || getProductPlaceholder((product as any)?.Category || (product as any)?.category || 'Book')}
