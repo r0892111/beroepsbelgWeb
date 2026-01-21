@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslations } from 'next-intl';
@@ -10,14 +10,16 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { UserPlus, Mail, Lock, User } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, Globe } from 'lucide-react';
 import { useAuth } from '@/lib/contexts/auth-context';
 
 const signUpSchema = z.object({
   fullName: z.string().min(2),
   email: z.string().email(),
   password: z.string().min(6),
+  preferredLanguage: z.enum(['nl', 'en', 'fr', 'de']),
 });
 
 type SignUpFormData = z.infer<typeof signUpSchema>;
@@ -35,16 +37,20 @@ export default function SignUpPage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
+    defaultValues: {
+      preferredLanguage: (locale === 'nl' || locale === 'en' || locale === 'fr' || locale === 'de') ? locale : 'nl',
+    },
   });
 
   const onSubmit = async (data: SignUpFormData) => {
     setIsSubmitting(true);
 
     try {
-      const { error } = await signUp(data.email, data.password, data.fullName);
+      const { error } = await signUp(data.email, data.password, data.fullName, data.preferredLanguage);
 
       if (error) {
         if (error.message.includes('already registered')) {
@@ -180,6 +186,34 @@ export default function SignUpPage() {
                   placeholder="••••••••"
                 />
                 {errors.password && <p className="mt-1 text-sm text-destructive">{t('weakPassword')}</p>}
+              </div>
+
+              <div>
+                <Label htmlFor="preferredLanguage" className="flex items-center gap-2 text-base font-semibold">
+                  <Globe className="h-4 w-4 text-[#92F0B1]" />
+                  {t('preferredLanguage') || 'Preferred Language'}
+                </Label>
+                <Controller
+                  name="preferredLanguage"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <SelectTrigger className="mt-2">
+                        <SelectValue placeholder={t('selectLanguage') || 'Select a language'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="nl">Nederlands</SelectItem>
+                        <SelectItem value="fr">Français</SelectItem>
+                        <SelectItem value="de">Deutsch</SelectItem>
+                        <SelectItem value="en">English</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t('languageEmailNote') || 'This will be the language in which you receive your emails.'}
+                </p>
+                {errors.preferredLanguage && <p className="mt-1 text-sm text-destructive">{tForms('required')}</p>}
               </div>
 
               <Button

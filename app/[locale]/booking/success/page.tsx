@@ -195,28 +195,55 @@ export default function BookingSuccessPage() {
               }
             }
 
-            // Optionally fetch tourbooking data if booking_id exists (for invitees/upsells)
-            if (localBookingData.booking_id) {
-              const tourBookingResponse = await fetch(
-                `${supabaseUrl}/rest/v1/tourbooking?id=eq.${localBookingData.booking_id}&select=*`,
-                {
-                  headers: {
-                    'apikey': supabaseAnonKey || '',
-                    'Authorization': `Bearer ${supabaseAnonKey}`,
-                  },
-                }
+            // For local stories, fetch payment data directly from Stripe (most reliable)
+            // This avoids complex invitee matching that can return wrong data
+            let stripeSessionData: any = null;
+            try {
+              const stripeResponse = await fetch(`/api/checkout-session/${sessionId}`);
+              if (stripeResponse.ok) {
+                stripeSessionData = await stripeResponse.json();
+                console.log('Stripe session data for local stories:', stripeSessionData);
+              }
+            } catch (stripeError) {
+              console.error('Error fetching Stripe session:', stripeError);
+            }
+
+            // Store stripe data in invitee-like structure for compatibility
+            if (stripeSessionData?.success) {
+              // Calculate tour base price (from tour line item, before discount)
+              const tourItemPrice = stripeSessionData.tourItem?.totalPrice || 0;
+              // Calculate upsells total
+              const upsellsTotal = (stripeSessionData.upsellItems || []).reduce(
+                (sum: number, item: any) => sum + (item.totalPrice || 0), 0
               );
 
-              if (tourBookingResponse.ok) {
-                const tourBookingData = await tourBookingResponse.json();
-                if (tourBookingData && tourBookingData.length > 0) {
-                  booking = tourBookingData[0];
-                  // Find invitee that matches this customer's email
-                  invitee = booking.invitees?.find(
-                    (inv: any) => inv.email === localBookingData.customer_email
-                  ) || booking.invitees?.[0];
-                }
-              }
+              invitee = {
+                name: localBookingData.customer_name,
+                email: localBookingData.customer_email,
+                phone: localBookingData.customer_phone,
+                numberOfPeople: localBookingData.amnt_of_people,
+                // Payment data from Stripe
+                // amount = total paid (already after discount)
+                amount: stripeSessionData.amountTotal,
+                // originalAmount = tour price only (before discount, excluding upsells)
+                originalAmount: tourItemPrice,
+                promoCode: stripeSessionData.promoCode,
+                promoDiscountAmount: stripeSessionData.discountAmount,
+                promoDiscountPercent: stripeSessionData.promoDiscountPercent,
+                // Upsell products from Stripe line items
+                upsellProducts: stripeSessionData.upsellItems?.map((item: any) => ({
+                  n: item.name,
+                  p: item.unitPrice,
+                  q: item.quantity,
+                })) || [],
+                language: stripeSessionData.language || 'nl',
+                // No fees for local stories tours
+                tanguyCost: 0,
+                extraHourCost: 0,
+                weekendFeeCost: 0,
+                eveningFeeCost: 0,
+              };
+              console.log('Built invitee from Stripe data:', invitee);
             }
           }
         }
@@ -296,9 +323,9 @@ export default function BookingSuccessPage() {
 
         // Process booking data
         if (localBookingData || booking) {
-          // Get upsell products from invitee
+          // Get upsell products from the matched invitee
           const upsellProducts = invitee?.upsellProducts || [];
-          
+
           // Use tour's op_maat property directly (most reliable)
           const opMaatValue = tourOpMaat;
           
@@ -307,17 +334,17 @@ export default function BookingSuccessPage() {
           if (localBookingData) {
             // Use local_tours_bookings data for local stories tours
             // Convert amnt_of_people (numeric) to number if needed
-            const numberOfPeople = localBookingData.amnt_of_people 
-              ? (typeof localBookingData.amnt_of_people === 'string' 
-                  ? parseFloat(localBookingData.amnt_of_people) 
+            const numberOfPeople = localBookingData.amnt_of_people
+              ? (typeof localBookingData.amnt_of_people === 'string'
+                  ? parseFloat(localBookingData.amnt_of_people)
                   : Number(localBookingData.amnt_of_people))
               : invitee?.numberOfPeople || 1;
-            
+
             // Format booking_date properly (it's a date string from the database)
-            const bookingDate = localBookingData.booking_date 
+            const bookingDate = localBookingData.booking_date
               ? new Date(localBookingData.booking_date).toISOString()
               : (booking?.tour_datetime || null);
-            
+
             bookingData = {
               id: booking?.id || localBookingData.booking_id || null,
               tour_id: localBookingData.tour_id,
@@ -328,6 +355,7 @@ export default function BookingSuccessPage() {
               number_of_people: numberOfPeople,
               language: invitee?.language || 'nl',
               special_requests: invitee?.specialRequests || '',
+              // All amounts come from the matched invitee
               amount: invitee?.amount || 0,
               originalAmount: invitee?.originalAmount || 0,
               discountApplied: invitee?.discountApplied || 0,
@@ -335,7 +363,7 @@ export default function BookingSuccessPage() {
               extraHourCost: invitee?.extraHourCost || 0,
               weekendFeeCost: invitee?.weekendFeeCost || 0,
               eveningFeeCost: invitee?.eveningFeeCost || 0,
-              // Promo code info
+              // Promo code discount from Stripe
               promoCode: invitee?.promoCode || null,
               promoDiscountAmount: invitee?.promoDiscountAmount || 0,
               promoDiscountPercent: invitee?.promoDiscountPercent || null,
@@ -375,7 +403,7 @@ export default function BookingSuccessPage() {
               extraHourCost: invitee?.extraHourCost || 0,
               weekendFeeCost: invitee?.weekendFeeCost || 0,
               eveningFeeCost: invitee?.eveningFeeCost || 0,
-              // Promo code info
+              // Promo code discount from Stripe
               promoCode: invitee?.promoCode || null,
               promoDiscountAmount: invitee?.promoDiscountAmount || 0,
               promoDiscountPercent: invitee?.promoDiscountPercent || null,
@@ -508,8 +536,25 @@ export default function BookingSuccessPage() {
             });
           }
           
-          // Fetch upsell product details if there are any
-          if (upsellProducts && upsellProducts.length > 0) {
+          // Handle upsell products
+          if (localBookingData && invitee?.upsellProducts?.length > 0) {
+            // For local stories with Stripe data, products are already in the right format
+            // Convert from Stripe format {n, p, q} to display format
+            const stripeUpsellProducts = invitee.upsellProducts.map((item: any) => ({
+              uuid: `stripe-${Math.random().toString(36).substr(2, 9)}`,
+              title: {
+                nl: item.n || item.name || 'Product',
+                en: item.n || item.name || 'Product',
+                fr: item.n || item.name || 'Product',
+                de: item.n || item.name || 'Product',
+              },
+              price: item.p || item.unitPrice || 0,
+              quantity: item.q || item.quantity || 1,
+            }));
+            setPurchasedUpsellProducts(stripeUpsellProducts);
+            console.log('Set upsell products from Stripe:', stripeUpsellProducts);
+          } else if (upsellProducts && upsellProducts.length > 0) {
+            // For regular bookings, fetch product details from database
             console.log('Fetching upsell product details for:', upsellProducts.length, 'products');
             await fetchUpsellProductDetails(upsellProducts);
           } else {
@@ -826,12 +871,14 @@ export default function BookingSuccessPage() {
                 <div className="flex justify-between items-center py-1">
                   <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
                     {booking.tour_title} ({booking.number_of_people} {booking.number_of_people > 1 ? 'personen' : 'persoon'})
-                    {booking.discountApplied > 0 && (
-                      <span className="text-xs ml-1" style={{ color: 'var(--primary-base)' }}>(10% korting)</span>
-                    )}
                   </span>
                   <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
                     €{(() => {
+                      // Use originalAmount if available (tour price before fees/discount)
+                      // Otherwise calculate: amount - fees (amount is tour + fees, before discount)
+                      if (booking.originalAmount > 0) {
+                        return parseFloat(booking.originalAmount).toFixed(2);
+                      }
                       const totalAmount = parseFloat(booking.amount) || 0;
                       const tanguyCost = parseFloat(booking.tanguyCost) || 0;
                       const extraHourCost = parseFloat(booking.extraHourCost) || 0;
@@ -905,6 +952,19 @@ export default function BookingSuccessPage() {
                     </div>
                   );
                 })}
+
+                {/* Promo code discount (shown at the bottom before total) */}
+                {(booking.promoDiscountAmount > 0 || booking.promoCode) && (
+                  <div className="flex justify-between items-center py-1 pt-2 border-t" style={{ borderColor: 'var(--border-light)' }}>
+                    <span className="text-sm" style={{ color: 'var(--primary-base)' }}>
+                      {t('discount') || 'Korting'} {booking.promoCode && `(${booking.promoCode})`}
+                      {booking.promoDiscountPercent && ` - ${booking.promoDiscountPercent}%`}
+                    </span>
+                    <span className="font-medium text-sm" style={{ color: 'var(--primary-base)' }}>
+                      -€{(parseFloat(booking.promoDiscountAmount) || 0).toFixed(2)}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Total */}
@@ -915,13 +975,20 @@ export default function BookingSuccessPage() {
                 <span className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{t('totalPaid')}</span>
                 <span className="text-xl font-bold" style={{ color: 'var(--primary-base)' }}>
                   €{(() => {
+                    // For local stories with Stripe data, booking.amount is already the final total
+                    if (booking.is_local_stories) {
+                      return (parseFloat(booking.amount) || 0).toFixed(2);
+                    }
+                    // For regular bookings: amount = tour + fees (before discount)
+                    // Total paid = amount + upsells - discount
                     const totalAmount = parseFloat(booking.amount) || 0;
+                    const promoDiscount = parseFloat(booking.promoDiscountAmount) || 0;
                     const upsellTotal = purchasedUpsellProducts.reduce((sum, product: any) => {
                       const quantity = product.quantity || 1;
                       const price = parseFloat(String(product.price)) || 0;
                       return sum + (price * quantity);
                     }, 0);
-                    return (totalAmount + upsellTotal).toFixed(2);
+                    return (totalAmount + upsellTotal - promoDiscount).toFixed(2);
                   })()}
                 </span>
               </div>

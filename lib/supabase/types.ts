@@ -2,6 +2,7 @@ export interface Profile {
   id: string;
   email: string;
   full_name: string | null;
+  preferred_language: 'nl' | 'en' | 'fr' | 'de' | null;
   created_at: string;
   updated_at: string;
   isAdmin?: boolean;

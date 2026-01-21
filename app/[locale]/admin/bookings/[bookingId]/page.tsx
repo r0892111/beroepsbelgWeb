@@ -819,12 +819,11 @@ export default function BookingDetailPage() {
     if (presetAmount !== undefined) {
       setPaymentLinkAmount(presetAmount);
     } else {
-      // Calculate fee costs
-      const isOpMaat = tour?.op_maat || false;
-      const tanguyCost = isOpMaat && fees.requestTanguy ? TANGUY_COST : 0;
-      const extraHourCost = isOpMaat && fees.hasExtraHour ? EXTRA_HOUR_COST : 0;
+      // Calculate fee costs (admin can set any fee for any tour)
+      const tanguyCost = fees.requestTanguy ? TANGUY_COST : 0;
+      const extraHourCost = fees.hasExtraHour ? EXTRA_HOUR_COST : 0;
       const weekendFeeCost = fees.weekendFee ? WEEKEND_FEE_COST : 0;
-      const eveningFeeCost = isOpMaat && fees.eveningFee ? EVENING_FEE_COST : 0;
+      const eveningFeeCost = fees.eveningFee ? EVENING_FEE_COST : 0;
       const totalFees = tanguyCost + extraHourCost + weekendFeeCost + eveningFeeCost;
 
       const baseTourPrice = Math.round(pricePerPerson * numberOfPeople * 100) / 100;
@@ -851,12 +850,11 @@ export default function BookingDetailPage() {
         headers['Authorization'] = `Bearer ${accessToken}`;
       }
 
-      // Calculate fee costs for the payment link
-      const isOpMaat = tour.op_maat || false;
-      const feeTanguyCost = isOpMaat && paymentLinkFees.requestTanguy ? TANGUY_COST : 0;
-      const feeExtraHourCost = isOpMaat && paymentLinkFees.hasExtraHour ? EXTRA_HOUR_COST : 0;
+      // Calculate fee costs for the payment link (admin can set any fee for any tour)
+      const feeTanguyCost = paymentLinkFees.requestTanguy ? TANGUY_COST : 0;
+      const feeExtraHourCost = paymentLinkFees.hasExtraHour ? EXTRA_HOUR_COST : 0;
       const feeWeekendCost = paymentLinkFees.weekendFee ? WEEKEND_FEE_COST : 0;
-      const feeEveningCost = isOpMaat && paymentLinkFees.eveningFee ? EVENING_FEE_COST : 0;
+      const feeEveningCost = paymentLinkFees.eveningFee ? EVENING_FEE_COST : 0;
 
       const response = await fetch('/api/admin/send-payment-link', {
         method: 'POST',
@@ -991,13 +989,13 @@ export default function BookingDetailPage() {
     try {
       const pricePerPerson = parseFloat(additionalPeoplePrice) || 0;
       const baseAmount = pricePerPerson * additionalPeople;
-      // Calculate fee costs for op_maat tours
-      const feeCosts = tour?.op_maat && sendPaymentForAdditional ? {
+      // Calculate fee costs (admin can set any fee for any tour)
+      const feeCosts = {
         tanguyCost: addPeopleFees.requestTanguy ? TANGUY_COST : 0,
         extraHourCost: addPeopleFees.hasExtraHour ? EXTRA_HOUR_COST : 0,
         weekendFeeCost: addPeopleFees.weekendFee ? WEEKEND_FEE_COST : 0,
         eveningFeeCost: addPeopleFees.eveningFee ? EVENING_FEE_COST : 0,
-      } : { tanguyCost: 0, extraHourCost: 0, weekendFeeCost: 0, eveningFeeCost: 0 };
+      };
       const totalFees = feeCosts.tanguyCost + feeCosts.extraHourCost + feeCosts.weekendFeeCost + feeCosts.eveningFeeCost;
       const totalAmount = baseAmount + totalFees;
 
@@ -1235,12 +1233,11 @@ export default function BookingDetailPage() {
         const updatedInvitees = [...(booking.invitees || [])];
         const existingInvitee = updatedInvitees[editInviteeTarget.index];
         if (existingInvitee) {
-          // Calculate fee costs based on toggles (for op_maat tours)
-          const isOpMaat = tour?.op_maat || false;
-          const tanguyCost = isOpMaat && editInviteeForm.requestTanguy ? TANGUY_COST : 0;
-          const extraHourCost = isOpMaat && editInviteeForm.hasExtraHour ? EXTRA_HOUR_COST : 0;
+          // Calculate fee costs based on toggles (admin can set any fee for any tour)
+          const tanguyCost = editInviteeForm.requestTanguy ? TANGUY_COST : 0;
+          const extraHourCost = editInviteeForm.hasExtraHour ? EXTRA_HOUR_COST : 0;
           const weekendFeeCost = editInviteeForm.weekendFee ? WEEKEND_FEE_COST : 0;
-          const eveningFeeCost = isOpMaat && editInviteeForm.eveningFee ? EVENING_FEE_COST : 0;
+          const eveningFeeCost = editInviteeForm.eveningFee ? EVENING_FEE_COST : 0;
 
           updatedInvitees[editInviteeTarget.index] = {
             ...existingInvitee,
@@ -2115,6 +2112,30 @@ export default function BookingDetailPage() {
                             <span className="text-xs">Delete</span>
                           </Button>
                         </div>
+                        {/* Upsell products for this customer */}
+                        {(() => {
+                          const matchingInvitee = allInvitees.find(inv =>
+                            (inv.email || '').toLowerCase().trim() === (lb.customer_email || '').toLowerCase().trim()
+                          );
+                          if (matchingInvitee?.upsellProducts && matchingInvitee.upsellProducts.length > 0) {
+                            return (
+                              <div className="mt-2 p-2 rounded-lg bg-purple-50 border border-purple-200">
+                                <p className="text-xs text-purple-700 font-medium mb-1">
+                                  <Package className="h-3 w-3 inline mr-1" />
+                                  Purchased Items:
+                                </p>
+                                <div className="space-y-1">
+                                  {matchingInvitee.upsellProducts.map((product: any, productIdx: number) => (
+                                    <p key={productIdx} className="text-xs text-purple-600">
+                                      • {product.n || product.title || 'Product'} (x{product.q || product.quantity || 1}) - €{product.p || product.price || 0}
+                                    </p>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
                         {lb.created_at && (
                           <div className="mt-2 text-xs text-muted-foreground">
                             Booked: {format(new Date(lb.created_at), 'dd/MM/yyyy HH:mm')}
@@ -2275,6 +2296,22 @@ export default function BookingDetailPage() {
                             <span className="text-xs">Delete</span>
                           </Button>
                         </div>
+                        {/* Upsell products for this invitee */}
+                        {inv.upsellProducts && inv.upsellProducts.length > 0 && (
+                          <div className="mt-2 p-2 rounded-lg bg-purple-50 border border-purple-200">
+                            <p className="text-xs text-purple-700 font-medium mb-1">
+                              <Package className="h-3 w-3 inline mr-1" />
+                              Purchased Items:
+                            </p>
+                            <div className="space-y-1">
+                              {inv.upsellProducts.map((product: any, productIdx: number) => (
+                                <p key={productIdx} className="text-xs text-purple-600">
+                                  • {product.n || product.title || 'Product'} (x{product.q || product.quantity || 1}) - €{product.p || product.price || 0}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                     {/* Total amount */}
@@ -2519,8 +2556,8 @@ export default function BookingDetailPage() {
           </Card>
         )}
 
-        {/* Additional Products */}
-        {invitee?.upsellProducts && invitee.upsellProducts.length > 0 && (
+        {/* Additional Products - only show for non-local-stories tours (local stories show products per invitee) */}
+        {!tour?.local_stories && invitee?.upsellProducts && invitee.upsellProducts.length > 0 && (
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-medium flex items-center gap-2">
@@ -2978,10 +3015,9 @@ export default function BookingDetailPage() {
                 </div>
               </div>
 
-              {/* Extra Fees Section - only for op_maat tours */}
-              {tour?.op_maat && (
-                <div className="space-y-3 border rounded-lg p-3">
-                  <Label className="text-sm font-medium">Extra Fees (Op Maat)</Label>
+              {/* Extra Fees Section */}
+              <div className="space-y-3 border rounded-lg p-3">
+                <Label className="text-sm font-medium">Extra Options & Fees</Label>
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -3062,7 +3098,6 @@ export default function BookingDetailPage() {
                     </div>
                   </div>
                 </div>
-              )}
 
               <div className="space-y-2">
                 <Label htmlFor="paymentAmount">Total Amount (EUR)</Label>
@@ -3221,50 +3256,91 @@ export default function BookingDetailPage() {
                 New total: {addPeopleTarget.currentPeople + additionalPeople} people
               </p>
 
+              {/* Extra Options & Fees Section */}
+              <div className="space-y-3 border rounded-lg p-3">
+                <Label className="text-sm font-medium">Extra Options & Fees</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="addPeopleTanguy"
+                      checked={addPeopleFees.requestTanguy}
+                      onCheckedChange={(checked) => setAddPeopleFees({ ...addPeopleFees, requestTanguy: checked === true })}
+                    />
+                    <Label htmlFor="addPeopleTanguy" className="text-sm cursor-pointer">
+                      Request Tanguy (+€{TANGUY_COST})
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="addPeopleExtraHour"
+                      checked={addPeopleFees.hasExtraHour}
+                      onCheckedChange={(checked) => setAddPeopleFees({ ...addPeopleFees, hasExtraHour: checked === true })}
+                    />
+                    <Label htmlFor="addPeopleExtraHour" className="text-sm cursor-pointer">
+                      Extra Hour (+€{EXTRA_HOUR_COST})
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="addPeopleWeekendFee"
+                      checked={addPeopleFees.weekendFee}
+                      onCheckedChange={(checked) => setAddPeopleFees({ ...addPeopleFees, weekendFee: checked === true })}
+                    />
+                    <Label htmlFor="addPeopleWeekendFee" className="text-sm cursor-pointer">
+                      Weekend Fee (+€{WEEKEND_FEE_COST})
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="addPeopleEveningFee"
+                      checked={addPeopleFees.eveningFee}
+                      onCheckedChange={(checked) => setAddPeopleFees({ ...addPeopleFees, eveningFee: checked === true })}
+                    />
+                    <Label htmlFor="addPeopleEveningFee" className="text-sm cursor-pointer">
+                      Evening Fee (+€{EVENING_FEE_COST})
+                    </Label>
+                  </div>
+                </div>
+              </div>
+
               <div className="bg-muted/50 rounded-lg p-3 space-y-1">
-                <p className="text-xs text-muted-foreground mb-1">Payment for additional people</p>
+                <p className="text-xs text-muted-foreground mb-1">Price summary</p>
                 <div className="flex justify-between text-sm">
                   <span>Base ({additionalPeople} × €{parseFloat(additionalPeoplePrice) || 0})</span>
                   <span>€{((parseFloat(additionalPeoplePrice) || 0) * additionalPeople).toFixed(2)}</span>
                 </div>
-                {tour?.op_maat && sendPaymentForAdditional && (
-                  <>
-                    {addPeopleFees.requestTanguy && (
-                      <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>Tanguy</span>
-                        <span>€{TANGUY_COST.toFixed(2)}</span>
-                      </div>
-                    )}
-                    {addPeopleFees.hasExtraHour && (
-                      <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>Extra Hour</span>
-                        <span>€{EXTRA_HOUR_COST.toFixed(2)}</span>
-                      </div>
-                    )}
-                    {addPeopleFees.weekendFee && (
-                      <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>Weekend Fee</span>
-                        <span>€{WEEKEND_FEE_COST.toFixed(2)}</span>
-                      </div>
-                    )}
-                    {addPeopleFees.eveningFee && (
-                      <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>Evening Fee</span>
-                        <span>€{EVENING_FEE_COST.toFixed(2)}</span>
-                      </div>
-                    )}
-                  </>
+                {addPeopleFees.requestTanguy && (
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Tanguy</span>
+                    <span>€{TANGUY_COST.toFixed(2)}</span>
+                  </div>
+                )}
+                {addPeopleFees.hasExtraHour && (
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Extra Hour</span>
+                    <span>€{EXTRA_HOUR_COST.toFixed(2)}</span>
+                  </div>
+                )}
+                {addPeopleFees.weekendFee && (
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Weekend Fee</span>
+                    <span>€{WEEKEND_FEE_COST.toFixed(2)}</span>
+                  </div>
+                )}
+                {addPeopleFees.eveningFee && (
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Evening Fee</span>
+                    <span>€{EVENING_FEE_COST.toFixed(2)}</span>
+                  </div>
                 )}
                 <div className="flex justify-between font-medium pt-1 border-t">
                   <span>Total</span>
                   <span>€{(
                     (parseFloat(additionalPeoplePrice) || 0) * additionalPeople +
-                    (tour?.op_maat && sendPaymentForAdditional ? (
-                      (addPeopleFees.requestTanguy ? TANGUY_COST : 0) +
-                      (addPeopleFees.hasExtraHour ? EXTRA_HOUR_COST : 0) +
-                      (addPeopleFees.weekendFee ? WEEKEND_FEE_COST : 0) +
-                      (addPeopleFees.eveningFee ? EVENING_FEE_COST : 0)
-                    ) : 0)
+                    (addPeopleFees.requestTanguy ? TANGUY_COST : 0) +
+                    (addPeopleFees.hasExtraHour ? EXTRA_HOUR_COST : 0) +
+                    (addPeopleFees.weekendFee ? WEEKEND_FEE_COST : 0) +
+                    (addPeopleFees.eveningFee ? EVENING_FEE_COST : 0)
                   ).toFixed(2)}</span>
                 </div>
               </div>
@@ -3279,55 +3355,6 @@ export default function BookingDetailPage() {
                   Send payment link to {addPeopleTarget.customerEmail}
                 </Label>
               </div>
-
-              {/* Extra Fees Section - only for op_maat tours when sending payment link */}
-              {tour?.op_maat && sendPaymentForAdditional && (
-                <div className="space-y-3 border rounded-lg p-3">
-                  <Label className="text-sm font-medium">Extra Fees (Op Maat)</Label>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="addPeopleTanguy"
-                        checked={addPeopleFees.requestTanguy}
-                        onCheckedChange={(checked) => setAddPeopleFees({ ...addPeopleFees, requestTanguy: checked === true })}
-                      />
-                      <Label htmlFor="addPeopleTanguy" className="text-sm cursor-pointer">
-                        Request Tanguy (+€{TANGUY_COST})
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="addPeopleExtraHour"
-                        checked={addPeopleFees.hasExtraHour}
-                        onCheckedChange={(checked) => setAddPeopleFees({ ...addPeopleFees, hasExtraHour: checked === true })}
-                      />
-                      <Label htmlFor="addPeopleExtraHour" className="text-sm cursor-pointer">
-                        Extra Hour (+€{EXTRA_HOUR_COST})
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="addPeopleWeekendFee"
-                        checked={addPeopleFees.weekendFee}
-                        onCheckedChange={(checked) => setAddPeopleFees({ ...addPeopleFees, weekendFee: checked === true })}
-                      />
-                      <Label htmlFor="addPeopleWeekendFee" className="text-sm cursor-pointer">
-                        Weekend Fee (+€{WEEKEND_FEE_COST})
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="addPeopleEveningFee"
-                        checked={addPeopleFees.eveningFee}
-                        onCheckedChange={(checked) => setAddPeopleFees({ ...addPeopleFees, eveningFee: checked === true })}
-                      />
-                      <Label htmlFor="addPeopleEveningFee" className="text-sm cursor-pointer">
-                        Evening Fee (+€{EVENING_FEE_COST})
-                      </Label>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
@@ -3467,10 +3494,10 @@ export default function BookingDetailPage() {
                 </div>
               </>
             )}
-            {/* Extra Fees Section - only for op_maat tours */}
-            {tour?.op_maat && !editInviteeTarget?.isLocalStories && (
+            {/* Extra Fees Section */}
+            {!editInviteeTarget?.isLocalStories && (
               <div className="space-y-3 border-t pt-4 mt-4">
-                <Label className="text-sm font-medium">Extra Fees (Op Maat)</Label>
+                <Label className="text-sm font-medium">Extra Options & Fees</Label>
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <Checkbox

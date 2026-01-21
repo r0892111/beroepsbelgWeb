@@ -501,43 +501,57 @@ export default function OrderSuccessPage() {
               </div>
 
               {/* Price Summary */}
-              <div className="pt-4 border-t space-y-2" style={{ borderColor: 'var(--border-light)' }}>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('subtotal')}</span>
-                  <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
-                    €{order.items?.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0).toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('shippingCost')}</span>
-                  <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
-                    €{(order.metadata?.shipping_cost ?? 0).toFixed(2)}
-                  </span>
-                </div>
-                {/* Promo code discount if applicable */}
-                {order.metadata?.promoCode && order.metadata?.discount_amount > 0 && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm" style={{ color: 'var(--primary-base)' }}>
-                      {t('promoCode') || 'Kortingscode'}: <span className="font-semibold">{order.metadata.promoCode}</span>
-                      {order.metadata.promoDiscountPercent && (
-                        <span className="text-xs ml-1">({order.metadata.promoDiscountPercent}%)</span>
-                      )}
-                    </span>
-                    <span className="font-medium text-sm" style={{ color: 'var(--primary-base)' }}>
-                      -€{(order.metadata.discount_amount).toFixed(2)}
-                    </span>
+              {(() => {
+                // Helper to check if item is shipping
+                const isShippingItem = (item: any) => {
+                  const title = item.title?.toLowerCase() || '';
+                  return title.includes('verzendkosten') || title.includes('shipping') || title.includes('freight');
+                };
+
+                // Calculate product subtotal (use stored value or calculate from items excluding shipping)
+                const productSubtotal = order.metadata?.product_subtotal ??
+                  order.items?.filter((item: any) => !isShippingItem(item))
+                    .reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0) ?? 0;
+
+                const discountAmount = order.metadata?.discount_amount ?? 0;
+                const shippingCost = order.metadata?.shipping_cost ??
+                  order.items?.filter((item: any) => isShippingItem(item))
+                    .reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0) ?? 0;
+
+                return (
+                  <div className="pt-4 border-t space-y-2" style={{ borderColor: 'var(--border-light)' }}>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('subtotal')}</span>
+                      <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
+                        €{productSubtotal.toFixed(2)}
+                      </span>
+                    </div>
+                    {discountAmount > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('discount') || 'Korting'}</span>
+                        <span className="text-sm" style={{ color: 'var(--primary-base)' }}>
+                          -€{discountAmount.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('shippingCost')}</span>
+                      <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
+                        €{shippingCost.toFixed(2)}
+                      </span>
+                    </div>
+                    <div
+                      className="flex justify-between items-center pt-3 mt-2 border-t"
+                      style={{ borderColor: 'var(--border-light)' }}
+                    >
+                      <span className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{t('total')}</span>
+                      <span className="text-xl font-bold" style={{ color: 'var(--primary-base)' }}>
+                        €{order.total_amount.toFixed(2)}
+                      </span>
+                    </div>
                   </div>
-                )}
-                <div
-                  className="flex justify-between items-center pt-3 mt-2 border-t"
-                  style={{ borderColor: 'var(--border-light)' }}
-                >
-                  <span className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{t('total')}</span>
-                  <span className="text-xl font-bold" style={{ color: 'var(--primary-base)' }}>
-                    €{order.total_amount.toFixed(2)}
-                  </span>
-                </div>
-              </div>
+                );
+              })()}
             </div>
 
             {/* What's next section */}

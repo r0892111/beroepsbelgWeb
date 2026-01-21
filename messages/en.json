@@ -220,7 +220,20 @@
     "couldNotLoadProducts": "Could not load products",
     "tryAgain": "Try again",
     "shippingAddress": "Shipping Address",
-    "orderItems": "Order Items"
+    "orderItems": "Order Items",
+    "preferredLanguage": "Preferred Language",
+    "selectLanguage": "Select a language",
+    "languageEmailNote": "This will be the language in which you receive your emails. You can change this at any time.",
+    "languageSaved": "Language preference saved",
+    "languageSaveError": "Could not save language preference",
+    "settings": "Settings",
+    "profileSettings": "Profile Settings",
+    "profileSettingsDesc": "Manage your account preferences",
+    "accountInfo": "Account Info",
+    "memberSince": "Member since",
+    "favorites": "Favorites",
+    "cart": "Cart",
+    "tours": "Tours"
   },
   "forms": {
     "name": "Name",
@@ -644,6 +657,11 @@
     "proceedToPayment": "Proceed to Payment",
     "required": "*",
     "total": "Total",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "freeShipping": "Free",
+    "free": "Free",
+    "enterDetails": "Enter your details to complete your order.",
     "digitalDelivery": "Digital Delivery",
     "giftCardNoShipping": "Gift cards are delivered via email - no shipping address needed!"
   },
@@ -1174,7 +1192,8 @@
     "email": "Email",
     "purchasedProducts": "Purchased Products",
     "priceBreakdown": "Price Breakdown",
-    "extraHour": "Extra hour"
+    "extraHour": "Extra hour",
+    "discount": "Discount"
   },
   "bookingCancelled": {
     "title": "Booking Cancelled",
@@ -1262,6 +1281,7 @@
     "quantity": "Quantity",
     "totalPaid": "Total Paid",
     "subtotal": "Subtotal",
+    "discount": "Discount",
     "shippingCost": "Shipping",
     "total": "Total",
     "shippingInfo": "Shipping Information",

@@ -17,7 +17,7 @@ export function CartSheet() {
   const tAuth = useTranslations('auth');
   const params = useParams();
   const locale = (params?.locale as Locale) || 'nl';
-  const { cartItems, cartCount, updateQuantity, removeFromCart, loading, refetch } = useCartContext();
+  const { cartItems, cartCount, updateQuantity, removeFromCart, loading, refetch, setIsCartOpen } = useCartContext();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [giftCardAmounts, setGiftCardAmounts] = useState<Record<string, number>>({});
@@ -49,6 +49,7 @@ export function CartSheet() {
   // Refetch cart when sheet opens
   const handleSheetOpenChange = (open: boolean) => {
     setSheetOpen(open);
+    setIsCartOpen(open); // Update context for chatbot visibility
     if (open) {
       // Refetch cart data when opening
       void refetch();

@@ -284,7 +284,20 @@
     "couldNotLoadProducts": "Kon de producten niet laden",
     "tryAgain": "Probeer opnieuw",
     "shippingAddress": "Verzendadres",
-    "orderItems": "Bestelde artikelen"
+    "orderItems": "Bestelde artikelen",
+    "preferredLanguage": "Voorkeurstaal",
+    "selectLanguage": "Selecteer een taal",
+    "languageEmailNote": "Dit is de taal waarin je je e-mails ontvangt. Je kunt dit op elk moment wijzigen.",
+    "languageSaved": "Taalvoorkeur opgeslagen",
+    "languageSaveError": "Kon taalvoorkeur niet opslaan",
+    "settings": "Instellingen",
+    "profileSettings": "Profielinstellingen",
+    "profileSettingsDesc": "Beheer je accountvoorkeuren",
+    "accountInfo": "Accountgegevens",
+    "memberSince": "Lid sinds",
+    "favorites": "Favorieten",
+    "cart": "Wagen",
+    "tours": "Tours"
   },
   "forms": {
     "name": "Naam",
@@ -712,6 +725,11 @@
     "proceedToPayment": "Doorgaan naar betaling",
     "required": "*",
     "total": "Totaal",
+    "subtotal": "Subtotaal",
+    "shipping": "Verzendkosten",
+    "freeShipping": "Gratis",
+    "free": "Gratis",
+    "enterDetails": "Vul je gegevens in om je bestelling af te ronden.",
     "digitalDelivery": "Digitale Levering",
     "giftCardNoShipping": "Cadeaubonnen worden per e-mail geleverd - geen verzendadres nodig!"
   },
@@ -1242,7 +1260,8 @@
     "email": "E-mail",
     "purchasedProducts": "Gekochte producten",
     "priceBreakdown": "Prijsoverzicht",
-    "extraHour": "Extra uur"
+    "extraHour": "Extra uur",
+    "discount": "Korting"
   },
   "bookingCancelled": {
     "title": "Boeking geannuleerd",
@@ -1330,6 +1349,7 @@
     "quantity": "Aantal",
     "totalPaid": "Totaal betaald",
     "subtotal": "Subtotaal",
+    "discount": "Korting",
     "shippingCost": "Verzendkosten",
     "total": "Totaal",
     "shippingInfo": "Verzendgegevens",

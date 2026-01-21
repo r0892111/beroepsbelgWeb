@@ -11,7 +11,7 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string, preferredLanguage: 'nl' | 'en' | 'fr' | 'de') => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, email, full_name, created_at, updated_at, isAdmin, is_admin, "TeamLeader UserInfo"')
+      .select('id, email, full_name, preferred_language, created_at, updated_at, isAdmin, is_admin, "TeamLeader UserInfo"')
       .eq('id', userId)
       .maybeSingle();
 
@@ -80,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (email: string, password: string, fullName: string, preferredLanguage: 'nl' | 'en' | 'fr' | 'de') => {
     try {
       // Check if Supabase client is properly initialized
       if (!supabase) {
@@ -93,6 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         options: {
           data: {
             full_name: fullName,
+            preferred_language: preferredLanguage,
           },
         },
       });
@@ -102,10 +103,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('Sign up error:', error);
         // Check if it's an API key error
         if (error.message?.includes('Invalid API key') || error.message?.includes('JWT')) {
-          return { 
-            error: new Error('Invalid API key. Please check your NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable.') 
+          return {
+            error: new Error('Invalid API key. Please check your NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable.')
           };
         }
+      }
+
+      // After successful signup, update the profile with preferred_language
+      // (in case the database trigger doesn't handle it)
+      if (data?.user && !error) {
+        await supabase
+          .from('profiles')
+          .update({ preferred_language: preferredLanguage })
+          .eq('id', data.user.id);
       }
 
       return { error };

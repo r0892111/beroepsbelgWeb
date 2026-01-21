@@ -5,6 +5,7 @@ import { MessageCircle, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useChatStream } from '@/lib/hooks/use-chat-stream';
 import { ChatPanel } from './chat-panel';
+import { useCartContext } from '@/lib/contexts/cart-context';
 
 function generateConversationId(): string {
   return `conv-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -27,12 +28,20 @@ interface ChatbotWidgetProps {
 
 export function ChatbotWidget({ locale }: ChatbotWidgetProps) {
   const t = useTranslations('chatbot');
+  const { isCartOpen } = useCartContext();
   const [isOpen, setIsOpen] = useState(false);
   const [conversationId, setConversationId] = useState<string>(() => getOrCreateConversationId());
   const panelRef = useRef<HTMLDivElement>(null);
   const fabRef = useRef<HTMLButtonElement>(null);
 
   const { messages, streamingState, sendMessage, clearMessages } = useChatStream(conversationId);
+
+  // Close chatbot when cart opens
+  useEffect(() => {
+    if (isCartOpen && isOpen) {
+      setIsOpen(false);
+    }
+  }, [isCartOpen, isOpen]);
 
   // Reset conversation ID when panel closes (optional - can be removed if you want persistence)
   // For now, we'll keep the same conversation until tab closes (sessionStorage)
@@ -89,6 +98,11 @@ export function ChatbotWidget({ locale }: ChatbotWidgetProps) {
   const handleToggle = useCallback(() => {
     setIsOpen((prev) => !prev);
   }, []);
+
+  // Hide chatbot when cart is open
+  if (isCartOpen) {
+    return null;
+  }
 
   return (
     <>

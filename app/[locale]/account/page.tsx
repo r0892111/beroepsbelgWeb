@@ -10,7 +10,7 @@ import { useCartContext } from '@/lib/contexts/cart-context';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Heart, ShoppingCart, User, LogOut, Package, Trash2, Plus, Minus, Calendar, Receipt, MapPin } from 'lucide-react';
+import { Heart, ShoppingCart, User, LogOut, Package, Trash2, Plus, Minus, Calendar, Receipt, MapPin, Globe, Settings } from 'lucide-react';
 // Removed direct import - will fetch from API instead
 import type { Product } from '@/lib/data/types';
 import { toast } from 'sonner';
@@ -19,12 +19,14 @@ import { ProductDetailDialog } from '@/components/webshop/product-detail-dialog'
 import { CheckoutDialog } from '@/components/webshop/checkout-dialog';
 import { supabase } from '@/lib/supabase/client';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import Image from 'next/image';
 import { getProductPlaceholder } from '@/lib/utils/placeholder-images';
 
 export default function AccountPage() {
   const t = useTranslations('auth');
-  const { user, profile, signOut, loading: authLoading } = useAuth();
+  const { user, profile, signOut, loading: authLoading, refreshProfile } = useAuth();
   const { favorites, favoritesCount, removeFavorite } = useFavoritesContext();
   const { favorites: tourFavorites, tourFavoritesCount, removeTourFavorite, loading: tourFavoritesLoading } = useTourFavoritesContext();
   const { cartItems, cartCount, updateQuantity, removeFromCart, addToCart } = useCartContext();
@@ -45,6 +47,28 @@ export default function AccountPage() {
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [savingLanguage, setSavingLanguage] = useState(false);
+
+  const handleLanguageChange = async (newLanguage: 'nl' | 'en' | 'fr' | 'de') => {
+    if (!user) return;
+    setSavingLanguage(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ preferred_language: newLanguage })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      await refreshProfile();
+      toast.success(t('languageSaved') || 'Language preference saved');
+    } catch (error) {
+      console.error('Error updating language:', error);
+      toast.error(t('languageSaveError') || 'Could not save language preference');
+    } finally {
+      setSavingLanguage(false);
+    }
+  };
 
   const handleProductClick = (product: Product) => {
     router.push(`/${locale}/webshop/${product.uuid}`);
@@ -141,7 +165,7 @@ export default function AccountPage() {
   }, []);
 
   useEffect(() => {
-    if (tabFromUrl === 'cart' || tabFromUrl === 'favorites' || tabFromUrl === 'orders' || tabFromUrl === 'tours') {
+    if (tabFromUrl === 'cart' || tabFromUrl === 'favorites' || tabFromUrl === 'orders' || tabFromUrl === 'tours' || tabFromUrl === 'settings') {
       setActiveTab(tabFromUrl);
     }
   }, [tabFromUrl]);
@@ -341,10 +365,11 @@ export default function AccountPage() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 h-auto">
               <TabsTrigger value="favorites" className="gap-2">
                 <Heart className="h-4 w-4" />
-                {t('myFavorites')}
+                <span className="hidden sm:inline">{t('myFavorites')}</span>
+                <span className="sm:hidden">{t('favorites') || 'Favorites'}</span>
                 {(favoritesCount + tourFavoritesCount) > 0 && (
                   <span className="ml-1 rounded-full bg-[#92F0B1] px-2 py-0.5 text-xs text-[#0d1117]">
                     {favoritesCount + tourFavoritesCount}
@@ -353,7 +378,8 @@ export default function AccountPage() {
               </TabsTrigger>
               <TabsTrigger value="cart" className="gap-2">
                 <ShoppingCart className="h-4 w-4" />
-                {t('myCart')}
+                <span className="hidden sm:inline">{t('myCart')}</span>
+                <span className="sm:hidden">{t('cart') || 'Cart'}</span>
                 {cartItems.length > 0 && (
                   <span className="ml-1 rounded-full bg-[#92F0B1] px-2 py-0.5 text-xs text-[#0d1117]">
                     {cartCount}
@@ -362,11 +388,18 @@ export default function AccountPage() {
               </TabsTrigger>
               <TabsTrigger value="orders" className="gap-2">
                 <Receipt className="h-4 w-4" />
-                {t('myOrders') || 'My Orders'}
+                <span className="hidden sm:inline">{t('myOrders') || 'My Orders'}</span>
+                <span className="sm:hidden">{t('orders') || 'Orders'}</span>
               </TabsTrigger>
               <TabsTrigger value="tours" className="gap-2">
                 <MapPin className="h-4 w-4" />
-                {t('myTours') || 'My Tours'}
+                <span className="hidden sm:inline">{t('myTours') || 'My Tours'}</span>
+                <span className="sm:hidden">{t('tours') || 'Tours'}</span>
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="gap-2">
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">{t('settings') || 'Settings'}</span>
+                <span className="sm:hidden">{t('settings') || 'Settings'}</span>
               </TabsTrigger>
             </TabsList>
 
@@ -855,6 +888,84 @@ export default function AccountPage() {
                   })}
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="settings">
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <User className="h-5 w-5" />
+                      {t('profileSettings') || 'Profile Settings'}
+                    </CardTitle>
+                    <CardDescription>
+                      {t('profileSettingsDesc') || 'Manage your account preferences'}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Account Info */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-muted-foreground">{t('email')}</Label>
+                      <p className="text-sm">{profile?.email || user?.email}</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-muted-foreground">{t('fullName') || 'Name'}</Label>
+                      <p className="text-sm">{profile?.full_name || '-'}</p>
+                    </div>
+
+                    {/* Preferred Language */}
+                    <div className="space-y-2">
+                      <Label htmlFor="preferredLanguage" className="flex items-center gap-2 text-sm font-medium">
+                        <Globe className="h-4 w-4 text-[#92F0B1]" />
+                        {t('preferredLanguage') || 'Preferred Language'}
+                      </Label>
+                      <Select
+                        value={profile?.preferred_language || 'nl'}
+                        onValueChange={(value) => handleLanguageChange(value as 'nl' | 'en' | 'fr' | 'de')}
+                        disabled={savingLanguage}
+                      >
+                        <SelectTrigger className="w-full sm:w-[200px]">
+                          <SelectValue placeholder={t('selectLanguage') || 'Select a language'} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="nl">Nederlands</SelectItem>
+                          <SelectItem value="fr">Français</SelectItem>
+                          <SelectItem value="de">Deutsch</SelectItem>
+                          <SelectItem value="en">English</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        {t('languageEmailNote') || 'This will be the language in which you receive your emails. You can change this at any time.'}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Account created date */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      {t('accountInfo') || 'Account Info'}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-muted-foreground">{t('memberSince') || 'Member since'}</Label>
+                      <p className="text-sm">
+                        {profile?.created_at
+                          ? new Date(profile.created_at).toLocaleDateString(locale, {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                            })
+                          : '-'}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
           </Tabs>
         </div>

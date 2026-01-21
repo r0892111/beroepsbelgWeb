@@ -68,6 +68,9 @@ interface CreateBookingForm {
   // Extra fees for op_maat tours
   requestTanguy: boolean;
   extraHour: boolean;
+  // Weekend and evening fees (can be manually overridden)
+  weekendFee: boolean;
+  eveningFee: boolean;
 }
 
 interface TeamLeaderDeal {
@@ -128,6 +131,8 @@ export default function AdminBookingsPage() {
     dealId: '',
     requestTanguy: false,
     extraHour: false,
+    weekendFee: false,
+    eveningFee: false,
   });
   const [customLanguage, setCustomLanguage] = useState('');
 
@@ -385,6 +390,8 @@ export default function AdminBookingsPage() {
       dealId: '',
       requestTanguy: false,
       extraHour: false,
+      weekendFee: false,
+      eveningFee: false,
     });
   };
 
@@ -437,11 +444,11 @@ export default function AdminBookingsPage() {
     return hour >= 17;
   })();
 
-  // Calculate fee amounts (only for op_maat tours)
-  const tanguyCost = selectedTour?.op_maat && createForm.requestTanguy ? TANGUY_COST : 0;
-  const extraHourCost = selectedTour?.op_maat && createForm.extraHour ? EXTRA_HOUR_COST : 0;
-  const weekendFeeCost = isWeekend ? WEEKEND_FEE_COST : 0;
-  const eveningFeeCost = selectedTour?.op_maat && isEvening ? EVENING_FEE_COST : 0;
+  // Calculate fee amounts (admin can set any fee for any tour)
+  const tanguyCost = createForm.requestTanguy ? TANGUY_COST : 0;
+  const extraHourCost = createForm.extraHour ? EXTRA_HOUR_COST : 0;
+  const weekendFeeCost = createForm.weekendFee ? WEEKEND_FEE_COST : 0;
+  const eveningFeeCost = createForm.eveningFee ? EVENING_FEE_COST : 0;
 
   // Check for duplicate bookings before creating
   const checkForDuplicateBooking = async (): Promise<TourBooking | null> => {
@@ -497,11 +504,11 @@ export default function AdminBookingsPage() {
       const pricePerPerson = createForm.customPrice ? parseFloat(createForm.customPrice) : (tour.price || 0);
       const baseTourPrice = Math.round(pricePerPerson * createForm.numberOfPeople * 100) / 100; // Round to nearest cent
 
-      // Calculate fees for this booking
-      const feeTanguyCost = tour.op_maat && createForm.requestTanguy ? TANGUY_COST : 0;
-      const feeExtraHourCost = tour.op_maat && createForm.extraHour ? EXTRA_HOUR_COST : 0;
-      const feeWeekendCost = isWeekend ? WEEKEND_FEE_COST : 0;
-      const feeEveningCost = tour.op_maat && isEvening ? EVENING_FEE_COST : 0;
+      // Calculate fees for this booking (admin can set any fee for any tour)
+      const feeTanguyCost = createForm.requestTanguy ? TANGUY_COST : 0;
+      const feeExtraHourCost = createForm.extraHour ? EXTRA_HOUR_COST : 0;
+      const feeWeekendCost = createForm.weekendFee ? WEEKEND_FEE_COST : 0;
+      const feeEveningCost = createForm.eveningFee ? EVENING_FEE_COST : 0;
 
       // Total amount includes base price + all fees
       const totalAmount = baseTourPrice + feeTanguyCost + feeExtraHourCost + feeWeekendCost + feeEveningCost;
@@ -522,8 +529,8 @@ export default function AdminBookingsPage() {
         // Store fee information
         requestTanguy: createForm.requestTanguy,
         hasExtraHour: createForm.extraHour,
-        weekendFee: isWeekend,
-        eveningFee: tour.op_maat && isEvening,
+        weekendFee: createForm.weekendFee,
+        eveningFee: createForm.eveningFee,
         tanguyCost: feeTanguyCost,
         extraHourCost: feeExtraHourCost,
         weekendFeeCost: feeWeekendCost,
@@ -1238,12 +1245,16 @@ export default function AdminBookingsPage() {
                   id="date"
                   type="date"
                   value={createForm.date}
-                  onChange={(e) => setCreateForm({ ...createForm, date: e.target.value })}
+                  onChange={(e) => {
+                    const newDate = e.target.value;
+                    // Auto-set weekend fee when date changes to a weekend
+                    const date = new Date(newDate);
+                    const day = date.getDay();
+                    const isWeekendDay = day === 0 || day === 6;
+                    setCreateForm({ ...createForm, date: newDate, weekendFee: isWeekendDay });
+                  }}
                   className="bg-white"
                 />
-                {createForm.date && isWeekend && (
-                  <p className="text-xs text-amber-600">Weekend fee (+€{WEEKEND_FEE_COST}) will be applied</p>
-                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="time">Time *</Label>
@@ -1251,19 +1262,22 @@ export default function AdminBookingsPage() {
                   id="time"
                   type="time"
                   value={createForm.time}
-                  onChange={(e) => setCreateForm({ ...createForm, time: e.target.value })}
+                  onChange={(e) => {
+                    const newTime = e.target.value;
+                    // Auto-set evening fee when time changes to evening (17:00+)
+                    const hour = parseInt(newTime.split(':')[0], 10);
+                    const isEveningTime = hour >= 17;
+                    setCreateForm({ ...createForm, time: newTime, eveningFee: isEveningTime });
+                  }}
                   className="bg-white"
                 />
-                {selectedTour?.op_maat && createForm.time && isEvening && (
-                  <p className="text-xs text-amber-600">Evening fee (+€{EVENING_FEE_COST}) will be applied</p>
-                )}
               </div>
             </div>
 
-            {/* Extra Options for Op Maat Tours */}
-            {selectedTour?.op_maat && (
+            {/* Extra Options and Fees */}
+            {selectedTour && (
               <div className="border-t pt-4">
-                <h4 className="text-sm font-medium mb-3">Extra Options (Op Maat)</h4>
+                <h4 className="text-sm font-medium mb-3">Extra Options & Fees</h4>
                 <div className="space-y-3">
                   <div className="flex items-center space-x-2">
                     <Checkbox
@@ -1284,6 +1298,32 @@ export default function AdminBookingsPage() {
                     <Label htmlFor="extraHour" className="text-sm cursor-pointer">
                       Extra Hour (+€{EXTRA_HOUR_COST})
                     </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="weekendFee"
+                      checked={createForm.weekendFee}
+                      onCheckedChange={(checked) => setCreateForm({ ...createForm, weekendFee: checked === true })}
+                    />
+                    <Label htmlFor="weekendFee" className="text-sm cursor-pointer">
+                      Weekend Fee (+€{WEEKEND_FEE_COST})
+                    </Label>
+                    {isWeekend && !createForm.weekendFee && (
+                      <span className="text-xs text-amber-600 ml-2">(auto-detected weekend)</span>
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="eveningFee"
+                      checked={createForm.eveningFee}
+                      onCheckedChange={(checked) => setCreateForm({ ...createForm, eveningFee: checked === true })}
+                    />
+                    <Label htmlFor="eveningFee" className="text-sm cursor-pointer">
+                      Evening Fee (+€{EVENING_FEE_COST})
+                    </Label>
+                    {isEvening && !createForm.eveningFee && (
+                      <span className="text-xs text-amber-600 ml-2">(auto-detected evening)</span>
+                    )}
                   </div>
                 </div>
               </div>

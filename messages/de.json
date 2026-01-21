@@ -220,7 +220,20 @@
     "couldNotLoadProducts": "Produkte konnten nicht geladen werden",
     "tryAgain": "Erneut versuchen",
     "shippingAddress": "Lieferadresse",
-    "orderItems": "Bestellte Artikel"
+    "orderItems": "Bestellte Artikel",
+    "preferredLanguage": "Bevorzugte Sprache",
+    "selectLanguage": "Sprache auswählen",
+    "languageEmailNote": "Dies ist die Sprache, in der Sie Ihre E-Mails erhalten. Sie können dies jederzeit ändern.",
+    "languageSaved": "Spracheinstellung gespeichert",
+    "languageSaveError": "Spracheinstellung konnte nicht gespeichert werden",
+    "settings": "Einstellungen",
+    "profileSettings": "Profileinstellungen",
+    "profileSettingsDesc": "Verwalten Sie Ihre Kontoeinstellungen",
+    "accountInfo": "Kontoinformationen",
+    "memberSince": "Mitglied seit",
+    "favorites": "Favoriten",
+    "cart": "Warenkorb",
+    "tours": "Touren"
   },
   "forms": {
     "name": "Name",
@@ -643,6 +656,11 @@
     "proceedToPayment": "Weiter zur Zahlung",
     "required": "*",
     "total": "Gesamt",
+    "subtotal": "Zwischensumme",
+    "shipping": "Versandkosten",
+    "freeShipping": "Kostenlos",
+    "free": "Kostenlos",
+    "enterDetails": "Geben Sie Ihre Daten ein, um Ihre Bestellung abzuschließen.",
     "digitalDelivery": "Digitale Lieferung",
     "giftCardNoShipping": "Geschenkkarten werden per E-Mail geliefert - keine Lieferadresse erforderlich!"
   },
@@ -1161,7 +1179,8 @@
     "email": "E-Mail",
     "purchasedProducts": "Gekaufte Produkte",
     "priceBreakdown": "Preisübersicht",
-    "extraHour": "Zusätzliche Stunde"
+    "extraHour": "Zusätzliche Stunde",
+    "discount": "Rabatt"
   },
   "bookingCancelled": {
     "title": "Buchung storniert",
@@ -1249,6 +1268,7 @@
     "quantity": "Menge",
     "totalPaid": "Gesamt bezahlt",
     "subtotal": "Zwischensumme",
+    "discount": "Rabatt",
     "shippingCost": "Versandkosten",
     "total": "Gesamt",
     "shippingInfo": "Versandinformationen",

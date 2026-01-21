@@ -7,15 +7,20 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Gift } from 'lucide-react';
+import { Loader2, Gift, Truck } from 'lucide-react';
 import { useCartContext } from '@/lib/contexts/cart-context';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useTranslations } from 'next-intl';
 
+// Shipping cost constants (must match create-webshop-checkout)
+const SHIPPING_COST_BELGIUM = 7.50;
+const SHIPPING_COST_INTERNATIONAL = 14.99;
+const FREE_SHIPPING_THRESHOLD = 150;
+
 interface CheckoutDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  totalAmount: number;
+  totalAmount: number; // Product subtotal (without shipping)
 }
 
 export function CheckoutDialog({ open, onOpenChange, totalAmount }: CheckoutDialogProps) {
@@ -46,6 +51,20 @@ export function CheckoutDialog({ open, onOpenChange, totalAmount }: CheckoutDial
       return product?.category === 'GiftCard' || product?.is_giftcard === true;
     });
   }, [cartItems]);
+
+  // Calculate shipping cost based on country and order total
+  const shippingCost = useMemo(() => {
+    // No shipping for gift card only orders
+    if (isGiftCardOnly) return 0;
+    // Free shipping for orders >= €150
+    if (totalAmount >= FREE_SHIPPING_THRESHOLD) return 0;
+    // Belgium vs International
+    const isBelgium = formData.country === 'België' || formData.country === 'Belgium';
+    return isBelgium ? SHIPPING_COST_BELGIUM : SHIPPING_COST_INTERNATIONAL;
+  }, [isGiftCardOnly, totalAmount, formData.country]);
+
+  // Total including shipping
+  const grandTotal = totalAmount + shippingCost;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,7 +149,7 @@ export function CheckoutDialog({ open, onOpenChange, totalAmount }: CheckoutDial
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>
-            {t('completePurchase', { total: totalAmount.toFixed(2) })}
+            {t('enterDetails') || 'Vul je gegevens in om je bestelling af te ronden.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -249,22 +268,43 @@ export function CheckoutDialog({ open, onOpenChange, totalAmount }: CheckoutDial
             </div>
           )}
 
-          <DialogFooter>
-            <div className="flex w-full items-center justify-between">
-              <div className="text-lg font-bold">
-                {t('total')}: €{totalAmount.toFixed(2)}
+          <DialogFooter className="flex-col sm:flex-col gap-4">
+            {/* Price breakdown */}
+            <div className="w-full space-y-2 border-t pt-4">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">{t('subtotal') || 'Subtotaal'}</span>
+                <span>€{totalAmount.toFixed(2)}</span>
               </div>
-              <Button type="submit" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t('processing')}
-                  </>
-                ) : (
-                  t('proceedToPayment')
-                )}
-              </Button>
+              {!isGiftCardOnly && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Truck className="h-3 w-3" />
+                    {t('shipping') || 'Verzendkosten'}
+                    {shippingCost === 0 && totalAmount >= FREE_SHIPPING_THRESHOLD && (
+                      <span className="text-green-600 text-xs">({t('freeShipping') || 'Gratis'})</span>
+                    )}
+                  </span>
+                  <span className={shippingCost === 0 ? 'text-green-600' : ''}>
+                    {shippingCost === 0 ? t('free') || 'Gratis' : `€${shippingCost.toFixed(2)}`}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between text-lg font-bold border-t pt-2">
+                <span>{t('total')}</span>
+                <span>€{grandTotal.toFixed(2)}</span>
+              </div>
             </div>
+
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t('processing')}
+                </>
+              ) : (
+                t('proceedToPayment')
+              )}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

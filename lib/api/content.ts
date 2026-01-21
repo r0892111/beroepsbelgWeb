@@ -1095,50 +1095,17 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
       return [];
     }
     
-    // Fetch tourbooking entries to count number of people per date
-    // Query all bookings for this tour and filter by date in JavaScript
-    // since tour_datetime is a timestamp and we need to match by date
-    const { data: tourBookings, error: tourBookingsError } = await supabaseServer
-      .from('tourbooking')
-      .select('tour_datetime, invitees')
-      .eq('tour_id', tourId);
-    
-    console.log('getLocalToursBookings: Tour bookings query result:', {
-      tourBookingsCount: tourBookings?.length || 0,
-      tourBookings,
-      tourBookingsError,
-    });
-    
-    // Calculate number of people per date from tourbooking
+    // Calculate number of people per date from local_tours_bookings (sum amnt_of_people for all rows per date)
     const peopleCountByDate = new Map<string, number>();
-    const saturdayDateStrings = saturdayDates; // Already formatted as YYYY-MM-DD
-    
-    (tourBookings || []).forEach((booking: any) => {
-      if (booking.tour_datetime && booking.invitees) {
-        const bookingDate = new Date(booking.tour_datetime);
-        const dateStr = bookingDate.toISOString().split('T')[0];
-        
-        // Only count bookings that match our Saturday dates
-        if (!saturdayDateStrings.includes(dateStr)) {
-          return;
-        }
-        
-        // Sum up numberOfPeople from all invitees
-        let totalPeople = 0;
-        if (Array.isArray(booking.invitees)) {
-          booking.invitees.forEach((invitee: any) => {
-            if (invitee && typeof invitee.numberOfPeople === 'number') {
-              totalPeople += invitee.numberOfPeople;
-            }
-          });
-        }
-        
-        const currentCount = peopleCountByDate.get(dateStr) || 0;
-        peopleCountByDate.set(dateStr, currentCount + totalPeople);
-      }
+
+    (existingBookings || []).forEach((booking: any) => {
+      const dateStr = booking.booking_date;
+      const amntOfPeople = booking.amnt_of_people || 0;
+      const currentCount = peopleCountByDate.get(dateStr) || 0;
+      peopleCountByDate.set(dateStr, currentCount + amntOfPeople);
     });
-    
-    console.log('getLocalToursBookings: People count by date:', Array.from(peopleCountByDate.entries()));
+
+    console.log('getLocalToursBookings: People count by date (from local_tours_bookings):', Array.from(peopleCountByDate.entries()));
     
     // Create a map of existing bookings by date
     const bookingsMap = new Map<string, LocalTourBooking>();

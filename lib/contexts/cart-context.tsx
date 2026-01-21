@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { useCart } from '@/lib/hooks/use-cart';
 
 interface CartContextType {
@@ -13,15 +13,18 @@ interface CartContextType {
   clearCart: ReturnType<typeof useCart>['clearCart'];
   getCartCount: ReturnType<typeof useCart>['getCartCount'];
   refetch: ReturnType<typeof useCart>['refetch'];
+  isCartOpen: boolean;
+  setIsCartOpen: (open: boolean) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const cart = useCart();
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   return (
-    <CartContext.Provider value={cart}>
+    <CartContext.Provider value={{ ...cart, isCartOpen, setIsCartOpen }}>
       {children}
     </CartContext.Provider>
   );

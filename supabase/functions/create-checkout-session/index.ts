@@ -51,6 +51,7 @@ serve(async (req: Request) => {
     weekendFee = false, // Weekend fee (25 EUR) - applies to all tour types
     eveningFee = false, // Evening fee (25 EUR) - only for op_maat tours when time >= 17:00
     locale = 'nl', // Locale for redirect URLs (default to Dutch)
+    locale = 'nl', // Locale for redirect URLs (default to Dutch)
     } = await req.json()
 
     // Freight costs constants

@@ -220,7 +220,20 @@
     "couldNotLoadProducts": "Impossible de charger les produits",
     "tryAgain": "Réessayer",
     "shippingAddress": "Adresse de livraison",
-    "orderItems": "Articles commandés"
+    "orderItems": "Articles commandés",
+    "preferredLanguage": "Langue préférée",
+    "selectLanguage": "Sélectionner une langue",
+    "languageEmailNote": "C'est la langue dans laquelle vous recevrez vos e-mails. Vous pouvez la modifier à tout moment.",
+    "languageSaved": "Préférence de langue enregistrée",
+    "languageSaveError": "Impossible d'enregistrer la préférence de langue",
+    "settings": "Paramètres",
+    "profileSettings": "Paramètres du profil",
+    "profileSettingsDesc": "Gérez les préférences de votre compte",
+    "accountInfo": "Informations du compte",
+    "memberSince": "Membre depuis",
+    "favorites": "Favoris",
+    "cart": "Panier",
+    "tours": "Tours"
   },
   "forms": {
     "name": "Nom",
@@ -643,6 +656,11 @@
     "proceedToPayment": "Procéder au paiement",
     "required": "*",
     "total": "Total",
+    "subtotal": "Sous-total",
+    "shipping": "Frais de livraison",
+    "freeShipping": "Gratuit",
+    "free": "Gratuit",
+    "enterDetails": "Entrez vos coordonnées pour finaliser votre commande.",
     "digitalDelivery": "Livraison numérique",
     "giftCardNoShipping": "Les cartes cadeaux sont livrées par e-mail - pas d'adresse de livraison requise!"
   },
@@ -1173,7 +1191,8 @@
     "email": "E-mail",
     "purchasedProducts": "Produits achetés",
     "priceBreakdown": "Détail du prix",
-    "extraHour": "Heure supplémentaire"
+    "extraHour": "Heure supplémentaire",
+    "discount": "Réduction"
   },
   "bookingCancelled": {
     "title": "Réservation annulée",
@@ -1261,6 +1280,7 @@
     "quantity": "Quantité",
     "totalPaid": "Total payé",
     "subtotal": "Sous-total",
+    "discount": "Réduction",
     "shippingCost": "Frais de livraison",
     "total": "Total",
     "shippingInfo": "Informations de livraison",
