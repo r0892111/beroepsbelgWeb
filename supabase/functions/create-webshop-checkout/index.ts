@@ -195,6 +195,7 @@ serve(async (req: Request) => {
       line_items: lineItems,
       mode: 'payment',
       allow_promotion_codes: true,
+      customer_creation: 'always', // Always create customer (required for invoice)
       invoice_creation: { enabled: true }, // Enable invoice creation for all sessions
       payment_intent_data: {
         receipt_email: customerEmail, // Send receipt to customer

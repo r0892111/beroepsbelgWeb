@@ -50,6 +50,7 @@ serve(async (req: Request) => {
     extraHour = false, // Extra hour option (150 EUR)
     weekendFee = false, // Weekend fee (25 EUR) - applies to all tour types
     eveningFee = false, // Evening fee (25 EUR) - only for op_maat tours when time >= 17:00
+    locale = 'nl', // Locale for redirect URLs (default to Dutch)
     } = await req.json()
 
     // Freight costs constants
@@ -301,12 +302,13 @@ serve(async (req: Request) => {
       line_items: lineItems,
       mode: 'payment',
       allow_promotion_codes: true, // Allow customers to enter promo codes
+      customer_creation: 'always', // Always create customer (required for invoice)
       invoice_creation: { enabled: true }, // Enable invoice creation for all sessions
       payment_intent_data: {
         receipt_email: customerEmail, // Send receipt to customer
       },
-      success_url: `${req.headers.get('origin')}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get('origin')}/booking/cancelled`,
+      success_url: `${req.headers.get('origin')}/${locale}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.get('origin')}/${locale}/booking/cancelled`,
       customer_email: customerEmail,
       metadata: {
         tourId,
