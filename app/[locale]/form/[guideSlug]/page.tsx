@@ -156,6 +156,7 @@ function StarRating({
 export default function GuideFeedbackPage() {
   const params = useParams();
   const guideSlug = params.guideSlug as string;
+  const locale = params.locale as string;
   const t = useTranslations('feedbackForm');
 
   const [guide, setGuide] = useState<Guide | null>(null);
@@ -260,6 +261,7 @@ export default function GuideFeedbackPage() {
           bookingRating,
           foundUsSource: foundUsSource === 'other' ? foundUsOther.trim() : foundUsSource,
           email: email.trim() || null,
+          locale,
         }),
       });
 

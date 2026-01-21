@@ -21,7 +21,7 @@ interface FeedbackSubmission {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { guideId, guideRating, guideFeedback, tourRating, tourFeedback, bookingRating, foundUsSource, email } = body;
+    const { guideId, guideRating, guideFeedback, tourRating, tourFeedback, bookingRating, foundUsSource, email, locale } = body;
 
     // Validate required fields
     if (!guideId || typeof guideId !== 'number') {
@@ -108,6 +108,7 @@ export async function POST(request: NextRequest) {
           found_us_source: foundUsSource,
           email: email || null,
           submitted_at: newSubmission.submitted_at,
+          locale: locale || 'nl',
         }),
       });
     } catch (webhookError) {
