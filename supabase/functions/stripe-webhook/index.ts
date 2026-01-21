@@ -755,6 +755,10 @@ async function handleEvent(event: Stripe.Event) {
             extra_invitees: isExtraInvitees,
           },
           bookingData, // Include full booking data matching normal booking format
+          // Include promo code info for invoice creation
+          promoCode: promoCodeInfo.code,
+          promoDiscountAmount: promoCodeInfo.discountAmount,
+          promoDiscountPercent: promoCodeInfo.discountPercent,
         };
 
         try {

@@ -58,10 +58,10 @@ if (profile.refresh_token_tl) {
 
     const data = await res.json();
 
-    // ❌ If this fails, nothing to save
+    // ❌ If this fails, skip to next user
     if (!res.ok) {
       console.error(`❌ Teamleader refresh failed for user ${userId}:`, data);
-      return;
+      continue;
     }
 
     // ✅ ALWAYS overwrite tokens
