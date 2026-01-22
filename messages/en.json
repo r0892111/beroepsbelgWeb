@@ -99,7 +99,11 @@
     "typing": "Typing...",
     "error": "Something went wrong. Please try again.",
     "close": "Close chat",
-    "welcomeMessage": "Hi! How may I help you?"
+    "welcomeMessage": "Hi! How may I help you?",
+    "emptyStateTitle": "What can I help you with?",
+    "starterPrompt1": "What tours do you offer?",
+    "starterPrompt2": "How do I book a tour?",
+    "starterPrompt3": "What are your prices?"
   },
   "footer": {
     "address": "Address",

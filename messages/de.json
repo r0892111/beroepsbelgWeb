@@ -99,7 +99,11 @@
     "typing": "Tippen...",
     "error": "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut.",
     "close": "Chat schließen",
-    "welcomeMessage": "Hallo! Wobei kann ich Ihnen helfen?"
+    "welcomeMessage": "Hallo! Wobei kann ich Ihnen helfen?",
+    "emptyStateTitle": "Wie kann ich Ihnen helfen?",
+    "starterPrompt1": "Welche Touren bieten Sie an?",
+    "starterPrompt2": "Wie buche ich eine Tour?",
+    "starterPrompt3": "Was sind Ihre Preise?"
   },
   "footer": {
     "address": "Adresse",

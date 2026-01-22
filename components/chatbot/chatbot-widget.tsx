@@ -34,7 +34,7 @@ export function ChatbotWidget({ locale }: ChatbotWidgetProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const fabRef = useRef<HTMLButtonElement>(null);
 
-  const { messages, streamingState, sendMessage, clearMessages } = useChatStream(conversationId);
+  const { messages, streamingState, sendMessage, clearMessages, retryLastMessage } = useChatStream(conversationId);
 
   // Close chatbot when cart opens
   useEffect(() => {
@@ -146,6 +146,8 @@ export function ChatbotWidget({ locale }: ChatbotWidgetProps) {
             streamingState={streamingState}
             onSendMessage={sendMessage}
             onClose={handleClose}
+            onRestart={clearMessages}
+            onRetry={retryLastMessage}
           />
         </div>
       )}

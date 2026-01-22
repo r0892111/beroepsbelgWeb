@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx supabase functions download:*)"
+      "Bash(npx supabase functions download:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(xargs ls:*)",
+      "Bash(xargs:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm install:*)"
     ]
   }
 }

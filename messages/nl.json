@@ -163,7 +163,11 @@
     "typing": "Typen...",
     "error": "Er is iets misgegaan. Probeer het opnieuw.",
     "close": "Chat sluiten",
-    "welcomeMessage": "Hey! Waar kan ik je mee helpen?"
+    "welcomeMessage": "Hey! Waar kan ik je mee helpen?",
+    "emptyStateTitle": "Waarmee kan ik je helpen?",
+    "starterPrompt1": "Welke tours bieden jullie aan?",
+    "starterPrompt2": "Hoe boek ik een tour?",
+    "starterPrompt3": "Wat zijn jullie prijzen?"
   },
   "footer": {
     "address": "Adres",

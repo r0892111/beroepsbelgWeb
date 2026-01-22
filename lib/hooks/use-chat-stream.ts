@@ -10,6 +10,8 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   isStreaming?: boolean;
+  isError?: boolean;
+  suggestions?: string[];
 }
 
 interface UseChatStreamReturn {
@@ -17,7 +19,29 @@ interface UseChatStreamReturn {
   streamingState: StreamingState;
   sendMessage: (message: string) => Promise<void>;
   clearMessages: () => void;
+  retryLastMessage: () => Promise<void>;
   error: string | null;
+}
+
+function parseSuggestions(content: string): { cleanContent: string; suggestions: string[] } {
+  const suggestionsMarker = '---suggestions---';
+  const markerIndex = content.toLowerCase().indexOf(suggestionsMarker);
+
+  if (markerIndex === -1) {
+    return { cleanContent: content, suggestions: [] };
+  }
+
+  const cleanContent = content.slice(0, markerIndex).trim();
+  const suggestionsText = content.slice(markerIndex + suggestionsMarker.length).trim();
+
+  // Split by newlines and filter out empty lines
+  const suggestions = suggestionsText
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0 && line.length <= 50) // Max 50 chars per suggestion
+    .slice(0, 3); // Max 3 suggestions
+
+  return { cleanContent, suggestions };
 }
 
 export function useChatStream(conversationId: string): UseChatStreamReturn {
@@ -27,6 +51,7 @@ export function useChatStream(conversationId: string): UseChatStreamReturn {
   const abortControllerRef = useRef<AbortController | null>(null);
   const draftMessageRef = useRef<string>('');
   const rafRef = useRef<number | null>(null);
+  const lastUserMessageRef = useRef<string>('');
 
   const updateDraftMessage = useCallback((chunk: string) => {
     draftMessageRef.current += chunk;
@@ -62,6 +87,9 @@ export function useChatStream(conversationId: string): UseChatStreamReturn {
     abortControllerRef.current = new AbortController();
     setError(null);
     draftMessageRef.current = '';
+
+    // Store last user message for retry
+    lastUserMessageRef.current = message.trim();
 
     // Add user message
     const userMessage: ChatMessage = {
@@ -182,22 +210,26 @@ export function useChatStream(conversationId: string): UseChatStreamReturn {
         }
       }
 
-      // Finalize message
+      // Finalize message and parse suggestions
       setMessages((prev) => {
         const newMessages = [...prev];
         const lastMessage = newMessages[newMessages.length - 1];
-        
+
         if (lastMessage && lastMessage.id === assistantMessageId) {
+          const rawContent = draftMessageRef.current || lastMessage.content;
+          const { cleanContent, suggestions } = parseSuggestions(rawContent);
+
           return [
             ...newMessages.slice(0, -1),
             {
               ...lastMessage,
-              content: draftMessageRef.current || lastMessage.content,
+              content: cleanContent,
               isStreaming: false,
+              suggestions: suggestions.length > 0 ? suggestions : undefined,
             },
           ];
         }
-        
+
         return newMessages;
       });
 
@@ -254,6 +286,7 @@ export function useChatStream(conversationId: string): UseChatStreamReturn {
         role: 'assistant',
         content: 'Something went wrong. Please try again.',
         timestamp: new Date(),
+        isError: true,
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -273,13 +306,43 @@ export function useChatStream(conversationId: string): UseChatStreamReturn {
     setStreamingState('idle');
     setError(null);
     draftMessageRef.current = '';
+    lastUserMessageRef.current = '';
   }, []);
+
+  const retryLastMessage = useCallback(async () => {
+    if (!lastUserMessageRef.current || streamingState !== 'idle') return;
+
+    // Remove the error message and the last user message
+    setMessages((prev) => {
+      const newMessages = [...prev];
+      // Remove last two messages (error + user message that failed)
+      if (newMessages.length >= 2) {
+        const lastMsg = newMessages[newMessages.length - 1];
+        const secondLastMsg = newMessages[newMessages.length - 2];
+        if (lastMsg.isError && secondLastMsg.role === 'user') {
+          return newMessages.slice(0, -2);
+        }
+      }
+      // Or just remove the error message
+      if (newMessages.length >= 1 && newMessages[newMessages.length - 1].isError) {
+        return newMessages.slice(0, -1);
+      }
+      return newMessages;
+    });
+
+    setStreamingState('idle');
+    setError(null);
+
+    // Resend the last message
+    await sendMessage(lastUserMessageRef.current);
+  }, [streamingState, sendMessage]);
 
   return {
     messages,
     streamingState,
     sendMessage,
     clearMessages,
+    retryLastMessage,
     error,
   };
 }

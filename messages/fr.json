@@ -99,7 +99,11 @@
     "typing": "En train de taper...",
     "error": "Une erreur s'est produite. Veuillez réessayer.",
     "close": "Fermer le chat",
-    "welcomeMessage": "Salut ! Avec quoi puis-je vous aider?"
+    "welcomeMessage": "Salut ! Avec quoi puis-je vous aider?",
+    "emptyStateTitle": "Comment puis-je vous aider?",
+    "starterPrompt1": "Quelles visites proposez-vous?",
+    "starterPrompt2": "Comment réserver une visite?",
+    "starterPrompt3": "Quels sont vos tarifs?"
   },
   "footer": {
     "address": "Adresse",
