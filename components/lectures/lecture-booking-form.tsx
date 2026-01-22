@@ -93,7 +93,7 @@ export function LectureBookingForm({ open, onOpenChange, lectureId, lectureTitle
     setSubmitting(true);
 
     try {
-      const bookingData: Omit<LectureBooking, 'id' | 'created_at' | 'updated_at' | 'status'> & { lecture_language: string } = {
+      const bookingData: Omit<LectureBooking, 'id' | 'created_at' | 'updated_at' | 'status'> = {
         lecture_id: lectureId,
         name: formData.name.trim(),
         phone: formData.phone.trim() || undefined,
@@ -102,7 +102,7 @@ export function LectureBookingForm({ open, onOpenChange, lectureId, lectureTitle
         number_of_people: formData.number_of_people ? Number(formData.number_of_people) : undefined,
         location_description: formData.location_description.trim() || undefined,
         needs_room_provided: formData.needs_room_provided,
-        lecture_language: formData.lecture_language,
+        lecture_language: formData.lecture_language as 'nl' | 'en',
       };
 
       const response = await fetch('/api/lecture-bookings', {
