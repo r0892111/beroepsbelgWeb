@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create booking
-    const bookingData: Omit<LectureBooking, 'id' | 'created_at' | 'updated_at' | 'status'> = {
+    const bookingData: Omit<LectureBooking, 'id' | 'created_at' | 'updated_at' | 'status'> & { lecture_language?: string } = {
       lecture_id: body.lecture_id || undefined,
       name: body.name.trim(),
       phone: body.phone?.trim() || undefined,
@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
       number_of_people: body.number_of_people ? Number(body.number_of_people) : undefined,
       location_description: body.location_description?.trim() || undefined,
       needs_room_provided: body.needs_room_provided || false,
+      lecture_language: body.lecture_language || undefined,
     };
 
     const booking = await createLectureBooking(bookingData);

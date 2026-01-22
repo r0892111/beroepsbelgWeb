@@ -1448,6 +1448,17 @@ export default function AdminLecturesPage() {
                       {selectedBooking.needs_room_provided ? 'Yes' : 'No'}
                     </p>
                   </div>
+                  {selectedBooking.lecture_language && (
+                    <div>
+                      <label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                        <BookOpen className="h-4 w-4" />
+                        Lecture Language
+                      </label>
+                      <p className="text-base mt-1">
+                        {selectedBooking.lecture_language === 'nl' ? 'Nederlands' : 'English'}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Location Description */}
@@ -1524,6 +1535,12 @@ export default function AdminLecturesPage() {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Number of People:</span>
                       <span className="font-medium">{selectedBookingForPayment.number_of_people}</span>
+                    </div>
+                  )}
+                  {selectedBookingForPayment.lecture_language && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Language:</span>
+                      <span className="font-medium">{selectedBookingForPayment.lecture_language === 'nl' ? 'Nederlands' : 'English'}</span>
                     </div>
                   )}
                 </div>

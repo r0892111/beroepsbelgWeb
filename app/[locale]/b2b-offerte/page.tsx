@@ -1206,7 +1206,18 @@ export default function B2BQuotePage() {
                       >
                         <div className="flex items-center gap-3 mb-3">
                           <div className="relative w-16 h-16 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
-                            {product.image ? (
+                            {product.image && /\.(mp4|webm|mov)$/i.test(product.image) ? (
+                              <video
+                                src={product.image}
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                                preload="metadata"
+                                className="w-full h-full object-cover"
+                                aria-label={product.title.nl}
+                              />
+                            ) : product.image ? (
                               <Image src={product.image} alt={product.title.nl} fill className="object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">

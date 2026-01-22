@@ -940,6 +940,7 @@ export async function createLectureBooking(booking: Omit<LectureBooking, 'id' | 
         number_of_people: booking.number_of_people || null,
         location_description: booking.location_description || null,
         needs_room_provided: booking.needs_room_provided || false,
+        lecture_language: (booking as any).lecture_language || null,
         status: 'pending',
       }])
       .select()
@@ -960,6 +961,7 @@ export async function createLectureBooking(booking: Omit<LectureBooking, 'id' | 
       number_of_people: data.number_of_people || undefined,
       location_description: data.location_description || undefined,
       needs_room_provided: data.needs_room_provided,
+      lecture_language: data.lecture_language || undefined,
       status: data.status as 'pending' | 'confirmed' | 'cancelled',
       created_at: data.created_at,
       updated_at: data.updated_at,

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import type { LectureBooking } from '@/lib/data/types';
 
@@ -30,6 +31,7 @@ export function LectureBookingForm({ open, onOpenChange, lectureId, lectureTitle
     number_of_people: '',
     location_description: '',
     needs_room_provided: false,
+    lecture_language: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -72,6 +74,11 @@ export function LectureBookingForm({ open, onOpenChange, lectureId, lectureTitle
       newErrors.location_description = tBooking('locationDescriptionRequired');
     }
 
+    // Lecture language is required
+    if (!formData.lecture_language) {
+      newErrors.lecture_language = tBooking('lectureLanguageRequired');
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -86,7 +93,7 @@ export function LectureBookingForm({ open, onOpenChange, lectureId, lectureTitle
     setSubmitting(true);
 
     try {
-      const bookingData: Omit<LectureBooking, 'id' | 'created_at' | 'updated_at' | 'status'> = {
+      const bookingData: Omit<LectureBooking, 'id' | 'created_at' | 'updated_at' | 'status'> & { lecture_language: string } = {
         lecture_id: lectureId,
         name: formData.name.trim(),
         phone: formData.phone.trim() || undefined,
@@ -95,6 +102,7 @@ export function LectureBookingForm({ open, onOpenChange, lectureId, lectureTitle
         number_of_people: formData.number_of_people ? Number(formData.number_of_people) : undefined,
         location_description: formData.location_description.trim() || undefined,
         needs_room_provided: formData.needs_room_provided,
+        lecture_language: formData.lecture_language,
       };
 
       const response = await fetch('/api/lecture-bookings', {
@@ -139,6 +147,7 @@ export function LectureBookingForm({ open, onOpenChange, lectureId, lectureTitle
         number_of_people: '',
         location_description: '',
         needs_room_provided: false,
+        lecture_language: '',
       });
       setErrors({});
       onOpenChange(false);
@@ -295,6 +304,29 @@ export function LectureBookingForm({ open, onOpenChange, lectureId, lectureTitle
               >
                 {tBooking('needsRoom')}
               </Label>
+            </div>
+
+            {/* Lecture Language */}
+            <div>
+              <Label htmlFor="lecture_language">
+                {tBooking('lectureLanguage')} <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={formData.lecture_language}
+                onValueChange={(value) => {
+                  setFormData({ ...formData, lecture_language: value });
+                  if (errors.lecture_language) setErrors({ ...errors, lecture_language: '' });
+                }}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder={tBooking('lectureLanguagePlaceholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nl">{tBooking('languageDutch')}</SelectItem>
+                  <SelectItem value="en">{tBooking('languageEnglish')}</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.lecture_language && <p className="text-sm text-red-500 mt-1">{errors.lecture_language}</p>}
             </div>
           </div>
           <DialogFooter>

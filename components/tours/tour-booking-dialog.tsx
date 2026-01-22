@@ -1040,9 +1040,20 @@ export function TourBookingDialog({
                     >
                       {/* Product info section - fixed structure */}
                       <div className="flex items-start gap-3 flex-1">
-                        {/* Image */}
+                        {/* Image or Video */}
                         <div className="relative w-16 h-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
-                          {product.image ? (
+                          {product.image && /\.(mp4|webm|mov)$/i.test(product.image) ? (
+                            <video
+                              src={product.image}
+                              autoPlay
+                              loop
+                              muted
+                              playsInline
+                              preload="metadata"
+                              className="w-full h-full object-cover"
+                              aria-label={product.title.nl}
+                            />
+                          ) : product.image ? (
                             <Image src={product.image} alt={product.title.nl} fill className="object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
@@ -1151,9 +1162,20 @@ export function TourBookingDialog({
                               >
                                 {/* Product info section - fixed structure */}
                                 <div className="flex items-start gap-3 flex-1">
-                                  {/* Image */}
+                                  {/* Image or Video */}
                                   <div className="relative w-16 h-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
-                                    {product.image ? (
+                                    {product.image && /\.(mp4|webm|mov)$/i.test(product.image) ? (
+                                      <video
+                                        src={product.image}
+                                        autoPlay
+                                        loop
+                                        muted
+                                        playsInline
+                                        preload="metadata"
+                                        className="w-full h-full object-cover"
+                                        aria-label={product.title.nl}
+                                      />
+                                    ) : product.image ? (
                                       <Image src={product.image} alt={product.title.nl} fill className="object-cover" />
                                     ) : (
                                       <div className="w-full h-full flex items-center justify-center">

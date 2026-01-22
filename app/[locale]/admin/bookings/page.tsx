@@ -263,10 +263,15 @@ export default function AdminBookingsPage() {
   // Filter logic
   const filteredBookings = bookings.filter((booking) => {
     const searchLower = searchQuery.toLowerCase();
-    const matchesSearch = !searchQuery || 
+    // Get customer name from first invitee
+    const customerName = (booking.invitees?.[0] as any)?.name?.toLowerCase() || '';
+    const customerEmail = (booking.invitees?.[0] as any)?.email?.toLowerCase() || '';
+    const matchesSearch = !searchQuery ||
       booking.id.toString().includes(searchLower) ||
       booking.city?.toLowerCase().includes(searchLower) ||
-      booking.deal_id?.toLowerCase().includes(searchLower);
+      booking.deal_id?.toLowerCase().includes(searchLower) ||
+      customerName.includes(searchLower) ||
+      customerEmail.includes(searchLower);
 
     const matchesStatus = filterStatus === 'all' || booking.status === filterStatus;
     const matchesCity = filterCity === 'all' || booking.city === filterCity;
@@ -721,7 +726,7 @@ export default function AdminBookingsPage() {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search by booking ID, city, or deal ID..."
+                    placeholder="Search by booking ID, city, deal ID, client name, or email..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10 bg-white"

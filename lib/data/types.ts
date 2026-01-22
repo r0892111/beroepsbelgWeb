@@ -214,6 +214,7 @@ export type LectureBooking = {
   number_of_people?: number;
   location_description?: string;
   needs_room_provided: boolean;
+  lecture_language?: 'nl' | 'en';
   status?: 'pending' | 'confirmed' | 'cancelled';
   created_at?: string;
   updated_at?: string;
