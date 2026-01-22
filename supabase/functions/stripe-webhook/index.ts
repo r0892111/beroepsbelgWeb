@@ -296,6 +296,8 @@ async function handleEvent(event: Stripe.Event) {
                 promoCode: promoCodeInfo.code,
                 promoDiscountAmount: promoCodeInfo.discountAmount,
                 promoDiscountPercent: promoCodeInfo.discountPercent,
+                // Unique identifier to match with local_tours_bookings
+                stripeSessionId: sessionId,
               };
 
               const updatedInvitees = [...currentInvitees, newInvitee];
@@ -349,6 +351,8 @@ async function handleEvent(event: Stripe.Event) {
                 promoCode: promoCodeInfo.code,
                 promoDiscountAmount: promoCodeInfo.discountAmount,
                 promoDiscountPercent: promoCodeInfo.discountPercent,
+                // Unique identifier to match with local_tours_bookings
+                stripeSessionId: sessionId,
               }],
             };
 
