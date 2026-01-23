@@ -114,8 +114,18 @@ export default function BlogDetailClientPage({ blog, locale }: BlogDetailClientP
           </div>
         </div>
 
-        {/* Thumbnail */}
-        {blog.thumbnail_url && (
+        {/* Thumbnail/Video */}
+        {blog.video_url ? (
+          <div className="relative w-full h-64 md:h-96 mb-8 rounded-lg overflow-hidden">
+            <video
+              src={blog.video_url}
+              controls
+              className="w-full h-full object-cover"
+              preload="metadata"
+              aria-label={title}
+            />
+          </div>
+        ) : blog.thumbnail_url && (
           <div className="relative w-full h-64 md:h-96 mb-8 rounded-lg overflow-hidden">
             <Image
               src={blog.thumbnail_url}

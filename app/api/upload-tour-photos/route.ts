@@ -53,18 +53,29 @@ async function getGoogleAccessToken(): Promise<string | null> {
   const { data: adminProfile, error: profileError } = await supabase
     .from('profiles')
     .select('id, google_access_token, google_refresh_token')
-    .or('isAdmin.eq.true')
+    .or('isAdmin.eq.true,is_admin.eq.true')
     .not('google_refresh_token', 'is', null)
     .limit(1)
     .single();
 
   if (profileError || !adminProfile) {
+    console.error('[getGoogleAccessToken] No admin profile found with Google tokens:', profileError?.message);
     return null;
   }
 
-  // If we have an access token, return it
+  // If we have an access token, try to validate it first by making a test request
   if (adminProfile.google_access_token) {
-    return adminProfile.google_access_token;
+    // Test if the token is still valid by making a lightweight API call
+    try {
+      const testResponse = await fetch('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=' + adminProfile.google_access_token);
+      if (testResponse.ok) {
+        return adminProfile.google_access_token;
+      }
+      // Token is invalid, will try to refresh below
+      console.log('[getGoogleAccessToken] Access token expired, refreshing...');
+    } catch (error) {
+      console.log('[getGoogleAccessToken] Error validating token, refreshing...');
+    }
   }
 
   // If we have a refresh token, refresh it
@@ -73,6 +84,7 @@ async function getGoogleAccessToken(): Promise<string | null> {
     const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+      console.error('[getGoogleAccessToken] Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET environment variables');
       return null;
     }
 
@@ -91,10 +103,34 @@ async function getGoogleAccessToken(): Promise<string | null> {
       });
 
       if (!refreshResponse.ok) {
+        const errorData = await refreshResponse.json().catch(() => ({}));
+        console.error('[getGoogleAccessToken] Token refresh failed:', {
+          status: refreshResponse.status,
+          error: errorData.error || 'unknown',
+          error_description: errorData.error_description || 'no description',
+        });
+        
+        // If refresh token is invalid/expired, clear it from database
+        if (refreshResponse.status === 400 && (errorData.error === 'invalid_grant' || errorData.error === 'invalid_request')) {
+          console.error('[getGoogleAccessToken] Refresh token is invalid, clearing from database');
+          await supabase
+            .from('profiles')
+            .update({ 
+              google_access_token: null,
+              google_refresh_token: null 
+            })
+            .eq('id', adminProfile.id);
+        }
+        
         return null;
       }
 
       const tokens = await refreshResponse.json();
+      
+      if (!tokens.access_token) {
+        console.error('[getGoogleAccessToken] No access token in refresh response');
+        return null;
+      }
       
       // Update the access token in the database
       await supabase
@@ -102,12 +138,15 @@ async function getGoogleAccessToken(): Promise<string | null> {
         .update({ google_access_token: tokens.access_token })
         .eq('id', adminProfile.id);
 
+      console.log('[getGoogleAccessToken] Successfully refreshed access token');
       return tokens.access_token;
     } catch (error) {
+      console.error('[getGoogleAccessToken] Exception refreshing token:', error);
       return null;
     }
   }
 
+  console.error('[getGoogleAccessToken] No refresh token available');
   return null;
 }
 
@@ -139,6 +178,19 @@ async function uploadToGoogleDrive(
     );
 
     if (!uploadResponse.ok) {
+      const errorData = await uploadResponse.json().catch(() => ({}));
+      console.error('[uploadToGoogleDrive] Upload failed:', {
+        status: uploadResponse.status,
+        statusText: uploadResponse.statusText,
+        error: errorData.error || 'unknown',
+        error_description: errorData.error?.message || errorData.error_description || 'no description',
+      });
+      
+      // If it's an auth error, the token might be invalid
+      if (uploadResponse.status === 401) {
+        throw new Error('Google authentication failed. Please reconnect your Google account in the admin panel.');
+      }
+      
       return null;
     }
 
@@ -147,8 +199,9 @@ async function uploadToGoogleDrive(
       id: result.id,
       name: result.name,
     };
-  } catch (error) {
-    return null;
+  } catch (error: any) {
+    console.error('[uploadToGoogleDrive] Exception:', error);
+    throw error; // Re-throw to propagate error message
   }
 }
 
@@ -211,16 +264,28 @@ export async function POST(request: NextRequest) {
 
     // Upload all files to Google Drive
     const uploadResults = [];
+    const errors: string[] = [];
+    
     for (const file of files) {
-      const result = await uploadToGoogleDrive(file, accessToken, folderId);
-      if (result) {
-        uploadResults.push(result);
+      try {
+        const result = await uploadToGoogleDrive(file, accessToken, folderId);
+        if (result) {
+          uploadResults.push(result);
+        } else {
+          errors.push(`Failed to upload ${file.name}`);
+        }
+      } catch (error: any) {
+        console.error(`[upload-tour-photos] Error uploading ${file.name}:`, error);
+        errors.push(error.message || `Failed to upload ${file.name}`);
       }
     }
 
     if (uploadResults.length === 0) {
       return NextResponse.json(
-        { error: 'Failed to upload files' },
+        { 
+          error: 'Failed to upload files',
+          details: errors.length > 0 ? errors.join('; ') : 'Unknown error',
+        },
         { status: 500 }
       );
     }

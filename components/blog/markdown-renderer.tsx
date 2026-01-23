@@ -9,13 +9,17 @@ interface MarkdownRendererProps {
   content: string;
 }
 
-// Pre-process markdown to extract image width attributes
-function preprocessMarkdown(markdown: string): { processed: string; imageWidths: Map<string, string> } {
+// Pre-process markdown to extract image width attributes and video tags
+function preprocessMarkdown(markdown: string): { processed: string; imageWidths: Map<string, string>; videos: Array<{ src: string; width: string; alt: string }> } {
   const imageWidths = new Map<string, string>();
+  const videos: Array<{ src: string; width: string; alt: string }> = [];
   
   // Match all image markdown patterns with optional width attribute
   // Pattern: ![alt](url){width="25%"} - can be on its own line or within text
   const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)(?:\{width="(\d+)%"\})?/g;
+  
+  // Match video HTML tags: <video src="url" controls style="width: X%">alt</video>
+  const videoRegex = /<video\s+src="([^"]+)"\s+controls(?:\s+style="width:\s*(\d+)%")?[^>]*>([^<]*)<\/video>/g;
   
   let processed = markdown;
   let match;
@@ -35,14 +39,50 @@ function preprocessMarkdown(markdown: string): { processed: string; imageWidths:
     processed = processed.replace(fullMatch, imageMarkdown);
   }
   
+  // Find all video tags and extract info
+  while ((match = videoRegex.exec(markdown)) !== null) {
+    const src = match[1];
+    const width = match[2] || '100';
+    const alt = match[3] || '';
+    
+    videos.push({ src, width, alt });
+    
+    // Replace video tag with a placeholder that we'll handle in the renderer
+    processed = processed.replace(match[0], `[VIDEO_PLACEHOLDER:${videos.length - 1}]`);
+  }
+  
   return {
     processed,
     imageWidths,
+    videos,
   };
 }
 
 export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
-  const { processed, imageWidths } = useMemo(() => preprocessMarkdown(content), [content]);
+  const { processed, imageWidths, videos } = useMemo(() => preprocessMarkdown(content), [content]);
+  
+  // Custom component to render video placeholders
+  const VideoComponent = ({ index }: { index: number }) => {
+    const video = videos[parseInt(index.toString())];
+    if (!video) return null;
+    
+    const widthValue = `${video.width}%`;
+    
+    return (
+      <div className={`my-6 ${widthValue === '100%' ? 'w-full' : 'mx-auto'}`} style={{ width: widthValue }}>
+        <div className="relative w-full rounded-lg overflow-hidden">
+          <video
+            src={video.src}
+            controls
+            className="w-full h-auto rounded-lg"
+            preload="metadata"
+          >
+            {video.alt || 'Video'}
+          </video>
+        </div>
+      </div>
+    );
+  };
   
   return (
     <ReactMarkdown
@@ -154,6 +194,16 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
         em: ({ node, ...props }) => (
           <em className="italic" {...props} />
         ),
+        // Paragraphs that contain video placeholders
+        p: ({ node, children, ...props }: any) => {
+          const text = String(children);
+          const videoMatch = text.match(/\[VIDEO_PLACEHOLDER:(\d+)\]/);
+          if (videoMatch) {
+            const index = parseInt(videoMatch[1]);
+            return <VideoComponent key={index} index={index} />;
+          }
+          return <p className="mb-4 text-gray-700 leading-relaxed" {...props}>{children}</p>;
+        },
       }}
     >
       {processed}

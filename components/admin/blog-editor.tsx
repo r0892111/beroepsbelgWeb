@@ -20,16 +20,18 @@ interface BlogEditorProps {
 
 type Block = {
   id: string;
-  type: 'markdown' | 'image';
+  type: 'markdown' | 'image' | 'video';
   content?: string; // For markdown blocks
   imageUrl?: string; // For image blocks
-  altText?: string; // For image blocks
-  width?: string; // For image blocks
+  videoUrl?: string; // For video blocks
+  altText?: string; // For image/video blocks
+  width?: string; // For image/video blocks
 };
 
 const STORAGE_BUCKET = 'airbnb-images';
 const STORAGE_FOLDER = 'blog-images';
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB for images
+const MAX_VIDEO_SIZE = 250 * 1024 * 1024; // 250MB for videos
 
 export default function BlogEditor({ content, onChange, blogId }: BlogEditorProps) {
   const [blocks, setBlocks] = useState<Block[]>([]);
@@ -40,12 +42,13 @@ export default function BlogEditor({ content, onChange, blogId }: BlogEditorProp
   const [linkText, setLinkText] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
   
-  // Image upload state
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  // Media upload state (image or video)
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
   const [imageSize, setImageSize] = useState<string>('100');
   const [altText, setAltText] = useState('');
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
 
   // Parse markdown content into blocks
   const parseContentToBlocks = (markdownContent: string): Block[] => {
@@ -121,6 +124,10 @@ export default function BlogEditor({ content, onChange, blogId }: BlogEditorProp
     return blocksArray.map(block => {
       if (block.type === 'markdown') {
         return block.content || '';
+      } else if (block.type === 'video') {
+        // Video block - use HTML video tag in markdown
+        const widthAttr = block.width && block.width !== '100' ? ` style="width: ${block.width}%"` : '';
+        return `<video src="${block.videoUrl}" controls${widthAttr}>\n${block.altText || 'Video'}\n</video>`;
       } else {
         // Image block
         const widthAttr = block.width && block.width !== '100' ? `{width="${block.width}%"}` : '';
@@ -160,54 +167,67 @@ export default function BlogEditor({ content, onChange, blogId }: BlogEditorProp
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > MAX_FILE_SIZE) {
-      toast.error(`File size exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit`);
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+
+    if (!isImage && !isVideo) {
+      toast.error('Please upload an image or video file');
       return;
     }
 
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
+    // Check file size based on type
+    const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_FILE_SIZE;
+    if (file.size > maxSize) {
+      toast.error(`File size exceeds ${maxSize / 1024 / 1024}MB limit`);
       return;
     }
 
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    setMediaFile(file);
+    setMediaType(isVideo ? 'video' : 'image');
+
+    // Create preview
+    if (isImage) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setMediaPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else if (isVideo) {
+      const videoUrl = URL.createObjectURL(file);
+      setMediaPreview(videoUrl);
+    }
   };
 
   const handleImageUpload = async () => {
-    // Check if we're editing an existing image block
-    const isEditing = selectedBlockIndex !== null && blocks[selectedBlockIndex]?.type === 'image';
+    // Check if we're editing an existing media block
+    const isEditing = selectedBlockIndex !== null && (blocks[selectedBlockIndex]?.type === 'image' || blocks[selectedBlockIndex]?.type === 'video');
     
     if (isEditing) {
       // Just update the existing block properties
       const newBlocks = [...blocks];
       const block = newBlocks[selectedBlockIndex];
-      if (block.type === 'image') {
+      if (block.type === 'image' || block.type === 'video') {
         block.altText = altText || '';
         block.width = imageSize;
         // Only update URL if a new file was uploaded
-        if (imageFile && blogId) {
-          setUploadingImage(true);
+        if (mediaFile && blogId) {
+          setUploadingMedia(true);
           try {
-            const fileExt = imageFile.name.split('.').pop();
+            const fileExt = mediaFile.name.split('.').pop();
             const fileName = `${blogId}/${Date.now()}.${fileExt}`;
             const filePath = `${STORAGE_FOLDER}/${fileName}`;
 
             const { error: uploadError } = await supabase.storage
               .from(STORAGE_BUCKET)
-              .upload(filePath, imageFile, {
+              .upload(filePath, mediaFile, {
                 cacheControl: '3600',
                 upsert: false,
               });
 
             if (uploadError) {
-              console.error('Error uploading image:', uploadError);
-              toast.error('Failed to upload image');
-              setUploadingImage(false);
+              console.error('Error uploading media:', uploadError);
+              toast.error('Failed to upload media');
+              setUploadingMedia(false);
               return;
             }
 
@@ -215,44 +235,52 @@ export default function BlogEditor({ content, onChange, blogId }: BlogEditorProp
               .from(STORAGE_BUCKET)
               .getPublicUrl(filePath);
             
-            block.imageUrl = publicUrl;
+            if (mediaType === 'video') {
+              block.type = 'video';
+              block.videoUrl = publicUrl;
+              block.imageUrl = undefined;
+            } else {
+              block.type = 'image';
+              block.imageUrl = publicUrl;
+              block.videoUrl = undefined;
+            }
           } catch (err) {
-            console.error('Exception uploading image:', err);
-            toast.error('Failed to upload image');
-            setUploadingImage(false);
+            console.error('Exception uploading media:', err);
+            toast.error('Failed to upload media');
+            setUploadingMedia(false);
             return;
           } finally {
-            setUploadingImage(false);
+            setUploadingMedia(false);
           }
         }
       }
       updateBlocks(newBlocks);
-      toast.success('Image updated');
+      toast.success('Media updated');
     } else {
-      // Inserting new image
-      if (!imageFile || !blogId) {
-        toast.error('Please select an image and save the blog first');
+      // Inserting new media
+      if (!mediaFile || !blogId) {
+        toast.error('Please select a file and save the blog first');
         return;
       }
 
-      setUploadingImage(true);
+      setUploadingMedia(true);
 
       try {
-        const fileExt = imageFile.name.split('.').pop();
+        const fileExt = mediaFile.name.split('.').pop();
         const fileName = `${blogId}/${Date.now()}.${fileExt}`;
         const filePath = `${STORAGE_FOLDER}/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from(STORAGE_BUCKET)
-          .upload(filePath, imageFile, {
+          .upload(filePath, mediaFile, {
             cacheControl: '3600',
             upsert: false,
           });
 
         if (uploadError) {
-          console.error('Error uploading image:', uploadError);
-          toast.error('Failed to upload image');
-          setUploadingImage(false);
+          console.error('Error uploading media:', uploadError);
+          toast.error('Failed to upload media');
+          setUploadingMedia(false);
           return;
         }
 
@@ -260,35 +288,39 @@ export default function BlogEditor({ content, onChange, blogId }: BlogEditorProp
           .from(STORAGE_BUCKET)
           .getPublicUrl(filePath);
 
-        // Add image block
-        const newImageBlock: Block = {
+        // Add media block
+        const newMediaBlock: Block = {
           id: `block-${Date.now()}-${Math.random()}`,
-          type: 'image',
-          imageUrl: publicUrl,
+          type: mediaType,
+          ...(mediaType === 'video' ? { videoUrl: publicUrl } : { imageUrl: publicUrl }),
           altText: altText || '',
           width: imageSize,
         };
 
         const newBlocks = [...blocks];
         if (selectedBlockIndex !== null) {
-          newBlocks.splice(selectedBlockIndex + 1, 0, newImageBlock);
+          newBlocks.splice(selectedBlockIndex + 1, 0, newMediaBlock);
         } else {
-          newBlocks.push(newImageBlock);
+          newBlocks.push(newMediaBlock);
         }
         
         updateBlocks(newBlocks);
-        toast.success('Image uploaded and inserted');
+        toast.success(`${mediaType === 'video' ? 'Video' : 'Image'} uploaded and inserted`);
       } catch (err) {
-        console.error('Exception uploading image:', err);
-        toast.error('Failed to upload image');
+        console.error('Exception uploading media:', err);
+        toast.error('Failed to upload media');
       } finally {
-        setUploadingImage(false);
+        setUploadingMedia(false);
       }
     }
 
     setShowImageDialog(false);
-    setImageFile(null);
-    setImagePreview(null);
+    // Clean up video object URL if needed
+    if (mediaType === 'video' && mediaPreview) {
+      URL.revokeObjectURL(mediaPreview);
+    }
+    setMediaFile(null);
+    setMediaPreview(null);
     setAltText('');
     setImageSize('100');
     setSelectedBlockIndex(null);
@@ -421,6 +453,62 @@ export default function BlogEditor({ content, onChange, blogId }: BlogEditorProp
                   </Button>
                 </div>
               </div>
+            ) : block.type === 'video' ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm text-gray-600">Video Block</Label>
+                  {blocks.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteBlock(index)}
+                      className="h-7 text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+                {block.videoUrl && (
+                  <div className="space-y-2">
+                    <div className="relative w-full mx-auto" style={{ width: `${block.width || '100'}%`, maxWidth: '100%' }}>
+                      <div className="relative w-full rounded-lg overflow-hidden border">
+                        <video
+                          src={block.videoUrl}
+                          controls
+                          className="w-full h-auto rounded-lg"
+                          preload="metadata"
+                        >
+                          {block.altText || 'Video'}
+                        </video>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <span>Size: {block.width || '100'}%</span>
+                      {block.altText && <span>• Alt: {block.altText}</span>}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedBlockIndex(index);
+                          setMediaPreview(block.videoUrl || null);
+                          setMediaType('video');
+                          setAltText(block.altText || '');
+                          setImageSize(block.width || '100');
+                          setMediaFile(null); // We're editing, not uploading new
+                          setShowImageDialog(true);
+                        }}
+                        className="h-7"
+                      >
+                        Edit Video
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -459,10 +547,11 @@ export default function BlogEditor({ content, onChange, blogId }: BlogEditorProp
                         size="sm"
                         onClick={() => {
                           setSelectedBlockIndex(index);
-                          setImagePreview(block.imageUrl || null);
+                          setMediaPreview(block.imageUrl || null);
+                          setMediaType('image');
                           setAltText(block.altText || '');
                           setImageSize(block.width || '100');
-                          setImageFile(null); // We're editing, not uploading new
+                          setMediaFile(null); // We're editing, not uploading new
                           setShowImageDialog(true);
                         }}
                         className="h-7"
@@ -520,28 +609,35 @@ export default function BlogEditor({ content, onChange, blogId }: BlogEditorProp
         </DialogContent>
       </Dialog>
 
-      {/* Image Upload Dialog */}
+      {/* Media Upload Dialog */}
       <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Insert Image</DialogTitle>
+            <DialogTitle>Insert Image or Video</DialogTitle>
             <DialogDescription>
-              Upload an image and choose its display size
+              Upload an image (up to 50MB) or video (up to 250MB) and choose its display size
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
-            {imagePreview ? (
+            {mediaPreview ? (
               <div className="relative w-full h-48 border rounded-lg overflow-hidden">
-                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                {mediaType === 'video' ? (
+                  <video src={mediaPreview} controls className="w-full h-full object-cover" preload="metadata" />
+                ) : (
+                  <img src={mediaPreview} alt="Preview" className="w-full h-full object-cover" />
+                )}
                 <Button
                   type="button"
                   variant="destructive"
                   size="sm"
                   className="absolute top-2 right-2"
                   onClick={() => {
-                    setImageFile(null);
-                    setImagePreview(null);
+                    if (mediaType === 'video' && mediaPreview) {
+                      URL.revokeObjectURL(mediaPreview);
+                    }
+                    setMediaFile(null);
+                    setMediaPreview(null);
                   }}
                 >
                   <X className="h-4 w-4" />
@@ -551,11 +647,11 @@ export default function BlogEditor({ content, onChange, blogId }: BlogEditorProp
               <div className="border-2 border-dashed rounded-lg p-8 text-center">
                 <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
                 <Label htmlFor="image-upload" className="cursor-pointer">
-                  <span className="text-sm text-gray-600">Click to upload image</span>
+                  <span className="text-sm text-gray-600">Click to upload image or video</span>
                   <input
                     id="image-upload"
                     type="file"
-                    accept="image/*"
+                    accept="image/*,video/*"
                     onChange={handleFileInput}
                     className="hidden"
                   />
@@ -590,12 +686,12 @@ export default function BlogEditor({ content, onChange, blogId }: BlogEditorProp
 
             {!blogId && selectedBlockIndex === null && (
               <p className="text-xs text-amber-600">
-                Note: Save the blog first to enable image uploads
+                Note: Save the blog first to enable media uploads
               </p>
             )}
-            {selectedBlockIndex !== null && blocks[selectedBlockIndex]?.type === 'image' && (
+            {selectedBlockIndex !== null && (blocks[selectedBlockIndex]?.type === 'image' || blocks[selectedBlockIndex]?.type === 'video') && (
               <p className="text-xs text-blue-600">
-                Editing existing image. Upload a new file to replace it, or just change size/alt text.
+                Editing existing {blocks[selectedBlockIndex]?.type}. Upload a new file to replace it, or just change size/alt text.
               </p>
             )}
           </div>
@@ -603,8 +699,11 @@ export default function BlogEditor({ content, onChange, blogId }: BlogEditorProp
           <DialogFooter>
             <Button variant="outline" onClick={() => {
               setShowImageDialog(false);
-              setImageFile(null);
-              setImagePreview(null);
+              if (mediaType === 'video' && mediaPreview) {
+                URL.revokeObjectURL(mediaPreview);
+              }
+              setMediaFile(null);
+              setMediaPreview(null);
               setAltText('');
               setImageSize('100');
               setSelectedBlockIndex(null);
@@ -614,12 +713,14 @@ export default function BlogEditor({ content, onChange, blogId }: BlogEditorProp
             <Button
               onClick={handleImageUpload}
               disabled={
-                (selectedBlockIndex === null && (!imageFile || !blogId)) || 
-                uploadingImage
+                (selectedBlockIndex === null && (!mediaFile || !blogId)) || 
+                uploadingMedia
               }
             >
-              {uploadingImage ? 'Uploading...' : 
-               (selectedBlockIndex !== null && blocks[selectedBlockIndex]?.type === 'image') ? 'Update Image' : 'Insert Image'}
+              {uploadingMedia ? 'Uploading...' : 
+               (selectedBlockIndex !== null && (blocks[selectedBlockIndex]?.type === 'image' || blocks[selectedBlockIndex]?.type === 'video')) 
+                 ? `Update ${blocks[selectedBlockIndex]?.type === 'video' ? 'Video' : 'Image'}` 
+                 : `Insert ${mediaType === 'video' ? 'Video' : 'Image'}`}
             </Button>
           </DialogFooter>
         </DialogContent>

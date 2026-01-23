@@ -122,6 +122,7 @@ export type Blog = {
   excerpt?: string;
   content: string; // Markdown content
   thumbnail_url?: string;
+  video_url?: string; // Video URL for thumbnail (mp4, webm, mov)
   
   // Optional multi-language content
   title_en?: string;
