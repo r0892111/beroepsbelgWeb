@@ -41,6 +41,7 @@ export default function ChooseGuideClientPage() {
   
   const [booking, setBooking] = useState<Booking | null>(null);
   const [guides, setGuides] = useState<Guide[]>([]);
+  const [allGuides, setAllGuides] = useState<Guide[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGuideId, setSelectedGuideId] = useState<number | null>(null);
   const [confirming, setConfirming] = useState(false);
@@ -100,6 +101,31 @@ export default function ChooseGuideClientPage() {
         const data = await response.json();
         setBooking(data.booking);
         setGuides(data.guides || []);
+
+        // Fetch all guides from database
+        const { data: allGuidesData, error: guidesError } = await supabase
+          .from('guides_temp')
+          .select('id, name, cities, languages, tour_types, content, phonenumber, Email, tours_done')
+          .order('name', { ascending: true });
+
+        if (!guidesError && allGuidesData) {
+          // Convert to Guide format
+          const formattedGuides: Guide[] = allGuidesData.map((g: any) => ({
+            id: g.id,
+            name: g.name,
+            cities: g.cities,
+            languages: g.languages,
+            tour_types: g.tour_types,
+            content: g.content,
+            phonenumber: g.phonenumber,
+            Email: g.Email,
+            tours_done: g.tours_done,
+            selectionStatus: null,
+            offeredAt: null,
+            respondedAt: null,
+          }));
+          setAllGuides(formattedGuides);
+        }
       } catch (err) {
         console.error('Error loading data:', err);
         setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -314,7 +340,11 @@ export default function ChooseGuideClientPage() {
           </div>
         )}
 
-        <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
+        {/* Suggested Guides Section */}
+        {guides.length > 0 && (
+          <div className="mb-8">
+            <h2 className="mb-4 text-xl font-semibold text-gray-900">Suggested Guides</h2>
+            <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
           {/* Only show available and offered guides - exclude declined */}
           {guides.filter(g => g.selectionStatus !== 'declined').map((guide) => {
             const isOffered = guide.selectionStatus === 'offered';
@@ -415,7 +445,125 @@ export default function ChooseGuideClientPage() {
               </Card>
             );
           })}
-        </div>
+            </div>
+          </div>
+        )}
+
+        {/* All Guides Section */}
+        {allGuides.length > 0 && (
+          <div className="mb-8">
+            <h2 className="mb-4 text-xl font-semibold text-gray-900">All Available Guides</h2>
+            <p className="mb-4 text-sm text-gray-600">Select any guide from the complete list below</p>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {allGuides.map((guide) => {
+                // Check if this guide is already in the suggested guides
+                const isInSuggested = guides.some(g => g.id === guide.id);
+                const suggestedGuide = guides.find(g => g.id === guide.id);
+                const isOffered = suggestedGuide?.selectionStatus === 'offered';
+                const isDeclined = suggestedGuide?.selectionStatus === 'declined';
+                const isSelectable = !isDeclined;
+                
+                return (
+                  <Card
+                    key={guide.id}
+                    className={`transition-all ${
+                      isSelectable ? 'cursor-pointer hover:shadow-lg' : 'opacity-60'
+                    } ${
+                      selectedGuideId === guide.id
+                        ? 'ring-2 ring-blue-500 ring-offset-2'
+                        : ''
+                    } ${isOffered ? 'bg-yellow-50 border-yellow-200' : ''} ${isInSuggested ? 'border-blue-300' : ''}`}
+                    onClick={() => isSelectable && setSelectedGuideId(guide.id)}
+                  >
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                            isOffered ? 'bg-yellow-100' : isInSuggested ? 'bg-blue-100' : 'bg-gray-100'
+                          }`}>
+                            {isOffered ? (
+                              <Clock className="h-5 w-5 text-yellow-600" />
+                            ) : (
+                              <User className="h-5 w-5 text-gray-600" />
+                            )}
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg">{guide.name || 'Unnamed Guide'}</CardTitle>
+                            {guide.tours_done !== null && guide.tours_done > 0 && (
+                              <div className="mt-1 flex items-center gap-1 text-sm text-gray-500">
+                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                <span>{guide.tours_done} tours</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          {selectedGuideId === guide.id && (
+                            <CheckCircle2 className="h-6 w-6 text-blue-500" />
+                          )}
+                          {isInSuggested && (
+                            <Badge className="bg-blue-500 text-xs">
+                              Suggested
+                            </Badge>
+                          )}
+                          {isOffered && (
+                            <Badge className="bg-yellow-500 text-xs">
+                              Waiting
+                            </Badge>
+                          )}
+                          {isDeclined && (
+                            <Badge className="bg-red-500 text-xs">
+                              Declined
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {guide.cities && guide.cities.length > 0 && (
+                          <div className="flex items-start gap-2">
+                            <MapPin className="mt-0.5 h-4 w-4 text-gray-400" />
+                            <div className="flex flex-wrap gap-1">
+                              {guide.cities.map((city, idx) => (
+                                <Badge key={idx} variant="secondary" className="text-xs">
+                                  {city}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {guide.languages && guide.languages.length > 0 && (
+                          <div className="flex items-start gap-2">
+                            <Languages className="mt-0.5 h-4 w-4 text-gray-400" />
+                            <div className="flex flex-wrap gap-1">
+                              {guide.languages.map((lang, idx) => (
+                                <Badge key={idx} variant="outline" className="text-xs">
+                                  {lang}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {guide.content && (
+                          <CardDescription className="line-clamp-3 text-sm">
+                            {guide.content}
+                          </CardDescription>
+                        )}
+
+                        {guide.Email && (
+                          <p className="text-xs text-gray-500">Email: {guide.Email}</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="mt-8 flex justify-center">
           <Button
