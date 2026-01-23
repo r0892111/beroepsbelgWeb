@@ -233,7 +233,7 @@ export default function B2BQuotePage() {
     };
 
     void checkTanguyAvailability();
-  }, [selectedDate, selectedTimeSlot, selectedCity, actualDuration, requestTanguy]);
+  }, [selectedDate, selectedTimeSlot, selectedCity, actualDuration]);
 
   useEffect(() => {
     let isMounted = true;
