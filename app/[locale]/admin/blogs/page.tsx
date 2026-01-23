@@ -343,8 +343,14 @@ export default function AdminBlogsPage() {
       // Upload thumbnail/video if new file selected
       if (thumbnailFile && editingBlog) {
         const uploaded = await uploadThumbnailToStorage(editingBlog.id);
-        if (uploaded.thumbnailUrl) thumbnailUrl = uploaded.thumbnailUrl;
-        if (uploaded.videoUrl) videoUrl = uploaded.videoUrl;
+        if (uploaded.thumbnailUrl) {
+          thumbnailUrl = uploaded.thumbnailUrl;
+          videoUrl = null; // Clear video if image uploaded
+        }
+        if (uploaded.videoUrl) {
+          videoUrl = uploaded.videoUrl;
+          thumbnailUrl = null; // Clear thumbnail if video uploaded
+        }
       } else if (thumbnailFile) {
         // For new blog, we need to create it first, then upload thumbnail
         // We'll handle this after blog creation
@@ -392,8 +398,14 @@ export default function AdminBlogsPage() {
         // Update existing blog
         if (thumbnailFile) {
           const uploaded = await uploadThumbnailToStorage(editingBlog.id);
-          if (uploaded.thumbnailUrl) blogData.thumbnail_url = uploaded.thumbnailUrl;
-          if (uploaded.videoUrl) blogData.video_url = uploaded.videoUrl;
+          if (uploaded.thumbnailUrl) {
+            blogData.thumbnail_url = uploaded.thumbnailUrl;
+            blogData.video_url = null; // Clear video if image uploaded
+          }
+          if (uploaded.videoUrl) {
+            blogData.video_url = uploaded.videoUrl;
+            blogData.thumbnail_url = null; // Clear thumbnail if video uploaded
+          }
         }
         const response = await fetch(`/api/blogs/${editingBlog.id}`, {
           method: 'PATCH',
@@ -417,9 +429,15 @@ export default function AdminBlogsPage() {
         const newBlog = await response.json();
         if (newBlog && thumbnailFile) {
           const uploaded = await uploadThumbnailToStorage(newBlog.id);
-          const updateData: { thumbnail_url?: string; video_url?: string } = {};
-          if (uploaded.thumbnailUrl) updateData.thumbnail_url = uploaded.thumbnailUrl;
-          if (uploaded.videoUrl) updateData.video_url = uploaded.videoUrl;
+          const updateData: { thumbnail_url?: string | null; video_url?: string | null } = {};
+          if (uploaded.thumbnailUrl) {
+            updateData.thumbnail_url = uploaded.thumbnailUrl;
+            updateData.video_url = null; // Clear video if image uploaded
+          }
+          if (uploaded.videoUrl) {
+            updateData.video_url = uploaded.videoUrl;
+            updateData.thumbnail_url = null; // Clear thumbnail if video uploaded
+          }
           
           if (Object.keys(updateData).length > 0) {
             await fetch(`/api/blogs/${newBlog.id}`, {

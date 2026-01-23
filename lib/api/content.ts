@@ -1492,6 +1492,7 @@ export async function createBlog(blogData: Omit<Blog, 'id' | 'created_at' | 'upd
         excerpt: blogData.excerpt || null,
         content: blogData.content,
         thumbnail_url: blogData.thumbnail_url || null,
+        video_url: blogData.video_url || null,
         title_en: blogData.title_en || null,
         excerpt_en: blogData.excerpt_en || null,
         content_en: blogData.content_en || null,
@@ -1549,6 +1550,7 @@ export async function updateBlog(id: string, blogData: Partial<Omit<Blog, 'id' |
     if (blogData.excerpt !== undefined) updateData.excerpt = blogData.excerpt || null;
     if (blogData.content !== undefined) updateData.content = blogData.content;
     if (blogData.thumbnail_url !== undefined) updateData.thumbnail_url = blogData.thumbnail_url || null;
+    if (blogData.video_url !== undefined) updateData.video_url = blogData.video_url || null;
     if (blogData.title_en !== undefined) updateData.title_en = blogData.title_en || null;
     if (blogData.excerpt_en !== undefined) updateData.excerpt_en = blogData.excerpt_en || null;
     if (blogData.content_en !== undefined) updateData.content_en = blogData.content_en || null;
