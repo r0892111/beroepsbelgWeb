@@ -89,7 +89,17 @@ export default function TeamleaderCallbackPage() {
       setStatus('loading');
       setMessage(t('teamleaderConnecting') || 'Connecting to Teamleader...');
 
-      const redirectUri = `${window.location.origin}/admin/teamleader/callback`;
+      // Get the correct origin (production URL or current origin)
+      const getOrigin = () => {
+        if (typeof window === 'undefined') return 'https://beroepsbelg.be';
+        // In production, always use the production URL
+        if (window.location.hostname === 'beroepsbelg.be' || window.location.hostname.includes('beroepsbelg')) {
+          return 'https://beroepsbelg.be';
+        }
+        return window.location.origin;
+      };
+      
+      const redirectUri = `${getOrigin()}/admin/teamleader/callback`;
       const { data, error } = await supabase.functions.invoke<{
         success: boolean;
         teamleader_user_id?: string;
