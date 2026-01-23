@@ -40,7 +40,10 @@ Deno.serve(async (req) => {
     const scopeEnv = Deno.env.get('TEAMLEADER_SCOPE');
     const scopeDefault = 'users contacts companies deals invoices products';
 
-    const resolvedRedirectUri = redirectUri ?? redirectFallback;
+    // Prioritize the redirect_uri passed from client, fallback to env var
+    // If redirectUri is provided, use it (even if it's localhost for dev)
+    // Only use fallback if redirectUri is explicitly not provided
+    const resolvedRedirectUri = redirectUri || redirectFallback || 'https://beroepsbelg.be/admin/teamleader/callback';
 
     console.log("🔧 OAuth config:", {
       clientIdPresent: !!clientId,

@@ -177,6 +177,18 @@ export default function AdminDashboardPage() {
     // Save locale for callback
     localStorage.setItem('userLocale', locale);
     try {
+      // Get the correct origin (production URL or current origin)
+      const getOrigin = () => {
+        if (typeof window === 'undefined') return 'https://beroepsbelg.be';
+        // In production, always use the production URL
+        if (window.location.hostname === 'beroepsbelg.be' || window.location.hostname.includes('beroepsbelg')) {
+          return 'https://beroepsbelg.be';
+        }
+        return window.location.origin;
+      };
+      
+      const redirectUri = `${getOrigin()}/admin/teamleader/callback`;
+      
       const { data, error } = await supabase.functions.invoke<{
         success: boolean;
         authorization_url?: string;
@@ -185,7 +197,7 @@ export default function AdminDashboardPage() {
       }>('teamleader-auth', {
         body: {
           action: 'authorize',
-          redirect_uri: `${window.location.origin}/admin/teamleader/callback`,
+          redirect_uri: redirectUri,
           user_id: user.id,
           locale: locale  // Pass locale separately so callback can redirect back with it
         }
