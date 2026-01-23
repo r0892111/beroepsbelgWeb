@@ -46,3 +46,10 @@ supabase/config.local.toml
 supabase/.env
 supabase/.env.localeigent/
 eigent/
+
+# migration scripts with sensitive data
+scripts/migration*.ts
+scripts/check-db-ids.*
+scripts/get-live-products.ts
+scripts/get-price-ids-with-names.ts
+scripts/update-database-ids.ts
