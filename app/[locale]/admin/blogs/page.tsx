@@ -413,6 +413,8 @@ export default function AdminBlogsPage() {
           body: JSON.stringify(blogData),
         });
         if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Blog update error:', errorData);
           throw new Error('Failed to update blog');
         }
         toast.success(t('saveSuccess'));
