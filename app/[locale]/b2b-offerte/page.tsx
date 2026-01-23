@@ -134,9 +134,19 @@ export default function B2BQuotePage() {
     return selectedTour?.durationMinutes ?? 120; // Default 2 hours
   }, [isOpMaat, extraHour, selectedTour?.durationMinutes]);
 
-  // Generate time slots between 10:00 and 18:00 based on tour duration
+  // Generate time slots based on tour type:
+  // - Local Stories tours: only show 14:00-16:00 timeslot
+  // - Op Maat tours: 30-minute intervals from 09:00 to 20:00
+  // - Regular tours: slots based on tour duration from 10:00 to 18:00
   const timeSlots = useMemo(() => {
     const durationMinutes = actualDuration;
+    const slots: { value: string; label: string }[] = [];
+
+    const formatTime = (mins: number) => {
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    };
 
     // Check if this is a "Local Stories" tour - restrict to 14:00-16:00 only
     if (selectedTour?.local_stories === true) {
@@ -146,18 +156,38 @@ export default function B2BQuotePage() {
       }];
     }
 
+    // Op Maat tours: 30-minute intervals from 09:00 to 20:00 (START times)
+    // Tours can START at 20:00 and end later (e.g., 22:00 or 23:00 with extra hour)
+    const tourIsOpMaat = selectedTour?.op_maat === true || 
+                        (typeof selectedTour?.op_maat === 'string' && selectedTour.op_maat === 'true') || 
+                        (typeof selectedTour?.op_maat === 'number' && selectedTour.op_maat === 1);
+    if (tourIsOpMaat) {
+      const startHour = 9; // 09:00
+      const lastStartHour = 20; // Last START time is 20:00
+      const intervalMinutes = 30; // 30-minute intervals
+
+      let currentMinutes = startHour * 60;
+      const lastStartMinutes = lastStartHour * 60;
+
+      while (currentMinutes <= lastStartMinutes) {
+        const startTime = formatTime(currentMinutes);
+        const endTime = formatTime(currentMinutes + durationMinutes);
+        slots.push({
+          value: startTime,
+          label: `${startTime} - ${endTime}`
+        });
+        currentMinutes += intervalMinutes;
+      }
+
+      return slots;
+    }
+
+    // Regular tours: generate slots based on tour duration from 10:00 to 18:00
     const startHour = 10; // 10:00
     const endHour = 18; // 18:00
-    const slots: { value: string; label: string }[] = [];
 
     let currentMinutes = startHour * 60; // Start at 10:00 in minutes
     const endMinutes = endHour * 60; // End at 18:00 in minutes
-
-    const formatTime = (mins: number) => {
-      const h = Math.floor(mins / 60);
-      const m = mins % 60;
-      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-    };
 
     while (currentMinutes + durationMinutes <= endMinutes) {
       const startTime = formatTime(currentMinutes);
@@ -170,7 +200,7 @@ export default function B2BQuotePage() {
     }
 
     return slots;
-  }, [actualDuration, selectedTour?.local_stories]);
+  }, [actualDuration, selectedTour?.local_stories, selectedTour?.op_maat]);
 
   // Check Tanguy's availability when date/time changes
   useEffect(() => {
@@ -444,6 +474,17 @@ export default function B2BQuotePage() {
                           (typeof selectedTourData?.op_maat === 'string' && selectedTourData.op_maat === 'true') || 
                           (typeof selectedTourData?.op_maat === 'number' && selectedTourData.op_maat === 1);
       
+      // Calculate weekend and evening fees
+      const isWeekend = selectedDate && (() => {
+        const dateObj = new Date(selectedDate);
+        const day = dateObj.getDay();
+        return day === 0 || day === 6; // Sunday or Saturday
+      })();
+      const weekendFee = isWeekend && selectedTourData?.local_stories !== true;
+      
+      const isEveningSlot = selectedTimeSlot && parseInt(selectedTimeSlot.split(':')[0], 10) >= 17;
+      const eveningFee = tourIsOpMaat && isEveningSlot;
+      
       // Create tourbooking record for ALL tours (to save upsell products and get booking ID)
       let createdBookingId: number | null = null;
       try {
@@ -521,6 +562,9 @@ export default function B2BQuotePage() {
         },
         language: data.language,
         numberOfPeople: data.numberOfPeople,
+        // Weekend and evening fees
+        weekendFee: weekendFee,
+        eveningFee: eveningFee,
         // Company info
         companyName: data.companyName || null,
         vatNumber: data.vatNumber || null,
@@ -1378,6 +1422,45 @@ export default function B2BQuotePage() {
                         </div>
                       )}
                       
+                      {/* Weekend and Evening Fees */}
+                      {(() => {
+                        // Calculate weekend fee: €25 if date is Saturday (6) or Sunday (0), except for local_stories
+                        const isWeekend = selectedDate && (() => {
+                          const dateObj = new Date(selectedDate);
+                          const day = dateObj.getDay();
+                          return day === 0 || day === 6; // Sunday or Saturday
+                        })();
+                        const weekendFeeCost = isWeekend && selectedTour?.local_stories !== true ? 25 : 0;
+
+                        // Calculate evening fee: €25 for op_maat tours if time >= 17:00
+                        const tourIsOpMaat = selectedTour?.op_maat === true || 
+                                            (typeof selectedTour?.op_maat === 'string' && selectedTour.op_maat === 'true') || 
+                                            (typeof selectedTour?.op_maat === 'number' && selectedTour.op_maat === 1);
+                        const isEveningSlot = selectedTimeSlot && parseInt(selectedTimeSlot.split(':')[0], 10) >= 17;
+                        const eveningFeeCost = tourIsOpMaat && isEveningSlot ? 25 : 0;
+
+                        return (weekendFeeCost > 0 || eveningFeeCost > 0) ? (
+                          <div className="pt-2 space-y-1" style={{ borderTop: '1px solid #e5e7eb' }}>
+                            {weekendFeeCost > 0 && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">
+                                  Weekend toeslag
+                                </span>
+                                <span className="font-medium">€{weekendFeeCost.toFixed(2)}</span>
+                              </div>
+                            )}
+                            {eveningFeeCost > 0 && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">
+                                  Avond toeslag
+                                </span>
+                                <span className="font-medium">€{eveningFeeCost.toFixed(2)}</span>
+                              </div>
+                            )}
+                          </div>
+                        ) : null;
+                      })()}
+                      
                       {/* Total */}
                       <div className="pt-3 flex justify-between" style={{ borderTop: '2px solid var(--brass)' }}>
                         <span className="font-bold text-navy text-base">Geschat Totaal</span>
@@ -1390,7 +1473,22 @@ export default function B2BQuotePage() {
                               const product = products.find(p => p.uuid === productId);
                               return sum + ((product?.price || 0) * quantity);
                             }, 0);
-                            return (tourTotal + tanguyCost + extraHourCost + upsellTotal).toFixed(2);
+                            
+                            // Calculate weekend and evening fees
+                            const isWeekend = selectedDate && (() => {
+                              const dateObj = new Date(selectedDate);
+                              const day = dateObj.getDay();
+                              return day === 0 || day === 6; // Sunday or Saturday
+                            })();
+                            const weekendFeeCost = isWeekend && selectedTour?.local_stories !== true ? 25 : 0;
+                            
+                            const tourIsOpMaat = selectedTour?.op_maat === true || 
+                                                (typeof selectedTour?.op_maat === 'string' && selectedTour.op_maat === 'true') || 
+                                                (typeof selectedTour?.op_maat === 'number' && selectedTour.op_maat === 1);
+                            const isEveningSlot = selectedTimeSlot && parseInt(selectedTimeSlot.split(':')[0], 10) >= 17;
+                            const eveningFeeCost = tourIsOpMaat && isEveningSlot ? 25 : 0;
+                            
+                            return (tourTotal + tanguyCost + extraHourCost + upsellTotal + weekendFeeCost + eveningFeeCost).toFixed(2);
                           })()}
                         </span>
                       </div>

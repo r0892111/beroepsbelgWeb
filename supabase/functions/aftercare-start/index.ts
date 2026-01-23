@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
+import { nowBrussels } from '../_shared/timezone.ts';
 
 // Helper function to update guide metrics
 async function updateGuideMetrics(supabase: any, guideId: number | null): Promise<void> {
@@ -67,23 +68,25 @@ Deno.serve(async (req: Request) => {
     return new Response(null, { status: 200, headers: corsHeaders });
   }
 
-  console.log(`[aftercare] Cron triggered at ${new Date().toISOString()}`);
+  const nowBrusselsISO = nowBrussels();
+  console.log(`[aftercare] Cron triggered at ${nowBrusselsISO} (Brussels time)`);
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-    const now = new Date().toISOString();
+    // Convert Brussels time to UTC for database comparison (tour_datetime is stored as UTC)
+    const nowUTC = new Date(nowBrusselsISO).toISOString();
 
-    console.log("[aftercare] Fetching bookings where tour date has passed & status = geaccepteerd");
+    console.log("[aftercare] Fetching bookings where tour date has passed & status = geaccepteerd (Brussels time)");
 
     // Fetch bookings needing after-tour action
     const { data: bookings, error } = await supabase
       .from("tourbooking")
       .select("*")
       .eq("status", "aftercare_ready")
-      .lt("tour_datetime", now); // tour date already passed
+      .lt("tour_datetime", nowUTC); // tour date already passed
 
     if (error) {
       console.error("[aftercare] DB error:", error);

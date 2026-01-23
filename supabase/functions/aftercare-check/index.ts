@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
+import { nowBrussels } from '../_shared/timezone.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,7 +13,8 @@ Deno.serve(async (req: Request) => {
     return new Response(null, { status: 200, headers: corsHeaders });
   }
 
-  console.log(`[aftercare-check] Cron triggered at ${new Date().toISOString()}`);
+  const nowBrusselsISO = nowBrussels();
+  console.log(`[aftercare-check] Cron triggered at ${nowBrusselsISO} (Brussels time)`);
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -29,8 +31,11 @@ Deno.serve(async (req: Request) => {
     );
 
     console.log(
-      "[aftercare-check] Fetching bookings with status=aftercare_ready and tour_end < now"
+      "[aftercare-check] Fetching bookings with status=aftercare_ready and tour_end < now (Brussels time)"
     );
+
+    // Convert Brussels time to UTC for database comparison (tour_datetime is stored as UTC)
+    const nowUTC = new Date(nowBrusselsISO).toISOString();
 
     // ✅ SINGLE SOURCE OF TRUTH — DB does the filtering
     const { data: bookings, error } = await supabase
@@ -38,7 +43,7 @@ Deno.serve(async (req: Request) => {
       .select("*")
       .eq("status", "aftercare_ready")
       .eq("is_aftercare_started", false)
-      .lt("tour_datetime", new Date().toISOString());
+      .lt("tour_datetime", nowUTC);
 
     if (error) {
       console.error("[aftercare-check] Database error:", error);

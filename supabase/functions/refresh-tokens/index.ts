@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.39.0';
+import { nowBrussels } from '../_shared/timezone.ts';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -113,7 +114,8 @@ if (profile.refresh_token_tl) {
       // SAVE UPDATES
       // ================================
       if (Object.keys(updates).length > 0) {
-        updates.updated_at = new Date().toISOString();
+        // Convert Brussels time to UTC for database storage
+        updates.updated_at = new Date(nowBrussels()).toISOString();
         try {
           const { error: updateError } = await supabase.from('profiles').update(updates).eq('id', userId);
           if (updateError) {

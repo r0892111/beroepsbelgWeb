@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.39.0';
+import { nowBrussels } from '../_shared/timezone.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -40,10 +41,7 @@ Deno.serve(async (req) => {
     const scopeEnv = Deno.env.get('TEAMLEADER_SCOPE');
     const scopeDefault = 'users contacts companies deals invoices products';
 
-    // Prioritize the redirect_uri passed from client, fallback to env var
-    // If redirectUri is provided, use it (even if it's localhost for dev)
-    // Only use fallback if redirectUri is explicitly not provided
-    const resolvedRedirectUri = redirectUri || redirectFallback || 'https://beroepsbelg.be/admin/teamleader/callback';
+    const resolvedRedirectUri = redirectUri ?? redirectFallback;
 
     console.log("🔧 OAuth config:", {
       clientIdPresent: !!clientId,
@@ -217,7 +215,8 @@ Deno.serve(async (req) => {
         },
         access_token_tl: accessToken,
         refresh_token_tl: refreshToken,
-        updated_at: new Date().toISOString()
+        // Convert Brussels time to UTC for database storage
+        updated_at: new Date(nowBrussels()).toISOString()
       })
       .eq('id', userId)
       .select();

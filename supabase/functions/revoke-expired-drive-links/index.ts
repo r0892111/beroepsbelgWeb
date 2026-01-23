@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
+import { nowBrussels, addMinutesBrussels } from '../_shared/timezone.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -54,7 +55,8 @@ Deno.serve(async (req: Request) => {
     return new Response(null, { status: 200, headers: corsHeaders });
   }
 
-  console.log(`[drive-revoke] Cron triggered at ${new Date().toISOString()}`);
+  const nowBrusselsISO = nowBrussels();
+  console.log(`[drive-revoke] Cron triggered at ${nowBrusselsISO} (Brussels time)`);
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -76,13 +78,15 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  const sevenDaysAgo = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString();
+  // Calculate 7 days ago in Brussels time, then convert to UTC for database comparison
+  const sevenDaysAgoBrussels = addMinutesBrussels(nowBrusselsISO, -7 * 24 * 60);
+  const sevenDaysAgoUTC = new Date(sevenDaysAgoBrussels).toISOString();
 
   const { data: bookings, error } = await supabase
     .from("tourbooking")
     .select("id,google_drive_link,tour_end")
     .not("google_drive_link", "is", null)
-    .lt("tour_end", sevenDaysAgo);
+    .lt("tour_end", sevenDaysAgoUTC);
 
   if (error) {
     return new Response(JSON.stringify(error), { status: 500, headers: corsHeaders });

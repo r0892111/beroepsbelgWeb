@@ -157,33 +157,26 @@ serve(async (req: Request) => {
       throw new Error('No valid products to checkout')
     }
 
-    // Calculate shipping cost - no shipping for gift card only orders or orders >= €150
+    // Calculate shipping cost - no shipping for gift card only orders
     const FREIGHT_COST_BE = 7.50
     const FREIGHT_COST_INTERNATIONAL = 14.99
-    const FREE_SHIPPING_THRESHOLD = 150
     let shippingCost = 0
 
     if (!isGiftCardOnly) {
-      // Free shipping for orders >= €150
-      if (subtotal >= FREE_SHIPPING_THRESHOLD) {
-        console.log('Free shipping applied - subtotal >= €150:', subtotal)
-        shippingCost = 0
-      } else {
-        const isBelgium = shippingAddress?.country === 'België' || shippingAddress?.country === 'Belgium'
-        shippingCost = isBelgium ? FREIGHT_COST_BE : FREIGHT_COST_INTERNATIONAL
+      const isBelgium = shippingAddress?.country === 'België' || shippingAddress?.country === 'Belgium'
+      shippingCost = isBelgium ? FREIGHT_COST_BE : FREIGHT_COST_INTERNATIONAL
 
-        // Add shipping as a line item only for physical products under €150
-        lineItems.push({
-          price_data: {
-            currency: 'eur',
-            product_data: {
-              name: isBelgium ? 'Verzendkosten (België)' : 'Verzendkosten (Internationaal)',
-            },
-            unit_amount: Math.round(shippingCost * 100),
+      // Add shipping as a line item only for physical products
+      lineItems.push({
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: isBelgium ? 'Verzendkosten (België)' : 'Verzendkosten (Internationaal)',
           },
-          quantity: 1,
-        })
-      }
+          unit_amount: Math.round(shippingCost * 100),
+        },
+        quantity: 1,
+      })
     }
 
     const totalAmount = subtotal + shippingCost
@@ -202,11 +195,6 @@ serve(async (req: Request) => {
       line_items: lineItems,
       mode: 'payment',
       allow_promotion_codes: true,
-      customer_creation: 'always', // Always create customer (required for invoice)
-      invoice_creation: { enabled: true }, // Enable invoice creation for all sessions
-      payment_intent_data: {
-        receipt_email: customerEmail, // Send receipt to customer
-      },
       customer_creation: 'always', // Always create customer (required for invoice)
       invoice_creation: { enabled: true }, // Enable invoice creation for all sessions
       payment_intent_data: {
