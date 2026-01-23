@@ -474,6 +474,17 @@ export default function B2BQuotePage() {
                           (typeof selectedTourData?.op_maat === 'string' && selectedTourData.op_maat === 'true') || 
                           (typeof selectedTourData?.op_maat === 'number' && selectedTourData.op_maat === 1);
       
+      // Calculate weekend and evening fees
+      const isWeekend = selectedDate && (() => {
+        const dateObj = new Date(selectedDate);
+        const day = dateObj.getDay();
+        return day === 0 || day === 6; // Sunday or Saturday
+      })();
+      const weekendFee = isWeekend && selectedTourData?.local_stories !== true;
+      
+      const isEveningSlot = selectedTimeSlot && parseInt(selectedTimeSlot.split(':')[0], 10) >= 17;
+      const eveningFee = tourIsOpMaat && isEveningSlot;
+      
       // Create tourbooking record for ALL tours (to save upsell products and get booking ID)
       let createdBookingId: number | null = null;
       try {
