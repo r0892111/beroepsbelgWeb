@@ -83,6 +83,7 @@ export default function AdminBlogsPage() {
     excerpt: '',
     content: '',
     thumbnail_url: '',
+    video_url: '',
     author: '',
     published_at: '',
     status: 'draft' as 'draft' | 'published',
