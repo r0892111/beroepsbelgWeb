@@ -7,7 +7,17 @@ import type { Metadata } from 'next';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const BASE_URL = 'https://beroepsbelg.be';
+// Get base URL dynamically - works in production, staging, and localhost
+function getBaseUrl(): string {
+  // In production, use the production URL
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL;
+  }
+  // Fallback to hardcoded production URL
+  return 'https://beroepsbelg.be';
+}
+
+const BASE_URL = getBaseUrl();
 
 const metadata: Record<Locale, { title: string; description: string }> = {
   nl: {
@@ -57,6 +67,13 @@ export async function generateMetadata({ params }: HomePageProps): Promise<Metad
           width: 1200,
           height: 630,
           alt: 'BeroepsBelg',
+        },
+        // Fallback to logo if homepage image fails
+        {
+          url: `${BASE_URL}/Beroepsbelg Logo.png`,
+          width: 1200,
+          height: 630,
+          alt: 'BeroepsBelg Logo',
         },
       ],
     },
