@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
       upsellProducts = [],
       opMaatAnswers = null,
       durationMinutes = null, // Tour duration in minutes (will be calculated from tour data + extra hour)
+      requestTanguy = false,
     } = body;
 
     // Validate required fields
@@ -123,6 +124,8 @@ export async function POST(request: NextRequest) {
       tourStartDatetime: tourDatetime, // Start time
       tourEndDatetime: tourEndDatetime, // End time (start + duration)
       durationMinutes: finalDurationMinutes, // Duration in minutes (base duration + 60 if extra hour)
+      // Tanguy request
+      requestTanguy: requestTanguy,
     }];
 
     // Create booking data
