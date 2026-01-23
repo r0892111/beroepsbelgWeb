@@ -1,6 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import Stripe from 'npm:stripe@17.7.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
+import { nowBrussels } from '../_shared/timezone.ts';
 
 const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
 const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')!;
@@ -296,8 +297,6 @@ async function handleEvent(event: Stripe.Event) {
                 promoCode: promoCodeInfo.code,
                 promoDiscountAmount: promoCodeInfo.discountAmount,
                 promoDiscountPercent: promoCodeInfo.discountPercent,
-                // Unique identifier to match with local_tours_bookings
-                stripeSessionId: sessionId,
               };
 
               const updatedInvitees = [...currentInvitees, newInvitee];
@@ -351,8 +350,6 @@ async function handleEvent(event: Stripe.Event) {
                 promoCode: promoCodeInfo.code,
                 promoDiscountAmount: promoCodeInfo.discountAmount,
                 promoDiscountPercent: promoCodeInfo.discountPercent,
-                // Unique identifier to match with local_tours_bookings
-                stripeSessionId: sessionId,
               }],
             };
 
@@ -653,7 +650,8 @@ async function handleEvent(event: Stripe.Event) {
 
           // Build the new payment log entry
           const paymentLogEntry = {
-            paidAt: new Date().toISOString(),
+            // Convert Brussels time to UTC for database storage
+            paidAt: new Date(nowBrussels()).toISOString(),
             amount: amountPaid,
             numberOfPeople: parseInt(metadata.numberOfPeople || '1', 10),
             stripeSessionId: sessionId,
@@ -827,7 +825,8 @@ async function handleEvent(event: Stripe.Event) {
           .from('lecture_bookings')
           .update({
             status: 'confirmed',
-            updated_at: new Date().toISOString(),
+            // Convert Brussels time to UTC for database storage
+            updated_at: new Date(nowBrussels()).toISOString(),
           })
           .eq('id', bookingId);
 
@@ -856,7 +855,8 @@ async function handleEvent(event: Stripe.Event) {
               amountPaid,
               stripeSessionId: sessionId,
               paymentStatus: 'completed',
-              paidAt: new Date().toISOString(),
+              // Convert Brussels time to UTC for database storage
+              paidAt: new Date(nowBrussels()).toISOString(),
             }),
           });
 
@@ -1056,7 +1056,8 @@ async function handleEvent(event: Stripe.Event) {
           session: fullSession,
           order: {
             checkout_session_id: sessionId,
-            created_at: new Date().toISOString(),
+            // Convert Brussels time to UTC for database storage
+            created_at: new Date(nowBrussels()).toISOString(),
             amount_subtotal: fullSession.amount_subtotal, // Stripe's subtotal (in cents, after discount, before shipping)
             amount_total: fullSession.amount_total, // Stripe's total (in cents)
             // Detailed breakdown for easier processing:

@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'npm:@supabase/supabase-js@^2.0.0'
+import { nowBrussels } from '../_shared/timezone.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -58,7 +59,8 @@ serve(async (req: Request) => {
       updated_at: string
     } = {
       google_access_token: accessToken,
-      updated_at: new Date().toISOString(),
+      // Convert Brussels time to UTC for database storage
+      updated_at: new Date(nowBrussels()).toISOString(),
     }
 
     // Only update refresh token if we have a new one, otherwise keep the existing one
