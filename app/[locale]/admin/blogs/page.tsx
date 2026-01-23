@@ -337,8 +337,8 @@ export default function AdminBlogsPage() {
     setSubmitting(true);
 
     try {
-      let thumbnailUrl = formData.thumbnail_url;
-      let videoUrl = formData.video_url;
+      let thumbnailUrl: string | null = formData.thumbnail_url || null;
+      let videoUrl: string | null = formData.video_url || null;
 
       // Upload thumbnail/video if new file selected
       if (thumbnailFile && editingBlog) {
