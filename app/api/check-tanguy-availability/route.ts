@@ -5,7 +5,8 @@ import { parseBrusselsDateTime } from '@/lib/utils/timezone';
 // Calendar ID from public embed URL
 // Public URL: https://calendar.google.com/calendar/embed?src=c_4ab8e279307c0e7083f815bff63cb65ce14df69f37ba5f9f4e5e8620a5b612d2%40group.calendar.google.com&ctz=Europe%2FBrussels
 // URL-decoded calendar ID:
-const TANGUY_CALENDAR_ID = 'c_4ab8e279307c0e7083f815bff63cb65ce14df69f37ba5f9f4e5e8620a5b612d2@group.calendar.google.com';
+const TANGUY_CALENDAR_ID = '61012c8e81e4701051cbb7a6a7f510cd510a4d6fb81b6e92cec055c261c93977@group.calendar.google.com';
+
 
 function getSupabaseServer() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
