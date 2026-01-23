@@ -400,11 +400,11 @@ export default function AdminBlogsPage() {
           const uploaded = await uploadThumbnailToStorage(editingBlog.id);
           if (uploaded.thumbnailUrl) {
             blogData.thumbnail_url = uploaded.thumbnailUrl;
-            blogData.video_url = null; // Clear video if image uploaded
+            blogData.video_url = undefined; // Clear video if image uploaded
           }
           if (uploaded.videoUrl) {
             blogData.video_url = uploaded.videoUrl;
-            blogData.thumbnail_url = null; // Clear thumbnail if video uploaded
+            blogData.thumbnail_url = undefined; // Clear thumbnail if video uploaded
           }
         }
         const response = await fetch(`/api/blogs/${editingBlog.id}`, {
