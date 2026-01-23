@@ -106,10 +106,16 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
         h6: ({ node, ...props }) => (
           <h6 className="text-base font-serif font-bold text-navy mt-3 mb-2" {...props} />
         ),
-        // Paragraphs
-        p: ({ node, ...props }) => (
-          <p className="mb-4 text-gray-700 leading-relaxed" {...props} />
-        ),
+        // Paragraphs (with video placeholder support)
+        p: ({ node, children, ...props }: any) => {
+          const text = String(children);
+          const videoMatch = text.match(/\[VIDEO_PLACEHOLDER:(\d+)\]/);
+          if (videoMatch) {
+            const index = parseInt(videoMatch[1]);
+            return <VideoComponent key={index} index={index} />;
+          }
+          return <p className="mb-4 text-gray-700 leading-relaxed" {...props}>{children}</p>;
+        },
         // Links
         a: ({ node, ...props }) => (
           <a
@@ -194,16 +200,6 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
         em: ({ node, ...props }) => (
           <em className="italic" {...props} />
         ),
-        // Paragraphs that contain video placeholders
-        p: ({ node, children, ...props }: any) => {
-          const text = String(children);
-          const videoMatch = text.match(/\[VIDEO_PLACEHOLDER:(\d+)\]/);
-          if (videoMatch) {
-            const index = parseInt(videoMatch[1]);
-            return <VideoComponent key={index} index={index} />;
-          }
-          return <p className="mb-4 text-gray-700 leading-relaxed" {...props}>{children}</p>;
-        },
       }}
     >
       {processed}
