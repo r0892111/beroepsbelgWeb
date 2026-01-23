@@ -54,19 +54,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Webhook returns true or false
-    const isAvailable = await webhookResponse.json();
+    // Webhook returns JSON with available property
+    const webhookData = await webhookResponse.json();
 
-    // Handle both boolean and string responses
-    const available = typeof isAvailable === 'boolean' 
-      ? isAvailable 
-      : isAvailable === true || isAvailable === 'true' || isAvailable === 'True';
-
-    return NextResponse.json({
-      available,
-      startDateTime: startDateTimeUTC1,
-      endDateTime: endDateTimeUTC1,
-    });
+    // Return the webhook's response directly
+    return NextResponse.json(webhookData);
 
   } catch (error: any) {
     console.error('[check-tanguy-availability] Error:', error?.message || error);
