@@ -53,7 +53,7 @@ export async function generateMetadata({ params }: HomePageProps): Promise<Metad
       type: 'website',
       images: [
         {
-          url: `${BASE_URL}/Beroepsbelg Logo.png`,
+          url: `${BASE_URL}/homepage-og-image.png`,
           width: 1200,
           height: 630,
           alt: 'BeroepsBelg',
@@ -64,6 +64,7 @@ export async function generateMetadata({ params }: HomePageProps): Promise<Metad
       card: 'summary_large_image',
       title: localeMetadata.title,
       description: localeMetadata.description,
+      images: [`${BASE_URL}/homepage-og-image.png`],
     },
     alternates: {
       canonical: `${BASE_URL}/${locale}`,
