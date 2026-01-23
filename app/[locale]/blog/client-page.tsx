@@ -103,7 +103,20 @@ export default function BlogClientPage({ blogs, locale }: BlogClientPageProps) {
                     const { title, excerpt } = getLocalizedContent(blog, locale);
                     return (
                       <Card key={blog.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                        {blog.thumbnail_url && (
+                        {blog.video_url ? (
+                          <div className="relative w-full h-48">
+                            <video
+                              src={blog.video_url}
+                              autoPlay
+                              loop
+                              muted
+                              playsInline
+                              preload="metadata"
+                              className="w-full h-full object-cover"
+                              aria-label={title}
+                            />
+                          </div>
+                        ) : blog.thumbnail_url && (
                           <div className="relative w-full h-48">
                             <Image
                               src={blog.thumbnail_url}
@@ -157,7 +170,20 @@ export default function BlogClientPage({ blogs, locale }: BlogClientPageProps) {
                     const { title, excerpt } = getLocalizedContent(blog, locale);
                     return (
                       <Card key={blog.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                        {blog.thumbnail_url && (
+                        {blog.video_url ? (
+                          <div className="relative w-full h-48">
+                            <video
+                              src={blog.video_url}
+                              autoPlay
+                              loop
+                              muted
+                              playsInline
+                              preload="metadata"
+                              className="w-full h-full object-cover"
+                              aria-label={title}
+                            />
+                          </div>
+                        ) : blog.thumbnail_url && (
                           <div className="relative w-full h-48">
                             <Image
                               src={blog.thumbnail_url}

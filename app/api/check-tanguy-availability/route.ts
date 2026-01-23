@@ -27,24 +27,32 @@ async function getGoogleAccessToken(): Promise<string | null> {
   console.log('[getGoogleAccessToken] Starting...');
   const supabase = getSupabaseServer();
 
-  // Get admin profile with Google tokens
+  // Get Tanguy's profile with Google tokens
   const { data: adminProfile, error: profileError } = await supabase
     .from('profiles')
-    .select('id, google_access_token, google_refresh_token')
-    .or('isAdmin.eq.true')
+    .select('id, email, google_access_token, google_refresh_token')
+    .eq('email', 'tanguy@beroepsbelg.be')
     .not('google_refresh_token', 'is', null)
-    .limit(1)
     .single();
 
   if (profileError || !adminProfile) {
-    console.error('[getGoogleAccessToken] Failed to get admin profile:', profileError?.message || 'No admin found with Google tokens');
+    console.error('[getGoogleAccessToken] Failed to get Tanguy profile:', profileError?.message || 'Tanguy account (tanguy@beroepsbelg.be) not found or has no Google tokens');
     return null;
   }
-  console.log('[getGoogleAccessToken] Found admin profile:', adminProfile.id);
+  console.log('[getGoogleAccessToken] Found Tanguy profile:', adminProfile.id, adminProfile.email);
 
-  // If we have a valid access token, use it
+  // If we have an access token, validate it first
   if (adminProfile.google_access_token) {
-    return adminProfile.google_access_token;
+    try {
+      const testResponse = await fetch('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=' + adminProfile.google_access_token);
+      if (testResponse.ok) {
+        console.log('[getGoogleAccessToken] Using existing valid access token');
+        return adminProfile.google_access_token;
+      }
+      console.log('[getGoogleAccessToken] Access token expired, refreshing...');
+    } catch (error) {
+      console.log('[getGoogleAccessToken] Error validating token, refreshing...');
+    }
   }
 
   // If we have a refresh token, refresh it
@@ -73,8 +81,25 @@ async function getGoogleAccessToken(): Promise<string | null> {
       });
 
       if (!refreshResponse.ok) {
-        const errorText = await refreshResponse.text();
-        console.error('Failed to refresh Google token:', refreshResponse.status, errorText);
+        const errorData = await refreshResponse.json().catch(() => ({}));
+        console.error('[getGoogleAccessToken] Token refresh failed:', {
+          status: refreshResponse.status,
+          error: errorData.error || 'unknown',
+          error_description: errorData.error_description || 'no description',
+        });
+        
+        // If refresh token is invalid/expired, clear it from database
+        if (refreshResponse.status === 400 && (errorData.error === 'invalid_grant' || errorData.error === 'invalid_request')) {
+          console.error('[getGoogleAccessToken] Refresh token is invalid, clearing from database');
+          await supabase
+            .from('profiles')
+            .update({ 
+              google_access_token: null,
+              google_refresh_token: null 
+            })
+            .eq('id', adminProfile.id);
+        }
+        
         return null;
       }
 

@@ -26,7 +26,8 @@ import BlogEditor from '@/components/admin/blog-editor';
 
 const STORAGE_BUCKET = 'airbnb-images';
 const STORAGE_FOLDER = 'blog-images';
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB for images
+const MAX_VIDEO_SIZE = 250 * 1024 * 1024; // 250MB for videos
 
 // Helper function to generate slug from title
 const generateSlug = (title: string): string => {
@@ -103,10 +104,11 @@ export default function AdminBlogsPage() {
     content_de: '',
   });
 
-  // Image upload state
+  // Thumbnail upload state (image or video)
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
+  const [thumbnailType, setThumbnailType] = useState<'image' | 'video' | null>(null);
 
   useEffect(() => {
     if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
@@ -175,6 +177,7 @@ export default function AdminBlogsPage() {
       excerpt: '',
       content: '',
       thumbnail_url: '',
+      video_url: '',
       author: '',
       published_at: '',
       status: 'draft',
@@ -209,6 +212,7 @@ export default function AdminBlogsPage() {
       excerpt: blog.excerpt || '',
       content: blog.content || '',
       thumbnail_url: blog.thumbnail_url || '',
+      video_url: blog.video_url || '',
       author: blog.author || '',
       published_at: blog.published_at ? format(new Date(blog.published_at), "yyyy-MM-dd'T'HH:mm") : '',
       status: blog.status || 'draft',
@@ -228,8 +232,12 @@ export default function AdminBlogsPage() {
       excerpt_de: blog.excerpt_de || '',
       content_de: blog.content_de || '',
     });
-    setThumbnailPreview(blog.thumbnail_url || null);
+    // Set preview based on whether it's a video or image
+    const thumbnailUrl = blog.thumbnail_url || null;
+    const videoUrl = blog.video_url || null;
+    setThumbnailPreview(thumbnailUrl || videoUrl || null);
     setThumbnailFile(null);
+    setThumbnailType(videoUrl ? 'video' : thumbnailUrl ? 'image' : null);
     setActiveTab('main');
     setShowMultilang(false);
     setDialogOpen(true);
@@ -239,32 +247,50 @@ export default function AdminBlogsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > MAX_FILE_SIZE) {
-      toast.error(`File size exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit`);
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+
+    if (!isImage && !isVideo) {
+      toast.error('Please upload an image or video file');
       return;
     }
 
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
+    // Check file size based on type
+    const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_FILE_SIZE;
+    if (file.size > maxSize) {
+      toast.error(`File size exceeds ${maxSize / 1024 / 1024}MB limit`);
       return;
     }
 
     setThumbnailFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setThumbnailPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    setThumbnailType(isVideo ? 'video' : 'image');
+
+    // Create preview
+    if (isImage) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setThumbnailPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else if (isVideo) {
+      const videoUrl = URL.createObjectURL(file);
+      setThumbnailPreview(videoUrl);
+    }
   };
 
   const removeThumbnail = () => {
+    // Clean up video object URL if it's a video preview
+    if (thumbnailType === 'video' && thumbnailPreview && thumbnailFile) {
+      URL.revokeObjectURL(thumbnailPreview);
+    }
     setThumbnailFile(null);
     setThumbnailPreview(null);
-    setFormData((prev) => ({ ...prev, thumbnail_url: '' }));
+    setThumbnailType(null);
+    setFormData((prev) => ({ ...prev, thumbnail_url: '', video_url: '' }));
   };
 
-  const uploadThumbnailToStorage = async (blogId: string): Promise<string | null> => {
-    if (!thumbnailFile) return null;
+  const uploadThumbnailToStorage = async (blogId: string): Promise<{ thumbnailUrl: string | null; videoUrl: string | null }> => {
+    if (!thumbnailFile) return { thumbnailUrl: null, videoUrl: null };
 
     try {
       const fileExt = thumbnailFile.name.split('.').pop();
@@ -281,18 +307,23 @@ export default function AdminBlogsPage() {
       if (uploadError) {
         console.error('Error uploading thumbnail:', uploadError);
         toast.error('Failed to upload thumbnail');
-        return null;
+        return { thumbnailUrl: null, videoUrl: null };
       }
 
       const { data: { publicUrl } } = supabase.storage
         .from(STORAGE_BUCKET)
         .getPublicUrl(filePath);
 
-      return publicUrl;
+      // Return based on file type
+      if (thumbnailType === 'video') {
+        return { thumbnailUrl: null, videoUrl: publicUrl };
+      } else {
+        return { thumbnailUrl: publicUrl, videoUrl: null };
+      }
     } catch (err) {
       console.error('Exception uploading thumbnail:', err);
       toast.error('Failed to upload thumbnail');
-      return null;
+      return { thumbnailUrl: null, videoUrl: null };
     }
   };
 
@@ -306,11 +337,13 @@ export default function AdminBlogsPage() {
 
     try {
       let thumbnailUrl = formData.thumbnail_url;
+      let videoUrl = formData.video_url;
 
-      // Upload thumbnail if new file selected
+      // Upload thumbnail/video if new file selected
       if (thumbnailFile && editingBlog) {
-        const uploadedUrl = await uploadThumbnailToStorage(editingBlog.id);
-        if (uploadedUrl) thumbnailUrl = uploadedUrl;
+        const uploaded = await uploadThumbnailToStorage(editingBlog.id);
+        if (uploaded.thumbnailUrl) thumbnailUrl = uploaded.thumbnailUrl;
+        if (uploaded.videoUrl) videoUrl = uploaded.videoUrl;
       } else if (thumbnailFile) {
         // For new blog, we need to create it first, then upload thumbnail
         // We'll handle this after blog creation
@@ -319,7 +352,7 @@ export default function AdminBlogsPage() {
       // Auto-generate slug if empty
       const slug = formData.slug || generateSlug(formData.title);
 
-      // Auto-generate SEO fields if empty
+      // Auto-generate SEO fields if empty (use thumbnail, not video for OG image)
       const seoFields = generateSEOFields(
         formData.title,
         formData.excerpt,
@@ -333,6 +366,7 @@ export default function AdminBlogsPage() {
         excerpt: formData.excerpt || undefined,
         content: formData.content,
         thumbnail_url: thumbnailUrl || undefined,
+        video_url: videoUrl || undefined,
         author: formData.author || undefined,
         published_at: formData.published_at || undefined,
         status: formData.status,
@@ -356,8 +390,9 @@ export default function AdminBlogsPage() {
       if (editingBlog) {
         // Update existing blog
         if (thumbnailFile) {
-          const uploadedUrl = await uploadThumbnailToStorage(editingBlog.id);
-          if (uploadedUrl) blogData.thumbnail_url = uploadedUrl;
+          const uploaded = await uploadThumbnailToStorage(editingBlog.id);
+          if (uploaded.thumbnailUrl) blogData.thumbnail_url = uploaded.thumbnailUrl;
+          if (uploaded.videoUrl) blogData.video_url = uploaded.videoUrl;
         }
         const response = await fetch(`/api/blogs/${editingBlog.id}`, {
           method: 'PATCH',
@@ -380,12 +415,16 @@ export default function AdminBlogsPage() {
         }
         const newBlog = await response.json();
         if (newBlog && thumbnailFile) {
-          const uploadedUrl = await uploadThumbnailToStorage(newBlog.id);
-          if (uploadedUrl) {
+          const uploaded = await uploadThumbnailToStorage(newBlog.id);
+          const updateData: { thumbnail_url?: string; video_url?: string } = {};
+          if (uploaded.thumbnailUrl) updateData.thumbnail_url = uploaded.thumbnailUrl;
+          if (uploaded.videoUrl) updateData.video_url = uploaded.videoUrl;
+          
+          if (Object.keys(updateData).length > 0) {
             await fetch(`/api/blogs/${newBlog.id}`, {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ thumbnail_url: uploadedUrl }),
+              body: JSON.stringify(updateData),
             });
           }
         }
@@ -643,10 +682,19 @@ export default function AdminBlogsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="thumbnail">{tForm('thumbnail')}</Label>
+                <Label htmlFor="thumbnail">{tForm('thumbnail')} (Image or Video)</Label>
                 {thumbnailPreview ? (
                   <div className="relative w-full h-48 border rounded-lg overflow-hidden">
-                    <Image src={thumbnailPreview} alt="Thumbnail preview" fill className="object-cover" />
+                    {thumbnailType === 'video' ? (
+                      <video
+                        src={thumbnailPreview}
+                        controls
+                        className="w-full h-full object-cover"
+                        preload="metadata"
+                      />
+                    ) : (
+                      <Image src={thumbnailPreview} alt="Thumbnail preview" fill className="object-cover" />
+                    )}
                     <Button
                       type="button"
                       variant="destructive"
@@ -661,11 +709,11 @@ export default function AdminBlogsPage() {
                   <div className="border-2 border-dashed rounded-lg p-8 text-center">
                     <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
                     <Label htmlFor="thumbnail-upload" className="cursor-pointer">
-                      <span className="text-sm text-gray-600">{tForm('thumbnailUpload')}</span>
+                      <span className="text-sm text-gray-600">{tForm('thumbnailUpload')} (Images up to 50MB, Videos up to 250MB)</span>
                       <input
                         id="thumbnail-upload"
                         type="file"
-                        accept="image/*"
+                        accept="image/*,video/*"
                         onChange={handleFileInput}
                         className="hidden"
                       />
