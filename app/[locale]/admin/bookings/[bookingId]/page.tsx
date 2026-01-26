@@ -1346,6 +1346,40 @@ export default function BookingDetailPage() {
   };
 
   // Handle delete entire booking
+  const handleReprocessBooking = async () => {
+    if (!booking.stripe_session_id) {
+      toast.error('No Stripe session ID found for this booking');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/reprocess-booking', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionId: booking.stripe_session_id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.error || 'Failed to reprocess booking');
+        return;
+      }
+
+      toast.success('Booking reprocessed successfully');
+      
+      // Refresh booking data
+      fetchBookingDetails();
+    } catch (error: any) {
+      console.error('Error reprocessing booking:', error);
+      toast.error(error.message || 'Failed to reprocess booking');
+    }
+  };
+
   const handleDeleteBooking = async () => {
     if (!booking) return;
 
@@ -3878,7 +3912,19 @@ export default function BookingDetailPage() {
                 {booking.stripe_session_id && (
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Stripe Session:</span>
-                    <span className="font-mono text-xs truncate max-w-[180px]">{booking.stripe_session_id}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs truncate max-w-[180px]">{booking.stripe_session_id}</span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleReprocessBooking}
+                        className="h-7 text-xs"
+                        title="Reprocess this booking"
+                      >
+                        <RefreshCw className="h-3 w-3 mr-1" />
+                        Reprocess
+                      </Button>
+                    </div>
                   </div>
                 )}
                 {booking.tour_id && (
