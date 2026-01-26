@@ -12,7 +12,26 @@ export async function GET(request: Request) {
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-    await supabase.auth.exchangeCodeForSession(code);
+    const { data: { session }, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
+    
+    // Ensure profile is created for new users
+    if (session?.user && !sessionError) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: session.user.id,
+          email: session.user.email || '',
+          full_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || null,
+          preferred_language: session.user.user_metadata?.preferred_language || 'nl',
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'id',
+        });
+
+      if (profileError) {
+        console.error('Error creating/updating profile in callback:', profileError);
+      }
+    }
   }
 
   // Determine locale: use locale param, extract from redirect, or default to 'nl'

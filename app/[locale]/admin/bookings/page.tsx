@@ -19,6 +19,7 @@ import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { getBookingTypeShortLabel } from '@/lib/utils';
+import { formatBrusselsDateTime } from '@/lib/utils/timezone';
 
 interface SelectedGuide {
   id: number;
@@ -620,12 +621,7 @@ export default function AdminBookingsPage() {
   };
 
   const formatDateTime = (dateStr: string | null) => {
-    if (!dateStr) return 'N/A';
-    try {
-      return format(new Date(dateStr), 'dd/MM/yyyy HH:mm');
-    } catch {
-      return dateStr;
-    }
+    return formatBrusselsDateTime(dateStr, 'dd/MM/yyyy HH:mm');
   };
 
   const getStatusColor = (status: string) => {
@@ -1021,7 +1017,7 @@ export default function AdminBookingsPage() {
                             {guide?.name || `Guide #${og.id}`}
                             {og.respondedAt && (
                               <span className="text-amber-600">
-                                ({format(new Date(og.respondedAt), 'dd/MM HH:mm')})
+                                ({formatBrusselsDateTime(og.respondedAt, 'dd/MM HH:mm')})
                               </span>
                             )}
                           </div>
@@ -1546,7 +1542,7 @@ export default function AdminBookingsPage() {
                 <p className="text-sm font-medium text-amber-800 mb-2">Existing booking details:</p>
                 <div className="space-y-1 text-sm text-amber-700">
                   <p><span className="font-medium">Tour:</span> {tours.get(existingDuplicateBooking.tour_id || '')?.title || 'Unknown'}</p>
-                  <p><span className="font-medium">Date:</span> {existingDuplicateBooking.tour_datetime ? format(new Date(existingDuplicateBooking.tour_datetime), 'dd/MM/yyyy HH:mm') : 'N/A'}</p>
+                  <p><span className="font-medium">Date:</span> {formatBrusselsDateTime(existingDuplicateBooking.tour_datetime, 'dd/MM/yyyy HH:mm')}</p>
                   <p><span className="font-medium">Status:</span> {existingDuplicateBooking.status}</p>
                   <p><span className="font-medium">Booking ID:</span> #{existingDuplicateBooking.id}</p>
                 </div>
