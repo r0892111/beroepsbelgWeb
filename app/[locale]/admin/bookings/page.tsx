@@ -561,38 +561,90 @@ export default function AdminBookingsPage() {
         booking_type: 'B2C',
       };
 
-      // Add deal_id for regular bookings (not Local Stories)
-      // Verify deal exists in Teamleader before assigning
-      if (createForm.dealId && !tour.local_stories) {
-        try {
-          // Verify deal exists in Teamleader
-          const dealResponse = await fetch('/api/admin/teamleader-deals', {
-            headers: {
-              'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-            },
-          });
+      // Ensure deal_id is set - either from manual selection or auto-creation
+      // Deal ID is MANDATORY - booking creation will fail if we can't get/create one
+      let finalDealId: string | null = null;
+      
+      if (!tour.local_stories) {
+        // If admin manually selected a deal, verify it exists first
+        if (createForm.dealId) {
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const dealResponse = await fetch('/api/admin/teamleader-deals', {
+              headers: {
+                'Authorization': `Bearer ${session?.access_token}`,
+              },
+            });
 
-          if (dealResponse.ok) {
-            const { deals } = await dealResponse.json();
-            const dealExists = deals.some((deal: { id: string }) => deal.id === createForm.dealId);
-            
-            if (!dealExists) {
-              console.warn(`Deal ${createForm.dealId} not found in Teamleader. Booking will be created without deal_id.`);
-              toast.warning(`Warning: Deal ${createForm.dealId} not found in Teamleader. Booking created without deal link.`);
-              // Don't set deal_id if it doesn't exist
+            if (dealResponse.ok) {
+              const { deals } = await dealResponse.json();
+              const dealExists = deals.some((deal: { id: string }) => deal.id === createForm.dealId);
+              
+              if (dealExists) {
+                finalDealId = createForm.dealId;
+                console.info('Using manually selected TeamLeader deal:', finalDealId);
+              } else {
+                console.warn(`Selected deal ${createForm.dealId} not found in Teamleader. Will create new deal.`);
+                toast.warning(`Selected deal not found. Creating new deal instead.`);
+              }
             } else {
-              tourbookingData.deal_id = createForm.dealId;
+              console.warn('Could not verify deal in Teamleader. Will create new deal.');
             }
-          } else {
-            console.warn('Could not verify deal in Teamleader. Proceeding without verification.');
-            // If we can't verify, still assign it (might be a temporary API issue)
-            tourbookingData.deal_id = createForm.dealId;
+          } catch (error) {
+            console.error('Error verifying deal in Teamleader:', error);
+            // Will create new deal below
           }
-        } catch (error) {
-          console.error('Error verifying deal in Teamleader:', error);
-          // If verification fails, still assign it (might be a temporary API issue)
-          tourbookingData.deal_id = createForm.dealId;
         }
+
+        // If no valid deal selected, create a new one
+        if (!finalDealId) {
+          try {
+            const dealTitle = `${tour.title || 'Tour'} - ${createForm.customerName} - ${createForm.date}`;
+            const { data: { session } } = await supabase.auth.getSession();
+            const createDealResponse = await fetch('/api/admin/teamleader-deals/create', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session?.access_token}`,
+              },
+              body: JSON.stringify({
+                title: dealTitle,
+                value: totalAmount,
+                currency: 'EUR',
+              }),
+            });
+
+            if (createDealResponse.ok) {
+              const dealData = await createDealResponse.json();
+              finalDealId = dealData.deal?.id || null;
+              
+              if (finalDealId) {
+                console.info('Created TeamLeader deal:', finalDealId);
+              } else {
+                console.error('TeamLeader deal creation succeeded but no deal ID returned');
+                toast.error('Failed to create TeamLeader deal: No deal ID returned');
+                return; // Fail booking creation
+              }
+            } else {
+              const errorData = await createDealResponse.json().catch(() => ({ error: 'Unknown error' }));
+              console.error('Failed to create TeamLeader deal:', errorData);
+              toast.error(`Failed to create TeamLeader deal: ${errorData.error || 'Unknown error'}`);
+              return; // Fail booking creation
+            }
+          } catch (error) {
+            console.error('Error creating TeamLeader deal:', error);
+            toast.error(`Error creating TeamLeader deal: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            return; // Fail booking creation
+          }
+        }
+
+        // Ensure we have a deal_id before proceeding
+        if (!finalDealId) {
+          toast.error('Cannot create booking without a TeamLeader deal ID');
+          return;
+        }
+
+        tourbookingData.deal_id = finalDealId;
       }
 
       const { data: newBooking, error: bookingError } = await supabase
@@ -622,10 +674,88 @@ export default function AdminBookingsPage() {
           amnt_of_people: createForm.numberOfPeople,
         };
 
-        // Add deal_id for Local Stories (per-invitee)
+        // Ensure deal_id is set for Local Stories - MANDATORY
+        let localDealId: string | null = null;
+        
+        // If admin manually selected a deal, verify it exists first
         if (createForm.dealId) {
-          localBookingData.deal_id = createForm.dealId;
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const dealResponse = await fetch('/api/admin/teamleader-deals', {
+              headers: {
+                'Authorization': `Bearer ${session?.access_token}`,
+              },
+            });
+
+            if (dealResponse.ok) {
+              const { deals } = await dealResponse.json();
+              const dealExists = deals.some((deal: { id: string }) => deal.id === createForm.dealId);
+              
+              if (dealExists) {
+                localDealId = createForm.dealId;
+                console.info('Using manually selected TeamLeader deal for Local Stories:', localDealId);
+              } else {
+                console.warn(`Selected deal ${createForm.dealId} not found in Teamleader. Will create new deal.`);
+                toast.warning(`Selected deal not found. Creating new deal instead.`);
+              }
+            } else {
+              console.warn('Could not verify deal in Teamleader. Will create new deal.');
+            }
+          } catch (error) {
+            console.error('Error verifying deal in Teamleader:', error);
+            // Will create new deal below
+          }
         }
+
+        // If no valid deal selected, create a new one
+        if (!localDealId) {
+          try {
+            const dealTitle = `${tour.title || 'Local Stories Tour'} - ${createForm.customerName} - ${createForm.date}`;
+            const { data: { session } } = await supabase.auth.getSession();
+            const createDealResponse = await fetch('/api/admin/teamleader-deals/create', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session?.access_token}`,
+              },
+              body: JSON.stringify({
+                title: dealTitle,
+                value: totalAmount,
+                currency: 'EUR',
+              }),
+            });
+
+            if (createDealResponse.ok) {
+              const dealData = await createDealResponse.json();
+              localDealId = dealData.deal?.id || null;
+              
+              if (localDealId) {
+                console.info('Created TeamLeader deal for Local Stories:', localDealId);
+              } else {
+                console.error('TeamLeader deal creation succeeded but no deal ID returned');
+                toast.error('Failed to create TeamLeader deal: No deal ID returned');
+                return; // Fail booking creation
+              }
+            } else {
+              const errorData = await createDealResponse.json().catch(() => ({ error: 'Unknown error' }));
+              console.error('Failed to create TeamLeader deal for Local Stories:', errorData);
+              toast.error(`Failed to create TeamLeader deal: ${errorData.error || 'Unknown error'}`);
+              return; // Fail booking creation
+            }
+          } catch (error) {
+            console.error('Error creating TeamLeader deal for Local Stories:', error);
+            toast.error(`Error creating TeamLeader deal: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            return; // Fail booking creation
+          }
+        }
+
+        // Ensure we have a deal_id before proceeding
+        if (!localDealId) {
+          toast.error('Cannot create Local Stories booking without a TeamLeader deal ID');
+          return;
+        }
+
+        localBookingData.deal_id = localDealId;
 
         const { error: localError } = await supabase
           .from('local_tours_bookings')
