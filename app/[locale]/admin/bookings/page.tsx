@@ -562,8 +562,37 @@ export default function AdminBookingsPage() {
       };
 
       // Add deal_id for regular bookings (not Local Stories)
+      // Verify deal exists in Teamleader before assigning
       if (createForm.dealId && !tour.local_stories) {
-        tourbookingData.deal_id = createForm.dealId;
+        try {
+          // Verify deal exists in Teamleader
+          const dealResponse = await fetch('/api/admin/teamleader-deals', {
+            headers: {
+              'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+            },
+          });
+
+          if (dealResponse.ok) {
+            const { deals } = await dealResponse.json();
+            const dealExists = deals.some((deal: { id: string }) => deal.id === createForm.dealId);
+            
+            if (!dealExists) {
+              console.warn(`Deal ${createForm.dealId} not found in Teamleader. Booking will be created without deal_id.`);
+              toast.warning(`Warning: Deal ${createForm.dealId} not found in Teamleader. Booking created without deal link.`);
+              // Don't set deal_id if it doesn't exist
+            } else {
+              tourbookingData.deal_id = createForm.dealId;
+            }
+          } else {
+            console.warn('Could not verify deal in Teamleader. Proceeding without verification.');
+            // If we can't verify, still assign it (might be a temporary API issue)
+            tourbookingData.deal_id = createForm.dealId;
+          }
+        } catch (error) {
+          console.error('Error verifying deal in Teamleader:', error);
+          // If verification fails, still assign it (might be a temporary API issue)
+          tourbookingData.deal_id = createForm.dealId;
+        }
       }
 
       const { data: newBooking, error: bookingError } = await supabase
