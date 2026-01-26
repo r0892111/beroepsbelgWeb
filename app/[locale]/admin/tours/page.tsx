@@ -1647,6 +1647,7 @@ export default function AdminToursPage() {
                       <TableHead>Type</TableHead>
                       <TableHead>Duration</TableHead>
                       <TableHead>Price</TableHead>
+                      <TableHead>Start/End Location</TableHead>
                       <TableHead>Languages</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -1749,6 +1750,25 @@ export default function AdminToursPage() {
         <TableCell>{formatDuration(tour.duration_minutes)}</TableCell>
         <TableCell>
           {tour.price ? `€${tour.price.toFixed(2)}` : 'N/A'}
+        </TableCell>
+        <TableCell className="max-w-xs">
+          <div className="text-xs space-y-1">
+            {tour.start_location ? (
+              <div className="flex items-start gap-1">
+                <span className="text-muted-foreground">Start:</span>
+                <span className="truncate">{tour.start_location}</span>
+              </div>
+            ) : null}
+            {tour.end_location ? (
+              <div className="flex items-start gap-1">
+                <span className="text-muted-foreground">End:</span>
+                <span className="truncate">{tour.end_location}</span>
+              </div>
+            ) : null}
+            {!tour.start_location && !tour.end_location && (
+              <span className="text-muted-foreground">Not set</span>
+            )}
+          </div>
         </TableCell>
         <TableCell>
           <div className="flex flex-wrap gap-1 max-w-xs">
@@ -2198,27 +2218,34 @@ export default function AdminToursPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="start_location" className="text-navy font-semibold">Start Location</Label>
-                <Input
-                  id="start_location"
-                  value={formData.start_location}
-                  onChange={(e) => setFormData({ ...formData, start_location: e.target.value })}
-                  className="bg-white"
-                  placeholder="e.g., Central Station"
-                />
-              </div>
+            <div>
+              <Label className="text-navy font-semibold mb-2 block">Start & End Locations</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="start_location" className="text-sm font-medium text-gray-700">Start Location*</Label>
+                  <Input
+                    id="start_location"
+                    value={formData.start_location}
+                    onChange={(e) => setFormData({ ...formData, start_location: e.target.value })}
+                    className="bg-white mt-1"
+                    placeholder="e.g., Central Station, Main Square"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Where the tour begins</p>
+                </div>
 
-              <div>
-                <Label htmlFor="end_location" className="text-navy font-semibold">End Location</Label>
-                <Input
-                  id="end_location"
-                  value={formData.end_location}
-                  onChange={(e) => setFormData({ ...formData, end_location: e.target.value })}
-                  className="bg-white"
-                  placeholder="e.g., Market Square"
-                />
+                <div>
+                  <Label htmlFor="end_location" className="text-sm font-medium text-gray-700">End Location*</Label>
+                  <Input
+                    id="end_location"
+                    value={formData.end_location}
+                    onChange={(e) => setFormData({ ...formData, end_location: e.target.value })}
+                    className="bg-white mt-1"
+                    placeholder="e.g., Market Square, City Hall"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Where the tour ends</p>
+                </div>
               </div>
             </div>
 
