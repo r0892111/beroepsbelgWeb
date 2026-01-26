@@ -26,6 +26,7 @@ const quoteSchema = z.object({
   city: z.string().min(1),
   tourId: z.string().min(1),
   language: z.string().min(1),
+  contactLanguage: z.string().min(1), // Language for email communications
   numberOfPeople: z.string().min(1),
   companyName: z.string().optional(),
   contactFirstName: z.string().min(1),
@@ -106,6 +107,7 @@ export default function B2BQuotePage() {
     resolver: zodResolver(quoteSchema),
     defaultValues: {
       numberOfPeople: '15',
+      contactLanguage: locale, // Default to current site locale
     },
   });
 
@@ -498,6 +500,7 @@ export default function B2BQuotePage() {
             citySlug: data.city,
             dateTime: data.dateTime,
             language: data.language,
+            contactLanguage: data.contactLanguage, // Language for email communications
             numberOfPeople: data.numberOfPeople,
             contactFirstName: data.contactFirstName,
             contactLastName: data.contactLastName,
@@ -561,6 +564,7 @@ export default function B2BQuotePage() {
           type: selectedTourData?.type ?? null,
         },
         language: data.language,
+        contactLanguage: data.contactLanguage, // Language for email communications
         numberOfPeople: data.numberOfPeople,
         // Weekend and evening fees
         weekendFee: weekendFee,
@@ -1086,6 +1090,25 @@ export default function B2BQuotePage() {
                     <Input id="contactPhone" type="tel" {...register('contactPhone')} className="mt-2" />
                     {errors.contactPhone && <p className="mt-1 text-sm text-destructive">{tForms('required')}</p>}
                   </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="contactLanguage" className="text-base font-semibold text-navy">{tBooking('contactLanguage')}</Label>
+                  <Select
+                    value={watch('contactLanguage')}
+                    onValueChange={(value) => setValue('contactLanguage', value)}
+                  >
+                    <SelectTrigger id="contactLanguage" className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nl">Nederlands</SelectItem>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="fr">Français</SelectItem>
+                      <SelectItem value="de">Deutsch</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-1 text-xs text-muted-foreground">{tBooking('contactLanguageDescription')}</p>
                 </div>
 
                 {/* Booking type toggle */}
