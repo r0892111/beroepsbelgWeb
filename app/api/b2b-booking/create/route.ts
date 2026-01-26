@@ -27,6 +27,7 @@ export async function POST(request: NextRequest) {
       citySlug,
       dateTime,
       language,
+      contactLanguage, // Language for email communications (nl, en, fr, de)
       numberOfPeople,
       contactFirstName,
       contactLastName,
@@ -109,6 +110,7 @@ export async function POST(request: NextRequest) {
       phone: contactPhone || null,
       numberOfPeople: parseInt(numberOfPeople, 10) || 1,
       language: language || 'nl',
+      contactLanguage: contactLanguage || 'nl', // Language for email communications
       specialRequests: additionalInfo || null,
       amount: 0, // B2B bookings don't have payment yet
       currency: 'eur',

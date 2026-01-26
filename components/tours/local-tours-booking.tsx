@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Calendar, Clock, Users, Info, Check } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Users, Info, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +24,8 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<LocalTourBooking | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [customSelectedDate, setCustomSelectedDate] = useState<Date | undefined>(undefined);
 
   console.log('LocalToursBooking component rendered:', {
     tourId,
@@ -79,8 +82,32 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
 
   const handleJoinClick = (booking: LocalTourBooking) => {
     setSelectedBooking(booking);
+    setCustomSelectedDate(undefined);
     setDialogOpen(true);
   };
+
+  const handleCalendarSelect = (date: Date | undefined) => {
+    if (date) {
+      setCustomSelectedDate(date);
+      setSelectedBooking(null);
+      setDialogOpen(true);
+    }
+  };
+
+  // Calculate date range for calendar (next Saturday to 52 weeks from now)
+  const getNextSaturday = () => {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const daysUntilSaturday = (6 - dayOfWeek + 7) % 7 || 7;
+    const nextSaturday = new Date(today);
+    nextSaturday.setDate(today.getDate() + daysUntilSaturday);
+    nextSaturday.setHours(0, 0, 0, 0);
+    return nextSaturday;
+  };
+
+  const calendarFromDate = getNextSaturday();
+  const calendarToDate = new Date();
+  calendarToDate.setDate(calendarToDate.getDate() + 365);
 
   const handleDialogClose = (open: boolean) => {
     setDialogOpen(open);
@@ -113,7 +140,7 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
     return (
       <div className="mb-12 rounded-lg bg-sand p-8 brass-corner">
         <h3 className="text-2xl font-serif font-bold text-navy mb-6 flex items-center gap-2">
-          <Calendar className="h-6 w-6" style={{ color: 'var(--brass)' }} />
+          <CalendarIcon className="h-6 w-6" style={{ color: 'var(--brass)' }} />
           Local Stories - Zaterdag 14:00
         </h3>
         <p className="text-sm mb-4" style={{ color: 'var(--slate-blue)' }}>
@@ -169,7 +196,7 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
     <>
       <div className="mb-12 rounded-lg bg-sand p-8 brass-corner">
         <h3 className="text-2xl font-serif font-bold text-navy mb-6 flex items-center gap-2">
-          <Calendar className="h-6 w-6" style={{ color: 'var(--brass)' }} />
+          <CalendarIcon className="h-6 w-6" style={{ color: 'var(--brass)' }} />
           Local Stories - Zaterdag 14:00
         </h3>
         
@@ -236,9 +263,45 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
             );
           })}
         </div>
+
+        {/* Show more dates button and calendar */}
+        <div className="mt-6">
+          <Button
+            variant="outline"
+            onClick={() => setShowCalendar(!showCalendar)}
+            className="w-full flex items-center justify-center gap-2 border-2"
+            style={{ borderColor: 'var(--brass)', color: 'var(--belgian-navy)' }}
+          >
+            <CalendarIcon className="h-4 w-4" style={{ color: 'var(--brass)' }} />
+            {t('showMoreDates')}
+            {showCalendar ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
+          </Button>
+
+          {showCalendar && (
+            <div className="mt-4 flex flex-col items-center">
+              <p className="text-sm mb-3" style={{ color: 'var(--slate-blue)' }}>
+                {t('selectSaturday')}
+              </p>
+              <Calendar
+                mode="single"
+                selected={customSelectedDate}
+                onSelect={handleCalendarSelect}
+                fromDate={calendarFromDate}
+                toDate={calendarToDate}
+                disabled={(date) => date.getDay() !== 6}
+                className="rounded-lg border-2 bg-white"
+                style={{ borderColor: 'var(--brass)' } as React.CSSProperties}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
-      {selectedBooking && (
+      {(selectedBooking || customSelectedDate) && (
         <TourBookingDialog
           tourId={tourId}
           tourTitle={tourTitle}
@@ -247,8 +310,14 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
           isLocalStories={true}
           open={dialogOpen}
           onOpenChange={handleDialogClose}
-          defaultBookingDate={selectedBooking.booking_date}
-          existingTourBookingId={selectedBooking.booking_id || undefined}
+          defaultBookingDate={
+            selectedBooking 
+              ? selectedBooking.booking_date 
+              : customSelectedDate 
+                ? `${customSelectedDate.getFullYear()}-${String(customSelectedDate.getMonth() + 1).padStart(2, '0')}-${String(customSelectedDate.getDate()).padStart(2, '0')}`
+                : undefined
+          }
+          existingTourBookingId={selectedBooking?.booking_id || undefined}
           citySlug={citySlug}
           tourLanguages={tourLanguages}
         />

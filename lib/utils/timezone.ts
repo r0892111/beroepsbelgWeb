@@ -149,7 +149,7 @@ export function getBrusselsOffsetHours(date: Date | string): number {
 
 /**
  * Format a date/time string for display in Brussels timezone
- * @param dateStr - ISO date string (can be UTC or any timezone)
+ * @param dateStr - ISO date string (stored as UTC but represents Brussels local time)
  * @param formatStr - Format string compatible with date-fns format (e.g., 'dd/MM/yyyy HH:mm', 'dd MMMM yyyy, HH:mm')
  * @returns Formatted date string in Brussels timezone
  */
@@ -157,12 +157,44 @@ export function formatBrusselsDateTime(dateStr: string | null, formatStr: string
   if (!dateStr) return 'N/A';
   
   try {
+    // Dates stored in the database as "2026-01-25T10:00:00+00:00" represent 10:00 Brussels time,
+    // not 10:00 UTC. The UTC time component actually represents Brussels local time.
+    // So we extract the date/time components and create a date object that represents
+    // that exact moment in Brussels timezone by constructing it with the Brussels offset.
+    
+    // Extract date and time components from the ISO string
+    const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:[+-](\d{2}):(\d{2})|Z)?$/);
+    if (match) {
+      const [, year, month, day, hour, minute, second, offsetHour, offsetMinute] = match;
+      
+      // Create a date string with Brussels timezone offset
+      // The time components represent Brussels local time, so we construct a date string
+      // with Brussels timezone offset, parse it, then convert to Brussels timezone for formatting
+      const datePart = `${year}-${month}-${day}`;
+      const timePart = `${hour}:${minute}:${second}`;
+      
+      // Get Brussels offset for this date
+      const tempDate = new Date(`${datePart}T${timePart}Z`); // Temporary UTC date
+      const brusselsOffset = getBrusselsOffsetHours(tempDate);
+      const offsetStr = `${brusselsOffset >= 0 ? '+' : '-'}${String(Math.abs(brusselsOffset)).padStart(2, '0')}:00`;
+      
+      // Create date string with Brussels timezone
+      const brusselsDateStr = `${datePart}T${timePart}${offsetStr}`;
+      const parsedDate = new Date(brusselsDateStr);
+      
+      if (!isNaN(parsedDate.getTime())) {
+        // Convert to Brussels timezone and format
+        const brusselsDate = toZonedTime(parsedDate, BRUSSELS_TIMEZONE);
+        return formatDateFns(brusselsDate, formatStr);
+      }
+    }
+    
+    // Fallback: parse as regular date and convert to Brussels timezone
     const date = new Date(dateStr);
     if (isNaN(date.getTime())) {
       return dateStr;
     }
-
-    // Convert UTC date to Brussels timezone and format it
+    
     const brusselsDate = toZonedTime(date, BRUSSELS_TIMEZONE);
     return formatDateFns(brusselsDate, formatStr);
   } catch (error) {

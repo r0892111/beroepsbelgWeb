@@ -277,6 +277,7 @@ async function handleEvent(event: Stripe.Event) {
                 phone: bookingData.customerPhone,
                 numberOfPeople: bookingData.numberOfPeople,
                 language: bookingData.language,
+                contactLanguage: bookingData.contactLanguage || 'nl', // Language for email communications
                 specialRequests: bookingData.specialRequests,
                 requestTanguy: bookingData.requestTanguy,
                 amount: bookingData.amounts.totalAmount || (bookingData.amounts.tourFinalAmount + (bookingData.amounts.tanguyCost || 0) + (bookingData.amounts.extraHourCost || 0) + (bookingData.amounts.weekendFeeCost || 0) + (bookingData.amounts.eveningFeeCost || 0)),
@@ -330,6 +331,7 @@ async function handleEvent(event: Stripe.Event) {
                 phone: bookingData.customerPhone,
                 numberOfPeople: bookingData.numberOfPeople,
                 language: bookingData.language,
+                contactLanguage: bookingData.contactLanguage || 'nl', // Language for email communications
                 specialRequests: bookingData.specialRequests,
                 requestTanguy: bookingData.requestTanguy,
                 amount: bookingData.amounts.totalAmount || (bookingData.amounts.tourFinalAmount + (bookingData.amounts.tanguyCost || 0) + (bookingData.amounts.extraHourCost || 0) + (bookingData.amounts.weekendFeeCost || 0) + (bookingData.amounts.eveningFeeCost || 0)),
@@ -434,6 +436,7 @@ async function handleEvent(event: Stripe.Event) {
               phone: bookingData.customerPhone,
               numberOfPeople: bookingData.numberOfPeople,
               language: bookingData.language,
+              contactLanguage: bookingData.contactLanguage || 'nl', // Language for email communications
               specialRequests: bookingData.specialRequests,
               requestTanguy: bookingData.requestTanguy,
               amount: bookingData.amounts.totalAmount || (bookingData.amounts.tourFinalAmount + (bookingData.amounts.tanguyCost || 0) + (bookingData.amounts.extraHourCost || 0) + (bookingData.amounts.weekendFeeCost || 0) + (bookingData.amounts.eveningFeeCost || 0)),
