@@ -562,7 +562,8 @@ export default function AdminBookingsPage() {
       };
 
       // Ensure deal_id is set - either from manual selection or auto-creation
-      // Deal ID is MANDATORY - booking creation will fail if we can't get/create one
+      // When no deal is selected, automatically create one (booking will succeed)
+      // Deal ID is MANDATORY - booking creation will fail ONLY if deal creation fails
       let finalDealId: string | null = null;
       
       if (!tour.local_stories) {
@@ -596,7 +597,7 @@ export default function AdminBookingsPage() {
           }
         }
 
-        // If no valid deal selected, create a new one
+        // If no deal selected or selected deal doesn't exist, create a new one
         if (!finalDealId) {
           try {
             const dealTitle = `${tour.title || 'Tour'} - ${createForm.customerName} - ${createForm.date}`;
@@ -675,6 +676,7 @@ export default function AdminBookingsPage() {
         };
 
         // Ensure deal_id is set for Local Stories - MANDATORY
+        // When no deal is selected, automatically create one (booking will succeed)
         let localDealId: string | null = null;
         
         // If admin manually selected a deal, verify it exists first
@@ -707,7 +709,8 @@ export default function AdminBookingsPage() {
           }
         }
 
-        // If no valid deal selected, create a new one
+        // If no deal selected (or selected deal doesn't exist), automatically create a new one
+        // This ensures booking creation succeeds when no deal is selected
         if (!localDealId) {
           try {
             const dealTitle = `${tour.title || 'Local Stories Tour'} - ${createForm.customerName} - ${createForm.date}`;
