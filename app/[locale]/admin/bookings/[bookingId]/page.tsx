@@ -46,6 +46,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { format } from 'date-fns';
+import { formatBrusselsDateTime } from '@/lib/utils/timezone';
 import { toast } from 'sonner';
 
 interface SelectedGuide {
@@ -1583,12 +1584,7 @@ export default function BookingDetailPage() {
   };
 
   const formatDateTime = (dateStr: string | null) => {
-    if (!dateStr) return 'Not set';
-    try {
-      return format(new Date(dateStr), 'dd MMMM yyyy, HH:mm');
-    } catch {
-      return dateStr;
-    }
+    return formatBrusselsDateTime(dateStr, 'dd MMMM yyyy, HH:mm');
   };
 
   // Normalize guide objects - can be full guide objects or simplified {id, status} objects
@@ -1960,7 +1956,7 @@ export default function BookingDetailPage() {
                             <div className="space-y-1">
                               {lb.extra_payments_received.map((payment, paymentIndex) => (
                                 <p key={paymentIndex} className="text-xs text-green-600">
-                                  • {format(new Date(payment.paidAt), 'dd/MM/yyyy HH:mm')} - {payment.numberOfPeople} {payment.numberOfPeople === 1 ? 'person' : 'people'} for €{payment.amount.toFixed(2)}
+                                  • {formatBrusselsDateTime(payment.paidAt, 'dd/MM/yyyy HH:mm')} - {payment.numberOfPeople} {payment.numberOfPeople === 1 ? 'person' : 'people'} for €{payment.amount.toFixed(2)}
                                   {payment.type === 'extra_people' && ' (extra people)'}
                                 </p>
                               ))}
@@ -1977,7 +1973,7 @@ export default function BookingDetailPage() {
                                 <div className="space-y-1">
                                   {matchingInvitee.paymentLinksSent.map((log, logIndex) => (
                                     <p key={logIndex} className="text-xs text-blue-600">
-                                      • {format(new Date(log.sentAt), 'dd/MM/yyyy HH:mm')} - {log.numberOfPeople} {log.numberOfPeople === 1 ? 'person' : 'people'} for €{log.amount.toFixed(2)}
+                                      • {formatBrusselsDateTime(log.sentAt, 'dd/MM/yyyy HH:mm')} - {log.numberOfPeople} {log.numberOfPeople === 1 ? 'person' : 'people'} for €{log.amount.toFixed(2)}
                                       {log.type === 'additional_people' && ' (additional)'}
                                     </p>
                                   ))}
@@ -2106,7 +2102,7 @@ export default function BookingDetailPage() {
                         })()}
                         {lb.created_at && (
                           <div className="mt-2 text-xs text-muted-foreground">
-                            Booked: {format(new Date(lb.created_at), 'dd/MM/yyyy HH:mm')}
+                            Booked: {formatBrusselsDateTime(lb.created_at, 'dd/MM/yyyy HH:mm')}
                           </div>
                         )}
                       </div>
@@ -2193,7 +2189,7 @@ export default function BookingDetailPage() {
                             <div className="space-y-1">
                               {inv.paymentLinksSent.map((log, logIndex) => (
                                 <p key={logIndex} className="text-xs text-green-600">
-                                  • {format(new Date(log.sentAt), 'dd/MM/yyyy HH:mm')} - {log.numberOfPeople} {log.numberOfPeople === 1 ? 'person' : 'people'} for €{log.amount.toFixed(2)}
+                                  • {formatBrusselsDateTime(log.sentAt, 'dd/MM/yyyy HH:mm')} - {log.numberOfPeople} {log.numberOfPeople === 1 ? 'person' : 'people'} for €{log.amount.toFixed(2)}
                                   {log.type === 'additional_people' && ' (additional)'}
                                 </p>
                               ))}

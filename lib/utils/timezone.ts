@@ -3,6 +3,9 @@
  * Handles CET (UTC+1) in winter and CEST (UTC+2) in summer
  */
 
+import { format as formatDateFns } from 'date-fns';
+import { utcToZonedTime } from 'date-fns-tz';
+
 const BRUSSELS_TIMEZONE = 'Europe/Brussels';
 
 /**
@@ -142,4 +145,28 @@ export function getBrusselsOffsetHours(date: Date | string): number {
   const utcTime = new Date(d.toLocaleString('en-US', { timeZone: 'UTC' }));
   const offsetMs = brusselsTime.getTime() - utcTime.getTime();
   return Math.round(offsetMs / (60 * 60 * 1000));
+}
+
+/**
+ * Format a date/time string for display in Brussels timezone
+ * @param dateStr - ISO date string (can be UTC or any timezone)
+ * @param formatStr - Format string compatible with date-fns format (e.g., 'dd/MM/yyyy HH:mm', 'dd MMMM yyyy, HH:mm')
+ * @returns Formatted date string in Brussels timezone
+ */
+export function formatBrusselsDateTime(dateStr: string | null, formatStr: string = 'dd/MM/yyyy HH:mm'): string {
+  if (!dateStr) return 'N/A';
+  
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) {
+      return dateStr;
+    }
+
+    // Convert UTC date to Brussels timezone and format it
+    const brusselsDate = utcToZonedTime(date, BRUSSELS_TIMEZONE);
+    return formatDateFns(brusselsDate, formatStr);
+  } catch (error) {
+    console.error('Error formatting Brussels datetime:', error);
+    return dateStr;
+  }
 }

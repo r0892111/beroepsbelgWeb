@@ -109,13 +109,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // After successful signup, update the profile with preferred_language
-      // (in case the database trigger doesn't handle it)
+      // After successful signup, create or update the profile
       if (data?.user && !error) {
-        await supabase
+        const { error: profileError } = await supabase
           .from('profiles')
-          .update({ preferred_language: preferredLanguage })
-          .eq('id', data.user.id);
+          .upsert({
+            id: data.user.id,
+            email: data.user.email || email,
+            full_name: fullName,
+            preferred_language: preferredLanguage,
+            updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'id',
+          });
+
+        if (profileError) {
+          console.error('Error creating/updating profile:', profileError);
+        }
       }
 
       return { error };
