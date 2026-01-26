@@ -16,10 +16,13 @@ const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPAB
 
 Deno.serve(async (req) => {
   try {
+    const isAdminReprocess = req.headers.get('X-Admin-Reprocess') === 'true';
+    
     console.info('[Webhook] Received request:', {
       method: req.method,
       url: req.url,
       hasSignature: !!req.headers.get('stripe-signature'),
+      isAdminReprocess,
     });
 
     // Handle OPTIONS request for CORS preflight
@@ -32,27 +35,48 @@ Deno.serve(async (req) => {
       return new Response('Method not allowed', { status: 405 });
     }
 
-    // get the signature from the header
-    const signature = req.headers.get('stripe-signature');
-
-    if (!signature) {
-      console.error('[Webhook] No signature found in headers');
-      return new Response('No signature found', { status: 400 });
-    }
-
     // get the raw body
     const body = await req.text();
     console.info('[Webhook] Body received, length:', body.length);
 
-    // verify the webhook signature
     let event: Stripe.Event;
 
-    try {
-      event = await stripe.webhooks.constructEventAsync(body, signature, stripeWebhookSecret);
-      console.info('[Webhook] Signature verified, event type:', event.type, 'event id:', event.id);
-    } catch (error: any) {
-      console.error(`[Webhook] Signature verification failed: ${error.message}`);
-      return new Response(`Webhook signature verification failed: ${error.message}`, { status: 400 });
+    if (isAdminReprocess) {
+      // Admin reprocess - skip signature verification and parse event directly
+      console.info('[Webhook] Admin reprocess mode - skipping signature verification');
+      try {
+        event = JSON.parse(body) as Stripe.Event;
+        console.info('[Webhook] Admin event parsed, event type:', event.type, 'event id:', event.id);
+      } catch (error: any) {
+        console.error(`[Webhook] Failed to parse admin event: ${error.message}`);
+        return new Response(`Failed to parse event: ${error.message}`, { status: 400 });
+      }
+    } else {
+      // Normal webhook - verify signature
+      const signature = req.headers.get('stripe-signature');
+
+      if (!signature) {
+        console.error('[Webhook] No signature found in headers');
+        return new Response('No signature found', { status: 400 });
+      }
+
+      console.info('[Webhook] Signature header present:', !!signature);
+      console.info('[Webhook] Webhook secret configured:', !!stripeWebhookSecret, stripeWebhookSecret ? `starts with: ${stripeWebhookSecret.substring(0, 10)}...` : 'MISSING');
+
+      try {
+        event = await stripe.webhooks.constructEventAsync(body, signature, stripeWebhookSecret);
+        console.info('[Webhook] Signature verified, event type:', event.type, 'event id:', event.id);
+      } catch (error: any) {
+        console.error(`[Webhook] Signature verification failed: ${error.message}`);
+        console.error('[Webhook] Debug info:', {
+          hasSignature: !!signature,
+          signatureLength: signature?.length,
+          bodyLength: body.length,
+          secretConfigured: !!stripeWebhookSecret,
+          secretPrefix: stripeWebhookSecret ? stripeWebhookSecret.substring(0, 15) : 'MISSING',
+        });
+        return new Response(`Webhook signature verification failed: ${error.message}`, { status: 400 });
+      }
     }
 
     // Process event asynchronously (don't block response to Stripe)
@@ -204,6 +228,59 @@ async function handleEvent(event: Stripe.Event) {
 
         if (existingBooking && existingBooking.status === 'payment_completed') {
           console.info(`Tour booking already exists for session ${sessionId}, skipping creation`);
+          // Still call webhook even if booking already exists (idempotency - n8n should handle duplicates)
+          const n8nWebhookUrl = 'https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc';
+          const payload = {
+            ...session,
+            metadata: {
+              ...metadata,
+              stripe_session_id: sessionId,
+              booking_id: existingBooking.id,
+              isDuplicate: true, // Flag to indicate this is a duplicate payment
+            },
+            bookingData,
+            promoCode: promoCodeInfo.code,
+            promoDiscountAmount: promoCodeInfo.discountAmount,
+            promoDiscountPercent: promoCodeInfo.discountPercent,
+          };
+          
+          try {
+            console.info('[N8N] Calling tour booking webhook for duplicate payment', {
+              url: n8nWebhookUrl,
+              sessionId,
+              bookingId: existingBooking.id,
+            });
+            
+            // Add timeout to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+            
+            const res = await fetch(n8nWebhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+              signal: controller.signal,
+            });
+            
+            clearTimeout(timeoutId);
+            
+            console.info('[N8N] Duplicate payment webhook response', {
+              status: res.status,
+              ok: res.ok,
+            });
+            
+            if (!res.ok) {
+              const text = await res.text();
+              console.error('[N8N] Duplicate payment webhook error body', text);
+            }
+          } catch (err) {
+            if (err instanceof Error && err.name === 'AbortError') {
+              console.error('[N8N] Webhook call timed out after 30 seconds');
+            } else {
+              console.error('[N8N] Failed to call tour booking webhook for duplicate payment', err);
+            }
+          }
+          
           // Delete pending entry and return
           await supabase.from('pending_tour_bookings').delete().eq('id', pendingBooking.id);
           return;
@@ -502,17 +579,26 @@ async function handleEvent(event: Stripe.Event) {
             url: n8nWebhookUrl,
             sessionId,
             tourType,
+            bookingId: createdBookingId,
           });
+
+          // Add timeout to prevent hanging
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
           const res = await fetch(n8nWebhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
+            signal: controller.signal,
           });
+
+          clearTimeout(timeoutId);
 
           console.info('[N8N] Tour booking webhook response', {
             status: res.status,
             ok: res.ok,
+            bookingId: createdBookingId,
           });
 
           if (!res.ok) {
@@ -520,7 +606,11 @@ async function handleEvent(event: Stripe.Event) {
             console.error('[N8N] Tour booking webhook error body', text);
           }
         } catch (err) {
-          console.error('[N8N] Failed to call tour booking webhook', err);
+          if (err instanceof Error && err.name === 'AbortError') {
+            console.error('[N8N] Webhook call timed out after 30 seconds');
+          } else {
+            console.error('[N8N] Failed to call tour booking webhook', err);
+          }
         }
 
         } catch (bookingError) {
@@ -530,7 +620,69 @@ async function handleEvent(event: Stripe.Event) {
             tourType,
             sessionId,
           }));
-          // Don't delete pending booking on error so we can retry/investigate
+          
+          // Delete pending booking if booking was created successfully (even if there was an error later)
+          if (createdBookingId) {
+            await supabase.from('pending_tour_bookings').delete().eq('id', pendingBooking.id);
+            console.info(`Deleted pending booking entry after error (booking ${createdBookingId} was created)`);
+          }
+          
+          // Still call webhook even if booking creation failed (so n8n can handle the error)
+          const n8nWebhookUrl = 'https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc';
+          const errorPayload = {
+            ...session,
+            metadata: {
+              ...metadata,
+              stripe_session_id: sessionId,
+              booking_id: createdBookingId || null,
+              bookingError: true,
+              errorMessage: bookingError instanceof Error ? bookingError.message : String(bookingError),
+            },
+            bookingData,
+            promoCode: promoCodeInfo.code,
+            promoDiscountAmount: promoCodeInfo.discountAmount,
+            promoDiscountPercent: promoCodeInfo.discountPercent,
+          };
+          
+          try {
+            console.info('[N8N] Calling tour booking webhook after error', {
+              url: n8nWebhookUrl,
+              sessionId,
+              hasBookingId: !!createdBookingId,
+            });
+            
+            // Add timeout to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+            
+            const res = await fetch(n8nWebhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(errorPayload),
+              signal: controller.signal,
+            });
+            
+            clearTimeout(timeoutId);
+            
+            console.info('[N8N] Error webhook response', {
+              status: res.status,
+              ok: res.ok,
+            });
+            
+            if (!res.ok) {
+              const text = await res.text();
+              console.error('[N8N] Error webhook error body', text);
+            }
+          } catch (webhookErr) {
+            if (webhookErr instanceof Error && webhookErr.name === 'AbortError') {
+              console.error('[N8N] Webhook call timed out after 30 seconds');
+            } else {
+              console.error('[N8N] Failed to call tour booking webhook after error', webhookErr);
+            }
+          }
+          
+          // Don't delete pending booking if booking creation failed (so we can retry/investigate)
+          // But if booking was created, we already deleted it above
           return;
         }
 
@@ -564,13 +716,40 @@ async function handleEvent(event: Stripe.Event) {
         // Call N8N webhook (only for actual status updates, not duplicate events)
         const n8nWebhookUrl = 'https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc';
         try {
-          await fetch(n8nWebhookUrl, {
+          console.info('[N8N] Calling tour booking webhook for legacy booking', {
+            url: n8nWebhookUrl,
+            sessionId,
+            bookingId: existingBooking.id,
+          });
+          
+          // Add timeout to prevent hanging
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+          
+          const res = await fetch(n8nWebhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...session, metadata: { ...metadata, stripe_session_id: sessionId } }),
+            signal: controller.signal,
           });
+          
+          clearTimeout(timeoutId);
+          
+          console.info('[N8N] Legacy booking webhook response', {
+            status: res.status,
+            ok: res.ok,
+          });
+          
+          if (!res.ok) {
+            const text = await res.text();
+            console.error('[N8N] Legacy booking webhook error body', text);
+          }
         } catch (err) {
-          console.error('[N8N] Failed to call tour booking webhook for legacy booking', err);
+          if (err instanceof Error && err.name === 'AbortError') {
+            console.error('[N8N] Webhook call timed out after 30 seconds');
+          } else {
+            console.error('[N8N] Failed to call tour booking webhook for legacy booking', err);
+          }
         }
 
         return;
@@ -774,11 +953,18 @@ async function handleEvent(event: Stripe.Event) {
             isExtraInvitees,
           });
 
+          // Add timeout to prevent hanging
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
           const res = await fetch(n8nWebhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
+            signal: controller.signal,
           });
+
+          clearTimeout(timeoutId);
 
           console.info('[N8N] Manual payment webhook response', {
             status: res.status,
@@ -791,7 +977,11 @@ async function handleEvent(event: Stripe.Event) {
             console.error('[N8N] Manual payment webhook error body', text);
           }
         } catch (err) {
-          console.error('[N8N] Failed to call tour booking webhook for manual payment', err);
+          if (err instanceof Error && err.name === 'AbortError') {
+            console.error('[N8N] Webhook call timed out after 30 seconds');
+          } else {
+            console.error('[N8N] Failed to call tour booking webhook for manual payment', err);
+          }
         }
 
         return;
