@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// The specific profile UUID that has the TeamLeader tokens
-const TEAMLEADER_PROFILE_UUID = 'd20a39c7-7b1d-4819-bb76-f7ba6ee099e0';
+// Always use Tanguy's TeamLeader integration for testing
+const TANGUY_EMAIL = 'tanguy@beroepsbelg.be';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,17 +66,25 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    // Fetch the TeamLeader tokens from the designated profile
+    // Always fetch Tanguy's TeamLeader tokens (for testing - regardless of who is logged in)
     const { data: tlProfile, error: tlError } = await supabase
       .from('profiles')
-      .select('access_token_tl, refresh_token_tl')
-      .eq('id', TEAMLEADER_PROFILE_UUID)
+      .select('access_token_tl, refresh_token_tl, email')
+      .eq('email', TANGUY_EMAIL)
       .single();
 
-    if (tlError || !tlProfile?.access_token_tl) {
+    if (tlError) {
+      console.error('Error fetching Tanguy profile:', tlError);
       return NextResponse.json({
         error: 'TeamLeader not connected',
-        details: 'No TeamLeader access token found'
+        details: `Could not find profile for ${TANGUY_EMAIL}: ${tlError.message}`
+      }, { status: 400 });
+    }
+
+    if (!tlProfile?.access_token_tl) {
+      return NextResponse.json({
+        error: 'TeamLeader not connected',
+        details: `No TeamLeader access token found for ${TANGUY_EMAIL}. Please connect TeamLeader integration.`
       }, { status: 400 });
     }
 
