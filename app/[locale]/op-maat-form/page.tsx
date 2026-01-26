@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Loader2, CheckCircle, MapPin, Compass, BookOpen, Sparkles } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { useTranslations } from 'next-intl';
+import { useParams } from 'next/navigation';
 
 interface Booking {
   id: string;
@@ -37,19 +38,44 @@ interface Booking {
   [key: string]: any;
 }
 
+interface OpMaatFormConfig {
+  startEnd: {
+    label: { nl?: string; en?: string; fr?: string; de?: string };
+    placeholder: { nl?: string; en?: string; fr?: string; de?: string };
+  };
+  cityPart: {
+    label: { nl?: string; en?: string; fr?: string; de?: string };
+    placeholder: { nl?: string; en?: string; fr?: string; de?: string };
+  };
+  subjects: {
+    label: { nl?: string; en?: string; fr?: string; de?: string };
+    placeholder: { nl?: string; en?: string; fr?: string; de?: string };
+  };
+  specialWishes: {
+    label: { nl?: string; en?: string; fr?: string; de?: string };
+    placeholder: { nl?: string; en?: string; fr?: string; de?: string };
+  };
+}
+
 interface Tour {
   id: string;
   title: string;
   description: string;
   city: string;
+  options?: {
+    op_maat_form_config?: OpMaatFormConfig;
+    [key: string]: any;
+  };
   [key: string]: any;
 }
 
 export default function OpMaatFormPage() {
   const searchParams = useSearchParams();
+  const params = useParams();
   const tourId = searchParams.get('tourId');
   const bookingId = searchParams.get('bookingId');
   const t = useTranslations('opMaatForm');
+  const locale = (params.locale as string) || 'nl';
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -57,6 +83,7 @@ export default function OpMaatFormPage() {
   const [error, setError] = useState<string | null>(null);
   const [booking, setBooking] = useState<Booking | null>(null);
   const [tour, setTour] = useState<Tour | null>(null);
+  const [formConfig, setFormConfig] = useState<OpMaatFormConfig | null>(null);
 
   const [formData, setFormData] = useState({
     startEnd: '',
@@ -64,6 +91,19 @@ export default function OpMaatFormPage() {
     subjects: '',
     specialWishes: '',
   });
+
+  // Helper function to get label/placeholder from config or fallback to translation
+  const getFormText = (field: 'startEnd' | 'cityPart' | 'subjects' | 'specialWishes', type: 'label' | 'placeholder', fallbackKey: string): string => {
+    if (formConfig?.[field]?.[type]) {
+      const configText = formConfig[field][type][locale as 'nl' | 'en' | 'fr' | 'de'] || 
+                        formConfig[field][type].nl || 
+                        '';
+      if (configText.trim()) {
+        return configText;
+      }
+    }
+    return t(fallbackKey) || '';
+  };
 
   // Load booking and tour data
   useEffect(() => {
@@ -111,6 +151,14 @@ export default function OpMaatFormPage() {
 
         if (!tourError && tourData) {
           setTour(tourData);
+          
+          // Extract op maat form config from tour options
+          if (tourData.options && typeof tourData.options === 'object') {
+            const config = (tourData.options as any).op_maat_form_config;
+            if (config) {
+              setFormConfig(config);
+            }
+          }
         }
 
         setLoading(false);
@@ -332,11 +380,11 @@ export default function OpMaatFormPage() {
               <div className="space-y-2">
                 <Label htmlFor="startEnd" className="flex items-center gap-2 text-base font-semibold">
                   <MapPin className="h-5 w-5 text-[#1BDD95]" />
-                  {t('startEndLabel') || 'Waar wil je beginnen en eindigen?'}
+                  {getFormText('startEnd', 'label', 'startEndLabel') || 'Waar wil je beginnen en eindigen?'}
                 </Label>
                 <Textarea
                   id="startEnd"
-                  placeholder={t('startEndPlaceholder') || 'Bijvoorbeeld: Start bij Centraal Station, eindig bij het stadhuis...'}
+                  placeholder={getFormText('startEnd', 'placeholder', 'startEndPlaceholder') || 'Bijvoorbeeld: Start bij Centraal Station, eindig bij het stadhuis...'}
                   value={formData.startEnd}
                   onChange={(e) => setFormData({ ...formData, startEnd: e.target.value })}
                   className="min-h-[100px]"
@@ -349,11 +397,11 @@ export default function OpMaatFormPage() {
               <div className="space-y-2">
                 <Label htmlFor="cityPart" className="flex items-center gap-2 text-base font-semibold">
                   <Compass className="h-5 w-5 text-[#1BDD95]" />
-                  {t('cityPartLabel') || 'Welk deel van de stad wil je ontdekken?'}
+                  {getFormText('cityPart', 'label', 'cityPartLabel') || 'Welk deel van de stad wil je ontdekken?'}
                 </Label>
                 <Textarea
                   id="cityPart"
-                  placeholder={t('cityPartPlaceholder') || 'Bijvoorbeeld: De historische binnenstad, de moderne wijk, de markten...'}
+                  placeholder={getFormText('cityPart', 'placeholder', 'cityPartPlaceholder') || 'Bijvoorbeeld: De historische binnenstad, de moderne wijk, de markten...'}
                   value={formData.cityPart}
                   onChange={(e) => setFormData({ ...formData, cityPart: e.target.value })}
                   className="min-h-[100px]"
@@ -366,11 +414,11 @@ export default function OpMaatFormPage() {
               <div className="space-y-2">
                 <Label htmlFor="subjects" className="flex items-center gap-2 text-base font-semibold">
                   <BookOpen className="h-5 w-5 text-[#1BDD95]" />
-                  {t('subjectsLabel') || 'Welke onderwerpen interesseren je?'}
+                  {getFormText('subjects', 'label', 'subjectsLabel') || 'Welke onderwerpen interesseren je?'}
                 </Label>
                 <Textarea
                   id="subjects"
-                  placeholder={t('subjectsPlaceholder') || 'Bijvoorbeeld: Architectuur, geschiedenis, lokale cultuur, eten en drinken...'}
+                  placeholder={getFormText('subjects', 'placeholder', 'subjectsPlaceholder') || 'Bijvoorbeeld: Architectuur, geschiedenis, lokale cultuur, eten en drinken...'}
                   value={formData.subjects}
                   onChange={(e) => setFormData({ ...formData, subjects: e.target.value })}
                   className="min-h-[100px]"
@@ -383,11 +431,11 @@ export default function OpMaatFormPage() {
               <div className="space-y-2">
                 <Label htmlFor="specialWishes" className="flex items-center gap-2 text-base font-semibold">
                   <Sparkles className="h-5 w-5 text-[#1BDD95]" />
-                  {t('specialWishesLabel') || 'Heb je speciale wensen of opmerkingen?'}
+                  {getFormText('specialWishes', 'label', 'specialWishesLabel') || 'Heb je speciale wensen of opmerkingen?'}
                 </Label>
                 <Textarea
                   id="specialWishes"
-                  placeholder={t('specialWishesPlaceholder') || 'Bijvoorbeeld: Toegankelijkheid, specifieke interesses, voorkeuren...'}
+                  placeholder={getFormText('specialWishes', 'placeholder', 'specialWishesPlaceholder') || 'Bijvoorbeeld: Toegankelijkheid, specifieke interesses, voorkeuren...'}
                   value={formData.specialWishes}
                   onChange={(e) => setFormData({ ...formData, specialWishes: e.target.value })}
                   className="min-h-[100px]"
