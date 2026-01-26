@@ -62,6 +62,7 @@ interface Invitee {
   phone?: string;
   numberOfPeople?: number;
   language?: string;
+  contactLanguage?: string; // Language for email communications (nl, en, fr, de)
   specialRequests?: string;
   amount?: number;
   currency?: string;
@@ -283,6 +284,7 @@ export default function BookingDetailPage() {
     phone: '',
     numberOfPeople: 1,
     language: 'nl',
+    contactLanguage: 'nl', // Language for email communications
     specialRequests: '',
     dealId: '',
     // Fee toggles for op_maat tours
@@ -1136,6 +1138,7 @@ export default function BookingDetailPage() {
       phone: inv.phone || inv.customer_phone || '',
       numberOfPeople: inv.numberOfPeople || inv.amnt_of_people || 1,
       language: isKnownLanguage ? invLanguage : 'other',
+      contactLanguage: (inv as any).contactLanguage || 'nl', // Language for email communications
       specialRequests: inv.specialRequests || '',
       dealId: inv.deal_id || (isLocalStories ? '' : booking?.deal_id || ''),
       // Load existing fee values from invitee
@@ -1190,6 +1193,7 @@ export default function BookingDetailPage() {
                 phone: editInviteeForm.phone,
                 numberOfPeople: editInviteeForm.numberOfPeople,
                 language: finalLanguage,
+                contactLanguage: editInviteeForm.contactLanguage, // Language for email communications
                 specialRequests: editInviteeForm.specialRequests,
               };
             }
@@ -1219,6 +1223,7 @@ export default function BookingDetailPage() {
             phone: editInviteeForm.phone,
             numberOfPeople: editInviteeForm.numberOfPeople,
             language: finalLanguage,
+            contactLanguage: editInviteeForm.contactLanguage, // Language for email communications
             specialRequests: editInviteeForm.specialRequests,
             // Store fee toggles and calculated costs
             requestTanguy: editInviteeForm.requestTanguy,
@@ -3417,10 +3422,29 @@ export default function BookingDetailPage() {
                 />
               </div>
             </div>
+            {/* Email Language - shown for ALL booking types */}
+            <div className="space-y-2">
+              <Label htmlFor="editContactLanguageAll">Email Language</Label>
+              <Select
+                value={editInviteeForm.contactLanguage}
+                onValueChange={(value) => setEditInviteeForm({ ...editInviteeForm, contactLanguage: value })}
+              >
+                <SelectTrigger id="editContactLanguageAll" className="bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nl">Nederlands</SelectItem>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="fr">Français</SelectItem>
+                  <SelectItem value="de">Deutsch</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Language for email communications</p>
+            </div>
             {!editInviteeTarget?.isLocalStories && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="editLanguage">Language</Label>
+                  <Label htmlFor="editLanguage">Tour Language</Label>
                   <Select
                     value={editInviteeForm.language}
                     onValueChange={(value) => {

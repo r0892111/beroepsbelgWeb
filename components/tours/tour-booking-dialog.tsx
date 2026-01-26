@@ -94,6 +94,7 @@ export function TourBookingDialog({
     customerName: '',
     customerEmail: '',
     customerPhone: '',
+    contactLanguage: locale, // Default to current site locale for email communications
     bookingDate: defaultBookingDate ? new Date(defaultBookingDate) : undefined as Date | undefined,
     numberOfPeople: isLocalStories ? 4 : 15, // Local stories: default to 4 (minimum), Regular tours: default to 15 (1-15 people)
     language: 'Nederlands',
@@ -418,6 +419,7 @@ export function TourBookingDialog({
           customerName: formData.customerName,
           customerEmail: formData.customerEmail,
           customerPhone: formData.customerPhone,
+          contactLanguage: formData.contactLanguage, // Language for email communications
           bookingDate: formData.bookingDate ? format(formData.bookingDate, 'yyyy-MM-dd') : '',
           bookingTime: opMaat ? (selectedTimeSlot || '14:00') : (isLocalStories ? '14:00' : selectedTimeSlot),
           bookingDateTime: bookingDateTime, // Combined date and time in ISO format
@@ -556,6 +558,25 @@ export function TourBookingDialog({
               value={formData.customerEmail}
               onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="contactLanguage">{t('contactLanguage')} *</Label>
+            <Select
+              value={formData.contactLanguage}
+              onValueChange={(value: string) => setFormData({ ...formData, contactLanguage: value })}
+            >
+              <SelectTrigger id="contactLanguage">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="nl">Nederlands</SelectItem>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="fr">Français</SelectItem>
+                <SelectItem value="de">Deutsch</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">{t('contactLanguageDescription')}</p>
           </div>
 
           <div className="space-y-2">

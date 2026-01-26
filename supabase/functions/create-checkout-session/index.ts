@@ -28,11 +28,12 @@ serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey)
 
-    const {
+const {
       tourId,
       customerName,
       customerEmail,
       customerPhone,
+      contactLanguage, // Language for email communications (nl, en, fr, de)
       bookingDate,
       bookingTime,
       bookingDateTime, // Combined date and time in ISO format (yyyy-MM-ddTHH:mm)
@@ -404,8 +405,9 @@ serve(async (req: Request) => {
       durationMinutes: finalDurationMinutes,
       saturdayDateStr: saturdayDateStr || null,
 
-      numberOfPeople,
+numberOfPeople,
       language,
+      contactLanguage: contactLanguage || locale || 'nl', // Fallback to locale, then 'nl'
       specialRequests: specialRequests || null,
       requestTanguy,
       extraHour: hasExtraHour,
