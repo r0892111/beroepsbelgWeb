@@ -67,6 +67,25 @@ interface ThemeTranslation {
   de?: string;
 }
 
+interface OpMaatFormConfig {
+  startEnd: {
+    label: ThemeTranslation;
+    placeholder: ThemeTranslation;
+  };
+  cityPart: {
+    label: ThemeTranslation;
+    placeholder: ThemeTranslation;
+  };
+  subjects: {
+    label: ThemeTranslation;
+    placeholder: ThemeTranslation;
+  };
+  specialWishes: {
+    label: ThemeTranslation;
+    placeholder: ThemeTranslation;
+  };
+}
+
 interface TourFormData {
   city: string;
   title: string;
@@ -87,6 +106,7 @@ interface TourFormData {
   themes: ThemeTranslation[];
   local_stories: boolean;
   op_maat: boolean;
+  op_maat_form_config?: OpMaatFormConfig;
   status: 'draft' | 'published';
 }
 
@@ -289,6 +309,30 @@ export default function AdminToursPage() {
 
   // Show custom tour type input fields
   const [showCustomTourType, setShowCustomTourType] = useState(false);
+
+  // Helper function to update op maat form config
+  const updateOpMaatFormConfig = (field: 'startEnd' | 'cityPart' | 'subjects' | 'specialWishes', subField: 'label' | 'placeholder', lang: 'nl' | 'en' | 'fr' | 'de', value: string) => {
+    const currentConfig = formData.op_maat_form_config || {
+      startEnd: { label: { nl: '', en: '', fr: '', de: '' }, placeholder: { nl: '', en: '', fr: '', de: '' } },
+      cityPart: { label: { nl: '', en: '', fr: '', de: '' }, placeholder: { nl: '', en: '', fr: '', de: '' } },
+      subjects: { label: { nl: '', en: '', fr: '', de: '' }, placeholder: { nl: '', en: '', fr: '', de: '' } },
+      specialWishes: { label: { nl: '', en: '', fr: '', de: '' }, placeholder: { nl: '', en: '', fr: '', de: '' } },
+    };
+    
+    setFormData({
+      ...formData,
+      op_maat_form_config: {
+        ...currentConfig,
+        [field]: {
+          ...currentConfig[field],
+          [subField]: {
+            ...currentConfig[field][subField],
+            [lang]: value,
+          },
+        },
+      },
+    });
+  };
 
   useEffect(() => {
     if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
@@ -496,6 +540,7 @@ export default function AdminToursPage() {
       })(),
       local_stories: Boolean(tour.local_stories === true || (tour.local_stories as any) === 'true' || (tour.local_stories as any) === 1),
       op_maat: Boolean(tour.op_maat === true || (tour.op_maat as any) === 'true' || (tour.op_maat as any) === 1),
+      op_maat_form_config: (tour.options as any)?.op_maat_form_config || undefined,
       status: tour.status || 'published', // Default to 'published' for existing tours without status
     });
     setCustomLanguage('');
@@ -576,7 +621,10 @@ export default function AdminToursPage() {
         description_fr: formData.description_fr || null,
         description_de: formData.description_de || null,
         notes: formData.notes || null,
-        options: formData.options || {},
+        options: {
+          ...formData.options,
+          ...(formData.op_maat && formData.op_maat_form_config ? { op_maat_form_config: formData.op_maat_form_config } : {}),
+        },
         themes: formData.themes || [],
         local_stories: formData.local_stories || false,
         op_maat: formData.op_maat || false,
@@ -2433,6 +2481,122 @@ export default function AdminToursPage() {
                 </Label>
               </div>
             </div>
+
+            {/* Op Maat Form Configuration */}
+            {formData.op_maat && (
+              <div className="space-y-6 border-t pt-6 mt-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-navy mb-4">Op Maat Form Configuration</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Customize the form questions that customers will see when booking this tour.
+                  </p>
+                </div>
+
+                {/* Start & End Location */}
+                <div className="space-y-4 border rounded-lg p-4">
+                  <h4 className="font-semibold text-navy">Start & End Location</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">Label (NL)</Label>
+                      <Input
+                        value={formData.op_maat_form_config?.startEnd?.label?.nl || ''}
+                        onChange={(e) => updateOpMaatFormConfig('startEnd', 'label', 'nl', e.target.value)}
+                        placeholder="Waar wil je beginnen en eindigen?"
+                        className="bg-white"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Placeholder (NL)</Label>
+                      <Input
+                        value={formData.op_maat_form_config?.startEnd?.placeholder?.nl || ''}
+                        onChange={(e) => updateOpMaatFormConfig('startEnd', 'placeholder', 'nl', e.target.value)}
+                        placeholder="Bijvoorbeeld: Start bij Centraal Station..."
+                        className="bg-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* City Part */}
+                <div className="space-y-4 border rounded-lg p-4">
+                  <h4 className="font-semibold text-navy">City Part</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">Label (NL)</Label>
+                      <Input
+                        value={formData.op_maat_form_config?.cityPart?.label?.nl || ''}
+                        onChange={(e) => updateOpMaatFormConfig('cityPart', 'label', 'nl', e.target.value)}
+                        placeholder="Welk deel van de stad wil je ontdekken?"
+                        className="bg-white"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Placeholder (NL)</Label>
+                      <Input
+                        value={formData.op_maat_form_config?.cityPart?.placeholder?.nl || ''}
+                        onChange={(e) => updateOpMaatFormConfig('cityPart', 'placeholder', 'nl', e.target.value)}
+                        placeholder="Bijvoorbeeld: De historische binnenstad..."
+                        className="bg-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Subjects */}
+                <div className="space-y-4 border rounded-lg p-4">
+                  <h4 className="font-semibold text-navy">Subjects</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">Label (NL)</Label>
+                      <Input
+                        value={formData.op_maat_form_config?.subjects?.label?.nl || ''}
+                        onChange={(e) => updateOpMaatFormConfig('subjects', 'label', 'nl', e.target.value)}
+                        placeholder="Welke onderwerpen interesseren je?"
+                        className="bg-white"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Placeholder (NL)</Label>
+                      <Input
+                        value={formData.op_maat_form_config?.subjects?.placeholder?.nl || ''}
+                        onChange={(e) => updateOpMaatFormConfig('subjects', 'placeholder', 'nl', e.target.value)}
+                        placeholder="Bijvoorbeeld: Architectuur, geschiedenis..."
+                        className="bg-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Special Wishes */}
+                <div className="space-y-4 border rounded-lg p-4">
+                  <h4 className="font-semibold text-navy">Special Wishes</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">Label (NL)</Label>
+                      <Input
+                        value={formData.op_maat_form_config?.specialWishes?.label?.nl || ''}
+                        onChange={(e) => updateOpMaatFormConfig('specialWishes', 'label', 'nl', e.target.value)}
+                        placeholder="Heb je speciale wensen of opmerkingen?"
+                        className="bg-white"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Placeholder (NL)</Label>
+                      <Input
+                        value={formData.op_maat_form_config?.specialWishes?.placeholder?.nl || ''}
+                        onChange={(e) => updateOpMaatFormConfig('specialWishes', 'placeholder', 'nl', e.target.value)}
+                        placeholder="Bijvoorbeeld: Toegankelijkheid..."
+                        className="bg-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  Note: If left empty, default translations will be used. Only Dutch (NL) fields are shown here for simplicity.
+                </p>
+              </div>
+            )}
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
