@@ -99,11 +99,33 @@ export async function POST(
       );
     }
 
+    // Verify that the deal_id from the booking matches what we're sending to webhook
+    if (booking.deal_id !== uuid) {
+      console.error('[Webhook] Deal ID mismatch:', {
+        bookingDealId: booking.deal_id,
+        parsedUuid: uuid,
+        dealIdParam: dealId,
+      });
+      return NextResponse.json(
+        { error: 'Deal ID mismatch - booking deal_id does not match parsed UUID' },
+        { status: 400 }
+      );
+    }
+
     // Use parsed guideId if available, otherwise use booking's guide_id
     const finalGuideId = guideId || booking.guide_id;
     
-    // Trigger webhook with guide_id included
-    const webhookSuccess = await triggerWebhook(uuid, finalGuideId, action);
+    // Trigger webhook with the verified deal_id from the booking
+    // Use booking.deal_id to ensure we're sending the actual deal_id from database
+    const webhookSuccess = await triggerWebhook(booking.deal_id, finalGuideId, action);
+    
+    console.info('[Webhook] Sent to webhook:', {
+      webhookUrl: 'https://alexfinit.app.n8n.cloud/webhook/d83af522-aa75-431d-bbf8-6b9f4faa1a14',
+      deal_id: booking.deal_id,
+      guide_id: finalGuideId,
+      action,
+      bookingId: booking.id,
+    });
 
     if (!webhookSuccess) {
       return NextResponse.json(

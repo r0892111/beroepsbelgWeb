@@ -30,6 +30,7 @@ interface Booking {
   tour_id: string | null;
   city: string | null;
   tour_datetime: string | null;
+  deal_id: string | null;
 }
 
 export default function ChooseGuideClientPage() {
