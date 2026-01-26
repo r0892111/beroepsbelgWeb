@@ -4,7 +4,7 @@
  */
 
 import { format as formatDateFns } from 'date-fns';
-import { utcToZonedTime } from 'date-fns-tz';
+import { toZonedTime } from 'date-fns-tz';
 
 const BRUSSELS_TIMEZONE = 'Europe/Brussels';
 
@@ -163,7 +163,7 @@ export function formatBrusselsDateTime(dateStr: string | null, formatStr: string
     }
 
     // Convert UTC date to Brussels timezone and format it
-    const brusselsDate = utcToZonedTime(date, BRUSSELS_TIMEZONE);
+    const brusselsDate = toZonedTime(date, BRUSSELS_TIMEZONE);
     return formatDateFns(brusselsDate, formatStr);
   } catch (error) {
     console.error('Error formatting Brussels datetime:', error);
