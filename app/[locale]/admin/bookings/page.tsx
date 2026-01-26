@@ -770,6 +770,79 @@ export default function AdminBookingsPage() {
         }
       }
 
+      // Send booking to intake webhook (same endpoint as normal bookings)
+      if (newBooking) {
+        try {
+          // Split customer name into first and last name
+          const nameParts = createForm.customerName.trim().split(' ');
+          const contactFirstName = nameParts[0] || '';
+          const contactLastName = nameParts.slice(1).join(' ') || '';
+
+          // Build datetime string (ISO format)
+          const dateTime = `${createForm.date}T${createForm.time}:00:00`;
+
+          // Get city slug from tour (tour.city is already the slug)
+          const citySlug = tour.city || '';
+
+          // Build payload matching n8n intake endpoint expectations
+          // This payload includes fields for both standardization nodes
+          const payload = {
+            // Fields for first standardization node
+            body: {
+              contactFirstName,
+              contactLastName,
+              contactPhone: createForm.customerPhone,
+              contactEmail: createForm.customerEmail,
+              companyName: null, // Manual bookings are B2C, no company
+              dateTime,
+              additionalInfo: createForm.specialRequests || null,
+              citySlug,
+              tourId: createForm.tourId,
+              numberOfPeople: createForm.numberOfPeople,
+              language: finalLanguage,
+              upsellProducts: [], // Manual bookings don't have upsells yet
+            },
+            // Fields for second standardization node (metadata)
+            metadata: {
+              customerName: createForm.customerName,
+              tourId: createForm.tourId,
+              bookingId: newBooking.id,
+              booking_id: newBooking.id,
+            },
+            // Fields for second standardization node (bookingData)
+            bookingData: {
+              customerPhone: createForm.customerPhone,
+              customerEmail: createForm.customerEmail,
+              bookingDate: createForm.date,
+              bookingDateTime: dateTime,
+              numberOfPeople: createForm.numberOfPeople,
+              language: finalLanguage,
+              requestTanguy: createForm.requestTanguy,
+              specialRequests: createForm.specialRequests || null,
+              upsellProducts: [],
+            },
+          };
+
+          const webhookResponse = await fetch('https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (!webhookResponse.ok) {
+            console.error('Failed to send booking to intake webhook:', webhookResponse.status);
+            // Don't fail the booking creation, just log the error
+          } else {
+            console.info('Booking sent to intake webhook successfully');
+          }
+        } catch (webhookError) {
+          console.error('Error sending booking to intake webhook:', webhookError);
+          // Don't fail the booking creation, just log the error
+        }
+      }
+
       toast.success('Booking created successfully!');
       setCreateDialogOpen(false);
       resetCreateForm();
