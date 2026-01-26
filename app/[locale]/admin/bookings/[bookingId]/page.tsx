@@ -118,6 +118,8 @@ interface TourBooking {
   created_at?: string;
   invoice_id: string | null;
   ai_desc: string | null;
+  start_location: string | null;
+  end_location: string | null;
 }
 
 interface Tour {
@@ -128,6 +130,8 @@ interface Tour {
   duration_minutes: number | null;
   op_maat?: boolean;
   local_stories?: boolean;
+  start_location: string | null;
+  end_location: string | null;
 }
 
 interface Guide {
@@ -201,6 +205,8 @@ export default function BookingDetailPage() {
     date: '',
     time: '',
     status: '',
+    start_location: '',
+    end_location: '',
   });
 
   // Add invitee state (for Local Stories)
@@ -411,7 +417,7 @@ export default function BookingDetailPage() {
       if (bookingData.tour_id) {
         const { data: fetchedTourData } = await supabase
           .from('tours_table_prod')
-          .select('id, title, city, price, duration_minutes, op_maat, local_stories')
+          .select('id, title, city, price, duration_minutes, op_maat, local_stories, start_location, end_location')
           .eq('id', bookingData.tour_id)
           .single();
 
@@ -615,6 +621,8 @@ export default function BookingDetailPage() {
       date: datetime.toISOString().split('T')[0],
       time: datetime.toTimeString().slice(0, 5),
       status: booking.status,
+      start_location: booking.start_location || '',
+      end_location: booking.end_location || '',
     });
     setEditDialogOpen(true);
   };
@@ -631,6 +639,8 @@ export default function BookingDetailPage() {
         .update({
           tour_datetime: tourDatetime,
           status: editForm.status,
+          start_location: editForm.start_location || null,
+          end_location: editForm.end_location || null,
         })
         .eq('id', booking.id);
 
@@ -1843,6 +1853,26 @@ export default function BookingDetailPage() {
                       <p className="font-medium">{tour.duration_minutes ? `${tour.duration_minutes} min` : 'N/A'}</p>
                     </div>
                   </div>
+                  <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Start Location</p>
+                      <p className="font-medium text-sm">
+                        {booking.start_location || tour.start_location || 'Not set'}
+                        {booking.start_location && (
+                          <Badge variant="outline" className="ml-2 text-xs">Custom</Badge>
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">End Location</p>
+                      <p className="font-medium text-sm">
+                        {booking.end_location || tour.end_location || 'Not set'}
+                        {booking.end_location && (
+                          <Badge variant="outline" className="ml-2 text-xs">Custom</Badge>
+                        )}
+                      </p>
+                    </div>
+                  </div>
                   <div className="flex flex-wrap gap-2 pt-2">
                     <Badge variant="secondary" className="text-xs">
                       {booking.booking_type || 'B2C'}
@@ -2770,6 +2800,35 @@ export default function BookingDetailPage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+              <div className="space-y-2">
+                <Label htmlFor="editStartLocation">Start Location</Label>
+                <Input
+                  id="editStartLocation"
+                  value={editForm.start_location}
+                  onChange={(e) => setEditForm({ ...editForm, start_location: e.target.value })}
+                  className="bg-white"
+                  placeholder={tour?.start_location || 'e.g., Central Station'}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Leave empty to use tour default: {tour?.start_location || 'Not set'}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editEndLocation">End Location</Label>
+                <Input
+                  id="editEndLocation"
+                  value={editForm.end_location}
+                  onChange={(e) => setEditForm({ ...editForm, end_location: e.target.value })}
+                  className="bg-white"
+                  placeholder={tour?.end_location || 'e.g., Market Square'}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Leave empty to use tour default: {tour?.end_location || 'Not set'}
+                </p>
+              </div>
             </div>
           </div>
 
