@@ -3,7 +3,7 @@ import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia',
+  apiVersion: '2025-11-17.clover',
 });
 
 const supabase = createClient(
@@ -67,11 +67,11 @@ export async function POST(request: NextRequest) {
     const mockEvent: Stripe.Event = {
       id: `evt_manual_${Date.now()}`,
       object: 'event',
-      api_version: '2024-12-18.acacia',
+      api_version: '2025-11-17.clover',
       created: Math.floor(Date.now() / 1000),
       data: {
         object: session as any,
-        previous_attributes: null,
+        previous_attributes: undefined,
       },
       livemode: session.livemode,
       pending_webhooks: 0,

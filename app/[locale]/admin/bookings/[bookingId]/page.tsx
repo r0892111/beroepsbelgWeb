@@ -1347,7 +1347,7 @@ export default function BookingDetailPage() {
 
   // Handle delete entire booking
   const handleReprocessBooking = async () => {
-    if (!booking.stripe_session_id) {
+    if (!booking || !booking.stripe_session_id) {
       toast.error('No Stripe session ID found for this booking');
       return;
     }
