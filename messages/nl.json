@@ -1302,6 +1302,7 @@
   "opMaatForm": {
     "title": "Tour Op Maat",
     "subtitle": "Vertel ons over je ideale tour, zodat we deze perfect kunnen afstemmen op jouw wensen.",
+    "loading": "Laden...",
     "bookingDetails": "Boeking Details",
     "name": "Naam",
     "date": "Datum",
@@ -1310,6 +1311,10 @@
     "persons": "personen",
     "formTitle": "Jouw Voorkeuren",
     "formDescription": "Beantwoord onderstaande vragen zodat we je tour perfect kunnen voorbereiden.",
+    "startLocationLabel": "Waar wil je beginnen?",
+    "startLocationPlaceholder": "Bijvoorbeeld: Centraal Station, Grote Markt...",
+    "endLocationLabel": "Waar wil je eindigen?",
+    "endLocationPlaceholder": "Bijvoorbeeld: Het stadhuis, MAS museum...",
     "startEndLabel": "Waar wil je beginnen en eindigen?",
     "startEndPlaceholder": "Bijvoorbeeld: Start bij Centraal Station, eindig bij het stadhuis...",
     "cityPartLabel": "Welk deel van de stad wil je ontdekken?",

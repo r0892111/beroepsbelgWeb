@@ -1221,6 +1221,7 @@
   "opMaatForm": {
     "title": "Individuelle Tour",
     "subtitle": "Erzählen Sie uns von Ihrer idealen Tour, damit wir sie perfekt auf Ihre Wünsche abstimmen können.",
+    "loading": "Wird geladen...",
     "bookingDetails": "Buchungsdetails",
     "name": "Name",
     "date": "Datum",
@@ -1229,6 +1230,10 @@
     "persons": "Personen",
     "formTitle": "Ihre Präferenzen",
     "formDescription": "Beantworten Sie die folgenden Fragen, damit wir Ihre Tour perfekt vorbereiten können.",
+    "startLocationLabel": "Wo möchten Sie beginnen?",
+    "startLocationPlaceholder": "Zum Beispiel: Hauptbahnhof, Großer Platz...",
+    "endLocationLabel": "Wo möchten Sie enden?",
+    "endLocationPlaceholder": "Zum Beispiel: Rathaus, MAS Museum...",
     "startEndLabel": "Wo möchten Sie beginnen und enden?",
     "startEndPlaceholder": "Zum Beispiel: Start am Hauptbahnhof, Ende am Rathaus...",
     "cityPartLabel": "Welchen Teil der Stadt möchten Sie erkunden?",

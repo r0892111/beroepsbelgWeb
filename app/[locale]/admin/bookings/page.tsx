@@ -556,7 +556,7 @@ export default function AdminBookingsPage() {
         tour_id: createForm.tourId,
         tour_datetime: tourDatetime,
         city: tour.city,
-        status: createForm.isPaid ? 'payment_completed' : 'pending',
+        status: createForm.isPaid ? 'payment_completed' : 'quote_pending',
         invitees: [invitee],
         booking_type: 'B2C',
       };
