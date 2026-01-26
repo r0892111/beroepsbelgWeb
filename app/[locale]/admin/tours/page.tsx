@@ -68,6 +68,14 @@ interface ThemeTranslation {
 }
 
 interface OpMaatFormConfig {
+  startLocation: {
+    label: ThemeTranslation;
+    placeholder: ThemeTranslation;
+  };
+  endLocation: {
+    label: ThemeTranslation;
+    placeholder: ThemeTranslation;
+  };
   startEnd: {
     label: ThemeTranslation;
     placeholder: ThemeTranslation;
@@ -311,8 +319,10 @@ export default function AdminToursPage() {
   const [showCustomTourType, setShowCustomTourType] = useState(false);
 
   // Helper function to update op maat form config
-  const updateOpMaatFormConfig = (field: 'startEnd' | 'cityPart' | 'subjects' | 'specialWishes', subField: 'label' | 'placeholder', lang: 'nl' | 'en' | 'fr' | 'de', value: string) => {
+  const updateOpMaatFormConfig = (field: 'startLocation' | 'endLocation' | 'startEnd' | 'cityPart' | 'subjects' | 'specialWishes', subField: 'label' | 'placeholder', lang: 'nl' | 'en' | 'fr' | 'de', value: string) => {
     const currentConfig = formData.op_maat_form_config || {
+      startLocation: { label: { nl: '', en: '', fr: '', de: '' }, placeholder: { nl: '', en: '', fr: '', de: '' } },
+      endLocation: { label: { nl: '', en: '', fr: '', de: '' }, placeholder: { nl: '', en: '', fr: '', de: '' } },
       startEnd: { label: { nl: '', en: '', fr: '', de: '' }, placeholder: { nl: '', en: '', fr: '', de: '' } },
       cityPart: { label: { nl: '', en: '', fr: '', de: '' }, placeholder: { nl: '', en: '', fr: '', de: '' } },
       subjects: { label: { nl: '', en: '', fr: '', de: '' }, placeholder: { nl: '', en: '', fr: '', de: '' } },
@@ -2521,23 +2531,45 @@ export default function AdminToursPage() {
 
                 {/* Start & End Location */}
                 <div className="space-y-4 border rounded-lg p-4">
-                  <h4 className="font-semibold text-navy">Start & End Location</h4>
-                  <div className="grid grid-cols-2 gap-4">
+                  <h4 className="font-semibold text-navy">Start Location</h4>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
                       <Label className="text-sm font-medium">Label (NL)</Label>
                       <Input
-                        value={formData.op_maat_form_config?.startEnd?.label?.nl || ''}
-                        onChange={(e) => updateOpMaatFormConfig('startEnd', 'label', 'nl', e.target.value)}
-                        placeholder="Waar wil je beginnen en eindigen?"
+                        value={formData.op_maat_form_config?.startLocation?.label?.nl || ''}
+                        onChange={(e) => updateOpMaatFormConfig('startLocation', 'label', 'nl', e.target.value)}
+                        placeholder="Waar wil je beginnen?"
                         className="bg-white"
                       />
                     </div>
                     <div>
                       <Label className="text-sm font-medium">Placeholder (NL)</Label>
                       <Input
-                        value={formData.op_maat_form_config?.startEnd?.placeholder?.nl || ''}
-                        onChange={(e) => updateOpMaatFormConfig('startEnd', 'placeholder', 'nl', e.target.value)}
-                        placeholder="Bijvoorbeeld: Start bij Centraal Station..."
+                        value={formData.op_maat_form_config?.startLocation?.placeholder?.nl || ''}
+                        onChange={(e) => updateOpMaatFormConfig('startLocation', 'placeholder', 'nl', e.target.value)}
+                        placeholder="Bijvoorbeeld: Centraal Station, Grote Markt..."
+                        className="bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <h4 className="font-semibold text-navy mt-4">End Location</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">Label (NL)</Label>
+                      <Input
+                        value={formData.op_maat_form_config?.endLocation?.label?.nl || ''}
+                        onChange={(e) => updateOpMaatFormConfig('endLocation', 'label', 'nl', e.target.value)}
+                        placeholder="Waar wil je eindigen?"
+                        className="bg-white"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Placeholder (NL)</Label>
+                      <Input
+                        value={formData.op_maat_form_config?.endLocation?.placeholder?.nl || ''}
+                        onChange={(e) => updateOpMaatFormConfig('endLocation', 'placeholder', 'nl', e.target.value)}
+                        placeholder="Bijvoorbeeld: Het stadhuis, MAS museum..."
                         className="bg-white"
                       />
                     </div>

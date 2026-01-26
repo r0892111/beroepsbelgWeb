@@ -26,7 +26,9 @@ interface Booking {
     numberOfPeople: number;
     language: string;
     opMaatAnswers?: {
-      startEnd?: string;
+      startLocation?: string;
+      endLocation?: string;
+      startEnd?: string; // Keep for backward compatibility
       cityPart?: string;
       subjects?: string;
       specialWishes?: string;
@@ -39,6 +41,14 @@ interface Booking {
 }
 
 interface OpMaatFormConfig {
+  startLocation: {
+    label: { nl?: string; en?: string; fr?: string; de?: string };
+    placeholder: { nl?: string; en?: string; fr?: string; de?: string };
+  };
+  endLocation: {
+    label: { nl?: string; en?: string; fr?: string; de?: string };
+    placeholder: { nl?: string; en?: string; fr?: string; de?: string };
+  };
   startEnd: {
     label: { nl?: string; en?: string; fr?: string; de?: string };
     placeholder: { nl?: string; en?: string; fr?: string; de?: string };
@@ -86,14 +96,15 @@ export default function OpMaatFormPage() {
   const [formConfig, setFormConfig] = useState<OpMaatFormConfig | null>(null);
 
   const [formData, setFormData] = useState({
-    startEnd: '',
+    startLocation: '',
+    endLocation: '',
     cityPart: '',
     subjects: '',
     specialWishes: '',
   });
 
   // Helper function to get label/placeholder from config or fallback to translation
-  const getFormText = (field: 'startEnd' | 'cityPart' | 'subjects' | 'specialWishes', type: 'label' | 'placeholder', fallbackKey: string): string => {
+  const getFormText = (field: 'startLocation' | 'endLocation' | 'startEnd' | 'cityPart' | 'subjects' | 'specialWishes', type: 'label' | 'placeholder', fallbackKey: string): string => {
     if (formConfig?.[field]?.[type]) {
       const configText = formConfig[field][type][locale as 'nl' | 'en' | 'fr' | 'de'] || 
                         formConfig[field][type].nl || 
@@ -134,8 +145,11 @@ export default function OpMaatFormPage() {
         // Pre-fill form if op_maat_answers already exist in invitees
         const mainInvitee = bookingData.invitees?.[0];
         if (mainInvitee?.opMaatAnswers) {
+          // Handle both new format (separate fields) and old format (combined startEnd)
+          const startEndText = mainInvitee.opMaatAnswers.startEnd || '';
           setFormData({
-            startEnd: mainInvitee.opMaatAnswers.startEnd || '',
+            startLocation: mainInvitee.opMaatAnswers.startLocation || (startEndText ? startEndText.split(',')[0].replace(/^start\s+bij\s*/i, '').trim() : ''),
+            endLocation: mainInvitee.opMaatAnswers.endLocation || '',
             cityPart: mainInvitee.opMaatAnswers.cityPart || '',
             subjects: mainInvitee.opMaatAnswers.subjects || '',
             specialWishes: mainInvitee.opMaatAnswers.specialWishes || '',
@@ -190,6 +204,10 @@ export default function OpMaatFormPage() {
         throw new Error('Failed to fetch booking');
       }
 
+      // Extract start and end locations directly from separate fields
+      const parsedStartLocation = formData.startLocation.trim() || null;
+      const parsedEndLocation = formData.endLocation.trim() || null;
+
       // Update the invitees array with op maat answers and tour times
       const updatedInvitees = currentBooking.invitees?.map((invitee: any, index: number) => {
         if (index === 0) { // Update the first invitee (main contact)
@@ -197,7 +215,8 @@ export default function OpMaatFormPage() {
             ...invitee,
             opMaatAnswers: {
               ...(invitee.opMaatAnswers || {}),
-              startEnd: formData.startEnd,
+              startLocation: formData.startLocation,
+              endLocation: formData.endLocation,
               cityPart: formData.cityPart,
               subjects: formData.subjects,
               specialWishes: formData.specialWishes,
@@ -211,11 +230,13 @@ export default function OpMaatFormPage() {
         return invitee;
       }) || [];
 
-      // Update booking with op maat answers in invitees
+      // Update booking with op maat answers in invitees AND extracted start/end locations
       const { error: updateError } = await supabase
         .from('tourbooking')
         .update({
           invitees: updatedInvitees,
+          start_location: parsedStartLocation,
+          end_location: parsedEndLocation,
         })
         .eq('id', bookingId);
 
@@ -376,19 +397,32 @@ export default function OpMaatFormPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Start & End Location */}
+              {/* Start Location */}
               <div className="space-y-2">
-                <Label htmlFor="startEnd" className="flex items-center gap-2 text-base font-semibold">
+                <Label htmlFor="startLocation" className="flex items-center gap-2 text-base font-semibold">
                   <MapPin className="h-5 w-5 text-[#1BDD95]" />
-                  {getFormText('startEnd', 'label', 'startEndLabel') || 'Waar wil je beginnen en eindigen?'}
+                  {getFormText('startLocation', 'label', 'startLocationLabel') || 'Waar wil je beginnen?'}
                 </Label>
-                <Textarea
-                  id="startEnd"
-                  placeholder={getFormText('startEnd', 'placeholder', 'startEndPlaceholder') || 'Bijvoorbeeld: Start bij Centraal Station, eindig bij het stadhuis...'}
-                  value={formData.startEnd}
-                  onChange={(e) => setFormData({ ...formData, startEnd: e.target.value })}
-                  className="min-h-[100px]"
-                  rows={4}
+                <Input
+                  id="startLocation"
+                  placeholder={getFormText('startLocation', 'placeholder', 'startLocationPlaceholder') || 'Bijvoorbeeld: Centraal Station, Grote Markt...'}
+                  value={formData.startLocation}
+                  onChange={(e) => setFormData({ ...formData, startLocation: e.target.value })}
+                  required
+                />
+              </div>
+
+              {/* End Location */}
+              <div className="space-y-2">
+                <Label htmlFor="endLocation" className="flex items-center gap-2 text-base font-semibold">
+                  <MapPin className="h-5 w-5 text-[#1BDD95]" />
+                  {getFormText('endLocation', 'label', 'endLocationLabel') || 'Waar wil je eindigen?'}
+                </Label>
+                <Input
+                  id="endLocation"
+                  placeholder={getFormText('endLocation', 'placeholder', 'endLocationPlaceholder') || 'Bijvoorbeeld: Het stadhuis, MAS museum...'}
+                  value={formData.endLocation}
+                  onChange={(e) => setFormData({ ...formData, endLocation: e.target.value })}
                   required
                 />
               </div>
@@ -454,7 +488,7 @@ export default function OpMaatFormPage() {
               {/* Submit button */}
               <Button
                 type="submit"
-                disabled={submitting || !formData.startEnd.trim() || !formData.cityPart.trim() || !formData.subjects.trim()}
+                disabled={submitting || !formData.startLocation.trim() || !formData.endLocation.trim() || !formData.cityPart.trim() || !formData.subjects.trim()}
                 className="w-full h-12 text-lg"
                 style={{
                   backgroundColor: '#1a3628',
