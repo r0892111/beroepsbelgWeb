@@ -185,7 +185,6 @@ export default function BookingDetailPage() {
   const [allGuides, setAllGuides] = useState<Map<number, Guide>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [triggeringGuideAssignment, setTriggeringGuideAssignment] = useState(false);
   const [guideDialogOpen, setGuideDialogOpen] = useState(false);
   const [selectedNewGuideId, setSelectedNewGuideId] = useState<number | null>(null);
   const [submittingNewGuide, setSubmittingNewGuide] = useState(false);
@@ -478,33 +477,6 @@ export default function BookingDetailPage() {
     }
   }, [user, profile, bookingId]);
 
-  const triggerGuideAssignment = async () => {
-    if (!booking) return;
-    
-    setTriggeringGuideAssignment(true);
-    try {
-      const response = await fetch('https://alexfinit.app.n8n.cloud/webhook/f22ab19e-bc75-475e-ac13-ca9b5c8f72fe', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(booking),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to trigger guide assignment webhook');
-      }
-
-      toast.success('Guide assignment triggered successfully!');
-      // Optionally refresh booking data
-      void fetchBookingDetails();
-    } catch (err) {
-      console.error('Error triggering guide assignment:', err);
-      toast.error('Failed to trigger guide assignment');
-    } finally {
-      setTriggeringGuideAssignment(false);
-    }
-  };
 
   // Check if all guides in selectedGuides have declined
   const allGuidesDeclined = (): boolean => {
@@ -1739,22 +1711,18 @@ export default function BookingDetailPage() {
         <Card className="border-dashed">
           <CardContent className="py-4">
             <div className="flex flex-wrap items-center gap-3">
-              {/* Send to Guide Assignment - triggers n8n webhook to start guide assignment workflow */}
+              {/* Send to Guide Assignment - redirects to guide choosing page */}
               {/* Disabled when status is 'pending' (payment not yet completed) */}
               {!booking.guide_id && (
                 <Button
-                  onClick={triggerGuideAssignment}
-                  disabled={triggeringGuideAssignment || booking.status === 'pending'}
+                  onClick={() => router.push(`/${locale}/choose-guide/${booking.id}`)}
+                  disabled={booking.status === 'pending'}
                   size="sm"
                   className="gap-2"
                   title={booking.status === 'pending' ? 'Payment must be completed before assigning a guide' : undefined}
                 >
-                  {triggeringGuideAssignment ? (
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                  {triggeringGuideAssignment ? 'Sending...' : 'Send to Guide Assignment'}
+                  <Send className="h-4 w-4" />
+                  Choose Guide
                 </Button>
               )}
               {booking.deal_id && !isLocalStories && (
