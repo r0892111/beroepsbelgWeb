@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { nowBrussels } from '@/lib/utils/timezone';
 
 // Use service role key for server-side operations
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
       booking_rating: bookingRating,
       found_us_source: foundUsSource,
       email: email || null,
-      submitted_at: new Date().toISOString(),
+      submitted_at: nowBrussels(),
     };
 
     // Fetch current guide to get existing submissions

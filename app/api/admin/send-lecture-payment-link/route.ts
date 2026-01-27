@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
+import { nowBrussels } from '@/lib/utils/timezone';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-11-17.clover',
@@ -178,7 +179,7 @@ export async function POST(request: NextRequest) {
           numberOfPeople,
           custom_amount: amount,
           paymentUrl: session.url,
-          sent_at: new Date().toISOString(),
+          sent_at: nowBrussels(),
         }),
       });
       console.log('Lecture payment link webhook sent successfully');

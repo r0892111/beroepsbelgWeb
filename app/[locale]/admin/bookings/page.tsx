@@ -19,7 +19,7 @@ import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { getBookingTypeShortLabel } from '@/lib/utils';
-import { formatBrusselsDateTime } from '@/lib/utils/timezone';
+import { formatBrusselsDateTime, parseBrusselsDateTime, toBrusselsISO, isWeekendBrussels } from '@/lib/utils/timezone';
 
 interface SelectedGuide {
   id: number;
@@ -502,8 +502,9 @@ export default function AdminBookingsPage() {
         return;
       }
 
-      // Build tour datetime
-      const tourDatetime = `${createForm.date}T${createForm.time}:00`;
+      // Build tour datetime - parse as Brussels time and convert to ISO
+      const parsedDate = parseBrusselsDateTime(createForm.date, createForm.time);
+      const tourDatetime = toBrusselsISO(parsedDate);
 
       // Create invitee object
       // Use custom price if provided, otherwise use tour's default price
@@ -618,8 +619,9 @@ export default function AdminBookingsPage() {
           const contactFirstName = nameParts[0] || '';
           const contactLastName = nameParts.slice(1).join(' ') || '';
 
-          // Build datetime string (ISO format)
-          const dateTime = `${createForm.date}T${createForm.time}:00:00`;
+          // Build datetime string (ISO format) - parse as Brussels time and convert to ISO
+          const parsedDate = parseBrusselsDateTime(createForm.date, createForm.time);
+          const dateTime = toBrusselsISO(parsedDate);
 
           // Get city slug from tour (tour.city is already the slug)
           const citySlug = tour.city || '';
@@ -1323,10 +1325,8 @@ export default function AdminBookingsPage() {
                   value={createForm.date}
                   onChange={(e) => {
                     const newDate = e.target.value;
-                    // Auto-set weekend fee when date changes to a weekend
-                    const date = new Date(newDate);
-                    const day = date.getDay();
-                    const isWeekendDay = day === 0 || day === 6;
+                    // Auto-set weekend fee when date changes to a weekend (check in Brussels timezone)
+                    const isWeekendDay = isWeekendBrussels(newDate);
                     setCreateForm({ ...createForm, date: newDate, weekendFee: isWeekendDay });
                   }}
                   className="bg-white"

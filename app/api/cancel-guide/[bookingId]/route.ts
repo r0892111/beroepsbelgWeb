@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { nowBrussels } from '@/lib/utils/timezone';
 
 function getSupabaseServer() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -168,7 +169,7 @@ export async function POST(
       updatedSelectedGuides[guideIndex] = {
         ...updatedSelectedGuides[guideIndex],
         status: 'declined',
-        respondedAt: new Date().toISOString(),
+        respondedAt: nowBrussels(),
       };
       console.log('Updated guide entry:', JSON.stringify(updatedSelectedGuides[guideIndex], null, 2));
     } else {
@@ -176,7 +177,7 @@ export async function POST(
       updatedSelectedGuides.push({
         id: guideId,
         status: 'declined',
-        respondedAt: new Date().toISOString(),
+        respondedAt: nowBrussels(),
       });
       console.log('Added new guide entry for id:', guideId);
     }

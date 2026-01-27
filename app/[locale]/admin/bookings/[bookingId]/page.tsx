@@ -46,7 +46,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { format } from 'date-fns';
-import { formatBrusselsDateTime } from '@/lib/utils/timezone';
+import { formatBrusselsDateTime, parseBrusselsDateTime, toBrusselsISO, isWeekendBrussels, getHourBrussels, nowBrussels } from '@/lib/utils/timezone';
 import { toast } from 'sonner';
 
 interface SelectedGuide {
@@ -526,7 +526,7 @@ export default function BookingDetailPage() {
         {
           id: selectedNewGuideId,
           status: 'offered' as const,
-          offeredAt: new Date().toISOString(),
+          offeredAt: nowBrussels(),
         }
       ];
 
@@ -616,14 +616,29 @@ export default function BookingDetailPage() {
   // Open edit dialog with current values
   const openEditDialog = () => {
     if (!booking) return;
-    const datetime = booking.tour_datetime ? new Date(booking.tour_datetime) : new Date();
-    setEditForm({
-      date: datetime.toISOString().split('T')[0],
-      time: datetime.toTimeString().slice(0, 5),
-      status: booking.status,
-      start_location: booking.start_location || '',
-      end_location: booking.end_location || '',
-    });
+    if (booking.tour_datetime) {
+      // Parse the datetime string (stored as Brussels time) and extract date/time components
+      const dateStr = booking.tour_datetime.split('T')[0];
+      const timeStr = booking.tour_datetime.split('T')[1]?.split(':').slice(0, 2).join(':') || '14:00';
+      setEditForm({
+        date: dateStr,
+        time: timeStr,
+        status: booking.status,
+        start_location: booking.start_location || '',
+        end_location: booking.end_location || '',
+      });
+    } else {
+      // Use current Brussels time
+      const now = new Date();
+      const brusselsDate = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Brussels' }));
+      setEditForm({
+        date: brusselsDate.toISOString().split('T')[0],
+        time: brusselsDate.toTimeString().slice(0, 5),
+        status: booking.status,
+        start_location: booking.start_location || '',
+        end_location: booking.end_location || '',
+      });
+    }
     setEditDialogOpen(true);
   };
 
@@ -632,7 +647,9 @@ export default function BookingDetailPage() {
     if (!booking) return;
     setSavingBooking(true);
     try {
-      const tourDatetime = `${editForm.date}T${editForm.time}:00`;
+      // Parse the date/time as Brussels time and convert to ISO string
+      const parsedDate = parseBrusselsDateTime(editForm.date, editForm.time);
+      const tourDatetime = toBrusselsISO(parsedDate);
 
       const { error: updateError } = await supabase
         .from('tourbooking')
@@ -714,9 +731,10 @@ export default function BookingDetailPage() {
       }
 
       // Create local_tours_bookings entry
+      // Extract date and time from Brussels datetime string
       const bookingDate = booking.tour_datetime ? booking.tour_datetime.split('T')[0] : '';
       const bookingTime = booking.tour_datetime
-        ? new Date(booking.tour_datetime).toTimeString().slice(0, 8)
+        ? booking.tour_datetime.split('T')[1]?.split('.')[0] || '14:00:00'
         : '14:00:00';
 
       const { error: localError } = await supabase
@@ -896,7 +914,7 @@ export default function BookingDetailPage() {
           // Add to payment links sent log
           const existingLog = (rest.paymentLinksSent as Array<Record<string, unknown>>) || [];
           const newLogEntry = {
-            sentAt: new Date().toISOString(),
+            sentAt: nowBrussels(),
             numberOfPeople: paymentLinkTarget.numberOfPeople,
             amount: paymentLinkAmount,
             type: paymentLinkIsExtraInvitees ? 'additional_people' : 'manual',
@@ -947,14 +965,10 @@ export default function BookingDetailPage() {
     // Initialize price - use tour price if available, otherwise default to 35 for Local Stories
     const basePrice = tour?.price || (tour?.local_stories ? 35 : 0);
     setAdditionalPeoplePrice(basePrice.toString());
-    // Reset fees - auto-detect weekend based on booking date
-    const isWeekend = booking?.tour_datetime ? (() => {
-      const date = new Date(booking.tour_datetime);
-      const day = date.getDay();
-      return day === 0 || day === 6;
-    })() : false;
+    // Reset fees - auto-detect weekend based on booking date (Brussels timezone)
+    const isWeekend = booking?.tour_datetime ? isWeekendBrussels(booking.tour_datetime) : false;
     const isEvening = booking?.tour_datetime ? (() => {
-      const hour = parseInt(booking.tour_datetime.split('T')[1]?.split(':')[0] || '0', 10);
+      const hour = getHourBrussels(booking.tour_datetime);
       return hour >= 17;
     })() : false;
     setAddPeopleFees({
@@ -1093,7 +1107,7 @@ export default function BookingDetailPage() {
                 paymentLinksSent: [
                   ...existingLog,
                   {
-                    sentAt: new Date().toISOString(),
+                    sentAt: nowBrussels(),
                     numberOfPeople: additionalPeople,
                     amount: totalAmount,
                     type: 'additional_people',

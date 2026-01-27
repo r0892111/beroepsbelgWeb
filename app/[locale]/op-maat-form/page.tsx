@@ -11,6 +11,7 @@ import { Loader2, CheckCircle, MapPin, Compass, BookOpen, Sparkles } from 'lucid
 import { supabase } from '@/lib/supabase/client';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
+import { formatBrusselsDateTime, nowBrussels } from '@/lib/utils/timezone';
 
 interface Booking {
   id: string;
@@ -270,7 +271,7 @@ export default function OpMaatFormPage() {
             booking: updatedBooking,
             tour: tour,
             opMaatAnswers: formData,
-            submittedAt: new Date().toISOString(),
+            submittedAt: nowBrussels(),
           }),
         });
 
@@ -367,7 +368,7 @@ export default function OpMaatFormPage() {
                 <span className="text-gray-500">{t('date') || 'Datum'}:</span>
                 <p className="font-medium">
                   {booking.tour_datetime 
-                    ? new Date(booking.tour_datetime).toLocaleDateString(locale === 'nl' ? 'nl-BE' : locale === 'fr' ? 'fr-BE' : locale === 'de' ? 'de-BE' : 'en-BE')
+                    ? formatBrusselsDateTime(booking.tour_datetime, locale === 'nl' ? 'dd/MM/yyyy' : locale === 'fr' ? 'dd/MM/yyyy' : locale === 'de' ? 'dd.MM.yyyy' : 'MM/dd/yyyy')
                     : '-'
                   }
                 </p>
@@ -376,7 +377,7 @@ export default function OpMaatFormPage() {
                 <span className="text-gray-500">{t('time') || 'Tijd'}:</span>
                 <p className="font-medium">
                   {booking.tour_datetime 
-                    ? new Date(booking.tour_datetime).toLocaleTimeString(locale === 'nl' ? 'nl-BE' : locale === 'fr' ? 'fr-BE' : locale === 'de' ? 'de-BE' : 'en-BE', { hour: '2-digit', minute: '2-digit' })
+                    ? formatBrusselsDateTime(booking.tour_datetime, 'HH:mm')
                     : '-'
                   }
                 </p>

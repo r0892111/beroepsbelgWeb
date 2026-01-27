@@ -23,6 +23,7 @@ import { CalendarIcon, Clock, Loader2, ShoppingBag, Gift, Plus, Minus, FileText,
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
+import { isWeekendBrussels } from '@/lib/utils/timezone';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useIsMobile } from '@/lib/hooks/use-media-query';
 // Removed direct import - will fetch from API instead
@@ -496,8 +497,8 @@ export function TourBookingDialog({
   const isEveningSlot = selectedTimeSlot && parseInt(selectedTimeSlot.split(':')[0], 10) >= 17;
   const eveningFeeCost = opMaat && isEveningSlot ? 25 : 0;
 
-  // Weekend fee for tours (except local_stories): €25 if date is Saturday (6) or Sunday (0)
-  const isWeekend = formData.bookingDate && (formData.bookingDate.getDay() === 0 || formData.bookingDate.getDay() === 6);
+  // Weekend fee for tours (except local_stories): €25 if date is Saturday or Sunday in Brussels timezone
+  const isWeekend = formData.bookingDate ? isWeekendBrussels(formData.bookingDate.toISOString().split('T')[0]) : false;
   const weekendFeeCost = isWeekend && !isLocalStories ? 25 : 0;
 
   // Shipping is ALWAYS FREE for tour bookings with upsell products
