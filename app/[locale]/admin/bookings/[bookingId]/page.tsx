@@ -617,9 +617,30 @@ export default function BookingDetailPage() {
   const openEditDialog = () => {
     if (!booking) return;
     if (booking.tour_datetime) {
-      // Parse the datetime string (stored as Brussels time) and extract date/time components
-      const dateStr = booking.tour_datetime.split('T')[0];
-      const timeStr = booking.tour_datetime.split('T')[1]?.split(':').slice(0, 2).join(':') || '14:00';
+      // Parse the datetime string (stored as Brussels timezone ISO string)
+      // Extract date and time components from the Brussels timezone string
+      // Format: "2025-01-25T14:00:00+01:00" or "2025-01-25T14:00:00Z"
+      const datetimeStr = booking.tour_datetime;
+      
+      // Extract date part (YYYY-MM-DD)
+      const dateStr = datetimeStr.split('T')[0];
+      
+      // Extract time part and handle timezone offset
+      // The time component in the ISO string represents Brussels local time
+      const timePart = datetimeStr.split('T')[1];
+      let timeStr = '14:00';
+      
+      if (timePart) {
+        // Remove timezone offset and milliseconds if present
+        // Examples: "14:00:00+01:00" -> "14:00:00", "14:00:00Z" -> "14:00:00"
+        const timeWithoutOffset = timePart.split(/[+-]/)[0].split('Z')[0];
+        // Extract HH:mm
+        const timeParts = timeWithoutOffset.split(':');
+        if (timeParts.length >= 2) {
+          timeStr = `${timeParts[0]}:${timeParts[1]}`;
+        }
+      }
+      
       setEditForm({
         date: dateStr,
         time: timeStr,
