@@ -243,7 +243,8 @@ export default function AddToCalendarPage() {
             >
               <a
                 href={icsUrl}
-                download={`tour-booking-${booking.id}.ics`}
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 <Download className="h-4 w-4" />
                 Download ICS File
@@ -252,6 +253,18 @@ export default function AddToCalendarPage() {
             <p className="text-xs text-gray-500 mt-2">
               Works with Google Calendar, Outlook, Apple Calendar, and more
             </p>
+            {/* Direct URL for testing */}
+            <div className="mt-3 p-2 bg-gray-50 rounded text-xs break-all">
+              <p className="text-gray-600 mb-1">Direct link:</p>
+              <a
+                href={icsUrl}
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {icsUrl}
+              </a>
+            </div>
           </div>
         </div>
       </div>
