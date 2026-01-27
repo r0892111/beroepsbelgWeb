@@ -1233,6 +1233,7 @@
   "opMaatForm": {
     "title": "Visite Sur Mesure",
     "subtitle": "Parlez-nous de votre visite idéale afin que nous puissions l'adapter parfaitement à vos souhaits.",
+    "loading": "Chargement...",
     "bookingDetails": "Détails de la Réservation",
     "name": "Nom",
     "date": "Date",
@@ -1241,6 +1242,10 @@
     "persons": "personnes",
     "formTitle": "Vos Préférences",
     "formDescription": "Répondez aux questions ci-dessous pour que nous puissions parfaitement préparer votre visite.",
+    "startLocationLabel": "Où souhaitez-vous commencer?",
+    "startLocationPlaceholder": "Par exemple: Gare Centrale, Grand Place...",
+    "endLocationLabel": "Où souhaitez-vous terminer?",
+    "endLocationPlaceholder": "Par exemple: Hôtel de Ville, musée MAS...",
     "startEndLabel": "Où souhaitez-vous commencer et terminer?",
     "startEndPlaceholder": "Par exemple: Départ à la Gare Centrale, arrivée à l'Hôtel de Ville...",
     "cityPartLabel": "Quelle partie de la ville souhaitez-vous découvrir?",

@@ -1234,6 +1234,7 @@
   "opMaatForm": {
     "title": "Custom Tour",
     "subtitle": "Tell us about your ideal tour so we can tailor it perfectly to your wishes.",
+    "loading": "Loading...",
     "bookingDetails": "Booking Details",
     "name": "Name",
     "date": "Date",
@@ -1242,6 +1243,10 @@
     "persons": "persons",
     "formTitle": "Your Preferences",
     "formDescription": "Answer the questions below so we can perfectly prepare your tour.",
+    "startLocationLabel": "Where would you like to start?",
+    "startLocationPlaceholder": "For example: Central Station, Grand Place...",
+    "endLocationLabel": "Where would you like to end?",
+    "endLocationPlaceholder": "For example: City Hall, MAS museum...",
     "startEndLabel": "Where would you like to start and end?",
     "startEndPlaceholder": "For example: Start at Central Station, end at City Hall...",
     "cityPartLabel": "Which part of the city would you like to explore?",
