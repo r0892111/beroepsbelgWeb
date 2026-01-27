@@ -136,6 +136,7 @@ export default function B2BQuotePage() {
     watch,
     getValues,
     trigger,
+    setFocus,
   } = useForm<QuoteFormData>({
     resolver: zodResolver(quoteSchema),
     defaultValues: {
@@ -147,10 +148,181 @@ export default function B2BQuotePage() {
   const selectedCity = watch('city');
   const selectedTourId = watch('tourId');
   const numberOfPeople = watch('numberOfPeople');
+  const vatNumber = watch('vatNumber') || '';
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
 
   const selectedTour = tours.find((tour) => String(tour.id ?? tour.slug) === String(selectedTourId));
+
+  // Format VAT number as user types (auto-format Belgian VAT: BE 0123.456.789)
+  const formatVATInput = (value: string): string => {
+    if (!value) return '';
+    
+    // Remove all non-alphanumeric characters except spaces, dots, and hyphens
+    let cleaned = value.replace(/[^A-Za-z0-9\s.-]/g, '');
+    
+    // Convert to uppercase
+    cleaned = cleaned.toUpperCase();
+    
+    // Extract country code (first 2 letters)
+    const countryMatch = cleaned.match(/^([A-Z]{0,2})/);
+    const countryCode = countryMatch ? countryMatch[1] : '';
+    
+    // Extract all digits (after any country code)
+    const allDigits = cleaned.replace(/[^0-9]/g, '');
+    
+    // If it starts with BE (or user is typing BE), format as Belgian VAT: BE 0123.456.789
+    if (countryCode === 'BE' || cleaned.startsWith('BE') || (cleaned.length <= 2 && cleaned.toUpperCase().startsWith('B'))) {
+      // Limit to 10 digits for Belgian VAT
+      const digits = allDigits.slice(0, 10);
+      
+      // If user is still typing the country code
+      if (cleaned.length <= 2 && /^[BE]*$/i.test(cleaned)) {
+        return cleaned.toUpperCase();
+      }
+      
+      if (digits.length === 0) {
+        return 'BE';
+      }
+      
+      // Format: BE 0123.456.789
+      if (digits.length <= 4) {
+        return `BE ${digits}`;
+      } else if (digits.length <= 7) {
+        return `BE ${digits.slice(0, 4)}.${digits.slice(4)}`;
+      } else {
+        return `BE ${digits.slice(0, 4)}.${digits.slice(4, 7)}.${digits.slice(7)}`;
+      }
+    }
+    
+    // For other countries, allow up to 2 letters + 8-12 alphanumeric
+    if (countryCode.length === 2) {
+      // After country code, only allow alphanumeric (no spaces/dots)
+      const rest = cleaned.slice(2).replace(/[^A-Z0-9]/g, '').slice(0, 12);
+      return countryCode + rest;
+    }
+    
+    // If no country code yet, allow letters for country code
+    if (cleaned.length <= 2 && /^[A-Z]*$/.test(cleaned)) {
+      return cleaned;
+    }
+    
+    // If starts with letters, treat as country code + numbers
+    const letterMatch = cleaned.match(/^([A-Z]{0,2})(.*)$/);
+    if (letterMatch) {
+      const [, letters, rest] = letterMatch;
+      const numbers = rest.replace(/[^0-9]/g, '').slice(0, 12);
+      return letters + numbers;
+    }
+    
+    return cleaned;
+  };
+
+  // Handle VAT input change with auto-formatting
+  const handleVATInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target;
+    const cursorPosition = input.selectionStart || 0;
+    const oldValue = vatNumber;
+    const newValue = e.target.value;
+    
+    // Format the value
+    const formatted = formatVATInput(newValue);
+    
+    // Calculate new cursor position
+    let newCursorPosition = cursorPosition;
+    if (formatted !== newValue) {
+      // If formatting changed, try to maintain cursor position
+      // Count how many formatting characters were added before cursor
+      const beforeCursorOld = newValue.substring(0, cursorPosition);
+      const beforeCursorNew = formatVATInput(beforeCursorOld);
+      newCursorPosition = beforeCursorNew.length;
+    }
+    
+    // Update the value
+    setValue('vatNumber', formatted, { shouldValidate: false });
+    
+    // Restore cursor position after React updates
+    requestAnimationFrame(() => {
+      input.setSelectionRange(newCursorPosition, newCursorPosition);
+    });
+    
+    // Trigger validation
+    trigger('vatNumber');
+  };
+
+  // Handle VAT input paste
+  const handleVATInputPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getText();
+    
+    // Normalize pasted text (remove all non-alphanumeric except spaces/dots/hyphens)
+    const normalized = pastedText.replace(/[^A-Za-z0-9\s.-]/g, '').toUpperCase();
+    
+    // Format it
+    const formatted = formatVATInput(normalized);
+    
+    // Set the value
+    setValue('vatNumber', formatted, { shouldValidate: true });
+    trigger('vatNumber');
+  };
+
+  // Handle VAT input keydown to prevent invalid characters
+  const handleVATInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const input = e.target as HTMLInputElement;
+    const value = input.value;
+    const cursorPosition = input.selectionStart || 0;
+    
+    // Allow control keys (backspace, delete, arrow keys, etc.)
+    if (e.ctrlKey || e.metaKey || e.key === 'Backspace' || e.key === 'Delete' || 
+        e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown' ||
+        e.key === 'Tab' || e.key === 'Home' || e.key === 'End' || e.key === 'Enter' ||
+        e.key === 'Escape') {
+      return;
+    }
+    
+    // Allow if it's a valid character
+    const char = e.key;
+    const isLetter = /[A-Za-z]/.test(char);
+    const isDigit = /[0-9]/.test(char);
+    const isSpace = char === ' ';
+    const isDot = char === '.';
+    const isHyphen = char === '-';
+    
+    if (!isLetter && !isDigit && !isSpace && !isDot && !isHyphen) {
+      e.preventDefault();
+      return;
+    }
+    
+    // For Belgian VAT (BE), restrict input after country code
+    const upperValue = value.toUpperCase();
+    if (upperValue.startsWith('BE') || upperValue.startsWith('BE ')) {
+      const digitsOnly = value.replace(/[^0-9]/g, '');
+      
+      // Limit to 10 digits for Belgian VAT
+      if (digitsOnly.length >= 10 && isDigit) {
+        e.preventDefault();
+        return;
+      }
+      
+      // Don't allow letters after BE (except when typing BE itself)
+      if (cursorPosition > 2 && isLetter && !(cursorPosition <= 2 && upperValue.length <= 2)) {
+        e.preventDefault();
+        return;
+      }
+      
+      // Don't allow spaces/dots/hyphens to be typed manually (they're auto-formatted)
+      if ((isSpace || isDot || isHyphen) && cursorPosition > 2) {
+        e.preventDefault();
+        return;
+      }
+    } else {
+      // For non-BE VAT, don't allow spaces/dots/hyphens after country code
+      if (upperValue.length >= 2 && (isSpace || isDot || isHyphen)) {
+        e.preventDefault();
+        return;
+      }
+    }
+  };
 
   const numPeople = parseInt(numberOfPeople) || 0;
 
@@ -1185,24 +1357,24 @@ export default function B2BQuotePage() {
                       <Label htmlFor="vatNumber" className="text-base font-semibold text-navy">{t('vatNumber')}</Label>
                       <Input 
                         id="vatNumber" 
-                        placeholder={t('vatPlaceholder')} 
-                        {...register('vatNumber', {
-                          onChange: (e) => {
-                            // Trigger validation on change so errors show immediately
+                        name="vatNumber"
+                        value={vatNumber}
+                        placeholder="BE 0123.456.789" 
+                        onChange={handleVATInputChange}
+                        onPaste={handleVATInputPaste}
+                        onKeyDown={handleVATInputKeyDown}
+                        onBlur={(e) => {
+                          // Normalize VAT number on blur (remove spaces, dots, hyphens, uppercase)
+                          const normalized = normalizeVATNumber(e.target.value);
+                          if (normalized) {
+                            setValue('vatNumber', normalized, { shouldValidate: true });
+                          } else if (e.target.value.trim()) {
+                            // If there's a value but normalization failed, trigger validation to show error
                             trigger('vatNumber');
-                          },
-                          onBlur: (e) => {
-                            // Normalize VAT number on blur (remove spaces, dots, hyphens, uppercase)
-                            const normalized = normalizeVATNumber(e.target.value);
-                            if (normalized) {
-                              setValue('vatNumber', normalized, { shouldValidate: true });
-                            } else if (e.target.value.trim()) {
-                              // If there's a value but normalization failed, trigger validation to show error
-                              trigger('vatNumber');
-                            }
                           }
-                        })} 
-                        className={`mt-2 ${errors.vatNumber ? 'border-red-500 border-2 focus-visible:ring-red-500' : ''}`}
+                        }}
+                        maxLength={17} // BE 0123.456.789 = 17 characters max
+                        className={`mt-2 font-mono ${errors.vatNumber ? 'border-red-500 border-2 focus-visible:ring-red-500' : ''}`}
                       />
                       {errors.vatNumber && (
                         <div className="flex items-start gap-2 mt-2 p-2 bg-red-50 border border-red-200 rounded-md">
@@ -1212,7 +1384,7 @@ export default function B2BQuotePage() {
                       )}
                       {!errors.vatNumber && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          {t('vatPlaceholder')} (e.g., BE 0123.456.789 or BE0123456789)
+                          Format: BE 0123.456.789 (auto-formatted as you type)
                         </p>
                       )}
                     </div>
