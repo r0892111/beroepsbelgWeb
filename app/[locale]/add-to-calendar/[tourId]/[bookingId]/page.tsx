@@ -203,7 +203,14 @@ export default function AddToCalendarPage() {
   );
 
   // Use API route for ICS file - works better on mobile
+  // On mobile, tapping this link will open the calendar app with the event pre-filled
   const icsUrl = `/api/calendar/${booking.id}/ics`;
+
+  // Handler for direct calendar add - works on all mobile devices
+  const handleAddToCalendar = () => {
+    // Direct navigation to ICS file - mobile browsers will open calendar app
+    window.location.href = icsUrl;
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
@@ -219,52 +226,50 @@ export default function AddToCalendarPage() {
         </div>
 
         <div className="mt-6 space-y-3">
-          {/* Google Calendar Button */}
-          <a
-            href={calendarUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block"
+          {/* Primary: Add to Calendar Button - Works on all phones */}
+          <Button
+            onClick={handleAddToCalendar}
+            size="lg"
+            className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white"
           >
-            <img
-              src="https://calendar.google.com/calendar/images/ext/gc_button1_en.gif"
-              alt="Add to Google Calendar"
-              className="border-0"
-            />
-          </a>
+            <Calendar className="h-5 w-5" />
+            Add to Calendar
+          </Button>
+          <p className="text-xs text-gray-500">
+            Tap to open your calendar app with this event
+          </p>
 
-          {/* ICS Download Button */}
+          {/* Alternative: Google Calendar Button */}
           <div className="pt-3 border-t">
-            <p className="text-sm text-gray-600 mb-3">Or download ICS file for any calendar app:</p>
-            <Button
-              asChild
-              variant="outline"
-              className="w-full gap-2"
+            <p className="text-sm text-gray-600 mb-3">Or add via Google Calendar:</p>
+            <a
+              href={calendarUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block"
             >
-              <a
-                href={icsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Download className="h-4 w-4" />
-                Download ICS File
-              </a>
-            </Button>
-            <p className="text-xs text-gray-500 mt-2">
-              Works with Google Calendar, Outlook, Apple Calendar, and more
+              <img
+                src="https://calendar.google.com/calendar/images/ext/gc_button1_en.gif"
+                alt="Add to Google Calendar"
+                className="border-0"
+              />
+            </a>
+          </div>
+
+          {/* Fallback: Direct ICS Link */}
+          <div className="pt-3 border-t">
+            <p className="text-xs text-gray-500 mb-2">Direct calendar file link:</p>
+            <a
+              href={icsUrl}
+              className="text-xs text-blue-600 hover:underline break-all"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {icsUrl}
+            </a>
+            <p className="text-xs text-gray-400 mt-1">
+              Works with Apple Calendar, Google Calendar, Outlook, and more
             </p>
-            {/* Direct URL for testing */}
-            <div className="mt-3 p-2 bg-gray-50 rounded text-xs break-all">
-              <p className="text-gray-600 mb-1">Direct link:</p>
-              <a
-                href={icsUrl}
-                className="text-blue-600 hover:underline"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {icsUrl}
-              </a>
-            </div>
           </div>
         </div>
       </div>

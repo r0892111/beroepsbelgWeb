@@ -197,11 +197,12 @@ export async function GET(
     );
 
     // Return ICS file with proper headers
+    // Using 'inline' instead of 'attachment' for better mobile calendar app opening
     return new NextResponse(icsContent, {
       status: 200,
       headers: {
         'Content-Type': 'text/calendar;charset=utf-8',
-        'Content-Disposition': `attachment; filename="tour-booking-${booking.id}.ics"`,
+        'Content-Disposition': `inline; filename="tour-booking-${booking.id}.ics"`,
         'Cache-Control': 'no-cache',
       },
     });
