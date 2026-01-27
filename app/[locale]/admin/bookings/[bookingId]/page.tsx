@@ -631,10 +631,12 @@ export default function BookingDetailPage() {
       let timeStr = '14:00';
       
       if (timePart) {
-        // Remove timezone offset and milliseconds if present
-        // Examples: "14:00:00+01:00" -> "14:00:00", "14:00:00Z" -> "14:00:00"
-        const timeWithoutOffset = timePart.split(/[+-]/)[0].split('Z')[0];
-        // Extract HH:mm
+        // Remove timezone offset, milliseconds, and seconds if present
+        // Examples: "14:00:00+01:00" -> "14:00", "14:00:00.123Z" -> "14:00", "14:00:00Z" -> "14:00"
+        let timeWithoutOffset = timePart.split(/[+-]/)[0].split('Z')[0];
+        // Remove milliseconds if present (e.g., "14:00:00.123" -> "14:00:00")
+        timeWithoutOffset = timeWithoutOffset.split('.')[0];
+        // Extract HH:mm (ignore seconds)
         const timeParts = timeWithoutOffset.split(':');
         if (timeParts.length >= 2) {
           timeStr = `${timeParts[0]}:${timeParts[1]}`;
