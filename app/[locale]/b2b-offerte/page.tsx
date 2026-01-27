@@ -14,7 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Calendar, Users, MapPin, Languages, Building2, Sparkles, CheckCircle2, Home, ShoppingBag, ExternalLink, Clock, Gift, FileText, Loader2, Plus, Minus } from 'lucide-react';
+import { Calendar, Users, MapPin, Languages, Building2, Sparkles, CheckCircle2, Home, ShoppingBag, ExternalLink, Clock, Gift, FileText, Loader2, Plus, Minus, AlertCircle } from 'lucide-react';
 // Removed direct imports - will fetch from API instead
 import type { City, Tour, Product } from '@/lib/data/types';
 import Image from 'next/image';
@@ -41,11 +41,30 @@ const quoteSchema = z.object({
       const normalized = val.trim().replace(/[\s.-]/g, '').toUpperCase();
       // If Belgian VAT, use checksum validation; otherwise use format validation
       if (normalized.startsWith('BE')) {
+        // Check format first
+        if (!isValidVATFormat(val)) {
+          return false;
+        }
+        // Then check checksum
         return isValidBelgianVAT(val);
       }
       return isValidVATFormat(val);
     },
-    { message: 'Invalid VAT number format. Expected format: BE 0123.456.789 or BE0123456789' }
+    (val) => {
+      if (!val) return { message: 'Invalid VAT number format. Expected format: BE 0123.456.789 or BE0123456789' };
+      const normalized = val.trim().replace(/[\s.-]/g, '').toUpperCase();
+      if (normalized.startsWith('BE')) {
+        // Check format first
+        if (!isValidVATFormat(val)) {
+          return { message: 'Invalid Belgian VAT number format. Expected format: BE 0123.456.789 or BE0123456789' };
+        }
+        // If format is valid but checksum fails
+        if (!isValidBelgianVAT(val)) {
+          return { message: 'Invalid Belgian VAT number. The checksum is incorrect. Please verify the VAT number.' };
+        }
+      }
+      return { message: 'Invalid VAT number format. Expected format: BE 0123.456.789 or BE0123456789' };
+    }
   ),
   billingAddress: z.string().optional(),
   // Business address fields
@@ -116,6 +135,7 @@ export default function B2BQuotePage() {
     setValue,
     watch,
     getValues,
+    trigger,
   } = useForm<QuoteFormData>({
     resolver: zodResolver(quoteSchema),
     defaultValues: {
@@ -1167,22 +1187,34 @@ export default function B2BQuotePage() {
                         id="vatNumber" 
                         placeholder={t('vatPlaceholder')} 
                         {...register('vatNumber', {
+                          onChange: (e) => {
+                            // Trigger validation on change so errors show immediately
+                            trigger('vatNumber');
+                          },
                           onBlur: (e) => {
-                            // Normalize VAT number on blur (remove spaces, uppercase)
+                            // Normalize VAT number on blur (remove spaces, dots, hyphens, uppercase)
                             const normalized = normalizeVATNumber(e.target.value);
                             if (normalized) {
                               setValue('vatNumber', normalized, { shouldValidate: true });
+                            } else if (e.target.value.trim()) {
+                              // If there's a value but normalization failed, trigger validation to show error
+                              trigger('vatNumber');
                             }
                           }
                         })} 
-                        className={`mt-2 ${errors.vatNumber ? 'border-red-500' : ''}`}
+                        className={`mt-2 ${errors.vatNumber ? 'border-red-500 border-2 focus-visible:ring-red-500' : ''}`}
                       />
                       {errors.vatNumber && (
-                        <p className="text-sm text-red-500 mt-1">{errors.vatNumber.message}</p>
+                        <div className="flex items-start gap-2 mt-2 p-2 bg-red-50 border border-red-200 rounded-md">
+                          <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm text-red-600 font-medium">{errors.vatNumber.message}</p>
+                        </div>
                       )}
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {t('vatPlaceholder')} (e.g., BE0123456789)
-                      </p>
+                      {!errors.vatNumber && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {t('vatPlaceholder')} (e.g., BE 0123.456.789 or BE0123456789)
+                        </p>
+                      )}
                     </div>
 
                     {/* Address Fields */}
