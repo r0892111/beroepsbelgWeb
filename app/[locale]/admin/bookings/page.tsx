@@ -1173,8 +1173,8 @@ export default function AdminBookingsPage() {
           resetCreateForm();
         }
       }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5" />
               Create New Booking
@@ -1184,7 +1184,7 @@ export default function AdminBookingsPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 overflow-y-auto flex-1 min-h-0">
             {/* Tour Selection */}
             <div className="space-y-2">
               <Label htmlFor="tour">Tour *</Label>
@@ -1567,7 +1567,7 @@ export default function AdminBookingsPage() {
             })()}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button
               variant="outline"
               onClick={() => {
