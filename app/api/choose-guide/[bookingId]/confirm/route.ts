@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { nowBrussels } from '@/lib/utils/timezone';
 
 function getSupabaseServer() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -214,7 +215,7 @@ export async function POST(
           return {
             id: guideIdNum,
             status: 'offered',
-            offeredAt: new Date().toISOString(),
+            offeredAt: nowBrussels(),
           };
         }
         

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { updateGuideMetrics, incrementGuideDeniedAssignment } from '@/lib/utils/update-guide-metrics';
+import { nowBrussels } from '@/lib/utils/timezone';
 
 function getSupabaseServer() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -147,7 +148,7 @@ export async function POST(
             return {
               ...(typeof g === 'object' ? g : { id: finalGuideId }),
               status: 'accepted',
-              respondedAt: new Date().toISOString(),
+              respondedAt: nowBrussels(),
             };
           }
           return g;
@@ -177,7 +178,7 @@ export async function POST(
             return {
               ...(typeof g === 'object' ? g : { id: finalGuideId }),
               status: 'declined',
-              respondedAt: new Date().toISOString(),
+              respondedAt: nowBrussels(),
             };
           }
           return g;

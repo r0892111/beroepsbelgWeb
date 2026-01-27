@@ -46,7 +46,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { format } from 'date-fns';
-import { formatBrusselsDateTime } from '@/lib/utils/timezone';
+import { formatBrusselsDateTime, parseBrusselsDateTime, toBrusselsISO, isWeekendBrussels, getHourBrussels, nowBrussels } from '@/lib/utils/timezone';
 import { toast } from 'sonner';
 
 interface SelectedGuide {
@@ -268,7 +268,7 @@ export default function BookingDetailPage() {
   const [sendInfoToGuideOpen, setSendInfoToGuideOpen] = useState(false);
   const [infoMessage, setInfoMessage] = useState('');
   const [sendingInfo, setSendingInfo] = useState(false);
-  const [deliveryMethod, setDeliveryMethod] = useState<'email' | 'whatsapp' | 'both'>('email');
+  const [deliveryMethod, setDeliveryMethod] = useState<'email'>('email');
 
   // Reassign guide state
   const [reassignGuideDialogOpen, setReassignGuideDialogOpen] = useState(false);
@@ -526,7 +526,7 @@ export default function BookingDetailPage() {
         {
           id: selectedNewGuideId,
           status: 'offered' as const,
-          offeredAt: new Date().toISOString(),
+          offeredAt: nowBrussels(),
         }
       ];
 
@@ -616,14 +616,50 @@ export default function BookingDetailPage() {
   // Open edit dialog with current values
   const openEditDialog = () => {
     if (!booking) return;
-    const datetime = booking.tour_datetime ? new Date(booking.tour_datetime) : new Date();
-    setEditForm({
-      date: datetime.toISOString().split('T')[0],
-      time: datetime.toTimeString().slice(0, 5),
-      status: booking.status,
-      start_location: booking.start_location || '',
-      end_location: booking.end_location || '',
-    });
+    if (booking.tour_datetime) {
+      // Parse the datetime string (stored as Brussels timezone ISO string)
+      // Extract date and time components from the Brussels timezone string
+      // Format: "2025-01-25T14:00:00+01:00" or "2025-01-25T14:00:00Z"
+      const datetimeStr = booking.tour_datetime;
+      
+      // Extract date part (YYYY-MM-DD)
+      const dateStr = datetimeStr.split('T')[0];
+      
+      // Extract time part and handle timezone offset
+      // The time component in the ISO string represents Brussels local time
+      const timePart = datetimeStr.split('T')[1];
+      let timeStr = '14:00';
+      
+      if (timePart) {
+        // Remove timezone offset and milliseconds if present
+        // Examples: "14:00:00+01:00" -> "14:00:00", "14:00:00Z" -> "14:00:00"
+        const timeWithoutOffset = timePart.split(/[+-]/)[0].split('Z')[0];
+        // Extract HH:mm
+        const timeParts = timeWithoutOffset.split(':');
+        if (timeParts.length >= 2) {
+          timeStr = `${timeParts[0]}:${timeParts[1]}`;
+        }
+      }
+      
+      setEditForm({
+        date: dateStr,
+        time: timeStr,
+        status: booking.status,
+        start_location: booking.start_location || '',
+        end_location: booking.end_location || '',
+      });
+    } else {
+      // Use current Brussels time
+      const now = new Date();
+      const brusselsDate = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Brussels' }));
+      setEditForm({
+        date: brusselsDate.toISOString().split('T')[0],
+        time: brusselsDate.toTimeString().slice(0, 5),
+        status: booking.status,
+        start_location: booking.start_location || '',
+        end_location: booking.end_location || '',
+      });
+    }
     setEditDialogOpen(true);
   };
 
@@ -632,7 +668,9 @@ export default function BookingDetailPage() {
     if (!booking) return;
     setSavingBooking(true);
     try {
-      const tourDatetime = `${editForm.date}T${editForm.time}:00`;
+      // Parse the date/time as Brussels time and convert to ISO string
+      const parsedDate = parseBrusselsDateTime(editForm.date, editForm.time);
+      const tourDatetime = toBrusselsISO(parsedDate);
 
       const { error: updateError } = await supabase
         .from('tourbooking')
@@ -714,9 +752,10 @@ export default function BookingDetailPage() {
       }
 
       // Create local_tours_bookings entry
+      // Extract date and time from Brussels datetime string
       const bookingDate = booking.tour_datetime ? booking.tour_datetime.split('T')[0] : '';
       const bookingTime = booking.tour_datetime
-        ? new Date(booking.tour_datetime).toTimeString().slice(0, 8)
+        ? booking.tour_datetime.split('T')[1]?.split('.')[0] || '14:00:00'
         : '14:00:00';
 
       const { error: localError } = await supabase
@@ -896,7 +935,7 @@ export default function BookingDetailPage() {
           // Add to payment links sent log
           const existingLog = (rest.paymentLinksSent as Array<Record<string, unknown>>) || [];
           const newLogEntry = {
-            sentAt: new Date().toISOString(),
+            sentAt: nowBrussels(),
             numberOfPeople: paymentLinkTarget.numberOfPeople,
             amount: paymentLinkAmount,
             type: paymentLinkIsExtraInvitees ? 'additional_people' : 'manual',
@@ -947,14 +986,10 @@ export default function BookingDetailPage() {
     // Initialize price - use tour price if available, otherwise default to 35 for Local Stories
     const basePrice = tour?.price || (tour?.local_stories ? 35 : 0);
     setAdditionalPeoplePrice(basePrice.toString());
-    // Reset fees - auto-detect weekend based on booking date
-    const isWeekend = booking?.tour_datetime ? (() => {
-      const date = new Date(booking.tour_datetime);
-      const day = date.getDay();
-      return day === 0 || day === 6;
-    })() : false;
+    // Reset fees - auto-detect weekend based on booking date (Brussels timezone)
+    const isWeekend = booking?.tour_datetime ? isWeekendBrussels(booking.tour_datetime) : false;
     const isEvening = booking?.tour_datetime ? (() => {
-      const hour = parseInt(booking.tour_datetime.split('T')[1]?.split(':')[0] || '0', 10);
+      const hour = getHourBrussels(booking.tour_datetime);
       return hour >= 17;
     })() : false;
     setAddPeopleFees({
@@ -1093,7 +1128,7 @@ export default function BookingDetailPage() {
                 paymentLinksSent: [
                   ...existingLog,
                   {
-                    sentAt: new Date().toISOString(),
+                    sentAt: nowBrussels(),
                     numberOfPeople: additionalPeople,
                     amount: totalAmount,
                     type: 'additional_people',
@@ -3970,47 +4005,8 @@ export default function BookingDetailPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label>Delivery Method</Label>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="deliveryMethod"
-                    value="email"
-                    checked={deliveryMethod === 'email'}
-                    onChange={() => setDeliveryMethod('email')}
-                    className="h-4 w-4"
-                  />
-                  <span className="text-sm">Email</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="deliveryMethod"
-                    value="whatsapp"
-                    checked={deliveryMethod === 'whatsapp'}
-                    onChange={() => setDeliveryMethod('whatsapp')}
-                    className="h-4 w-4"
-                  />
-                  <span className="text-sm">WhatsApp</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="deliveryMethod"
-                    value="both"
-                    checked={deliveryMethod === 'both'}
-                    onChange={() => setDeliveryMethod('both')}
-                    className="h-4 w-4"
-                  />
-                  <span className="text-sm">Both</span>
-                </label>
-              </div>
-            </div>
-
             <div className="bg-muted/50 rounded-lg p-3 text-sm">
-              <p className="text-xs text-muted-foreground mb-2">Will be sent to:</p>
+              <p className="text-xs text-muted-foreground mb-2">Will be sent via email to:</p>
               {tour?.local_stories ? (
                 localStoriesBookings.length > 0 ? (
                   <div className="space-y-1">
@@ -4093,47 +4089,8 @@ export default function BookingDetailPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label>Delivery Method</Label>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="guideDeliveryMethod"
-                    value="email"
-                    checked={deliveryMethod === 'email'}
-                    onChange={() => setDeliveryMethod('email')}
-                    className="h-4 w-4"
-                  />
-                  <span className="text-sm">Email</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="guideDeliveryMethod"
-                    value="whatsapp"
-                    checked={deliveryMethod === 'whatsapp'}
-                    onChange={() => setDeliveryMethod('whatsapp')}
-                    className="h-4 w-4"
-                  />
-                  <span className="text-sm">WhatsApp</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="guideDeliveryMethod"
-                    value="both"
-                    checked={deliveryMethod === 'both'}
-                    onChange={() => setDeliveryMethod('both')}
-                    className="h-4 w-4"
-                  />
-                  <span className="text-sm">Both</span>
-                </label>
-              </div>
-            </div>
-
             <div className="bg-muted/50 rounded-lg p-3 text-sm">
-              <p className="text-xs text-muted-foreground mb-2">Will be sent to:</p>
+              <p className="text-xs text-muted-foreground mb-2">Will be sent via email to:</p>
               {booking.guide_id && allGuides.get(booking.guide_id) ? (
                 <p className="text-sm font-medium">
                   {allGuides.get(booking.guide_id)!.name}

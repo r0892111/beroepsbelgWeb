@@ -20,6 +20,7 @@ import type { City, Tour, Product } from '@/lib/data/types';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { useTranslations as useBookingTranslations } from 'next-intl';
+import { isValidVATFormat, normalizeVATNumber } from '@/lib/utils/vat-validation';
 
 const quoteSchema = z.object({
   dateTime: z.string().min(1),
@@ -33,7 +34,10 @@ const quoteSchema = z.object({
   contactLastName: z.string().min(1),
   contactEmail: z.string().email(),
   contactPhone: z.string().min(1),
-  vatNumber: z.string().optional(),
+  vatNumber: z.string().optional().refine(
+    (val) => !val || isValidVATFormat(val),
+    { message: 'Invalid VAT number format. Expected format: BE0123456789' }
+  ),
   billingAddress: z.string().optional(),
   // Business address fields
   street: z.string().optional(),
@@ -507,7 +511,7 @@ export default function B2BQuotePage() {
             contactEmail: data.contactEmail,
             contactPhone: data.contactPhone,
             companyName: data.companyName || null,
-            vatNumber: data.vatNumber || null,
+            vatNumber: normalizeVATNumber(data.vatNumber),
             billingAddress: data.billingAddress || null,
             street: data.street || null,
             streetNumber: data.streetNumber || null,
@@ -1150,7 +1154,26 @@ export default function B2BQuotePage() {
 
                     <div>
                       <Label htmlFor="vatNumber" className="text-base font-semibold text-navy">{t('vatNumber')}</Label>
-                      <Input id="vatNumber" placeholder={t('vatPlaceholder')} {...register('vatNumber')} className="mt-2" />
+                      <Input 
+                        id="vatNumber" 
+                        placeholder={t('vatPlaceholder')} 
+                        {...register('vatNumber', {
+                          onBlur: (e) => {
+                            // Normalize VAT number on blur (remove spaces, uppercase)
+                            const normalized = normalizeVATNumber(e.target.value);
+                            if (normalized) {
+                              setValue('vatNumber', normalized, { shouldValidate: true });
+                            }
+                          }
+                        })} 
+                        className={`mt-2 ${errors.vatNumber ? 'border-red-500' : ''}`}
+                      />
+                      {errors.vatNumber && (
+                        <p className="text-sm text-red-500 mt-1">{errors.vatNumber.message}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {t('vatPlaceholder')} (e.g., BE0123456789)
+                      </p>
                     </div>
 
                     {/* Address Fields */}
