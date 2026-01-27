@@ -253,7 +253,7 @@ export default function B2BQuotePage() {
   // Handle VAT input paste
   const handleVATInputPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
-    const pastedText = e.clipboardData.getText();
+    const pastedText = e.clipboardData.getData('text');
     
     // Normalize pasted text (remove all non-alphanumeric except spaces/dots/hyphens)
     const normalized = pastedText.replace(/[^A-Za-z0-9\s.-]/g, '').toUpperCase();
