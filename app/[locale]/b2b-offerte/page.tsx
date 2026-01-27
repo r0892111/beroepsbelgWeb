@@ -20,7 +20,7 @@ import type { City, Tour, Product } from '@/lib/data/types';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { useTranslations as useBookingTranslations } from 'next-intl';
-import { isValidVATFormat, normalizeVATNumber } from '@/lib/utils/vat-validation';
+import { isValidVATFormat, isValidBelgianVAT, normalizeVATNumber } from '@/lib/utils/vat-validation';
 
 const quoteSchema = z.object({
   dateTime: z.string().min(1),
@@ -35,8 +35,17 @@ const quoteSchema = z.object({
   contactEmail: z.string().email(),
   contactPhone: z.string().min(1),
   vatNumber: z.string().optional().refine(
-    (val) => !val || isValidVATFormat(val),
-    { message: 'Invalid VAT number format. Expected format: BE0123456789' }
+    (val) => {
+      if (!val) return true;
+      // Normalize to check country code
+      const normalized = val.trim().replace(/[\s.-]/g, '').toUpperCase();
+      // If Belgian VAT, use checksum validation; otherwise use format validation
+      if (normalized.startsWith('BE')) {
+        return isValidBelgianVAT(val);
+      }
+      return isValidVATFormat(val);
+    },
+    { message: 'Invalid VAT number format. Expected format: BE 0123.456.789 or BE0123456789' }
   ),
   billingAddress: z.string().optional(),
   // Business address fields
