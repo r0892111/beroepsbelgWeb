@@ -121,44 +121,23 @@ export async function GET(
     const endLocation = booking.end_location || tour?.end_location || '';
     const location = endLocation ? `${startLocation} → ${endLocation}` : startLocation;
     
-    // Build comprehensive description
+    // Build description - only include tour info and number of people (no personal info)
     const descriptionParts: string[] = [];
     
     // Tour description
     if (tour?.description) {
-      descriptionParts.push(`TOUR DESCRIPTION:\n${tour.description}`);
+      descriptionParts.push(tour.description);
     }
     
-    // Booking details
-    descriptionParts.push(`\nBOOKING DETAILS:`);
-    descriptionParts.push(`Booking ID: #${booking.id}`);
-    descriptionParts.push(`Status: ${booking.status || 'N/A'}`);
-    
-    // Customer information from invitees
+    // Number of people only (no other personal info)
     if (booking.invitees && Array.isArray(booking.invitees) && booking.invitees.length > 0) {
       const mainInvitee = booking.invitees[0] as any;
-      descriptionParts.push(`\nCUSTOMER INFORMATION:`);
-      if (mainInvitee.name) descriptionParts.push(`Name: ${mainInvitee.name}`);
-      if (mainInvitee.email) descriptionParts.push(`Email: ${mainInvitee.email}`);
-      if (mainInvitee.phone) descriptionParts.push(`Phone: ${mainInvitee.phone}`);
-      if (mainInvitee.numberOfPeople) descriptionParts.push(`Number of People: ${mainInvitee.numberOfPeople}`);
-      if (mainInvitee.language) descriptionParts.push(`Language: ${mainInvitee.language}`);
-      if (mainInvitee.specialRequests) descriptionParts.push(`Special Requests: ${mainInvitee.specialRequests}`);
-      
-      // Op maat answers if available
-      if (mainInvitee.opMaatAnswers) {
-        const opMaat = mainInvitee.opMaatAnswers;
-        descriptionParts.push(`\nOP MAAT DETAILS:`);
-        if (opMaat.startLocation) descriptionParts.push(`Start Location: ${opMaat.startLocation}`);
-        if (opMaat.endLocation) descriptionParts.push(`End Location: ${opMaat.endLocation}`);
-        if (opMaat.cityPart) descriptionParts.push(`City Part: ${opMaat.cityPart}`);
-        if (opMaat.subjects) descriptionParts.push(`Subjects: ${opMaat.subjects}`);
-        if (opMaat.specialWishes) descriptionParts.push(`Special Wishes: ${opMaat.specialWishes}`);
+      if (mainInvitee.numberOfPeople) {
+        descriptionParts.push(`\nNumber of People: ${mainInvitee.numberOfPeople}`);
       }
     }
     
-    // Tour details
-    descriptionParts.push(`\nTOUR INFORMATION:`);
+    // Tour information
     if (tour?.duration_minutes) {
       const hours = Math.floor(tour.duration_minutes / 60);
       const minutes = tour.duration_minutes % 60;
@@ -168,20 +147,19 @@ export async function GET(
       descriptionParts.push(`Duration: ${durationStr}`);
     }
     if (tour?.languages && Array.isArray(tour.languages) && tour.languages.length > 0) {
-      descriptionParts.push(`Available Languages: ${tour.languages.join(', ')}`);
+      descriptionParts.push(`Languages: ${tour.languages.join(', ')}`);
     }
-    if (startLocation) descriptionParts.push(`Start Location: ${startLocation}`);
-    if (endLocation) descriptionParts.push(`End Location: ${endLocation}`);
-    if (booking.city) descriptionParts.push(`City: ${booking.city}`);
+    if (startLocation) descriptionParts.push(`Start: ${startLocation}`);
+    if (endLocation) descriptionParts.push(`End: ${endLocation}`);
     
     // Additional tour notes
     if (tour?.notes) {
-      descriptionParts.push(`\nNOTES:\n${tour.notes}`);
+      descriptionParts.push(`\n${tour.notes}`);
     }
     
     // Google Maps link
     if (tour?.google_maps_url) {
-      descriptionParts.push(`\nGoogle Maps: ${tour.google_maps_url}`);
+      descriptionParts.push(`\n${tour.google_maps_url}`);
     }
     
     const fullDescription = descriptionParts.join('\n');
@@ -196,13 +174,12 @@ export async function GET(
       booking.id
     );
 
-    // Return ICS file with proper headers
-    // Using 'inline' instead of 'attachment' for better mobile calendar app opening
+    // Return ICS file with proper headers for direct calendar app opening
+    // No Content-Disposition header - allows mobile browsers to open calendar app directly
     return new NextResponse(icsContent, {
       status: 200,
       headers: {
         'Content-Type': 'text/calendar;charset=utf-8',
-        'Content-Disposition': `inline; filename="tour-booking-${booking.id}.ics"`,
         'Cache-Control': 'no-cache',
       },
     });

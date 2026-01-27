@@ -203,12 +203,13 @@ export default function AddToCalendarPage() {
   );
 
   // Use API route for ICS file - works better on mobile
-  // On mobile, tapping this link will open the calendar app with the event pre-filled
   const icsUrl = `/api/calendar/${booking.id}/ics`;
 
-  // Handler for direct calendar add - works on all mobile devices
+  // Handler for direct calendar add - opens calendar app without download
   const handleAddToCalendar = () => {
-    // Direct navigation to ICS file - mobile browsers will open calendar app
+    // Direct navigation to ICS file
+    // Mobile browsers (iOS Safari, Android Chrome) will automatically
+    // open the calendar app when they encounter an ICS file with proper Content-Type
     window.location.href = icsUrl;
   };
 
