@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
-import { Loader2, Calendar, AlertCircle } from 'lucide-react';
+import { Loader2, Calendar, AlertCircle, Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface TourData {
   title: string;
@@ -41,6 +42,74 @@ function buildGoogleCalendarUrl(
     details: details,
   });
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+function generateICSContent(
+  title: string,
+  startDate: string,
+  endDate: string,
+  location: string,
+  description: string,
+  bookingId: number
+): string {
+  // Format dates for ICS (YYYYMMDDTHHmmssZ format)
+  const formatICSDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const hours = String(date.getUTCHours()).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+    return `${year}${month}${day}T${hours}${minutes}${seconds}Z`;
+  };
+
+  // Escape special characters in ICS format
+  const escapeICS = (text: string): string => {
+    return text
+      .replace(/\\/g, '\\\\')
+      .replace(/;/g, '\\;')
+      .replace(/,/g, '\\,')
+      .replace(/\n/g, '\\n');
+  };
+
+  const icsStart = formatICSDate(startDate);
+  const icsEnd = formatICSDate(endDate);
+  const icsTitle = escapeICS(title);
+  const icsLocation = escapeICS(location);
+  const icsDescription = escapeICS(description || `Booking ID: ${bookingId}`);
+
+  return [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Beroepsbelg//Tour Booking//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:booking-${bookingId}@beroepsbelg.be`,
+    `DTSTAMP:${formatICSDate(new Date().toISOString())}`,
+    `DTSTART:${icsStart}`,
+    `DTEND:${icsEnd}`,
+    `SUMMARY:${icsTitle}`,
+    `LOCATION:${icsLocation}`,
+    `DESCRIPTION:${icsDescription}`,
+    'STATUS:CONFIRMED',
+    'SEQUENCE:0',
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n');
+}
+
+function downloadICS(icsContent: string, filename: string) {
+  const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 export default function AddToCalendarPage() {
@@ -137,11 +206,24 @@ export default function AddToCalendarPage() {
 
   const calendarUrl = buildGoogleCalendarUrl(
     tourTitle,
-    booking.tour_datetime,
-    booking.tour_end,
+    booking.tour_datetime!,
+    booking.tour_end!,
     location,
     details
   );
+
+  const handleDownloadICS = () => {
+    const icsContent = generateICSContent(
+      tourTitle,
+      booking.tour_datetime!,
+      booking.tour_end!,
+      location,
+      details || `Booking ID: ${booking.id}`,
+      booking.id
+    );
+    const filename = `tour-booking-${booking.id}.ics`;
+    downloadICS(icsContent, filename);
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
@@ -153,10 +235,11 @@ export default function AddToCalendarPage() {
           <p><span className="font-medium">Tour:</span> {tourTitle}</p>
           <p><span className="font-medium">Booking ID:</span> #{booking.id}</p>
           {location && <p><span className="font-medium">Location:</span> {location}</p>}
-          <p><span className="font-medium">Date:</span> {new Date(booking.tour_datetime).toLocaleString()}</p>
+          <p><span className="font-medium">Date:</span> {new Date(booking.tour_datetime!).toLocaleString()}</p>
         </div>
 
-        <div className="mt-6">
+        <div className="mt-6 space-y-3">
+          {/* Google Calendar Button */}
           <a
             href={calendarUrl}
             target="_blank"
@@ -169,6 +252,22 @@ export default function AddToCalendarPage() {
               className="border-0"
             />
           </a>
+
+          {/* ICS Download Button */}
+          <div className="pt-3 border-t">
+            <p className="text-sm text-gray-600 mb-3">Or download ICS file for any calendar app:</p>
+            <Button
+              onClick={handleDownloadICS}
+              variant="outline"
+              className="w-full gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Download ICS File
+            </Button>
+            <p className="text-xs text-gray-500 mt-2">
+              Works with Google Calendar, Outlook, Apple Calendar, and more
+            </p>
+          </div>
         </div>
       </div>
     </div>
