@@ -100,17 +100,7 @@ function generateICSContent(
   ].join('\r\n');
 }
 
-function downloadICS(icsContent: string, filename: string) {
-  const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
+// Removed downloadICS function - now using direct API link for better mobile support
 
 export default function AddToCalendarPage() {
   const params = useParams();
@@ -212,18 +202,8 @@ export default function AddToCalendarPage() {
     details
   );
 
-  const handleDownloadICS = () => {
-    const icsContent = generateICSContent(
-      tourTitle,
-      booking.tour_datetime!,
-      booking.tour_end!,
-      location,
-      details || `Booking ID: ${booking.id}`,
-      booking.id
-    );
-    const filename = `tour-booking-${booking.id}.ics`;
-    downloadICS(icsContent, filename);
-  };
+  // Use API route for ICS file - works better on mobile
+  const icsUrl = `/api/calendar/${booking.id}/ics`;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
@@ -257,12 +237,17 @@ export default function AddToCalendarPage() {
           <div className="pt-3 border-t">
             <p className="text-sm text-gray-600 mb-3">Or download ICS file for any calendar app:</p>
             <Button
-              onClick={handleDownloadICS}
+              asChild
               variant="outline"
               className="w-full gap-2"
             >
-              <Download className="h-4 w-4" />
-              Download ICS File
+              <a
+                href={icsUrl}
+                download={`tour-booking-${booking.id}.ics`}
+              >
+                <Download className="h-4 w-4" />
+                Download ICS File
+              </a>
             </Button>
             <p className="text-xs text-gray-500 mt-2">
               Works with Google Calendar, Outlook, Apple Calendar, and more
