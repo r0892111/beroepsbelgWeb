@@ -1195,7 +1195,7 @@ export default function AdminBookingsPage() {
                 <SelectTrigger className="bg-white">
                   <SelectValue placeholder="Select a tour..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-60">
                   {allTours.map((tour) => (
                     <SelectItem key={tour.id} value={tour.id}>
                       <div className="flex items-center gap-2">

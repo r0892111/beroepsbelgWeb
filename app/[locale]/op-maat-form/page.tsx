@@ -205,6 +205,7 @@ export default function OpMaatFormPage() {
       }
 
       // Extract start and end locations directly from separate fields
+      // Always replace the booking's start_location and end_location with form values
       const parsedStartLocation = formData.startLocation.trim() || null;
       const parsedEndLocation = formData.endLocation.trim() || null;
 
@@ -215,11 +216,11 @@ export default function OpMaatFormPage() {
             ...invitee,
             opMaatAnswers: {
               ...(invitee.opMaatAnswers || {}),
-              startLocation: formData.startLocation,
-              endLocation: formData.endLocation,
-              cityPart: formData.cityPart,
-              subjects: formData.subjects,
-              specialWishes: formData.specialWishes,
+              startLocation: formData.startLocation.trim(),
+              endLocation: formData.endLocation.trim(),
+              cityPart: formData.cityPart.trim(),
+              subjects: formData.subjects.trim(),
+              specialWishes: formData.specialWishes.trim(),
             },
             // Always update tour times from the booking (in case they were set after initial booking)
             tourStartDatetime: currentBooking.tour_datetime || invitee.tourStartDatetime,
@@ -230,13 +231,14 @@ export default function OpMaatFormPage() {
         return invitee;
       }) || [];
 
-      // Update booking with op maat answers in invitees AND extracted start/end locations
+      // Update booking with op maat answers in invitees AND replace start/end locations
+      // This will always replace any existing start_location and end_location values
       const { error: updateError } = await supabase
         .from('tourbooking')
         .update({
           invitees: updatedInvitees,
-          start_location: parsedStartLocation,
-          end_location: parsedEndLocation,
+          start_location: parsedStartLocation, // Always replace with form value (or null if empty)
+          end_location: parsedEndLocation, // Always replace with form value (or null if empty)
         })
         .eq('id', bookingId);
 

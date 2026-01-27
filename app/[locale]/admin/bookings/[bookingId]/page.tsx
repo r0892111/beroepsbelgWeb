@@ -2796,7 +2796,7 @@ export default function BookingDetailPage() {
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="editDate">Date</Label>
+                <Label htmlFor="editDate" className="text-xs text-muted-foreground uppercase tracking-wide">Date</Label>
                 <Input
                   id="editDate"
                   type="date"
@@ -2806,7 +2806,7 @@ export default function BookingDetailPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="editTime">Time</Label>
+                <Label htmlFor="editTime" className="text-xs text-muted-foreground uppercase tracking-wide">Time</Label>
                 <Input
                   id="editTime"
                   type="time"
@@ -2818,7 +2818,7 @@ export default function BookingDetailPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="editStatus">Status</Label>
+              <Label htmlFor="editStatus" className="text-xs text-muted-foreground uppercase tracking-wide">Status</Label>
               <Select
                 value={editForm.status}
                 onValueChange={(value) => setEditForm({ ...editForm, status: value })}
@@ -2838,7 +2838,7 @@ export default function BookingDetailPage() {
 
             <div className="grid grid-cols-2 gap-4 pt-2 border-t">
               <div className="space-y-2">
-                <Label htmlFor="editStartLocation">Start Location</Label>
+                <Label htmlFor="editStartLocation" className="text-xs text-muted-foreground uppercase tracking-wide">Start Location</Label>
                 <Input
                   id="editStartLocation"
                   value={editForm.start_location}
@@ -2851,7 +2851,7 @@ export default function BookingDetailPage() {
                 </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="editEndLocation">End Location</Label>
+                <Label htmlFor="editEndLocation" className="text-xs text-muted-foreground uppercase tracking-wide">End Location</Label>
                 <Input
                   id="editEndLocation"
                   value={editForm.end_location}
@@ -2910,7 +2910,7 @@ export default function BookingDetailPage() {
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="inviteeName">Name *</Label>
+                <Label htmlFor="inviteeName" className="text-xs text-muted-foreground uppercase tracking-wide">Name *</Label>
                 <Input
                   id="inviteeName"
                   value={newInvitee.name}
@@ -2920,7 +2920,7 @@ export default function BookingDetailPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="inviteeEmail">Email *</Label>
+                <Label htmlFor="inviteeEmail" className="text-xs text-muted-foreground uppercase tracking-wide">Email *</Label>
                 <Input
                   id="inviteeEmail"
                   type="email"
@@ -2931,7 +2931,7 @@ export default function BookingDetailPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="inviteePhone">Phone</Label>
+                <Label htmlFor="inviteePhone" className="text-xs text-muted-foreground uppercase tracking-wide">Phone</Label>
                 <Input
                   id="inviteePhone"
                   value={newInvitee.phone}
@@ -2941,7 +2941,7 @@ export default function BookingDetailPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="inviteePeople">Number of People</Label>
+                <Label htmlFor="inviteePeople" className="text-xs text-muted-foreground uppercase tracking-wide">Number of People</Label>
                 <Input
                   id="inviteePeople"
                   type="number"
@@ -2952,7 +2952,7 @@ export default function BookingDetailPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="inviteeLanguage">Language</Label>
+                <Label htmlFor="inviteeLanguage" className="text-xs text-muted-foreground uppercase tracking-wide">Language</Label>
                 <Select
                   value={newInvitee.language}
                   onValueChange={(value) => setNewInvitee({ ...newInvitee, language: value })}
@@ -2970,7 +2970,7 @@ export default function BookingDetailPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="inviteeRequests">Special Requests</Label>
+              <Label htmlFor="inviteeRequests" className="text-xs text-muted-foreground uppercase tracking-wide">Special Requests</Label>
               <Textarea
                 id="inviteeRequests"
                 value={newInvitee.specialRequests}
@@ -3470,7 +3470,7 @@ export default function BookingDetailPage() {
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="editName">Name</Label>
+                <Label htmlFor="editName" className="text-xs text-muted-foreground uppercase tracking-wide">Name</Label>
                 <Input
                   id="editName"
                   value={editInviteeForm.name}
@@ -3480,7 +3480,7 @@ export default function BookingDetailPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="editEmail">Email</Label>
+                <Label htmlFor="editEmail" className="text-xs text-muted-foreground uppercase tracking-wide">Email</Label>
                 <Input
                   id="editEmail"
                   type="email"
@@ -3493,7 +3493,7 @@ export default function BookingDetailPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="editPhone">Phone</Label>
+                <Label htmlFor="editPhone" className="text-xs text-muted-foreground uppercase tracking-wide">Phone</Label>
                 <Input
                   id="editPhone"
                   type="tel"
@@ -3504,7 +3504,7 @@ export default function BookingDetailPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="editPeople">Number of People</Label>
+                <Label htmlFor="editPeople" className="text-xs text-muted-foreground uppercase tracking-wide">Number of People</Label>
                 <Input
                   id="editPeople"
                   type="number"
@@ -3517,7 +3517,7 @@ export default function BookingDetailPage() {
             </div>
             {/* Email Language - shown for ALL booking types */}
             <div className="space-y-2">
-              <Label htmlFor="editContactLanguageAll">Email Language</Label>
+              <Label htmlFor="editContactLanguageAll" className="text-xs text-muted-foreground uppercase tracking-wide">Email Language</Label>
               <Select
                 value={editInviteeForm.contactLanguage}
                 onValueChange={(value) => setEditInviteeForm({ ...editInviteeForm, contactLanguage: value })}
@@ -3537,7 +3537,7 @@ export default function BookingDetailPage() {
             {!editInviteeTarget?.isLocalStories && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="editLanguage">Tour Language</Label>
+                  <Label htmlFor="editLanguage" className="text-xs text-muted-foreground uppercase tracking-wide">Tour Language</Label>
                   <Select
                     value={editInviteeForm.language}
                     onValueChange={(value) => {
@@ -3564,7 +3564,7 @@ export default function BookingDetailPage() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="editRequests">Special Requests</Label>
+                  <Label htmlFor="editRequests" className="text-xs text-muted-foreground uppercase tracking-wide">Special Requests</Label>
                   <Textarea
                     id="editRequests"
                     value={editInviteeForm.specialRequests}

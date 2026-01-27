@@ -16,6 +16,7 @@ import { sendContactFormWebhook } from '@/lib/utils/webhooks';
 
 const contactSchema = z.object({
   name: z.string().min(1),
+  email: z.string().email().min(1),
   phone: z.string().optional(),
   message: z.string().min(10),
   consent: z.boolean().refine((val) => val === true),
@@ -55,7 +56,7 @@ export default function ContactPage() {
     // Send to n8n webhook (non-blocking)
     sendContactFormWebhook({
       name: data.name,
-      email: '',
+      email: data.email,
       phone: data.phone,
       message: data.message,
       consent: data.consent,
@@ -162,6 +163,27 @@ export default function ContactPage() {
                     className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg font-inter focus:border-[#1BDD95] focus:ring-0 transition-colors"
                   />
                   {errors.name && <p className="mt-2 text-sm text-red-600">{tForms('required')}</p>}
+                </div>
+
+                {/* Email Field */}
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="block font-oswald text-sm uppercase tracking-wider font-semibold text-neutral-700 mb-2"
+                  >
+                    {tForms('email')}*
+                  </label>
+                  <Input
+                    id="email"
+                    type="email"
+                    {...register('email')}
+                    className="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg font-inter focus:border-[#1BDD95] focus:ring-0 transition-colors"
+                  />
+                  {errors.email && (
+                    <p className="mt-2 text-sm text-red-600">
+                      {errors.email.type === 'required' ? tForms('required') : tForms('invalidEmail')}
+                    </p>
+                  )}
                 </div>
 
                 {/* Phone Field */}
