@@ -268,7 +268,7 @@ export default function BookingDetailPage() {
   const [sendInfoToGuideOpen, setSendInfoToGuideOpen] = useState(false);
   const [infoMessage, setInfoMessage] = useState('');
   const [sendingInfo, setSendingInfo] = useState(false);
-  const [deliveryMethod, setDeliveryMethod] = useState<'email' | 'whatsapp' | 'both'>('email');
+  const [deliveryMethod, setDeliveryMethod] = useState<'email'>('email');
 
   // Reassign guide state
   const [reassignGuideDialogOpen, setReassignGuideDialogOpen] = useState(false);
@@ -4005,47 +4005,8 @@ export default function BookingDetailPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label>Delivery Method</Label>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="deliveryMethod"
-                    value="email"
-                    checked={deliveryMethod === 'email'}
-                    onChange={() => setDeliveryMethod('email')}
-                    className="h-4 w-4"
-                  />
-                  <span className="text-sm">Email</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="deliveryMethod"
-                    value="whatsapp"
-                    checked={deliveryMethod === 'whatsapp'}
-                    onChange={() => setDeliveryMethod('whatsapp')}
-                    className="h-4 w-4"
-                  />
-                  <span className="text-sm">WhatsApp</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="deliveryMethod"
-                    value="both"
-                    checked={deliveryMethod === 'both'}
-                    onChange={() => setDeliveryMethod('both')}
-                    className="h-4 w-4"
-                  />
-                  <span className="text-sm">Both</span>
-                </label>
-              </div>
-            </div>
-
             <div className="bg-muted/50 rounded-lg p-3 text-sm">
-              <p className="text-xs text-muted-foreground mb-2">Will be sent to:</p>
+              <p className="text-xs text-muted-foreground mb-2">Will be sent via email to:</p>
               {tour?.local_stories ? (
                 localStoriesBookings.length > 0 ? (
                   <div className="space-y-1">
@@ -4128,47 +4089,8 @@ export default function BookingDetailPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label>Delivery Method</Label>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="guideDeliveryMethod"
-                    value="email"
-                    checked={deliveryMethod === 'email'}
-                    onChange={() => setDeliveryMethod('email')}
-                    className="h-4 w-4"
-                  />
-                  <span className="text-sm">Email</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="guideDeliveryMethod"
-                    value="whatsapp"
-                    checked={deliveryMethod === 'whatsapp'}
-                    onChange={() => setDeliveryMethod('whatsapp')}
-                    className="h-4 w-4"
-                  />
-                  <span className="text-sm">WhatsApp</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="guideDeliveryMethod"
-                    value="both"
-                    checked={deliveryMethod === 'both'}
-                    onChange={() => setDeliveryMethod('both')}
-                    className="h-4 w-4"
-                  />
-                  <span className="text-sm">Both</span>
-                </label>
-              </div>
-            </div>
-
             <div className="bg-muted/50 rounded-lg p-3 text-sm">
-              <p className="text-xs text-muted-foreground mb-2">Will be sent to:</p>
+              <p className="text-xs text-muted-foreground mb-2">Will be sent via email to:</p>
               {booking.guide_id && allGuides.get(booking.guide_id) ? (
                 <p className="text-sm font-medium">
                   {allGuides.get(booking.guide_id)!.name}
