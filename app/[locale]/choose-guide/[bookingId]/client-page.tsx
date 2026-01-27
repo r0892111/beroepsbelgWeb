@@ -252,18 +252,6 @@ export default function ChooseGuideClientPage() {
     );
   }
 
-  if (guides.length === 0) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-        <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg text-center">
-          <XCircle className="mx-auto h-16 w-16 text-yellow-500" />
-          <h1 className="mt-4 text-2xl font-bold text-gray-900">No Guides Available</h1>
-          <p className="mt-2 text-gray-600">No guides have been selected for this booking.</p>
-        </div>
-      </div>
-    );
-  }
-
   // Check if there are any available guides to select
   const availableGuides = guides.filter(g => !g.selectionStatus);
   const declinedGuides = guides.filter(g => g.selectionStatus === 'declined');
@@ -313,13 +301,22 @@ export default function ChooseGuideClientPage() {
             </div>
           )}
           
-          {/* Warning when no available guides */}
+          {/* Message when no suggested guides */}
+          {guides.length === 0 && (
+            <div className="mt-4 rounded-lg bg-blue-50 border border-blue-200 p-4 max-w-md mx-auto">
+              <p className="text-sm text-blue-800">
+                No guides have been suggested for this booking. Please select a guide from the complete list below.
+              </p>
+            </div>
+          )}
+          
+          {/* Warning when no available guides but some suggested */}
           {availableGuides.length === 0 && guides.length > 0 && (
             <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 p-4 max-w-md mx-auto">
               <p className="text-sm text-amber-800">
                 {offeredGuides.length > 0 
                   ? 'All guides have been offered. Waiting for responses.'
-                  : 'All suggested guides have declined or been offered. Use the Admin Dashboard → Tour Bookings to select a new guide.'}
+                  : 'All suggested guides have declined or been offered. Please select a guide from the complete list below.'}
               </p>
             </div>
           )}

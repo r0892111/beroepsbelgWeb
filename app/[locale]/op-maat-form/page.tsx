@@ -210,6 +210,12 @@ export default function OpMaatFormPage() {
       const parsedStartLocation = formData.startLocation.trim() || null;
       const parsedEndLocation = formData.endLocation.trim() || null;
 
+      console.log('Updating tourbooking start_location and end_location:', {
+        bookingId,
+        start_location: parsedStartLocation,
+        end_location: parsedEndLocation,
+      });
+
       // Update the invitees array with op maat answers and tour times
       const updatedInvitees = currentBooking.invitees?.map((invitee: any, index: number) => {
         if (index === 0) { // Update the first invitee (main contact)
@@ -234,19 +240,33 @@ export default function OpMaatFormPage() {
 
       // Update booking with op maat answers in invitees AND replace start/end locations
       // This will always replace any existing start_location and end_location values
-      const { error: updateError } = await supabase
+      const updatePayload: {
+        invitees: any[];
+        start_location: string | null;
+        end_location: string | null;
+      } = {
+        invitees: updatedInvitees,
+        start_location: parsedStartLocation, // Always replace with form value (or null if empty)
+        end_location: parsedEndLocation, // Always replace with form value (or null if empty)
+      };
+
+      console.log('Update payload:', updatePayload);
+
+      const { error: updateError, data: updatedData } = await supabase
         .from('tourbooking')
-        .update({
-          invitees: updatedInvitees,
-          start_location: parsedStartLocation, // Always replace with form value (or null if empty)
-          end_location: parsedEndLocation, // Always replace with form value (or null if empty)
-        })
-        .eq('id', bookingId);
+        .update(updatePayload)
+        .eq('id', bookingId)
+        .select('start_location, end_location'); // Select updated fields to verify
 
       if (updateError) {
         console.error('Error updating booking:', updateError);
-        throw new Error('Failed to save answers');
+        throw new Error(`Failed to save answers: ${updateError.message}`);
       }
+
+      console.log('Successfully updated tourbooking:', {
+        bookingId,
+        updatedFields: updatedData?.[0],
+      });
 
       // Fetch the updated booking for the webhook
       const { data: updatedBooking, error: fetchError } = await supabase
