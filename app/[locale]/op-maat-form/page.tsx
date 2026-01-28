@@ -238,8 +238,9 @@ export default function OpMaatFormPage() {
               specialWishes: trimmedSpecialWishes,
             },
             // Always update tour times from the booking (in case they were set after initial booking)
-            tourStartDatetime: currentBooking.tour_datetime || invitee.tourStartDatetime,
-            tourEndDatetime: currentBooking.tour_end || invitee.tourEndDatetime,
+            // Ensure tourStartDatetime matches tour_datetime exactly (same format with timezone)
+            tourStartDatetime: currentBooking.tour_datetime || invitee.tourStartDatetime || null,
+            tourEndDatetime: currentBooking.tour_end || invitee.tourEndDatetime || null,
             isContacted: true, 
           };
         }
