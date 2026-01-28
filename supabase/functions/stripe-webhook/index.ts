@@ -1,7 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import Stripe from 'npm:stripe@17.7.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
-import { nowBrussels } from '../_shared/timezone.ts';
+import { nowBrussels, parseBrusselsDateTime, toBrusselsISO, addMinutesBrussels } from '../_shared/timezone.ts';
 
 const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
 const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')!;
@@ -330,16 +330,29 @@ async function handleEvent(event: Stripe.Event) {
           console.info(`Processing local stories booking for Saturday: ${saturdayDateStr || 'NO DATE AVAILABLE'}`);
 
           let tourbookingId: number | null = null;
-          const saturdayDateTime = saturdayDateStr ? `${saturdayDateStr}T14:00:00` : null;
+          // Create proper ISO string with Brussels timezone offset for Saturday 14:00
+          let saturdayDateTime: string | null = null;
+          if (saturdayDateStr) {
+            try {
+              const parsedDate = parseBrusselsDateTime(saturdayDateStr, '14:00');
+              saturdayDateTime = toBrusselsISO(parsedDate);
+            } catch (e) {
+              console.error('Error creating saturdayDateTime:', e);
+            }
+          }
 
           // Look for existing tourbooking for this Saturday
           if (saturdayDateStr) {
+            // Create proper ISO strings with timezone offset for query comparison
+            const startOfDay = toBrusselsISO(parseBrusselsDateTime(saturdayDateStr, '00:00'));
+            const endOfDay = toBrusselsISO(parseBrusselsDateTime(saturdayDateStr, '23:59'));
+            
             const { data: existingTourBookings } = await supabase
               .from('tourbooking')
               .select('id, invitees')
               .eq('tour_id', bookingData.tourId)
-              .gte('tour_datetime', `${saturdayDateStr}T00:00:00`)
-              .lt('tour_datetime', `${saturdayDateStr}T23:59:59`);
+              .gte('tour_datetime', startOfDay)
+              .lt('tour_datetime', endOfDay);
 
             if (existingTourBookings && existingTourBookings.length > 0) {
               // Use existing tourbooking

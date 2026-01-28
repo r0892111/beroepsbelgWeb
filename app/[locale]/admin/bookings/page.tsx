@@ -468,8 +468,8 @@ export default function AdminBookingsPage() {
       .from('tourbooking')
       .select('*')
       .eq('tour_id', createForm.tourId)
-      .gte('tour_datetime', `${createForm.date}T00:00:00`)
-      .lt('tour_datetime', `${createForm.date}T23:59:59`);
+      .gte('tour_datetime', toBrusselsISO(parseBrusselsDateTime(createForm.date, '00:00')))
+      .lt('tour_datetime', toBrusselsISO(parseBrusselsDateTime(createForm.date, '23:59')));
 
     if (existingBookings && existingBookings.length > 0) {
       return existingBookings[0] as TourBooking;
