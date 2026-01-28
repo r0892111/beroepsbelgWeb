@@ -210,6 +210,11 @@ export default function OpMaatFormPage() {
       const parsedStartLocation = formData.startLocation.trim() || null;
       const parsedEndLocation = formData.endLocation.trim() || null;
 
+      // Ensure we have valid location values (form fields are required, but double-check)
+      if (!parsedStartLocation || !parsedEndLocation) {
+        throw new Error('Start location and end location are required');
+      }
+
       console.log('Updating tourbooking start_location and end_location:', {
         bookingId,
         start_location: parsedStartLocation,
@@ -256,16 +261,33 @@ export default function OpMaatFormPage() {
         .from('tourbooking')
         .update(updatePayload)
         .eq('id', bookingId)
-        .select('start_location, end_location'); // Select updated fields to verify
+        .select('id, start_location, end_location, invitees'); // Select updated fields to verify
 
       if (updateError) {
         console.error('Error updating booking:', updateError);
         throw new Error(`Failed to save answers: ${updateError.message}`);
       }
 
+      if (!updatedData || updatedData.length === 0) {
+        throw new Error('No booking was updated - booking may not exist');
+      }
+
+      const updatedBooking = updatedData[0];
+      
+      // Verify that start_location and end_location were saved correctly
+      if (updatedBooking.start_location !== parsedStartLocation || 
+          updatedBooking.end_location !== parsedEndLocation) {
+        console.warn('Location mismatch after update:', {
+          expected: { start_location: parsedStartLocation, end_location: parsedEndLocation },
+          actual: { start_location: updatedBooking.start_location, end_location: updatedBooking.end_location },
+        });
+      }
+
       console.log('Successfully updated tourbooking:', {
         bookingId,
-        updatedFields: updatedData?.[0],
+        start_location: updatedBooking.start_location,
+        end_location: updatedBooking.end_location,
+        inviteesUpdated: updatedBooking.invitees?.length || 0,
       });
 
       // Fetch the updated booking for the webhook
