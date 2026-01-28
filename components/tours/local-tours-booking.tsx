@@ -95,7 +95,7 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
     }
   };
 
-  // Filter future bookings and limit to 9 months from now
+  // Generate all Saturdays for the next 9 months
   // IMPORTANT: All hooks must be called before any early returns
   const nineMonthsFromNow = useMemo(() => {
     const date = new Date();
@@ -103,13 +103,65 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
     return date;
   }, []);
 
-  const futureBookings = useMemo(() => {
-    const now = new Date();
-    return bookings.filter((booking) => {
+  // Generate all Saturdays for the next 9 months
+  const allSaturdays = useMemo(() => {
+    const saturdays: string[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Find the next Saturday
+    const currentDay = today.getDay();
+    const daysUntilSaturday = (6 - currentDay + 7) % 7 || 7;
+    const nextSaturday = new Date(today);
+    nextSaturday.setDate(today.getDate() + daysUntilSaturday);
+    
+    // Generate Saturdays until 9 months from now
+    const currentSaturday = new Date(nextSaturday);
+    while (currentSaturday <= nineMonthsFromNow) {
+      const dateStr = currentSaturday.toISOString().split('T')[0];
+      saturdays.push(dateStr);
+      currentSaturday.setDate(currentSaturday.getDate() + 7);
+    }
+    
+    return saturdays;
+  }, [nineMonthsFromNow]);
+
+  // Create a map of existing bookings by date
+  const bookingsByDate = useMemo(() => {
+    const map = new Map<string, LocalTourBooking>();
+    bookings.forEach((booking) => {
       const bookingDate = new Date(booking.booking_date);
-      return bookingDate >= now && bookingDate <= nineMonthsFromNow;
+      const now = new Date();
+      if (bookingDate >= now && bookingDate <= nineMonthsFromNow) {
+        map.set(booking.booking_date, booking);
+      }
     });
+    return map;
   }, [bookings, nineMonthsFromNow]);
+
+  // Merge all Saturdays with existing bookings
+  const futureBookings = useMemo(() => {
+    return allSaturdays.map((dateStr) => {
+      const existingBooking = bookingsByDate.get(dateStr);
+      if (existingBooking) {
+        return existingBooking;
+      }
+      // Create a placeholder booking for Saturdays without existing bookings
+      return {
+        id: `placeholder-${dateStr}`,
+        tour_id: tourId,
+        booking_date: dateStr,
+        booking_time: '14:00:00',
+        is_booked: false,
+        status: 'available',
+        customer_name: undefined,
+        customer_email: undefined,
+        customer_phone: undefined,
+        number_of_people: 0,
+        booking_id: undefined,
+      } as LocalTourBooking;
+    });
+  }, [allSaturdays, bookingsByDate, tourId]);
 
   // Group bookings by month
   const bookingsByMonth = useMemo(() => {
