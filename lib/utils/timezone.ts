@@ -65,24 +65,23 @@ export function parseBrusselsDateTime(dateStr: string, timeStr: string): Date {
     ? `${timeStr}:00`
     : timeStr;
 
-  // Create a date string
-  const brusselsStr = `${dateStr}T${normalizedTime}`;
-
-  // Parse the date first to get a reference point
-  const tempDate = new Date(brusselsStr + 'Z'); // Treat as UTC temporarily
-
-  // Get Brussels offset for this specific date
-  const brusselsTime = new Date(tempDate.toLocaleString('en-US', { timeZone: BRUSSELS_TIMEZONE }));
-  const utcTime = new Date(tempDate.toLocaleString('en-US', { timeZone: 'UTC' }));
-  const brusselsOffsetMs = brusselsTime.getTime() - utcTime.getTime();
-  const brusselsOffsetHours = brusselsOffsetMs / (60 * 60 * 1000);
-
-  // Create the correct UTC time by subtracting Brussels offset from the "local" time
-  // e.g., 14:00 Brussels (UTC+1) = 13:00 UTC
-  const localMs = new Date(brusselsStr).getTime();
-  const utcMs = localMs - (brusselsOffsetHours * 60 * 60 * 1000);
-
-  return new Date(utcMs);
+  // Parse components
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const [hour, minute, second] = normalizedTime.split(':').map(Number);
+  
+  // Create a temporary UTC date to determine Brussels offset for this specific date
+  const tempUTC = new Date(Date.UTC(year, month - 1, day, 12, 0, 0)); // Use noon to avoid DST edge cases
+  
+  // Get Brussels offset for this date using existing helper function
+  const offsetHours = getBrusselsOffsetHours(tempUTC);
+  
+  // Create UTC date representing the desired Brussels local time
+  // If user wants 09:00 Brussels and Brussels is UTC+1, we need 08:00 UTC
+  // Formula: UTC = Brussels time - offset
+  const desiredBrusselsUTC = new Date(Date.UTC(year, month - 1, day, hour, minute, second || 0));
+  const correctUTC = new Date(desiredBrusselsUTC.getTime() - (offsetHours * 60 * 60 * 1000));
+  
+  return correctUTC;
 }
 
 /**
