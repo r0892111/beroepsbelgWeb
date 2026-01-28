@@ -23,6 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import Image from 'next/image';
 import { getProductPlaceholder } from '@/lib/utils/placeholder-images';
+import { formatBrusselsDateTime, nowBrussels } from '@/lib/utils/timezone';
 
 export default function AccountPage() {
   const t = useTranslations('auth');
@@ -814,7 +815,10 @@ export default function AccountPage() {
                 <div className="space-y-4">
                   {bookings.map((booking) => {
                     const tour = booking.tour_id ? tours.get(booking.tour_id) : null;
-                    const isPast = booking.tour_datetime ? new Date(booking.tour_datetime) < new Date() : false;
+                    // Compare Brussels times, not browser times
+                    const isPast = booking.tour_datetime 
+                      ? new Date(booking.tour_datetime) < new Date(nowBrussels())
+                      : false;
                     
                     return (
                       <Card key={booking.id}>
@@ -827,13 +831,7 @@ export default function AccountPage() {
                               </CardTitle>
                               <CardDescription>
                                 {booking.tour_datetime
-                                  ? new Date(booking.tour_datetime).toLocaleDateString(locale, {
-                                      year: 'numeric',
-                                      month: 'long',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                    })
+                                  ? formatBrusselsDateTime(booking.tour_datetime, 'dd MMMM yyyy, HH:mm')
                                   : t('dateTBD') || 'Date TBD'}
                                 {booking.city && ` • ${booking.city}`}
                                 {tour && ` • ${tour.type}`}

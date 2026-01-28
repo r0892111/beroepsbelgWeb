@@ -6,14 +6,29 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+/**
+ * Format date for ICS file in UTC
+ * The dateString is stored as Brussels timezone (e.g., "2025-01-25T14:00:00+01:00")
+ * We need to convert it to UTC for ICS format (YYYYMMDDTHHmmssZ)
+ */
 function formatICSDate(dateString: string): string {
+  // Parse the date string - JavaScript will correctly interpret the timezone offset
   const date = new Date(dateString);
+  
+  // Check if date is valid
+  if (isNaN(date.getTime())) {
+    throw new Error(`Invalid date string: ${dateString}`);
+  }
+  
+  // Extract UTC components for ICS format (ICS requires UTC times)
   const year = date.getUTCFullYear();
   const month = String(date.getUTCMonth() + 1).padStart(2, '0');
   const day = String(date.getUTCDate()).padStart(2, '0');
   const hours = String(date.getUTCHours()).padStart(2, '0');
   const minutes = String(date.getUTCMinutes()).padStart(2, '0');
   const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+  
+  // Return in ICS format: YYYYMMDDTHHmmssZ (UTC)
   return `${year}${month}${day}T${hours}${minutes}${seconds}Z`;
 }
 
