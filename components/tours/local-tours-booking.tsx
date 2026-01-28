@@ -126,23 +126,25 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
     return saturdays;
   }, [nineMonthsFromNow]);
 
-  // Create a map of existing bookings by date
-  const bookingsByDate = useMemo(() => {
-    const map = new Map<string, LocalTourBooking>();
-    bookings.forEach((booking) => {
+  // Filter and prepare existing bookings
+  const filteredBookings = useMemo(() => {
+    const now = new Date();
+    return bookings.filter((booking) => {
       const bookingDate = new Date(booking.booking_date);
-      const now = new Date();
-      if (bookingDate >= now && bookingDate <= nineMonthsFromNow) {
-        map.set(booking.booking_date, booking);
-      }
+      return bookingDate >= now && bookingDate <= nineMonthsFromNow;
     });
-    return map;
   }, [bookings, nineMonthsFromNow]);
 
   // Merge all Saturdays with existing bookings
   const futureBookings = useMemo(() => {
+    // Create a map of existing bookings by date for quick lookup
+    const bookingsMap = new Map<string, LocalTourBooking>();
+    filteredBookings.forEach((booking) => {
+      bookingsMap.set(booking.booking_date, booking);
+    });
+
     return allSaturdays.map((dateStr) => {
-      const existingBooking = bookingsByDate.get(dateStr);
+      const existingBooking = bookingsMap.get(dateStr);
       if (existingBooking) {
         return existingBooking;
       }
@@ -161,7 +163,7 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
         booking_id: undefined,
       } as LocalTourBooking;
     });
-  }, [allSaturdays, bookingsByDate, tourId]);
+  }, [allSaturdays, filteredBookings, tourId]);
 
   // Group bookings by month
   const bookingsByMonth = useMemo(() => {
