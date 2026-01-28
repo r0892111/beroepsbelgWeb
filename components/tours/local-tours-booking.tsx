@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Calendar as CalendarIcon, Clock, Users, Info, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import { Calendar as CalendarIcon, Clock, Users, Info, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,7 +23,7 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<LocalTourBooking | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [showAllDates, setShowAllDates] = useState(false);
+  const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
 
   console.log('LocalToursBooking component rendered:', {
     tourId,
@@ -46,6 +46,7 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
             isArray: Array.isArray(data),
           });
           setBookings(Array.isArray(data) ? data : []);
+          setCurrentMonthIndex(0); // Reset to first month when bookings change
         } else {
           const errorText = await response.text();
           console.error('LocalToursBooking: API error response:', {
@@ -143,16 +144,81 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
     );
   }
 
-  const futureBookings = bookings.filter((booking) => {
-    const bookingDate = new Date(booking.booking_date);
-    const isPast = bookingDate < new Date();
-    return !isPast;
-  });
+  // Filter future bookings and limit to 9 months from now
+  const nineMonthsFromNow = useMemo(() => {
+    const date = new Date();
+    date.setMonth(date.getMonth() + 9);
+    return date;
+  }, []);
+
+  const futureBookings = useMemo(() => {
+    const now = new Date();
+    return bookings.filter((booking) => {
+      const bookingDate = new Date(booking.booking_date);
+      return bookingDate >= now && bookingDate <= nineMonthsFromNow;
+    });
+  }, [bookings, nineMonthsFromNow]);
+
+  // Group bookings by month
+  const bookingsByMonth = useMemo(() => {
+    const grouped: { [key: string]: LocalTourBooking[] } = {};
+    
+    futureBookings.forEach((booking) => {
+      const date = new Date(booking.booking_date);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!grouped[monthKey]) {
+        grouped[monthKey] = [];
+      }
+      grouped[monthKey].push(booking);
+    });
+
+    // Sort months chronologically
+    return Object.keys(grouped)
+      .sort()
+      .map((monthKey) => {
+        const date = new Date(`${monthKey}-01`);
+        const monthLabel = date.toLocaleDateString('nl-NL', { month: 'long', year: 'numeric' });
+        // Capitalize first letter
+        const capitalizedLabel = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+        return {
+          monthKey,
+          monthLabel: capitalizedLabel,
+          bookings: grouped[monthKey].sort((a, b) => 
+            new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime()
+          ),
+        };
+      });
+  }, [futureBookings]);
+
+  // Ensure currentMonthIndex is within bounds
+  useEffect(() => {
+    if (bookingsByMonth.length > 0 && currentMonthIndex >= bookingsByMonth.length) {
+      setCurrentMonthIndex(0);
+    }
+  }, [bookingsByMonth.length, currentMonthIndex]);
+
+  const currentMonth = bookingsByMonth[currentMonthIndex] || null;
+  const canGoPrevious = currentMonthIndex > 0;
+  const canGoNext = currentMonthIndex < bookingsByMonth.length - 1;
+
+  const handlePreviousMonth = () => {
+    if (canGoPrevious) {
+      setCurrentMonthIndex(currentMonthIndex - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (canGoNext) {
+      setCurrentMonthIndex(currentMonthIndex + 1);
+    }
+  };
 
   console.log('LocalToursBooking: Filtered future bookings:', {
     totalBookings: bookings.length,
     futureBookingsCount: futureBookings.length,
-    futureBookings,
+    bookingsByMonth: bookingsByMonth.length,
+    currentMonthIndex,
   });
 
   if (futureBookings.length === 0) {
@@ -161,6 +227,16 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
       <div className="mb-12 rounded-lg bg-sand p-8 brass-corner">
         <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>
           Geen toekomstige boekingen beschikbaar.
+        </p>
+      </div>
+    );
+  }
+
+  if (bookingsByMonth.length === 0) {
+    return (
+      <div className="mb-12 rounded-lg bg-sand p-8 brass-corner">
+        <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>
+          Geen boekingen beschikbaar voor de komende 9 maanden.
         </p>
       </div>
     );
@@ -189,74 +265,109 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
           </div>
         </div>
 
-        <div className="space-y-3">
-          {(showAllDates ? futureBookings : futureBookings.slice(0, 4)).map((booking) => {
-            const isBooked = booking.is_booked && booking.customer_name;
-            const numberOfPeople = booking.number_of_people || 0;
-            const hasPeople = numberOfPeople > 0;
-
-            return (
-              <div
-                key={booking.id}
-                className="flex items-center justify-between p-4 rounded-lg bg-white/50 border-2"
-                style={{ borderColor: 'var(--brass)' }}
-              >
-                <div className="flex items-center gap-4 flex-1">
-                  <Clock className="h-5 w-5" style={{ color: 'var(--brass)' }} />
-                  <div className="flex-1">
-                    <p className="font-semibold text-navy">{formatDate(booking.booking_date)}</p>
-                    <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>14:00</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4" style={{ color: 'var(--slate-blue)' }} />
-                    {numberOfPeople >= 5 ? (
-                      <>
-                        <Badge variant="outline" className="border-brass text-navy">
-                          {numberOfPeople} {numberOfPeople === 1 ? 'persoon' : 'personen'}
-                        </Badge>
-                        <div className="flex items-center gap-1 text-sm" style={{ color: 'var(--mint)' }}>
-                          <Check className="h-4 w-4" />
-                          <span>{t('tourConfirmed')}</span>
-                        </div>
-                      </>
-                    ) : (
-                      <span className="text-sm font-medium text-blue-600">
-                        {numberOfPeople}/5
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <Button
-                  onClick={() => handleJoinClick(booking)}
-                  style={{ backgroundColor: 'rgb(26, 216, 138)', color: 'white' }}
-                  className="ml-4 font-semibold hover:opacity-90"
-                >
-                  {t('joinTour')}
-                </Button>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Show more dates button - extends the blocks */}
-        {futureBookings.length > 4 && (
-          <div className="mt-6">
+        {/* Month carousel */}
+        <div className="space-y-4">
+          {/* Month navigation header */}
+          <div className="flex items-center justify-between">
             <Button
               variant="outline"
-              onClick={() => setShowAllDates(!showAllDates)}
-              className="w-full flex items-center justify-center gap-2 border-2"
+              onClick={handlePreviousMonth}
+              disabled={!canGoPrevious}
+              className="flex items-center gap-2 border-2 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ borderColor: 'var(--brass)', color: 'var(--belgian-navy)' }}
             >
-              <CalendarIcon className="h-4 w-4" style={{ color: 'var(--brass)' }} />
-              {showAllDates ? t('showFewerDates') : t('showMoreDates')}
-              {showAllDates ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            <h4 className="text-lg font-semibold text-navy">
+              {currentMonth?.monthLabel || ''}
+            </h4>
+            
+            <Button
+              variant="outline"
+              onClick={handleNextMonth}
+              disabled={!canGoNext}
+              className="flex items-center gap-2 border-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ borderColor: 'var(--brass)', color: 'var(--belgian-navy)' }}
+            >
+              <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-        )}
+
+          {/* Month indicator dots */}
+          {bookingsByMonth.length > 1 && (
+            <div className="flex items-center justify-center gap-2">
+              {bookingsByMonth.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentMonthIndex(index)}
+                  className={`h-2 rounded-full transition-all ${
+                    index === currentMonthIndex
+                      ? 'w-8 bg-brass'
+                      : 'w-2 bg-brass/30 hover:bg-brass/50'
+                  }`}
+                  aria-label={`Go to month ${index + 1}`}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Bookings for current month */}
+          {currentMonth && (
+            <div className="space-y-3">
+              {currentMonth.bookings.map((booking) => {
+                const numberOfPeople = booking.number_of_people || 0;
+
+                return (
+                  <div
+                    key={booking.id}
+                    className="flex items-center justify-between p-4 rounded-lg bg-white/50 border-2"
+                    style={{ borderColor: 'var(--brass)' }}
+                  >
+                    <div className="flex items-center gap-4 flex-1">
+                      <Clock className="h-5 w-5" style={{ color: 'var(--brass)' }} />
+                      <div className="flex-1">
+                        <p className="font-semibold text-navy">{formatDate(booking.booking_date)}</p>
+                        <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>14:00</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" style={{ color: 'var(--slate-blue)' }} />
+                        {numberOfPeople >= 5 ? (
+                          <>
+                            <Badge variant="outline" className="border-brass text-navy">
+                              {numberOfPeople} {numberOfPeople === 1 ? 'persoon' : 'personen'}
+                            </Badge>
+                            <div className="flex items-center gap-1 text-sm" style={{ color: 'var(--mint)' }}>
+                              <Check className="h-4 w-4" />
+                              <span>{t('tourConfirmed')}</span>
+                            </div>
+                          </>
+                        ) : (
+                          <span className="text-sm font-medium text-blue-600">
+                            {numberOfPeople}/5
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => handleJoinClick(booking)}
+                      style={{ backgroundColor: 'rgb(26, 216, 138)', color: 'white' }}
+                      className="ml-4 font-semibold hover:opacity-90"
+                    >
+                      {t('joinTour')}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {currentMonth && currentMonth.bookings.length === 0 && (
+            <p className="text-sm text-center py-4" style={{ color: 'var(--slate-blue)' }}>
+              Geen boekingen beschikbaar voor deze maand.
+            </p>
+          )}
+        </div>
       </div>
 
       {selectedBooking && (
