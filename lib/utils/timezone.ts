@@ -20,7 +20,11 @@ export function toBrusselsISO(date: Date | string): string {
     throw new Error(`Invalid date: ${date}`);
   }
 
-  // Get the offset for Brussels at this specific date/time
+  // Get Brussels offset for this specific date
+  const offsetHours = getBrusselsOffsetHours(d);
+  
+  // Get what Brussels time this UTC date represents
+  // The Date object d represents a UTC moment, we need to show what Brussels local time that is
   const formatter = new Intl.DateTimeFormat('en-CA', {
     timeZone: BRUSSELS_TIMEZONE,
     year: 'numeric',
@@ -41,12 +45,7 @@ export function toBrusselsISO(date: Date | string): string {
   const hour = get('hour');
   const minute = get('minute');
   const second = get('second');
-
-  // Calculate the offset by comparing UTC time with Brussels time
-  const brusselsDate = new Date(d.toLocaleString('en-US', { timeZone: BRUSSELS_TIMEZONE }));
-  const utcDate = new Date(d.toLocaleString('en-US', { timeZone: 'UTC' }));
-  const offsetMs = brusselsDate.getTime() - utcDate.getTime();
-  const offsetHours = Math.round(offsetMs / (60 * 60 * 1000));
+  
   const offsetSign = offsetHours >= 0 ? '+' : '-';
   const offsetStr = `${offsetSign}${String(Math.abs(offsetHours)).padStart(2, '0')}:00`;
 
@@ -65,24 +64,27 @@ export function parseBrusselsDateTime(dateStr: string, timeStr: string): Date {
     ? `${timeStr}:00`
     : timeStr;
 
-  // Create a date string
-  const brusselsStr = `${dateStr}T${normalizedTime}`;
-
-  // Parse the date first to get a reference point
-  const tempDate = new Date(brusselsStr + 'Z'); // Treat as UTC temporarily
-
-  // Get Brussels offset for this specific date
-  const brusselsTime = new Date(tempDate.toLocaleString('en-US', { timeZone: BRUSSELS_TIMEZONE }));
-  const utcTime = new Date(tempDate.toLocaleString('en-US', { timeZone: 'UTC' }));
-  const brusselsOffsetMs = brusselsTime.getTime() - utcTime.getTime();
-  const brusselsOffsetHours = brusselsOffsetMs / (60 * 60 * 1000);
-
-  // Create the correct UTC time by subtracting Brussels offset from the "local" time
-  // e.g., 14:00 Brussels (UTC+1) = 13:00 UTC
-  const localMs = new Date(brusselsStr).getTime();
-  const utcMs = localMs - (brusselsOffsetHours * 60 * 60 * 1000);
-
-  return new Date(utcMs);
+  // Parse components
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const [hour, minute, second] = normalizedTime.split(':').map(Number);
+  
+  // Create a date string representing Brussels local time
+  const brusselsLocalStr = `${dateStr}T${normalizedTime}`;
+  
+  // Create a reference UTC date at noon to determine Brussels offset for this date
+  const referenceUTC = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+  
+  // Get Brussels offset for this date
+  const offsetHours = getBrusselsOffsetHours(referenceUTC);
+  
+  // Create a UTC date that represents the desired Brussels local time
+  // If user wants 10:00 Brussels and Brussels is UTC+2 (DST), we need 08:00 UTC
+  // Formula: UTC = Brussels local time - offset
+  // We create the date as if it's UTC, then subtract the offset
+  const utcDate = new Date(Date.UTC(year, month - 1, day, hour, minute, second || 0));
+  const correctUTC = new Date(utcDate.getTime() - (offsetHours * 60 * 60 * 1000));
+  
+  return correctUTC;
 }
 
 /**
