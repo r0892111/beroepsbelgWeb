@@ -49,6 +49,7 @@ interface Tour {
   title: string;
   city: string;
   price?: number;
+  duration_minutes?: number | null;
   op_maat?: boolean;
   local_stories?: boolean;
 }
@@ -215,7 +216,7 @@ export default function AdminBookingsPage() {
       // Fetch tours
       const { data: toursData } = await supabase
         .from('tours_table_prod')
-        .select('id, title, city, price, op_maat, local_stories')
+        .select('id, title, city, price, duration_minutes, op_maat, local_stories')
         .order('title', { ascending: true });
 
       if (toursData) {
