@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { Loader2, Calendar, AlertCircle, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { formatBrusselsDateTime } from '@/lib/utils/timezone';
 
 interface TourData {
   title: string;
@@ -223,7 +224,7 @@ export default function AddToCalendarPage() {
           <p><span className="font-medium">Tour:</span> {tourTitle}</p>
           <p><span className="font-medium">Booking ID:</span> #{booking.id}</p>
           {location && <p><span className="font-medium">Location:</span> {location}</p>}
-          <p><span className="font-medium">Date:</span> {new Date(booking.tour_datetime!).toLocaleString()}</p>
+          <p><span className="font-medium">Date:</span> {formatBrusselsDateTime(booking.tour_datetime, 'dd/MM/yyyy HH:mm')}</p>
         </div>
 
         <div className="mt-6 space-y-3">

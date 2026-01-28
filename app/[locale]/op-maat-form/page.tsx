@@ -210,6 +210,11 @@ export default function OpMaatFormPage() {
       const parsedStartLocation = formData.startLocation.trim() || null;
       const parsedEndLocation = formData.endLocation.trim() || null;
 
+      // Ensure we have valid location values (form fields are required, but double-check)
+      if (!parsedStartLocation || !parsedEndLocation) {
+        throw new Error('Start location and end location are required');
+      }
+
       console.log('Updating tourbooking start_location and end_location:', {
         bookingId,
         start_location: parsedStartLocation,
@@ -219,19 +224,23 @@ export default function OpMaatFormPage() {
       // Update the invitees array with op maat answers and tour times
       const updatedInvitees = currentBooking.invitees?.map((invitee: any, index: number) => {
         if (index === 0) { // Update the first invitee (main contact)
+          const trimmedSpecialWishes = formData.specialWishes.trim();
           return {
             ...invitee,
+            // Populate specialRequests from specialWishes for consistency with regular tours
+            specialRequests: trimmedSpecialWishes || invitee.specialRequests || '',
             opMaatAnswers: {
               ...(invitee.opMaatAnswers || {}),
               startLocation: formData.startLocation.trim(),
               endLocation: formData.endLocation.trim(),
               cityPart: formData.cityPart.trim(),
               subjects: formData.subjects.trim(),
-              specialWishes: formData.specialWishes.trim(),
+              specialWishes: trimmedSpecialWishes,
             },
             // Always update tour times from the booking (in case they were set after initial booking)
-            tourStartDatetime: currentBooking.tour_datetime || invitee.tourStartDatetime,
-            tourEndDatetime: currentBooking.tour_end || invitee.tourEndDatetime,
+            // Ensure tourStartDatetime matches tour_datetime exactly (same format with timezone)
+            tourStartDatetime: currentBooking.tour_datetime || invitee.tourStartDatetime || null,
+            tourEndDatetime: currentBooking.tour_end || invitee.tourEndDatetime || null,
             isContacted: true, 
           };
         }
@@ -256,20 +265,37 @@ export default function OpMaatFormPage() {
         .from('tourbooking')
         .update(updatePayload)
         .eq('id', bookingId)
-        .select('start_location, end_location'); // Select updated fields to verify
+        .select('id, start_location, end_location, invitees'); // Select updated fields to verify
 
       if (updateError) {
         console.error('Error updating booking:', updateError);
         throw new Error(`Failed to save answers: ${updateError.message}`);
       }
 
+      if (!updatedData || updatedData.length === 0) {
+        throw new Error('No booking was updated - booking may not exist');
+      }
+
+      const updatedBooking = updatedData[0];
+      
+      // Verify that start_location and end_location were saved correctly
+      if (updatedBooking.start_location !== parsedStartLocation || 
+          updatedBooking.end_location !== parsedEndLocation) {
+        console.warn('Location mismatch after update:', {
+          expected: { start_location: parsedStartLocation, end_location: parsedEndLocation },
+          actual: { start_location: updatedBooking.start_location, end_location: updatedBooking.end_location },
+        });
+      }
+
       console.log('Successfully updated tourbooking:', {
         bookingId,
-        updatedFields: updatedData?.[0],
+        start_location: updatedBooking.start_location,
+        end_location: updatedBooking.end_location,
+        inviteesUpdated: updatedBooking.invitees?.length || 0,
       });
 
-      // Fetch the updated booking for the webhook
-      const { data: updatedBooking, error: fetchError } = await supabase
+      // Fetch the full updated booking for the webhook (need all fields)
+      const { data: fullUpdatedBooking, error: fetchError } = await supabase
         .from('tourbooking')
         .select('*')
         .eq('id', bookingId)
@@ -288,7 +314,7 @@ export default function OpMaatFormPage() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            booking: updatedBooking,
+            booking: fullUpdatedBooking,
             tour: tour,
             opMaatAnswers: formData,
             submittedAt: nowBrussels(),

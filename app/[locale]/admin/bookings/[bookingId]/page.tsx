@@ -46,7 +46,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { format } from 'date-fns';
-import { formatBrusselsDateTime, parseBrusselsDateTime, toBrusselsISO, isWeekendBrussels, getHourBrussels, nowBrussels } from '@/lib/utils/timezone';
+import { formatBrusselsDateTime, parseBrusselsDateTime, toBrusselsISO, isWeekendBrussels, getHourBrussels, nowBrussels, addMinutesBrussels } from '@/lib/utils/timezone';
 import { toast } from 'sonner';
 
 interface SelectedGuide {
@@ -673,14 +673,32 @@ export default function BookingDetailPage() {
       // Parse the date/time as Brussels time and convert to ISO string
       const parsedDate = parseBrusselsDateTime(editForm.date, editForm.time);
       const tourDatetime = toBrusselsISO(parsedDate);
+      
+      // Calculate tour_end based on tour duration
+      // Get duration from tour or use existing booking's duration, default to 120 minutes
+      const firstInvitee = booking.invitees?.[0] as any;
+      const tourDuration = tour?.duration_minutes || 
+                          firstInvitee?.durationMinutes || 
+                          120;
+      const tourEndDatetime = addMinutesBrussels(tourDatetime, tourDuration);
+      
+      // Update invitees array to ensure tourStartDatetime matches tour_datetime exactly
+      const updatedInvitees = booking.invitees?.map((invitee: any) => ({
+        ...invitee,
+        tourStartDatetime: tourDatetime, // Match tour_datetime exactly
+        tourEndDatetime: tourEndDatetime, // Match tour_end exactly
+        durationMinutes: tourDuration,
+      })) || [];
 
       const { error: updateError } = await supabase
         .from('tourbooking')
         .update({
           tour_datetime: tourDatetime,
+          tour_end: tourEndDatetime,
           status: editForm.status,
           start_location: editForm.start_location || null,
           end_location: editForm.end_location || null,
+          invitees: updatedInvitees, // Update invitees with matching tourStartDatetime
         })
         .eq('id', booking.id);
 

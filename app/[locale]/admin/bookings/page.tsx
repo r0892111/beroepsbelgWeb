@@ -19,7 +19,7 @@ import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { getBookingTypeShortLabel } from '@/lib/utils';
-import { formatBrusselsDateTime, parseBrusselsDateTime, toBrusselsISO, isWeekendBrussels } from '@/lib/utils/timezone';
+import { formatBrusselsDateTime, parseBrusselsDateTime, toBrusselsISO, isWeekendBrussels, addMinutesBrussels } from '@/lib/utils/timezone';
 
 interface SelectedGuide {
   id: number;
@@ -49,6 +49,7 @@ interface Tour {
   title: string;
   city: string;
   price?: number;
+  duration_minutes?: number | null;
   op_maat?: boolean;
   local_stories?: boolean;
 }
@@ -215,7 +216,7 @@ export default function AdminBookingsPage() {
       // Fetch tours
       const { data: toursData } = await supabase
         .from('tours_table_prod')
-        .select('id, title, city, price, op_maat, local_stories')
+        .select('id, title, city, price, duration_minutes, op_maat, local_stories')
         .order('title', { ascending: true });
 
       if (toursData) {
@@ -505,6 +506,12 @@ export default function AdminBookingsPage() {
       // Build tour datetime - parse as Brussels time and convert to ISO
       const parsedDate = parseBrusselsDateTime(createForm.date, createForm.time);
       const tourDatetime = toBrusselsISO(parsedDate);
+      
+      // Calculate tour end datetime (start + duration)
+      const tourDuration = tour.duration_minutes || 120; // Default 2 hours
+      const extraHour = createForm.extraHour ? 60 : 0;
+      const finalDuration = tourDuration + extraHour;
+      const tourEndDatetime = addMinutesBrussels(tourDatetime, finalDuration);
 
       // Create invitee object
       // Use custom price if provided, otherwise use tour's default price
@@ -542,6 +549,10 @@ export default function AdminBookingsPage() {
         extraHourCost: feeExtraHourCost,
         weekendFeeCost: feeWeekendCost,
         eveningFeeCost: feeEveningCost,
+        // Tour timing information - ensure tourStartDatetime matches tour_datetime exactly
+        tourStartDatetime: tourDatetime,
+        tourEndDatetime: tourEndDatetime,
+        durationMinutes: finalDuration,
       };
 
       // Only set amount if customer has already paid
@@ -556,6 +567,7 @@ export default function AdminBookingsPage() {
       const tourbookingData: Record<string, unknown> = {
         tour_id: createForm.tourId,
         tour_datetime: tourDatetime,
+        tour_end: tourEndDatetime,
         city: tour.city,
         status: createForm.isPaid ? 'payment_completed' : 'quote_pending',
         invitees: [invitee],
