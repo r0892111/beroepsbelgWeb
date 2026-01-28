@@ -676,8 +676,9 @@ export default function BookingDetailPage() {
       
       // Calculate tour_end based on tour duration
       // Get duration from tour or use existing booking's duration, default to 120 minutes
+      const firstInvitee = booking.invitees?.[0] as any;
       const tourDuration = tour?.duration_minutes || 
-                          booking.invitees?.[0]?.durationMinutes || 
+                          firstInvitee?.durationMinutes || 
                           120;
       const tourEndDatetime = addMinutesBrussels(tourDatetime, tourDuration);
       
