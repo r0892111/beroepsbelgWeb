@@ -224,15 +224,18 @@ export default function OpMaatFormPage() {
       // Update the invitees array with op maat answers and tour times
       const updatedInvitees = currentBooking.invitees?.map((invitee: any, index: number) => {
         if (index === 0) { // Update the first invitee (main contact)
+          const trimmedSpecialWishes = formData.specialWishes.trim();
           return {
             ...invitee,
+            // Populate specialRequests from specialWishes for consistency with regular tours
+            specialRequests: trimmedSpecialWishes || invitee.specialRequests || '',
             opMaatAnswers: {
               ...(invitee.opMaatAnswers || {}),
               startLocation: formData.startLocation.trim(),
               endLocation: formData.endLocation.trim(),
               cityPart: formData.cityPart.trim(),
               subjects: formData.subjects.trim(),
-              specialWishes: formData.specialWishes.trim(),
+              specialWishes: trimmedSpecialWishes,
             },
             // Always update tour times from the booking (in case they were set after initial booking)
             tourStartDatetime: currentBooking.tour_datetime || invitee.tourStartDatetime,
@@ -290,8 +293,8 @@ export default function OpMaatFormPage() {
         inviteesUpdated: updatedBooking.invitees?.length || 0,
       });
 
-      // Fetch the updated booking for the webhook
-      const { data: updatedBooking, error: fetchError } = await supabase
+      // Fetch the full updated booking for the webhook (need all fields)
+      const { data: fullUpdatedBooking, error: fetchError } = await supabase
         .from('tourbooking')
         .select('*')
         .eq('id', bookingId)
@@ -310,7 +313,7 @@ export default function OpMaatFormPage() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            booking: updatedBooking,
+            booking: fullUpdatedBooking,
             tour: tour,
             opMaatAnswers: formData,
             submittedAt: nowBrussels(),
