@@ -95,56 +95,8 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
     }
   };
 
-  console.log('LocalToursBooking: Render state:', {
-    loading,
-    bookingsCount: bookings.length,
-    bookings,
-  });
-
-  if (loading) {
-    console.log('LocalToursBooking: Showing loading state');
-    return (
-      <div className="mb-12 rounded-lg bg-sand p-8 brass-corner">
-        <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>Loading availability...</p>
-      </div>
-    );
-  }
-
-  if (bookings.length === 0) {
-    console.log('LocalToursBooking: No bookings found, showing message with retry');
-    return (
-      <div className="mb-12 rounded-lg bg-sand p-8 brass-corner">
-        <h3 className="text-2xl font-serif font-bold text-navy mb-6 flex items-center gap-2">
-          <CalendarIcon className="h-6 w-6" style={{ color: 'var(--brass)' }} />
-          Local Stories - Zaterdag 14:00
-        </h3>
-        <p className="text-sm mb-4" style={{ color: 'var(--slate-blue)' }}>
-          Boekingen worden geladen... Tour ID: {tourId}
-        </p>
-        <Button
-          onClick={() => {
-            setLoading(true);
-            fetch(`/api/local-tours-bookings?tourId=${tourId}`)
-              .then(res => res.json())
-              .then(data => {
-                console.log('LocalToursBooking: Retry fetched data:', data);
-                setBookings(Array.isArray(data) ? data : []);
-                setLoading(false);
-              })
-              .catch(err => {
-                console.error('LocalToursBooking: Retry error:', err);
-                setLoading(false);
-              });
-          }}
-          style={{ backgroundColor: 'var(--brass)', color: 'var(--belgian-navy)' }}
-        >
-          Herlaad boekingen
-        </Button>
-      </div>
-    );
-  }
-
   // Filter future bookings and limit to 9 months from now
+  // IMPORTANT: All hooks must be called before any early returns
   const nineMonthsFromNow = useMemo(() => {
     const date = new Date();
     date.setMonth(date.getMonth() + 9);
@@ -201,6 +153,55 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
   const currentMonth = bookingsByMonth[currentMonthIndex] || null;
   const canGoPrevious = currentMonthIndex > 0;
   const canGoNext = currentMonthIndex < bookingsByMonth.length - 1;
+
+  console.log('LocalToursBooking: Render state:', {
+    loading,
+    bookingsCount: bookings.length,
+    bookings,
+  });
+
+  if (loading) {
+    console.log('LocalToursBooking: Showing loading state');
+    return (
+      <div className="mb-12 rounded-lg bg-sand p-8 brass-corner">
+        <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>Loading availability...</p>
+      </div>
+    );
+  }
+
+  if (bookings.length === 0) {
+    console.log('LocalToursBooking: No bookings found, showing message with retry');
+    return (
+      <div className="mb-12 rounded-lg bg-sand p-8 brass-corner">
+        <h3 className="text-2xl font-serif font-bold text-navy mb-6 flex items-center gap-2">
+          <CalendarIcon className="h-6 w-6" style={{ color: 'var(--brass)' }} />
+          Local Stories - Zaterdag 14:00
+        </h3>
+        <p className="text-sm mb-4" style={{ color: 'var(--slate-blue)' }}>
+          Boekingen worden geladen... Tour ID: {tourId}
+        </p>
+        <Button
+          onClick={() => {
+            setLoading(true);
+            fetch(`/api/local-tours-bookings?tourId=${tourId}`)
+              .then(res => res.json())
+              .then(data => {
+                console.log('LocalToursBooking: Retry fetched data:', data);
+                setBookings(Array.isArray(data) ? data : []);
+                setLoading(false);
+              })
+              .catch(err => {
+                console.error('LocalToursBooking: Retry error:', err);
+                setLoading(false);
+              });
+          }}
+          style={{ backgroundColor: 'var(--brass)', color: 'var(--belgian-navy)' }}
+        >
+          Herlaad boekingen
+        </Button>
+      </div>
+    );
+  }
 
   const handlePreviousMonth = () => {
     if (canGoPrevious) {
