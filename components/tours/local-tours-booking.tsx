@@ -71,11 +71,15 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
   }, [tourId]);
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
+    // Parse date string as local date (YYYY-MM-DD format)
+    // Don't use new Date(dateStr) as it interprets as UTC and shifts the day
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     return date.toLocaleDateString('nl-NL', {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
+      timeZone: 'Europe/Brussels',
     });
   };
 
@@ -116,9 +120,14 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
     nextSaturday.setDate(today.getDate() + daysUntilSaturday);
     
     // Generate Saturdays until 9 months from now
+    // Don't use toISOString() as it converts to UTC and shifts dates
     const currentSaturday = new Date(nextSaturday);
     while (currentSaturday <= nineMonthsFromNow) {
-      const dateStr = currentSaturday.toISOString().split('T')[0];
+      // Format date as YYYY-MM-DD without timezone conversion
+      const year = currentSaturday.getFullYear();
+      const month = String(currentSaturday.getMonth() + 1).padStart(2, '0');
+      const day = String(currentSaturday.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
       saturdays.push(dateStr);
       currentSaturday.setDate(currentSaturday.getDate() + 7);
     }
@@ -129,23 +138,61 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
   // Filter and prepare existing bookings
   const filteredBookings = useMemo(() => {
     const now = new Date();
+    now.setHours(0, 0, 0, 0);
     return bookings.filter((booking) => {
-      const bookingDate = new Date(booking.booking_date);
+      if (!booking.booking_date) return false;
+      // Parse date string as local date (YYYY-MM-DD format)
+      const dateMatch = booking.booking_date.match(/^(\d{4}-\d{2}-\d{2})/);
+      if (!dateMatch) return false;
+      const [year, month, day] = dateMatch[1].split('-').map(Number);
+      const bookingDate = new Date(year, month - 1, day);
       return bookingDate >= now && bookingDate <= nineMonthsFromNow;
     });
   }, [bookings, nineMonthsFromNow]);
 
   // Merge all Saturdays with existing bookings
   const futureBookings = useMemo(() => {
-    // Create a map of existing bookings by date for quick lookup
-    const bookingsMap = new Map<string, LocalTourBooking>();
-    filteredBookings.forEach((booking) => {
-      bookingsMap.set(booking.booking_date, booking);
+    console.log('LocalToursBooking: Merging bookings:', {
+      allSaturdaysCount: allSaturdays.length,
+      filteredBookingsCount: filteredBookings.length,
+      firstFewSaturdays: allSaturdays.slice(0, 5),
+      firstFewBookings: filteredBookings.slice(0, 5).map(b => ({
+        date: b.booking_date,
+        id: b.id,
+        people: b.number_of_people,
+      })),
     });
 
-    return allSaturdays.map((dateStr) => {
+    // Create a map of existing bookings by date for quick lookup
+    // Normalize booking dates to YYYY-MM-DD format to ensure matching
+    const bookingsMap = new Map<string, LocalTourBooking>();
+    filteredBookings.forEach((booking) => {
+      // Normalize the booking_date to YYYY-MM-DD format
+      let normalizedDate = booking.booking_date;
+      if (normalizedDate) {
+        // Handle various date formats (YYYY-MM-DD, YYYY-MM-DDTHH:mm:ss, etc.)
+        const dateMatch = normalizedDate.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (dateMatch) {
+          normalizedDate = dateMatch[1];
+        } else {
+          // Try parsing as Date and reformatting
+          const parts = normalizedDate.split('-');
+          if (parts.length >= 3) {
+            const [year, month, day] = parts.map(Number);
+            if (year && month && day) {
+              normalizedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            }
+          }
+        }
+        console.log(`LocalToursBooking: Normalized booking date: ${booking.booking_date} -> ${normalizedDate}`);
+        bookingsMap.set(normalizedDate, booking);
+      }
+    });
+
+    const result = allSaturdays.map((dateStr) => {
       const existingBooking = bookingsMap.get(dateStr);
       if (existingBooking) {
+        console.log(`LocalToursBooking: Found booking for ${dateStr}:`, existingBooking.id);
         return existingBooking;
       }
       // Create a placeholder booking for Saturdays without existing bookings
@@ -163,6 +210,14 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
         booking_id: undefined,
       } as LocalTourBooking;
     });
+
+    console.log('LocalToursBooking: Future bookings result:', {
+      totalCount: result.length,
+      withBookings: result.filter(b => !b.id?.startsWith('placeholder-')).length,
+      placeholders: result.filter(b => b.id?.startsWith('placeholder-')).length,
+    });
+
+    return result;
   }, [allSaturdays, filteredBookings, tourId]);
 
   // Group bookings by month
