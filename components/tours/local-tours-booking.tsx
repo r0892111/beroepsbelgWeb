@@ -208,6 +208,25 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
   const canGoPrevious = currentMonthIndex > 0;
   const canGoNext = currentMonthIndex < bookingsByMonth.length - 1;
 
+  // Debug: Log month generation
+  useEffect(() => {
+    if (bookingsByMonth.length > 0) {
+      const currentMonthData = bookingsByMonth[currentMonthIndex] || null;
+      console.log('LocalToursBooking: Generated months:', {
+        totalMonths: bookingsByMonth.length,
+        months: bookingsByMonth.map(m => ({
+          label: m.monthLabel,
+          bookingCount: m.bookings.length,
+          placeholderCount: m.bookings.filter(b => b.id?.startsWith('placeholder-')).length,
+          realBookingCount: m.bookings.filter(b => !b.id?.startsWith('placeholder-')).length,
+        })),
+        currentMonthIndex,
+        currentMonth: currentMonthData?.monthLabel,
+        currentMonthBookings: currentMonthData?.bookings.length || 0,
+      });
+    }
+  }, [bookingsByMonth, currentMonthIndex]);
+
   console.log('LocalToursBooking: Render state:', {
     loading,
     bookingsCount: bookings.length,
@@ -351,17 +370,18 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
 
           {/* Month indicator dots */}
           {bookingsByMonth.length > 1 && (
-            <div className="flex items-center justify-center gap-2">
-              {bookingsByMonth.map((_, index) => (
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              {bookingsByMonth.map((month, index) => (
                 <button
-                  key={index}
+                  key={month.monthKey}
                   onClick={() => setCurrentMonthIndex(index)}
-                  className={`h-2 rounded-full transition-all ${
+                  className={`h-2 rounded-full transition-all cursor-pointer ${
                     index === currentMonthIndex
                       ? 'w-8 bg-brass'
                       : 'w-2 bg-brass/30 hover:bg-brass/50'
                   }`}
-                  aria-label={`Go to month ${index + 1}`}
+                  aria-label={`Go to ${month.monthLabel}`}
+                  title={month.monthLabel}
                 />
               ))}
             </div>
