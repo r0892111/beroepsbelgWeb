@@ -1065,15 +1065,33 @@ function getNextSaturdays(count: number = 8): Date[] {
 
 /**
  * Get local tours bookings for a specific tour
- * Returns availability for the next 8 Saturdays
+ * Returns availability for the next 9 months of Saturdays
  * Automatically creates bookings for upcoming Saturdays if they don't exist (with 0 people, status 'booked')
  */
 export async function getLocalToursBookings(tourId: string): Promise<LocalTourBooking[]> {
   console.log('getLocalToursBookings called for tourId:', tourId);
   try {
-    // Get the next 8 Saturdays
-    const nextSaturdays = getNextSaturdays(8);
-    console.log('getLocalToursBookings: Next Saturdays:', nextSaturdays.map(d => d.toISOString().split('T')[0]));
+    // Get the next 9 months of Saturdays (matching frontend)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const nineMonthsFromNow = new Date(today);
+    nineMonthsFromNow.setMonth(today.getMonth() + 9);
+    
+    // Find the next Saturday
+    const currentDay = today.getDay();
+    const daysUntilSaturday = (6 - currentDay + 7) % 7 || 7;
+    const nextSaturday = new Date(today);
+    nextSaturday.setDate(today.getDate() + daysUntilSaturday);
+    
+    // Generate all Saturdays until 9 months from now
+    const nextSaturdays: Date[] = [];
+    const currentSaturday = new Date(nextSaturday);
+    while (currentSaturday <= nineMonthsFromNow) {
+      nextSaturdays.push(new Date(currentSaturday));
+      currentSaturday.setDate(currentSaturday.getDate() + 7);
+    }
+    
+    console.log('getLocalToursBookings: Next Saturdays (9 months):', nextSaturdays.map(d => d.toISOString().split('T')[0]));
     
     // Fetch existing bookings for these dates
     const saturdayDates = nextSaturdays.map(d => d.toISOString().split('T')[0]);
@@ -1097,6 +1115,20 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
       return [];
     }
     
+    // Also fetch tourbookings for this tour to get accurate people counts from invitees
+    // Query all completed bookings for this tour and filter by date in JavaScript
+    const { data: tourBookings, error: tourBookingsError } = await supabaseServer
+      .from('tourbooking')
+      .select('id, tour_datetime, invitees')
+      .eq('tour_id', tourId)
+      .eq('status', 'payment_completed');
+    
+    console.log('getLocalToursBookings: Tourbookings query result:', {
+      tourBookingsCount: tourBookings?.length || 0,
+      tourBookings,
+      error: tourBookingsError,
+    });
+    
     // Calculate number of people per date from local_tours_bookings (sum amnt_of_people for all rows per date)
     const peopleCountByDate = new Map<string, number>();
 
@@ -1106,8 +1138,38 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
       const currentCount = peopleCountByDate.get(dateStr) || 0;
       peopleCountByDate.set(dateStr, currentCount + amntOfPeople);
     });
+    
+    // Also calculate from tourbooking invitees as fallback/verification
+    // This ensures we get accurate counts even if local_tours_bookings is missing data
+    if (tourBookings && !tourBookingsError) {
+      tourBookings.forEach((tb: any) => {
+        const tourDatetime = tb.tour_datetime;
+        if (tourDatetime && typeof tourDatetime === 'string') {
+          // Extract date from tour_datetime (handle various formats: YYYY-MM-DD, YYYY-MM-DDTHH:mm:ss, YYYY-MM-DDTHH:mm:ss+HH:mm)
+          const dateMatch = tourDatetime.match(/^(\d{4}-\d{2}-\d{2})/);
+          if (dateMatch) {
+            const dateStr = dateMatch[1];
+            if (saturdayDates.includes(dateStr)) {
+              // Sum numberOfPeople from all invitees
+              const invitees = Array.isArray(tb.invitees) ? tb.invitees : [];
+              const totalPeople = invitees.reduce((sum: number, invitee: any) => {
+                return sum + (invitee.numberOfPeople || 0);
+              }, 0);
+              
+              // Use the higher count (either from local_tours_bookings or tourbooking)
+              // This handles cases where local_tours_bookings might be missing or have incorrect data
+              const currentCount = peopleCountByDate.get(dateStr) || 0;
+              if (totalPeople > currentCount) {
+                peopleCountByDate.set(dateStr, totalPeople);
+                console.log(`getLocalToursBookings: Updated count for ${dateStr} from tourbooking invitees: ${totalPeople} (was ${currentCount})`);
+              }
+            }
+          }
+        }
+      });
+    }
 
-    console.log('getLocalToursBookings: People count by date (from local_tours_bookings):', Array.from(peopleCountByDate.entries()));
+    console.log('getLocalToursBookings: People count by date (from local_tours_bookings + tourbooking):', Array.from(peopleCountByDate.entries()));
     
     // Create a map of existing bookings by date
     const bookingsMap = new Map<string, LocalTourBooking>();
