@@ -1072,29 +1072,41 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
   console.log('getLocalToursBookings called for tourId:', tourId);
   try {
     // Get the next 9 months of Saturdays (matching frontend)
+    // Calculate how many Saturdays are in 9 months (~40 Saturdays)
+    const saturdayDateObjects = getNextSaturdays(40);
+    
+    // Extract date strings in YYYY-MM-DD format from Brussels timezone
+    const dateFormatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Brussels',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    
+    const nextSaturdays: Date[] = [];
+    const saturdayDates: string[] = [];
+    
+    // Calculate 9 months from now
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
     const nineMonthsFromNow = new Date(today);
     nineMonthsFromNow.setMonth(today.getMonth() + 9);
     
-    // Find the next Saturday
-    const currentDay = today.getDay();
-    const daysUntilSaturday = (6 - currentDay + 7) % 7 || 7;
-    const nextSaturday = new Date(today);
-    nextSaturday.setDate(today.getDate() + daysUntilSaturday);
-    
-    // Generate all Saturdays until 9 months from now
-    const nextSaturdays: Date[] = [];
-    const currentSaturday = new Date(nextSaturday);
-    while (currentSaturday <= nineMonthsFromNow) {
-      nextSaturdays.push(new Date(currentSaturday));
-      currentSaturday.setDate(currentSaturday.getDate() + 7);
+    for (const saturdayDate of saturdayDateObjects) {
+      // Check if we've exceeded 9 months
+      if (saturdayDate > nineMonthsFromNow) {
+        break;
+      }
+      
+      // Get the date string in Brussels timezone (YYYY-MM-DD format)
+      const dateStr = dateFormatter.format(saturdayDate);
+      
+      nextSaturdays.push(saturdayDate);
+      saturdayDates.push(dateStr);
     }
     
-    console.log('getLocalToursBookings: Next Saturdays (9 months):', nextSaturdays.map(d => d.toISOString().split('T')[0]));
+    console.log('getLocalToursBookings: Next Saturdays (9 months):', saturdayDates);
     
     // Fetch existing bookings for these dates
-    const saturdayDates = nextSaturdays.map(d => d.toISOString().split('T')[0]);
     
     console.log('getLocalToursBookings: Fetching existing bookings for dates:', saturdayDates);
     const { data: existingBookings, error } = await supabaseServer
@@ -1173,6 +1185,8 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
     
     // Create a map of existing bookings by date
     const bookingsMap = new Map<string, LocalTourBooking>();
+    
+    // First, add entries from local_tours_bookings
     (existingBookings || []).forEach((booking: any) => {
       const dateStr = booking.booking_date;
       const numberOfPeople = peopleCountByDate.get(dateStr) || 0;
@@ -1221,11 +1235,98 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
       // If existing already has booking_id, keep it (don't replace)
     });
     
+    // Also create entries from tourbookings if they don't exist in local_tours_bookings
+    // This handles cases where local_tours_bookings entries weren't created
+    // Also handles cases where dates might be off by a day due to timezone issues
+    if (tourBookings && !tourBookingsError) {
+      tourBookings.forEach((tb: any) => {
+        const tourDatetime = tb.tour_datetime;
+        if (tourDatetime && typeof tourDatetime === 'string') {
+          const dateMatch = tourDatetime.match(/^(\d{4}-\d{2}-\d{2})/);
+          if (dateMatch) {
+            let dateStr = dateMatch[1];
+            
+            // If date is not in saturdayDates, try to find the nearest Saturday
+            if (!saturdayDates.includes(dateStr)) {
+              const [year, month, day] = dateStr.split('-').map(Number);
+              const date = new Date(year, month - 1, day);
+              const dayOfWeek = date.getDay();
+              
+              // If it's Friday (5), it might be a timezone issue - try Saturday
+              if (dayOfWeek === 5) {
+                const saturdayDate = new Date(date);
+                saturdayDate.setDate(date.getDate() + 1);
+                const satYear = saturdayDate.getFullYear();
+                const satMonth = String(saturdayDate.getMonth() + 1).padStart(2, '0');
+                const satDay = String(saturdayDate.getDate()).padStart(2, '0');
+                const saturdayStr = `${satYear}-${satMonth}-${satDay}`;
+                
+                if (saturdayDates.includes(saturdayStr)) {
+                  console.log(`getLocalToursBookings: Mapping Friday ${dateStr} to Saturday ${saturdayStr}`);
+                  dateStr = saturdayStr;
+                }
+              }
+              // If it's Sunday (0), try previous Saturday
+              else if (dayOfWeek === 0) {
+                const saturdayDate = new Date(date);
+                saturdayDate.setDate(date.getDate() - 1);
+                const satYear = saturdayDate.getFullYear();
+                const satMonth = String(saturdayDate.getMonth() + 1).padStart(2, '0');
+                const satDay = String(saturdayDate.getDate()).padStart(2, '0');
+                const saturdayStr = `${satYear}-${satMonth}-${satDay}`;
+                
+                if (saturdayDates.includes(saturdayStr)) {
+                  console.log(`getLocalToursBookings: Mapping Sunday ${dateStr} to Saturday ${saturdayStr}`);
+                  dateStr = saturdayStr;
+                }
+              }
+            }
+            
+            // Add if it's now a Saturday date and doesn't already exist
+            if (saturdayDates.includes(dateStr) && !bookingsMap.has(dateStr)) {
+              const invitees = Array.isArray(tb.invitees) ? tb.invitees : [];
+              const totalPeople = invitees.reduce((sum: number, invitee: any) => {
+                return sum + (invitee.numberOfPeople || 0);
+              }, 0);
+              
+              // Extract time from tour_datetime (default to 14:00:00)
+              let bookingTime = '14:00:00';
+              const timeMatch = tourDatetime.match(/T(\d{2}:\d{2})/);
+              if (timeMatch) {
+                bookingTime = timeMatch[1] + ':00';
+              }
+              
+              // Get first invitee for customer info
+              const firstInvitee = invitees[0] || {};
+              
+              bookingsMap.set(dateStr, {
+                id: `tourbooking-${tb.id}`,
+                tour_id: tourId,
+                booking_date: dateStr,
+                booking_time: bookingTime,
+                is_booked: true,
+                status: 'booked' as const,
+                user_id: null,
+                customer_name: firstInvitee.name || undefined,
+                customer_email: firstInvitee.email || undefined,
+                customer_phone: firstInvitee.phone || undefined,
+                stripe_session_id: null,
+                booking_id: tb.id,
+                number_of_people: totalPeople,
+                amnt_of_people: totalPeople,
+              });
+              
+              console.log(`getLocalToursBookings: Created booking entry from tourbooking ${tb.id} for date ${dateStr} with ${totalPeople} people`);
+            }
+          }
+        }
+      });
+    }
+    
     // Build bookings array - use existing entries or create virtual placeholders for display
     // NOTE: We no longer create placeholder entries in the database - they're only virtual for the UI
     // Real entries are created by the webhook when someone actually books
-    const bookings: LocalTourBooking[] = nextSaturdays.map(saturday => {
-      const dateStr = saturday.toISOString().split('T')[0];
+    const bookings: LocalTourBooking[] = saturdayDates.map(dateStr => {
       const existing = bookingsMap.get(dateStr);
 
       if (existing) {
