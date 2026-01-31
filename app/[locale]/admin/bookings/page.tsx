@@ -633,7 +633,7 @@ export default function AdminBookingsPage() {
         tour_datetime: tourDatetime,
         tour_end: tourEndDatetime,
         city: tour.city,
-        status: createForm.isPaid ? 'payment_completed' : 'quote_pending',
+        status: createForm.isPaid ? 'payment_completed' : 'pending',
         invitees: [invitee],
         booking_type: 'B2C',
       };
@@ -704,6 +704,7 @@ export default function AdminBookingsPage() {
 
           // Build payload matching n8n intake endpoint expectations
           // This payload includes fields for both standardization nodes
+          const bookingStatus = createForm.isPaid ? 'payment_completed' : 'pending';
           const payload = {
             // Fields for first standardization node
             body: {
@@ -726,6 +727,7 @@ export default function AdminBookingsPage() {
               tourId: createForm.tourId,
               bookingId: newBooking.id,
               booking_id: newBooking.id,
+              status: bookingStatus,
             },
             // Fields for second standardization node (bookingData)
             bookingData: {
@@ -738,6 +740,7 @@ export default function AdminBookingsPage() {
               requestTanguy: createForm.requestTanguy,
               specialRequests: createForm.specialRequests || null,
               upsellProducts: [],
+              status: bookingStatus,
             },
           };
 
