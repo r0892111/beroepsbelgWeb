@@ -1812,14 +1812,11 @@ export default function BookingDetailPage() {
           <CardContent className="py-4">
             <div className="flex flex-wrap items-center gap-3">
               {/* Send to Guide Assignment - redirects to guide choosing page */}
-              {/* Disabled when status is 'pending' (payment not yet completed) */}
               {!booking.guide_id && (
                 <Button
                   onClick={() => router.push(`/${locale}/choose-guide/${booking.id}`)}
-                  disabled={booking.status === 'pending'}
                   size="sm"
                   className="gap-2"
-                  title={booking.status === 'pending' ? 'Payment must be completed before assigning a guide' : undefined}
                 >
                   <Send className="h-4 w-4" />
                   Choose Guide
