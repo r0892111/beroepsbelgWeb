@@ -438,12 +438,7 @@ export default function AdminBookingsPage() {
   const selectedTour = createForm.tourId ? tours.get(createForm.tourId) : null;
 
   // Calculate fees based on selected options and date/time
-  const isWeekend = (() => {
-    if (!createForm.date) return false;
-    const date = new Date(createForm.date);
-    const day = date.getDay();
-    return day === 0 || day === 6; // Sunday = 0, Saturday = 6
-  })();
+  const isWeekend = createForm.date ? isWeekendBrussels(createForm.date) : false;
 
   const isEvening = (() => {
     if (!createForm.time) return false;
