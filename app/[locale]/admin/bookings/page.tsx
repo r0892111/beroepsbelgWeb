@@ -106,6 +106,10 @@ export default function AdminBookingsPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterCity, setFilterCity] = useState<string>('all');
   const [filterBookingType, setFilterBookingType] = useState<string>('all');
+  const [filterDateFrom, setFilterDateFrom] = useState<string>('');
+  const [filterDateTo, setFilterDateTo] = useState<string>('');
+  const [filterOpMaat, setFilterOpMaat] = useState<string>('all'); // 'all', 'yes', 'no'
+  const [filterLocalStories, setFilterLocalStories] = useState<string>('all'); // 'all', 'yes', 'no'
 
   // Guide selection dialog state
   const [guideDialogOpen, setGuideDialogOpen] = useState(false);
@@ -279,7 +283,68 @@ export default function AdminBookingsPage() {
     const matchesCity = filterCity === 'all' || booking.city === filterCity;
     const matchesBookingType = filterBookingType === 'all' || booking.booking_type === filterBookingType;
 
-    return matchesSearch && matchesStatus && matchesCity && matchesBookingType;
+    // Date filter: check if tour_datetime falls within the date range (using Brussels timezone)
+    let matchesDate = true;
+    if (filterDateFrom || filterDateTo) {
+      if (!booking.tour_datetime) {
+        matchesDate = false; // No date = doesn't match if date filter is set
+      } else {
+        try {
+          // Extract date part from tour_datetime in Brussels timezone
+          // tour_datetime is stored as ISO string with Brussels offset (e.g., "2026-01-30T14:00:00+01:00")
+          const bookingDate = new Date(booking.tour_datetime);
+          const brusselsDateStr = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Europe/Brussels',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+          }).format(bookingDate); // Returns YYYY-MM-DD format
+          
+          if (filterDateFrom && brusselsDateStr < filterDateFrom) {
+            matchesDate = false;
+          }
+          if (filterDateTo && brusselsDateStr > filterDateTo) {
+            matchesDate = false;
+          }
+        } catch (e) {
+          matchesDate = false; // Invalid date = doesn't match
+        }
+      }
+    }
+
+    // Tour metadata filters: check tour properties
+    let matchesTourMetadata = true;
+    if (filterOpMaat !== 'all' || filterLocalStories !== 'all') {
+      const tour = booking.tour_id ? tours.get(booking.tour_id) : null;
+      if (tour) {
+        const tourIsOpMaat = tour.op_maat === true || 
+                           (typeof tour.op_maat === 'string' && tour.op_maat === 'true') || 
+                           (typeof tour.op_maat === 'number' && tour.op_maat === 1);
+        const tourIsLocalStories = tour.local_stories === true || 
+                                  (typeof tour.local_stories === 'string' && tour.local_stories === 'true') || 
+                                  (typeof tour.local_stories === 'number' && tour.local_stories === 1);
+
+        if (filterOpMaat === 'yes' && !tourIsOpMaat) {
+          matchesTourMetadata = false;
+        }
+        if (filterOpMaat === 'no' && tourIsOpMaat) {
+          matchesTourMetadata = false;
+        }
+        if (filterLocalStories === 'yes' && !tourIsLocalStories) {
+          matchesTourMetadata = false;
+        }
+        if (filterLocalStories === 'no' && tourIsLocalStories) {
+          matchesTourMetadata = false;
+        }
+      } else {
+        // If tour not found, only exclude if filtering for "yes"
+        if (filterOpMaat === 'yes' || filterLocalStories === 'yes') {
+          matchesTourMetadata = false;
+        }
+      }
+    }
+
+    return matchesSearch && matchesStatus && matchesCity && matchesBookingType && matchesDate && matchesTourMetadata;
   });
 
   const clearFilters = () => {
@@ -287,6 +352,10 @@ export default function AdminBookingsPage() {
     setFilterStatus('all');
     setFilterCity('all');
     setFilterBookingType('all');
+    setFilterDateFrom('');
+    setFilterDateTo('');
+    setFilterOpMaat('all');
+    setFilterLocalStories('all');
   };
 
   // Helper to normalize selectedGuides entries to objects
@@ -816,7 +885,7 @@ export default function AdminBookingsPage() {
                   variant="outline"
                   size="sm"
                   onClick={clearFilters}
-                  disabled={!searchQuery && filterStatus === 'all' && filterCity === 'all' && filterBookingType === 'all'}
+                  disabled={!searchQuery && filterStatus === 'all' && filterCity === 'all' && filterBookingType === 'all' && !filterDateFrom && !filterDateTo && filterOpMaat === 'all' && filterLocalStories === 'all'}
                 >
                   <X className="h-4 w-4 mr-2" />
                   Clear
@@ -868,9 +937,64 @@ export default function AdminBookingsPage() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="flex-1 min-w-[150px]">
+                  <Select value={filterOpMaat} onValueChange={setFilterOpMaat}>
+                    <SelectTrigger className="bg-white">
+                      <SelectValue placeholder="Op Maat" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Tours</SelectItem>
+                      <SelectItem value="yes">Op Maat Only</SelectItem>
+                      <SelectItem value="no">Not Op Maat</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex-1 min-w-[150px]">
+                  <Select value={filterLocalStories} onValueChange={setFilterLocalStories}>
+                    <SelectTrigger className="bg-white">
+                      <SelectValue placeholder="Local Stories" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Tours</SelectItem>
+                      <SelectItem value="yes">Local Stories Only</SelectItem>
+                      <SelectItem value="no">Not Local Stories</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              {(searchQuery || filterStatus !== 'all' || filterCity !== 'all' || filterBookingType !== 'all') && (
+              {/* Date Range Filters */}
+              <div className="flex gap-4 flex-wrap">
+                <div className="flex-1 min-w-[150px]">
+                  <Label htmlFor="dateFrom" className="text-sm text-muted-foreground mb-1 block">
+                    Date From
+                  </Label>
+                  <Input
+                    id="dateFrom"
+                    type="date"
+                    value={filterDateFrom}
+                    onChange={(e) => setFilterDateFrom(e.target.value)}
+                    className="bg-white"
+                  />
+                </div>
+                <div className="flex-1 min-w-[150px]">
+                  <Label htmlFor="dateTo" className="text-sm text-muted-foreground mb-1 block">
+                    Date To
+                  </Label>
+                  <Input
+                    id="dateTo"
+                    type="date"
+                    value={filterDateTo}
+                    onChange={(e) => setFilterDateTo(e.target.value)}
+                    className="bg-white"
+                    min={filterDateFrom || undefined}
+                  />
+                </div>
+              </div>
+
+              {(searchQuery || filterStatus !== 'all' || filterCity !== 'all' || filterBookingType !== 'all' || filterDateFrom || filterDateTo || filterOpMaat !== 'all' || filterLocalStories !== 'all') && (
                 <div className="text-sm text-muted-foreground">
                   Showing {filteredBookings.length} of {bookings.length} bookings
                 </div>
