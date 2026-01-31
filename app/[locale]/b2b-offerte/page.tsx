@@ -21,6 +21,7 @@ import Image from 'next/image';
 import { format } from 'date-fns';
 import { useTranslations as useBookingTranslations } from 'next-intl';
 import { isValidVATFormat, isValidBelgianVAT, normalizeVATNumber } from '@/lib/utils/vat-validation';
+import { isWeekendBrussels } from '@/lib/utils/timezone';
 
 const quoteSchema = z.object({
   dateTime: z.string().min(1),
@@ -561,6 +562,18 @@ export default function B2BQuotePage() {
     }
   }, [selectedTour, setValue]);
 
+  // Set isOpMaat when tour is selected
+  useEffect(() => {
+    if (selectedTour) {
+      const tourIsOpMaat = selectedTour?.op_maat === true || 
+                          (typeof selectedTour?.op_maat === 'string' && selectedTour.op_maat === 'true') || 
+                          (typeof selectedTour?.op_maat === 'number' && selectedTour.op_maat === 1);
+      setIsOpMaat(tourIsOpMaat);
+    } else {
+      setIsOpMaat(false);
+    }
+  }, [selectedTour]);
+
   // Combine date + timeslot
   useEffect(() => {
     if (selectedDate && selectedTimeSlot) {
@@ -682,11 +695,7 @@ export default function B2BQuotePage() {
                           (typeof selectedTourData?.op_maat === 'number' && selectedTourData.op_maat === 1);
       
       // Calculate weekend and evening fees
-      const isWeekend = selectedDate && (() => {
-        const dateObj = new Date(selectedDate);
-        const day = dateObj.getDay();
-        return day === 0 || day === 6; // Sunday or Saturday
-      })();
+      const isWeekend = selectedDate ? isWeekendBrussels(selectedDate) : false;
       const weekendFee = isWeekend && selectedTourData?.local_stories !== true;
       
       const isEveningSlot = selectedTimeSlot && parseInt(selectedTimeSlot.split(':')[0], 10) >= 17;
@@ -729,6 +738,8 @@ export default function B2BQuotePage() {
             isOpMaat: tourIsOpMaat, // Flag to indicate this is an op maat tour
             requestTanguy: requestTanguy,
             durationMinutes: actualDuration, // Include actual duration in booking
+            weekendFee: weekendFee, // Weekend fee flag
+            eveningFee: eveningFee, // Evening fee flag
           }),
         });
 
@@ -1236,8 +1247,8 @@ export default function B2BQuotePage() {
                  ) : null
                 )}
 
-                {/* Extra Hour Checkbox - Only for opMaat tours */}
-                {isOpMaat && (
+                {/* Extra Hour Checkbox - Only for opMaat tours when date & time are selected */}
+                {isOpMaat && selectedDate && selectedTimeSlot && (
                   <div className="rounded-lg border-2 p-4 border-gray-200">
                     <div className="flex items-start gap-3">
                       <Checkbox
@@ -1683,12 +1694,8 @@ export default function B2BQuotePage() {
                       
                       {/* Weekend and Evening Fees */}
                       {(() => {
-                        // Calculate weekend fee: €25 if date is Saturday (6) or Sunday (0), except for local_stories
-                        const isWeekend = selectedDate && (() => {
-                          const dateObj = new Date(selectedDate);
-                          const day = dateObj.getDay();
-                          return day === 0 || day === 6; // Sunday or Saturday
-                        })();
+                        // Calculate weekend fee: €25 if date is Saturday or Sunday in Brussels timezone, except for local_stories
+                        const isWeekend = selectedDate ? isWeekendBrussels(selectedDate) : false;
                         const weekendFeeCost = isWeekend && selectedTour?.local_stories !== true ? 25 : 0;
 
                         // Calculate evening fee: €25 for op_maat tours if time >= 17:00
@@ -1734,11 +1741,7 @@ export default function B2BQuotePage() {
                             }, 0);
                             
                             // Calculate weekend and evening fees
-                            const isWeekend = selectedDate && (() => {
-                              const dateObj = new Date(selectedDate);
-                              const day = dateObj.getDay();
-                              return day === 0 || day === 6; // Sunday or Saturday
-                            })();
+                            const isWeekend = selectedDate ? isWeekendBrussels(selectedDate) : false;
                             const weekendFeeCost = isWeekend && selectedTour?.local_stories !== true ? 25 : 0;
                             
                             const tourIsOpMaat = selectedTour?.op_maat === true || 

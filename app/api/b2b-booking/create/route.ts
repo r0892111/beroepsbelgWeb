@@ -41,6 +41,8 @@ export async function POST(request: NextRequest) {
       opMaatAnswers = null,
       durationMinutes = null, // Tour duration in minutes (will be calculated from tour data + extra hour)
       requestTanguy = false,
+      weekendFee = false, // Weekend fee flag (€25 if Saturday/Sunday, except local_stories)
+      eveningFee = false, // Evening fee flag (€25 for op_maat tours if time >= 17:00)
     } = body;
 
     // Validate required fields
@@ -128,6 +130,9 @@ export async function POST(request: NextRequest) {
       durationMinutes: finalDurationMinutes, // Duration in minutes (base duration + 60 if extra hour)
       // Tanguy request
       requestTanguy: requestTanguy,
+      // Weekend and evening fees
+      weekendFeeCost: weekendFee ? 25 : 0,
+      eveningFeeCost: eveningFee ? 25 : 0,
     }];
 
     // Create booking data
