@@ -83,20 +83,25 @@ const SelectContent = React.forwardRef<
       position={position}
       {...props}
     >
+      <SelectScrollUpButton />
       <SelectPrimitive.Viewport
         className={cn(
-          'p-1 max-h-[280px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400',
+          'p-1 max-h-[280px] overflow-y-auto',
           position === 'popper' &&
             'w-full min-w-[var(--radix-select-trigger-width)]'
         )}
         style={{
           overscrollBehavior: 'contain',
+          // Ensure scrollbar is visible and functional
           scrollbarWidth: 'thin',
-          scrollbarColor: '#d1d5db transparent'
+          scrollbarColor: '#d1d5db #f3f4f6',
+          // Webkit scrollbar styles for better cross-browser support
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         {children}
       </SelectPrimitive.Viewport>
+      <SelectScrollDownButton />
     </SelectPrimitive.Content>
   </SelectPrimitive.Portal>
 ));
