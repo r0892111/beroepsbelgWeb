@@ -215,8 +215,8 @@ export default function AddToCalendarPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg text-center">
+    <div className="min-h-screen bg-gray-50 px-4 py-8">
+      <div className="w-full max-w-md mx-auto rounded-lg bg-white p-8 shadow-lg text-center">
         <Calendar className="mx-auto h-16 w-16 text-blue-500" />
         <h1 className="mt-4 text-2xl font-bold text-gray-900">Add Tour to Calendar</h1>
 

@@ -572,9 +572,10 @@ export default function AdminBookingsPage() {
       const tourDatetime = toBrusselsISO(parsedDate);
       
       // Calculate tour end datetime (start + duration)
+      // IMPORTANT: Add extra hour (60 minutes) if checkbox is checked
       const tourDuration = tour.duration_minutes || 120; // Default 2 hours
-      const extraHour = createForm.extraHour ? 60 : 0;
-      const finalDuration = tourDuration + extraHour;
+      const extraHourMinutes = createForm.extraHour ? 60 : 0;
+      const finalDuration = tourDuration + extraHourMinutes;
       const tourEndDatetime = addMinutesBrussels(tourDatetime, finalDuration);
 
       // Create invitee object
@@ -969,7 +970,7 @@ export default function AdminBookingsPage() {
               </div>
 
               {/* Date Range Filters */}
-              <div className="flex gap-4 flex-wrap">
+              <div className="flex gap-4 flex-wrap items-end">
                 <div className="flex-1 min-w-[150px]">
                   <Label htmlFor="dateFrom" className="text-sm text-muted-foreground mb-1 block">
                     Date From
@@ -994,6 +995,28 @@ export default function AdminBookingsPage() {
                     className="bg-white"
                     min={filterDateFrom || undefined}
                   />
+                </div>
+                <div className="flex-shrink-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      // Get today's date in Brussels timezone (YYYY-MM-DD format)
+                      const today = new Date();
+                      const brusselsDateStr = new Intl.DateTimeFormat('en-CA', {
+                        timeZone: 'Europe/Brussels',
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                      }).format(today);
+                      setFilterDateFrom(brusselsDateStr);
+                      setFilterDateTo(brusselsDateStr);
+                    }}
+                    className="gap-2"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Today
+                  </Button>
                 </div>
               </div>
 
