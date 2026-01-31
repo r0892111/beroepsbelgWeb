@@ -97,14 +97,24 @@ export function nowBrussels(): string {
 
 /**
  * Add duration to a date and return Brussels ISO string
- * @param date - Start date
+ * @param date - Start date (Date object or ISO string)
  * @param minutes - Minutes to add
  * @returns ISO string with Brussels timezone offset
  */
 export function addMinutesBrussels(date: Date | string, minutes: number): string {
-  const d = typeof date === 'string' ? new Date(date) : new Date(date.getTime());
-  d.setTime(d.getTime() + minutes * 60 * 1000);
-  return toBrusselsISO(d);
+  // Parse the date string to a Date object
+  const d = typeof date === 'string' ? new Date(date) : date;
+  
+  // Validate the date
+  if (isNaN(d.getTime())) {
+    throw new Error(`Invalid date: ${date}`);
+  }
+  
+  // Add minutes (works correctly with Date objects regardless of timezone)
+  const resultDate = new Date(d.getTime() + minutes * 60 * 1000);
+  
+  // Convert back to Brussels ISO string
+  return toBrusselsISO(resultDate);
 }
 
 /**
