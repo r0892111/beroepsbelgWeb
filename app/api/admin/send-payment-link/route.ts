@@ -212,6 +212,7 @@ export async function POST(request: NextRequest) {
       payment_method_types: ['card', 'bancontact', 'ideal'],
       line_items: lineItems,
       mode: 'payment',
+      allow_promotion_codes: true, // Allow customers to enter discount codes
       customer_creation: 'always', // Always create customer (required for invoice)
       invoice_creation: { enabled: true }, // Enable invoice creation for all sessions
       payment_intent_data: {
