@@ -498,7 +498,7 @@ export function TourBookingDialog({
   const eveningFeeCost = opMaat && isEveningSlot ? 25 : 0;
 
   // Weekend fee for tours (except local_stories): €25 if date is Saturday or Sunday in Brussels timezone
-  const isWeekend = formData.bookingDate ? isWeekendBrussels(formData.bookingDate.toISOString().split('T')[0]) : false;
+  const isWeekend = formData.bookingDate ? isWeekendBrussels(formData.bookingDate) : false;
   const weekendFeeCost = isWeekend && !isLocalStories ? 25 : 0;
 
   // Shipping is ALWAYS FREE for tour bookings with upsell products
