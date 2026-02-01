@@ -1027,7 +1027,7 @@ export function TourBookingDialog({
           {/* Free shipping notice */}
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--primary-base)]/10 border border-[var(--primary-base)]/20">
             <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--primary-base)' }} />
-            <span className="text-sm" style={{ color: 'var(--primary-dark)' }}>
+            <span className="text-sm font-bold text-red-600">
               Gratis verzending bij je tourboeking
             </span>
           </div>
@@ -1326,7 +1326,7 @@ export function TourBookingDialog({
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-base font-semibold">Verzendkosten:</span>
-                        <span className="text-base font-semibold text-green-600">
+                        <span className="text-base font-bold text-red-600">
                           GRATIS
                         </span>
                       </div>
