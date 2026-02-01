@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, CheckCircle2, XCircle, User, MapPin, Calendar, Clock } from 'lucide-react';
+import { formatBrusselsDateTime } from '@/lib/utils/timezone';
 
 interface Guide {
   id: number;
@@ -25,6 +26,7 @@ interface Booking {
   tour_id: string | null;
   city: string | null;
   tour_datetime: string | null;
+  tour_end: string | null;
   status: string;
   guide: Guide | null;
   tour: Tour | null;
@@ -193,18 +195,11 @@ export default function ConfirmGuideClientPage() {
                 <div>
                   <p className="text-sm font-medium text-gray-600">Date & Time</p>
                   <p className="text-base font-semibold text-gray-900">
-                    {new Date(booking.tour_datetime).toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
+                    {formatBrusselsDateTime(booking.tour_datetime, 'dd/MM/yyyy')}
                   </p>
                   <p className="text-sm text-gray-500">
-                    {new Date(booking.tour_datetime).toLocaleTimeString('en-US', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+                    {formatBrusselsDateTime(booking.tour_datetime, 'HH:mm')}
+                    {booking.tour_end && ` - ${formatBrusselsDateTime(booking.tour_end, 'HH:mm')}`}
                   </p>
                 </div>
               </div>

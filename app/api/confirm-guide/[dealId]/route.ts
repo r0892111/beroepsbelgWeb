@@ -57,7 +57,7 @@ export async function GET(
     // Fetch the booking by deal_id (using the UUID part)
     const { data: booking, error: bookingError } = await supabase
       .from('tourbooking')
-      .select('id, deal_id, guide_id, tour_id, city, tour_datetime, status')
+      .select('id, deal_id, guide_id, tour_id, city, tour_datetime, tour_end, status')
       .eq('deal_id', uuid)
       .single();
 
@@ -98,6 +98,7 @@ export async function GET(
         tour_id: booking.tour_id,
         city: booking.city,
         tour_datetime: booking.tour_datetime,
+        tour_end: booking.tour_end,
         status: booking.status,
         guide,
         tour,

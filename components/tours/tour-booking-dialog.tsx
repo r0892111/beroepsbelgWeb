@@ -1026,7 +1026,7 @@ export function TourBookingDialog({
 
           {/* Free shipping notice */}
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--primary-base)]/10 border border-[var(--primary-base)]/20">
-            <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--primary-base)' }} />
+            <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-red-600" />
             <span className="text-sm font-bold text-red-600">
               Gratis verzending bij je tourboeking
             </span>
