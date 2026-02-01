@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Home, LogOut, RefreshCw, Calendar, Search, Filter, X, ExternalLink, UserPlus, Users, AlertCircle, Plus, Hash } from 'lucide-react';
+import { Home, LogOut, RefreshCw, Calendar, Search, Filter, X, ExternalLink, UserPlus, Users, AlertCircle, Plus, Hash, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -110,6 +110,10 @@ export default function AdminBookingsPage() {
   const [filterDateTo, setFilterDateTo] = useState<string>('');
   const [filterOpMaat, setFilterOpMaat] = useState<string>('all'); // 'all', 'yes', 'no'
   const [filterLocalStories, setFilterLocalStories] = useState<string>('all'); // 'all', 'yes', 'no'
+  
+  // Sorting state
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc'); // Default to descending (newest first)
 
   // Guide selection dialog state
   const [guideDialogOpen, setGuideDialogOpen] = useState(false);
@@ -356,7 +360,81 @@ export default function AdminBookingsPage() {
     setFilterDateTo('');
     setFilterOpMaat('all');
     setFilterLocalStories('all');
+    setSortColumn(null);
+    setSortDirection('desc');
   };
+
+  // Handle column sorting
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      // Toggle direction if clicking the same column
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Set new column and default to descending
+      setSortColumn(column);
+      setSortDirection('desc');
+    }
+  };
+
+  // Sort function
+  const sortBookings = (bookings: TourBooking[]): TourBooking[] => {
+    if (!sortColumn) return bookings;
+
+    return [...bookings].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortColumn) {
+        case 'id':
+          aValue = a.id;
+          bValue = b.id;
+          break;
+        case 'tour':
+          aValue = a.tour_id ? tours.get(a.tour_id)?.title || '' : '';
+          bValue = b.tour_id ? tours.get(b.tour_id)?.title || '' : '';
+          break;
+        case 'city':
+          aValue = a.city || '';
+          bValue = b.city || '';
+          break;
+        case 'date':
+          aValue = a.tour_datetime ? new Date(a.tour_datetime).getTime() : 0;
+          bValue = b.tour_datetime ? new Date(b.tour_datetime).getTime() : 0;
+          break;
+        case 'guide':
+          aValue = a.guide_id ? guides.get(a.guide_id)?.name || '' : '';
+          bValue = b.guide_id ? guides.get(b.guide_id)?.name || '' : '';
+          break;
+        case 'status':
+          aValue = a.status || '';
+          bValue = b.status || '';
+          break;
+        case 'type':
+          aValue = a.booking_type || '';
+          bValue = b.booking_type || '';
+          break;
+        default:
+          return 0;
+      }
+
+      // Handle null/undefined values
+      if (aValue === null || aValue === undefined) aValue = '';
+      if (bValue === null || bValue === undefined) bValue = '';
+
+      // Compare values
+      let comparison = 0;
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        comparison = aValue - bValue;
+      } else {
+        comparison = String(aValue).localeCompare(String(bValue));
+      }
+
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  };
+
+  // Apply sorting to filtered bookings
+  const sortedBookings = sortBookings(filteredBookings);
 
   // Helper to normalize selectedGuides entries to objects
   const normalizeGuide = (item: number | SelectedGuide): SelectedGuide => {
@@ -1020,9 +1098,14 @@ export default function AdminBookingsPage() {
                 </div>
               </div>
 
-              {(searchQuery || filterStatus !== 'all' || filterCity !== 'all' || filterBookingType !== 'all' || filterDateFrom || filterDateTo || filterOpMaat !== 'all' || filterLocalStories !== 'all') && (
+              {(searchQuery || filterStatus !== 'all' || filterCity !== 'all' || filterBookingType !== 'all' || filterDateFrom || filterDateTo || filterOpMaat !== 'all' || filterLocalStories !== 'all' || sortColumn) && (
                 <div className="text-sm text-muted-foreground">
-                  Showing {filteredBookings.length} of {bookings.length} bookings
+                  Showing {sortedBookings.length} of {bookings.length} bookings
+                  {sortColumn && (
+                    <span className="ml-2">
+                      (sorted by {sortColumn} {sortDirection === 'asc' ? '↑' : '↓'})
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -1031,7 +1114,7 @@ export default function AdminBookingsPage() {
               <div className="flex items-center justify-center py-12">
                 <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
               </div>
-            ) : filteredBookings.length === 0 ? (
+            ) : sortedBookings.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 {bookings.length === 0 ? 'No bookings found' : 'No bookings match your filters'}
               </div>
@@ -1040,20 +1123,104 @@ export default function AdminBookingsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Tour</TableHead>
-                      <TableHead>City</TableHead>
-                      <TableHead>Tour Date</TableHead>
-                      <TableHead>Guide</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Type</TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-muted/50 select-none"
+                        onClick={() => handleSort('id')}
+                      >
+                        <div className="flex items-center gap-2">
+                          ID
+                          {sortColumn === 'id' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                          ) : (
+                            <ArrowUpDown className="h-4 w-4 opacity-50" />
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-muted/50 select-none"
+                        onClick={() => handleSort('tour')}
+                      >
+                        <div className="flex items-center gap-2">
+                          Tour
+                          {sortColumn === 'tour' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                          ) : (
+                            <ArrowUpDown className="h-4 w-4 opacity-50" />
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-muted/50 select-none"
+                        onClick={() => handleSort('city')}
+                      >
+                        <div className="flex items-center gap-2">
+                          City
+                          {sortColumn === 'city' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                          ) : (
+                            <ArrowUpDown className="h-4 w-4 opacity-50" />
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-muted/50 select-none"
+                        onClick={() => handleSort('date')}
+                      >
+                        <div className="flex items-center gap-2">
+                          Tour Date
+                          {sortColumn === 'date' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                          ) : (
+                            <ArrowUpDown className="h-4 w-4 opacity-50" />
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-muted/50 select-none"
+                        onClick={() => handleSort('guide')}
+                      >
+                        <div className="flex items-center gap-2">
+                          Guide
+                          {sortColumn === 'guide' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                          ) : (
+                            <ArrowUpDown className="h-4 w-4 opacity-50" />
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-muted/50 select-none"
+                        onClick={() => handleSort('status')}
+                      >
+                        <div className="flex items-center gap-2">
+                          Status
+                          {sortColumn === 'status' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                          ) : (
+                            <ArrowUpDown className="h-4 w-4 opacity-50" />
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-muted/50 select-none"
+                        onClick={() => handleSort('type')}
+                      >
+                        <div className="flex items-center gap-2">
+                          Type
+                          {sortColumn === 'type' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                          ) : (
+                            <ArrowUpDown className="h-4 w-4 opacity-50" />
+                          )}
+                        </div>
+                      </TableHead>
                       <TableHead>Deal</TableHead>
                       <TableHead>Calendar</TableHead>
                       <TableHead>IDs</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredBookings.map((booking) => (
+                    {sortedBookings.map((booking) => (
                       <TableRow
                         key={booking.id}
                         className="cursor-pointer hover:bg-green-50 hover:ring-2 hover:ring-inset hover:ring-green-300 transition-all"
@@ -1200,10 +1367,10 @@ export default function AdminBookingsPage() {
               </div>
             )}
 
-            {!loading && filteredBookings.length > 0 && (
+            {!loading && sortedBookings.length > 0 && (
               <div className="mt-4 text-sm text-muted-foreground">
-                Showing {filteredBookings.length} {filteredBookings.length === 1 ? 'booking' : 'bookings'}
-                {filteredBookings.length !== bookings.length && ` (filtered from ${bookings.length} total)`}
+                Showing {sortedBookings.length} {sortedBookings.length === 1 ? 'booking' : 'bookings'}
+                {sortedBookings.length !== bookings.length && ` (filtered from ${bookings.length} total)`}
               </div>
             )}
           </CardContent>

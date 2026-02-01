@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, CheckCircle2, XCircle, User, MapPin, Languages, Star, Clock } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatBrusselsDateTime } from '@/lib/utils/timezone';
 import { Badge } from '@/components/ui/badge';
 
 interface Guide {
@@ -30,6 +31,7 @@ interface Booking {
   tour_id: string | null;
   city: string | null;
   tour_datetime: string | null;
+  tour_end: string | null;
   deal_id: string | null;
 }
 
@@ -282,6 +284,14 @@ export default function ChooseGuideClientPage() {
               <p className="text-sm text-gray-600">Booking ID: <span className="font-semibold">#{booking.id}</span></p>
               {booking.city && (
                 <p className="text-sm text-gray-600">City: <span className="font-semibold">{booking.city}</span></p>
+              )}
+              {booking.tour_datetime && (
+                <p className="text-sm text-gray-600">
+                  Tour: <span className="font-semibold">
+                    {formatBrusselsDateTime(booking.tour_datetime, 'dd/MM/yyyy HH:mm')}
+                    {booking.tour_end && ` - ${formatBrusselsDateTime(booking.tour_end, 'HH:mm')}`}
+                  </span>
+                </p>
               )}
             </div>
           )}
