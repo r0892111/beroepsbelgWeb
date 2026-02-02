@@ -16,6 +16,26 @@ function getSupabaseServer() {
   });
 }
 
+// Parse URL parameter which is in format "bookingId-guideId" (e.g., "551-18")
+function parseBookingAndGuideId(param: string): { bookingId: number; guideId: number | null } {
+  const parts = param.split('-');
+  
+  if (parts.length >= 2) {
+    // Last part is guide_id
+    const guideId = parseInt(parts[parts.length - 1], 10);
+    // Everything except last part is booking_id
+    const bookingId = parseInt(parts.slice(0, -1).join('-'), 10);
+    
+    if (!isNaN(bookingId) && !isNaN(guideId)) {
+      return { bookingId, guideId };
+    }
+  }
+  
+  // Fallback: treat entire string as booking ID (backward compatibility)
+  const bookingId = parseInt(param, 10);
+  return { bookingId: isNaN(bookingId) ? 0 : bookingId, guideId: null };
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ dealId: string }> }
@@ -32,15 +52,21 @@ export async function GET(
 
     const supabase = getSupabaseServer();
 
-    // Parse booking ID - can be a number (like 551) or UUID format
-    const bookingIdNum = parseInt(dealId, 10);
-    const isNumericId = !isNaN(bookingIdNum);
+    // Parse booking ID and guide ID from URL format "bookingId-guideId"
+    const { bookingId, guideId: urlGuideId } = parseBookingAndGuideId(dealId);
+
+    if (!bookingId || bookingId === 0) {
+      return NextResponse.json(
+        { error: 'Invalid booking ID format. Expected format: bookingId-guideId' },
+        { status: 400 }
+      );
+    }
 
     // Fetch the booking by booking id (numeric ID)
     const { data: booking, error: bookingError } = await supabase
       .from('tourbooking')
       .select('id, deal_id, guide_id, tour_id, city, tour_datetime, tour_end, status')
-      .eq('id', isNumericId ? bookingIdNum : dealId)
+      .eq('id', bookingId)
       .single();
 
     if (bookingError || !booking) {
@@ -50,13 +76,14 @@ export async function GET(
       );
     }
 
-    // Fetch guide details if guide_id exists
+    // Fetch guide details - use guide_id from URL if provided, otherwise use booking's guide_id
     let guide = null;
-    if (booking.guide_id) {
+    const guideIdToFetch = urlGuideId || booking.guide_id;
+    if (guideIdToFetch) {
       const { data: guideData } = await supabase
         .from('guides_temp')
         .select('id, name, Email, phonenumber')
-        .eq('id', booking.guide_id)
+        .eq('id', guideIdToFetch)
         .single();
       guide = guideData;
     }
@@ -72,8 +99,8 @@ export async function GET(
       tour = tourData;
     }
 
-    // Check if booking is already confirmed - if so, return error
-    if (booking.status === 'confirmed') {
+    // Check if booking is already confirmed - confirmed means status is 'confirmed' AND guide_id is not null
+    if (booking.status === 'confirmed' && booking.guide_id !== null) {
       return NextResponse.json(
         { error: 'This assignment has already been confirmed and is no longer accessible.' },
         { status: 403 }
@@ -84,7 +111,7 @@ export async function GET(
       booking: {
         id: booking.id,
         deal_id: booking.deal_id,
-        guide_id: booking.guide_id,
+        guide_id: urlGuideId || booking.guide_id, // Use guide_id from URL if provided
         tour_id: booking.tour_id,
         city: booking.city,
         tour_datetime: booking.tour_datetime,

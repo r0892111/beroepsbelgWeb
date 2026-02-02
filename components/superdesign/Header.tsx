@@ -74,7 +74,7 @@ export function Header({ locale }: HeaderProps) {
       >
         {/* Logo */}
         <Link
-          href={`/${locale}`}
+          href="https://beroepsbelg.be"
           className="flex items-center gap-3 cursor-pointer relative z-[101]"
         >
           <Image
