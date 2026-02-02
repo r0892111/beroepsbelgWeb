@@ -226,8 +226,8 @@ export default function OpMaatFormPage() {
 
       // Extract start and end locations directly from separate fields
       // Always replace the booking's start_location and end_location with form values
-      const parsedStartLocation = formData.startLocation.trim() || null;
-      const parsedEndLocation = formData.endLocation.trim() || null;
+      const parsedStartLocation = formData.startLocation.trim();
+      const parsedEndLocation = formData.endLocation.trim();
 
       // Ensure we have valid location values (form fields are required, but double-check)
       if (!parsedStartLocation || !parsedEndLocation) {
@@ -270,12 +270,12 @@ export default function OpMaatFormPage() {
       // This will always replace any existing start_location and end_location values
       const updatePayload: {
         invitees: any[];
-        start_location: string | null;
-        end_location: string | null;
+        start_location: string;
+        end_location: string;
       } = {
         invitees: updatedInvitees,
-        start_location: parsedStartLocation, // Always replace with form value (or null if empty)
-        end_location: parsedEndLocation, // Always replace with form value (or null if empty)
+        start_location: parsedStartLocation, // Always replace with form value
+        end_location: parsedEndLocation, // Always replace with form value
       };
 
       console.log('Update payload:', updatePayload);
