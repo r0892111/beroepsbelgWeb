@@ -18,7 +18,7 @@ function getSupabaseServer() {
   });
 }
 
-async function triggerWebhook(dealId: string, guideId: number | null, action: 'accept' | 'decline') {
+async function triggerWebhook(bookingId: number, guideId: number | null, action: 'accept' | 'decline') {
   try {
     const response = await fetch('https://alexfinit.app.n8n.cloud/webhook/d83af522-aa75-431d-bbf8-6b9f4faa1a14', {
       method: 'POST',
@@ -26,7 +26,7 @@ async function triggerWebhook(dealId: string, guideId: number | null, action: 'a
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ 
-        deal_id: dealId,
+        booking_id: bookingId,
         guide_id: guideId,
         action: action,
       }),
@@ -92,13 +92,11 @@ export async function POST(
     // Use booking's guide_id
     const finalGuideId = booking.guide_id;
     
-    // Trigger webhook with booking id and deal_id
-    // Send both booking.id and deal_id for compatibility
-    const webhookSuccess = await triggerWebhook(booking.deal_id || booking.id.toString(), finalGuideId, action);
+    // Trigger webhook with booking_id
+    const webhookSuccess = await triggerWebhook(booking.id, finalGuideId, action);
     
     console.info('[Webhook] Sent to webhook:', {
       webhookUrl: 'https://alexfinit.app.n8n.cloud/webhook/d83af522-aa75-431d-bbf8-6b9f4faa1a14',
-      deal_id: booking.deal_id,
       booking_id: booking.id,
       guide_id: finalGuideId,
       action,
