@@ -117,6 +117,7 @@ interface TourBooking {
   selectedGuides: (number | SelectedGuide)[] | null;
   created_at?: string;
   invoice_id: string | null;
+  invoice_link: string | null;
   ai_desc: string | null;
   start_location: string | null;
   end_location: string | null;
@@ -2345,6 +2346,20 @@ export default function BookingDetailPage() {
                             >
                               <CreditCard className="h-3 w-3" />
                               <span className="text-xs">Send Payment Link</span>
+                            </Button>
+                          )}
+                          {booking.invoice_link && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 gap-1.5 text-green-600 border-green-200 hover:bg-green-50"
+                              asChild
+                            >
+                              <Link href={booking.invoice_link} target="_blank" rel="noopener noreferrer">
+                                <FileText className="h-3 w-3" />
+                                <span className="text-xs">Invoice</span>
+                                <ExternalLink className="h-3 w-3 ml-0.5" />
+                              </Link>
                             </Button>
                           )}
                           <Button
