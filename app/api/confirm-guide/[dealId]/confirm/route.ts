@@ -38,6 +38,26 @@ async function triggerWebhook(bookingId: number, guideId: number | null, action:
   }
 }
 
+// Parse URL parameter which is in format "bookingId-guideId" (e.g., "551-18")
+function parseBookingAndGuideId(param: string): { bookingId: number; guideId: number | null } {
+  const parts = param.split('-');
+  
+  if (parts.length >= 2) {
+    // Last part is guide_id
+    const guideId = parseInt(parts[parts.length - 1], 10);
+    // Everything except last part is booking_id
+    const bookingId = parseInt(parts.slice(0, -1).join('-'), 10);
+    
+    if (!isNaN(bookingId) && !isNaN(guideId)) {
+      return { bookingId, guideId };
+    }
+  }
+  
+  // Fallback: treat entire string as booking ID (backward compatibility)
+  const bookingId = parseInt(param, 10);
+  return { bookingId: isNaN(bookingId) ? 0 : bookingId, guideId: null };
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ dealId: string }> }
@@ -62,16 +82,22 @@ export async function POST(
       );
     }
 
-    // Parse booking ID - can be a number (like 551) or UUID format
-    const bookingIdNum = parseInt(dealId, 10);
-    const isNumericId = !isNaN(bookingIdNum);
+    // Parse booking ID and guide ID from URL format "bookingId-guideId"
+    const { bookingId, guideId: urlGuideId } = parseBookingAndGuideId(dealId);
+
+    if (!bookingId || bookingId === 0) {
+      return NextResponse.json(
+        { error: 'Invalid booking ID format. Expected format: bookingId-guideId' },
+        { status: 400 }
+      );
+    }
 
     // Verify booking exists (using booking id)
     const supabase = getSupabaseServer();
     const { data: booking, error: bookingError } = await supabase
       .from('tourbooking')
       .select('id, deal_id, guide_id, selectedGuides, status')
-      .eq('id', isNumericId ? bookingIdNum : dealId)
+      .eq('id', bookingId)
       .single();
 
     if (bookingError || !booking) {
@@ -89,11 +115,10 @@ export async function POST(
       );
     }
 
-    // For accept action, guide_id must be provided (from selectedGuides or booking)
-    // Use booking's guide_id if available, otherwise find it from selectedGuides
-    let finalGuideId = booking.guide_id;
+    // Use guide_id from URL if provided, otherwise use booking's guide_id, otherwise find from selectedGuides
+    let finalGuideId = urlGuideId || booking.guide_id;
     
-    // If guide_id is null but we're accepting, try to find guide from selectedGuides
+    // If guide_id is still null but we're accepting, try to find guide from selectedGuides
     // Look for a guide with status 'offered' (the one being accepted)
     if (action === 'accept' && !finalGuideId && booking.selectedGuides) {
       const selectedGuidesArray = Array.isArray(booking.selectedGuides) ? booking.selectedGuides : [];

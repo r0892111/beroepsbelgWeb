@@ -14,7 +14,7 @@ export default function SiteFooter({ locale }: SiteFooterProps) {
       <DiagonalStripes className="opacity-50" />
       <div className="container py-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 relative">
         <div className="space-y-6">
-          <Link href={`/${locale}`} className="block">
+          <Link href="https://beroepsbelg.be" className="block">
             <Image
               src="/Beroepsbelg Logo.png"
               alt="BuroBeroepsBelg"

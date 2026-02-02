@@ -64,7 +64,7 @@ export function MainNav({ locale }: MainNavProps) {
 
       <div className="container mx-auto px-6 md:px-12">
         <div className={`flex items-center justify-between transition-all duration-500 ${isScrolled ? 'h-16' : 'h-20'}`}>
-          <Link href={`/${locale}`} className="flex items-center group relative">
+          <Link href="https://beroepsbelg.be" className="flex items-center group relative">
             <div className="relative">
               {/* Turquoise glow on hover */}
               <div
