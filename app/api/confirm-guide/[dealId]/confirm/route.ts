@@ -38,27 +38,6 @@ async function triggerWebhook(dealId: string, guideId: number | null, action: 'a
   }
 }
 
-// Parse dealId which is in format "uuid-guide_id"
-function parseDealId(dealId: string): { uuid: string; guideId: number | null } {
-  const parts = dealId.split('-');
-  
-  // UUID has 5 parts separated by hyphens, guide_id is appended after
-  // Format: "123e4567-e89b-12d3-a456-426614174000-123"
-  if (parts.length >= 6) {
-    // Last part is guide_id
-    const guideId = parseInt(parts[parts.length - 1], 10);
-    // Everything except last part is UUID
-    const uuid = parts.slice(0, -1).join('-');
-    
-    if (!isNaN(guideId)) {
-      return { uuid, guideId };
-    }
-  }
-  
-  // Fallback: treat entire string as UUID (backward compatibility)
-  return { uuid: dealId, guideId: null };
-}
-
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ dealId: string }> }
@@ -68,12 +47,10 @@ export async function POST(
 
     if (!dealId) {
       return NextResponse.json(
-        { error: 'Invalid deal ID' },
+        { error: 'Invalid booking ID' },
         { status: 400 }
       );
     }
-
-    const { uuid, guideId } = parseDealId(dealId);
 
     const body = await request.json();
     const { action } = body;
@@ -85,12 +62,16 @@ export async function POST(
       );
     }
 
-    // Verify booking exists (using UUID part)
+    // Parse booking ID - can be a number (like 551) or UUID format
+    const bookingIdNum = parseInt(dealId, 10);
+    const isNumericId = !isNaN(bookingIdNum);
+
+    // Verify booking exists (using booking id)
     const supabase = getSupabaseServer();
     const { data: booking, error: bookingError } = await supabase
       .from('tourbooking')
-      .select('id, deal_id, guide_id, selectedGuides')
-      .eq('deal_id', uuid)
+      .select('id, deal_id, guide_id, selectedGuides, status')
+      .eq('id', isNumericId ? bookingIdNum : dealId)
       .single();
 
     if (bookingError || !booking) {
@@ -100,32 +81,27 @@ export async function POST(
       );
     }
 
-    // Verify that the deal_id from the booking matches what we're sending to webhook
-    if (booking.deal_id !== uuid) {
-      console.error('[Webhook] Deal ID mismatch:', {
-        bookingDealId: booking.deal_id,
-        parsedUuid: uuid,
-        dealIdParam: dealId,
-      });
+    // Check if booking is already confirmed - if so, return error
+    if (booking.status === 'confirmed') {
       return NextResponse.json(
-        { error: 'Deal ID mismatch - booking deal_id does not match parsed UUID' },
-        { status: 400 }
+        { error: 'This assignment has already been confirmed and can no longer be modified.' },
+        { status: 403 }
       );
     }
 
-    // Use parsed guideId if available, otherwise use booking's guide_id
-    const finalGuideId = guideId || booking.guide_id;
+    // Use booking's guide_id
+    const finalGuideId = booking.guide_id;
     
-    // Trigger webhook with the verified deal_id from the booking
-    // Use booking.deal_id to ensure we're sending the actual deal_id from database
-    const webhookSuccess = await triggerWebhook(booking.deal_id, finalGuideId, action);
+    // Trigger webhook with booking id and deal_id
+    // Send both booking.id and deal_id for compatibility
+    const webhookSuccess = await triggerWebhook(booking.deal_id || booking.id.toString(), finalGuideId, action);
     
     console.info('[Webhook] Sent to webhook:', {
       webhookUrl: 'https://alexfinit.app.n8n.cloud/webhook/d83af522-aa75-431d-bbf8-6b9f4faa1a14',
       deal_id: booking.deal_id,
+      booking_id: booking.id,
       guide_id: finalGuideId,
       action,
-      bookingId: booking.id,
     });
 
     if (!webhookSuccess) {
@@ -162,7 +138,7 @@ export async function POST(
           guide_id: finalGuideId,
           selectedGuides: updatedSelectedGuides,
         })
-        .eq('deal_id', uuid);
+        .eq('id', booking.id);
 
       if (!updateError) {
         // Update guide metrics when guide accepts (tours_done will be recalculated)
@@ -189,7 +165,7 @@ export async function POST(
       await supabase
         .from('tourbooking')
         .update({ selectedGuides: updatedSelectedGuides })
-        .eq('deal_id', uuid);
+        .eq('id', booking.id);
 
       // Increment denied_assignment count when guide declines
       await incrementGuideDeniedAssignment(finalGuideId);

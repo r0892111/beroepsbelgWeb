@@ -34,24 +34,37 @@ interface Booking {
 
 export default function ConfirmGuideClientPage() {
   const params = useParams();
-  const dealId = params.dealId as string;
+  const bookingId = params.dealId as string; // Parameter name is still dealId but it's actually bookingId now
   
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState<{ action: 'accept' | 'decline' } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [alreadyConfirmed, setAlreadyConfirmed] = useState(false);
 
   useEffect(() => {
     async function loadBooking() {
       try {
-        const response = await fetch(`/api/confirm-guide/${dealId}`);
+        const response = await fetch(`/api/confirm-guide/${bookingId}`);
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: 'Failed to load booking' }));
-          throw new Error(errorData.error || 'Failed to load booking');
+          // Check if it's a 403 (already confirmed)
+          if (response.status === 403) {
+            setAlreadyConfirmed(true);
+            setError(errorData.error || 'This assignment has already been confirmed.');
+          } else {
+            throw new Error(errorData.error || 'Failed to load booking');
+          }
+        } else {
+          const data = await response.json();
+          setBooking(data.booking);
+          // Also check if status is confirmed
+          if (data.booking?.status === 'confirmed') {
+            setAlreadyConfirmed(true);
+            setError('This assignment has already been confirmed.');
+          }
         }
-        const data = await response.json();
-        setBooking(data.booking);
       } catch (err) {
         console.error('Error loading booking:', err);
         setError(err instanceof Error ? err.message : 'Failed to load booking');
@@ -61,14 +74,19 @@ export default function ConfirmGuideClientPage() {
     }
 
     void loadBooking();
-  }, [dealId]);
+  }, [bookingId]);
 
   const handleAction = async (action: 'accept' | 'decline') => {
+    if (alreadyConfirmed || booking?.status === 'confirmed') {
+      setError('This assignment has already been confirmed and can no longer be modified.');
+      return;
+    }
+
     setProcessing(true);
     setError(null);
 
     try {
-      const response = await fetch(`/api/confirm-guide/${dealId}/confirm`, {
+      const response = await fetch(`/api/confirm-guide/${bookingId}/confirm`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -79,10 +97,16 @@ export default function ConfirmGuideClientPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || `Failed to ${action} assignment`);
+        // Check if it's a 403 (already confirmed)
+        if (response.status === 403) {
+          setAlreadyConfirmed(true);
+          setError(data.error || 'This assignment has already been confirmed.');
+        } else {
+          throw new Error(data.error || `Failed to ${action} assignment`);
+        }
+      } else {
+        setSuccess({ action });
       }
-
-      setSuccess({ action });
     } catch (err) {
       console.error(`Error ${action}ing assignment:`, err);
       setError(err instanceof Error ? err.message : `Failed to ${action} assignment`);
@@ -106,9 +130,34 @@ export default function ConfirmGuideClientPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg text-center">
-          <XCircle className="mx-auto h-16 w-16 text-red-500" />
-          <h1 className="mt-4 text-2xl font-bold text-gray-900">Error</h1>
-          <p className="mt-2 text-gray-600">{error}</p>
+          {alreadyConfirmed ? (
+            <>
+              <CheckCircle2 className="mx-auto h-16 w-16 text-green-500" />
+              <h1 className="mt-4 text-2xl font-bold text-gray-900">Already Confirmed</h1>
+              <p className="mt-2 text-gray-600">{error}</p>
+            </>
+          ) : (
+            <>
+              <XCircle className="mx-auto h-16 w-16 text-red-500" />
+              <h1 className="mt-4 text-2xl font-bold text-gray-900">Error</h1>
+              <p className="mt-2 text-gray-600">{error}</p>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Show already confirmed message if booking is confirmed
+  if (alreadyConfirmed || booking?.status === 'confirmed') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+        <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg text-center">
+          <CheckCircle2 className="mx-auto h-16 w-16 text-green-500" />
+          <h1 className="mt-4 text-2xl font-bold text-gray-900">Already Confirmed</h1>
+          <p className="mt-2 text-gray-600">
+            This assignment has already been confirmed and is no longer accessible.
+          </p>
         </div>
       </div>
     );
@@ -136,7 +185,7 @@ export default function ConfirmGuideClientPage() {
         <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg text-center">
           <XCircle className="mx-auto h-16 w-16 text-yellow-500" />
           <h1 className="mt-4 text-2xl font-bold text-gray-900">Assignment Not Found</h1>
-          <p className="mt-2 text-gray-600">No assignment found for this deal ID.</p>
+          <p className="mt-2 text-gray-600">No assignment found for this booking ID.</p>
         </div>
       </div>
     );
