@@ -2300,6 +2300,61 @@ export default function BookingDetailPage() {
                             <p>{inv.specialRequests}</p>
                           </div>
                         )}
+                        {/* Price Breakdown */}
+                        {(inv.pricePerPerson !== undefined || inv.amount !== undefined || inv.tanguyCost !== undefined || inv.extraHourCost !== undefined || inv.weekendFeeCost !== undefined || inv.eveningFeeCost !== undefined) && (
+                          <div className="mt-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                            <p className="text-xs font-semibold text-blue-900 mb-2">Price Breakdown</p>
+                            <div className="space-y-1 text-xs">
+                              {inv.pricePerPerson !== undefined && inv.numberOfPeople !== undefined && (
+                                <div className="flex justify-between">
+                                  <span className="text-blue-700">Base Price ({inv.numberOfPeople} {inv.numberOfPeople === 1 ? 'person' : 'people'} × €{inv.pricePerPerson.toFixed(2)})</span>
+                                  <span className="font-medium text-blue-900">€{((inv.pricePerPerson || 0) * (inv.numberOfPeople || 1)).toFixed(2)}</span>
+                                </div>
+                              )}
+                              {inv.tanguyCost !== undefined && inv.tanguyCost > 0 && (
+                                <div className="flex justify-between">
+                                  <span className="text-blue-700">Tanguy Cost</span>
+                                  <span className="font-medium text-blue-900">€{inv.tanguyCost.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {inv.extraHourCost !== undefined && inv.extraHourCost > 0 && (
+                                <div className="flex justify-between">
+                                  <span className="text-blue-700">Extra Hour</span>
+                                  <span className="font-medium text-blue-900">€{inv.extraHourCost.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {inv.weekendFeeCost !== undefined && inv.weekendFeeCost > 0 && (
+                                <div className="flex justify-between">
+                                  <span className="text-blue-700">Weekend Fee</span>
+                                  <span className="font-medium text-blue-900">€{inv.weekendFeeCost.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {inv.eveningFeeCost !== undefined && inv.eveningFeeCost > 0 && (
+                                <div className="flex justify-between">
+                                  <span className="text-blue-700">Evening Fee</span>
+                                  <span className="font-medium text-blue-900">€{inv.eveningFeeCost.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {(inv.amount !== undefined || inv.pricePerPerson !== undefined) && (
+                                <div className="flex justify-between pt-1 mt-1 border-t border-blue-300">
+                                  <span className="font-semibold text-blue-900">Total</span>
+                                  <span className="font-bold text-blue-900">
+                                    €{inv.amount !== undefined && inv.amount !== null 
+                                      ? inv.amount.toFixed(2) 
+                                      : (
+                                          ((inv.pricePerPerson || 0) * (inv.numberOfPeople || 1)) +
+                                          (inv.tanguyCost || 0) +
+                                          (inv.extraHourCost || 0) +
+                                          (inv.weekendFeeCost || 0) +
+                                          (inv.eveningFeeCost || 0)
+                                        ).toFixed(2)
+                                    }
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
                         {/* Pending payment alert */}
                         {inv.pendingPaymentPeople && (
                           <div className="mt-2 p-2 rounded-lg bg-amber-50 border border-amber-200">
