@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -95,6 +96,8 @@ export default function OpMaatFormPage() {
   const [booking, setBooking] = useState<Booking | null>(null);
   const [tour, setTour] = useState<Tour | null>(null);
   const [formConfig, setFormConfig] = useState<OpMaatFormConfig | null>(null);
+  const [tourImage, setTourImage] = useState<string | null>(null);
+  const [tourMediaType, setTourMediaType] = useState<'image' | 'video'>('image');
 
   const [formData, setFormData] = useState({
     startLocation: '',
@@ -172,6 +175,22 @@ export default function OpMaatFormPage() {
             const config = (tourData.options as any).op_maat_form_config;
             if (config) {
               setFormConfig(config);
+            }
+          }
+
+          // Get primary image/video from tour_images
+          const tourImages = tourData.tour_images;
+          if (tourImages && Array.isArray(tourImages) && tourImages.length > 0) {
+            // Sort: is_primary=true first, then by sort_order
+            const sortedImages = [...tourImages].sort((a: any, b: any) => {
+              if (a.is_primary === true && b.is_primary !== true) return -1;
+              if (a.is_primary !== true && b.is_primary === true) return 1;
+              return (a.sort_order || 0) - (b.sort_order || 0);
+            });
+            const primaryMedia = sortedImages[0];
+            if (primaryMedia && primaryMedia.url) {
+              setTourImage(primaryMedia.url);
+              setTourMediaType(primaryMedia.media_type === 'video' ? 'video' : 'image');
             }
           }
         }
@@ -368,20 +387,49 @@ export default function OpMaatFormPage() {
   // Success state
   if (submitted) {
     return (
-      <div className="min-h-screen bg-[#F0F0EB] flex items-center justify-center p-4">
-        <Card className="max-w-md w-full text-center">
-          <CardHeader>
-            <div className="mx-auto mb-4">
-              <CheckCircle className="h-16 w-16 text-green-500" />
+      <div className="min-h-screen bg-[#F0F0EB]">
+        {/* Hero Section with Tour Image */}
+        {tourImage && (
+          <div className="relative w-full h-[280px] md:h-[360px]">
+            <div className="absolute inset-0 overflow-hidden">
+              {tourMediaType === 'video' ? (
+                <video
+                  src={tourImage}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              ) : (
+                <Image
+                  src={tourImage}
+                  alt={tour?.title || 'Tour'}
+                  fill
+                  className="object-cover"
+                  priority
+                />
+              )}
+              <div className="absolute inset-0 bg-black/20" />
             </div>
-            <CardTitle className="text-2xl text-[#1a3628]">
-              {t('thankYou') || 'Bedankt!'}
-            </CardTitle>
-            <CardDescription className="text-base">
-              {t('submittedMessage') || 'Je voorkeuren zijn succesvol opgeslagen. We nemen contact met je op om de details van je tour op maat te bespreken.'}
-            </CardDescription>
-          </CardHeader>
-        </Card>
+          </div>
+        )}
+        
+        <div className="flex items-center justify-center p-4 py-8">
+          <Card className={`w-full text-center ${tourImage ? 'max-w-md' : 'max-w-md'}`}>
+            <CardHeader>
+              <div className="mx-auto mb-4">
+                <CheckCircle className="h-16 w-16 text-green-500" />
+              </div>
+              <CardTitle className="text-2xl text-[#1a3628]">
+                {t('thankYou') || 'Bedankt!'}
+              </CardTitle>
+              <CardDescription className="text-base">
+                {t('submittedMessage') || 'Je voorkeuren zijn succesvol opgeslagen. We nemen contact met je op om de details van je tour op maat te bespreken.'}
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
       </div>
     );
   }
