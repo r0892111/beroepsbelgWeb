@@ -117,6 +117,7 @@ interface TourBooking {
   selectedGuides: (number | SelectedGuide)[] | null;
   created_at?: string;
   invoice_id: string | null;
+  invoice_link: string | null;
   ai_desc: string | null;
   start_location: string | null;
   end_location: string | null;
@@ -1540,6 +1541,31 @@ export default function BookingDetailPage() {
     }
   };
 
+  // Call invoice webhook
+  const handleCallInvoiceWebhook = async (invoiceId: string, price: number) => {
+    try {
+      const response = await fetch('https://alexfinit.app.n8n.cloud/webhook/8a7a6159-5cdb-4853-b6ff-b92307739f22', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          invoice_id: invoiceId,
+          price: price,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Webhook call failed: ${response.statusText}`);
+      }
+
+      toast.success('Webhook called successfully');
+    } catch (err) {
+      console.error('Error calling invoice webhook:', err);
+      toast.error('Failed to call webhook');
+    }
+  };
+
   // Send extra info to guide
   const handleSendInfoToGuide = async () => {
     if (!booking || !infoMessage.trim()) return;
@@ -2345,6 +2371,31 @@ export default function BookingDetailPage() {
                             >
                               <CreditCard className="h-3 w-3" />
                               <span className="text-xs">Send Payment Link</span>
+                            </Button>
+                          )}
+                          {booking.invoice_link && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 gap-1.5 text-green-600 border-green-200 hover:bg-green-50"
+                              asChild
+                            >
+                              <Link href={booking.invoice_link} target="_blank" rel="noopener noreferrer">
+                                <FileText className="h-3 w-3" />
+                                <span className="text-xs">Invoice</span>
+                                <ExternalLink className="h-3 w-3 ml-0.5" />
+                              </Link>
+                            </Button>
+                          )}
+                          {booking.invoice_id && inv.amount !== undefined && inv.amount !== null && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 gap-1.5 text-purple-600 border-purple-200 hover:bg-purple-50"
+                              onClick={() => handleCallInvoiceWebhook(booking.invoice_id!, inv.amount!)}
+                            >
+                              <Send className="h-3 w-3" />
+                              <span className="text-xs">Send Webhook</span>
                             </Button>
                           )}
                           <Button
