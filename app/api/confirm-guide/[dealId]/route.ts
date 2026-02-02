@@ -16,27 +16,6 @@ function getSupabaseServer() {
   });
 }
 
-// Parse dealId which is in format "uuid-guide_id"
-function parseDealId(dealId: string): { uuid: string; guideId: number | null } {
-  const parts = dealId.split('-');
-  
-  // UUID has 5 parts separated by hyphens, guide_id is appended after
-  // Format: "123e4567-e89b-12d3-a456-426614174000-123"
-  if (parts.length >= 6) {
-    // Last part is guide_id
-    const guideId = parseInt(parts[parts.length - 1], 10);
-    // Everything except last part is UUID
-    const uuid = parts.slice(0, -1).join('-');
-    
-    if (!isNaN(guideId)) {
-      return { uuid, guideId };
-    }
-  }
-  
-  // Fallback: treat entire string as UUID (backward compatibility)
-  return { uuid: dealId, guideId: null };
-}
-
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ dealId: string }> }
@@ -46,19 +25,22 @@ export async function GET(
 
     if (!dealId) {
       return NextResponse.json(
-        { error: 'Invalid deal ID' },
+        { error: 'Invalid booking ID' },
         { status: 400 }
       );
     }
 
-    const { uuid, guideId } = parseDealId(dealId);
     const supabase = getSupabaseServer();
 
-    // Fetch the booking by deal_id (using the UUID part)
+    // Parse booking ID - can be a number (like 551) or UUID format
+    const bookingIdNum = parseInt(dealId, 10);
+    const isNumericId = !isNaN(bookingIdNum);
+
+    // Fetch the booking by booking id (numeric ID)
     const { data: booking, error: bookingError } = await supabase
       .from('tourbooking')
       .select('id, deal_id, guide_id, tour_id, city, tour_datetime, tour_end, status')
-      .eq('deal_id', uuid)
+      .eq('id', isNumericId ? bookingIdNum : dealId)
       .single();
 
     if (bookingError || !booking) {
@@ -90,11 +72,19 @@ export async function GET(
       tour = tourData;
     }
 
+    // Check if booking is already confirmed - if so, return error
+    if (booking.status === 'confirmed') {
+      return NextResponse.json(
+        { error: 'This assignment has already been confirmed and is no longer accessible.' },
+        { status: 403 }
+      );
+    }
+
     return NextResponse.json({
       booking: {
         id: booking.id,
         deal_id: booking.deal_id,
-        guide_id: guideId || booking.guide_id, // Use parsed guideId if available, otherwise use booking's guide_id
+        guide_id: booking.guide_id,
         tour_id: booking.tour_id,
         city: booking.city,
         tour_datetime: booking.tour_datetime,
