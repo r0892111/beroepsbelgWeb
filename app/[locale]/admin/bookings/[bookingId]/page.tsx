@@ -2130,31 +2130,97 @@ export default function BookingDetailPage() {
                           }
                           return null;
                         })()}
+                        {/* Price Breakdown for Local Stories */}
+                        {(() => {
+                          const matchingInvitee = allInvitees.find(inv => 
+                            (inv.email || '').toLowerCase().trim() === (lb.customer_email || '').toLowerCase().trim()
+                          );
+                          
+                          // Calculate total paid amount
+                          // 1. Initial payment from matching invitee
+                          const initialPaidAmount = matchingInvitee?.amount || 0;
+                          
+                          // 2. Extra payments received
+                          const extraPaymentsTotal = lb.extra_payments_received?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+                          
+                          // 3. Total paid amount
+                          const totalPaidAmount = initialPaidAmount + extraPaymentsTotal;
+                          
+                          // Show breakdown if there's any payment info
+                          if (totalPaidAmount > 0 || matchingInvitee?.pricePerPerson !== undefined || matchingInvitee?.amount !== undefined) {
+                            return (
+                              <div className="mt-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                                <p className="text-xs font-semibold text-blue-900 mb-2">Price Breakdown</p>
+                                <div className="space-y-1 text-xs">
+                                  {matchingInvitee?.pricePerPerson !== undefined && lb.amnt_of_people !== undefined && (
+                                    <div className="flex justify-between">
+                                      <span className="text-blue-700">Base Price ({lb.amnt_of_people} {lb.amnt_of_people === 1 ? 'person' : 'people'} × €{matchingInvitee.pricePerPerson.toFixed(2)})</span>
+                                      <span className="font-medium text-blue-900">€{((matchingInvitee.pricePerPerson || 0) * (lb.amnt_of_people || 1)).toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                  {initialPaidAmount > 0 && (
+                                    <div className="flex justify-between">
+                                      <span className="text-blue-700">Initial Payment</span>
+                                      <span className="font-medium text-blue-900">€{initialPaidAmount.toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                  {extraPaymentsTotal > 0 && (
+                                    <div className="flex justify-between">
+                                      <span className="text-blue-700">Extra Payments ({lb.extra_payments_received?.length || 0} {lb.extra_payments_received?.length === 1 ? 'payment' : 'payments'})</span>
+                                      <span className="font-medium text-blue-900">€{extraPaymentsTotal.toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                  {totalPaidAmount > 0 && (
+                                    <div className="flex justify-between pt-1 mt-1 border-t border-blue-300">
+                                      <span className="font-semibold text-blue-900">Total Paid</span>
+                                      <span className="font-bold text-blue-900">€{totalPaidAmount.toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
                         <div className="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t">
                           {(() => {
                             // Check if this customer has paid (via deal_id, stripe_session_id, or invitee.isPaid/amount)
-                            const matchingInvitee = allInvitees.find(inv => inv.email === lb.customer_email);
-                            const isPaid = lb.deal_id || lb.stripe_session_id || matchingInvitee?.isPaid || matchingInvitee?.amount;
+                            const matchingInvitee = allInvitees.find(inv => 
+                              (inv.email || '').toLowerCase().trim() === (lb.customer_email || '').toLowerCase().trim()
+                            );
+                            
+                            // Calculate total paid amount
+                            const initialPaidAmount = matchingInvitee?.amount || 0;
+                            const extraPaymentsTotal = lb.extra_payments_received?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+                            const totalPaidAmount = initialPaidAmount + extraPaymentsTotal;
+                            const isPaid = lb.deal_id || lb.stripe_session_id || matchingInvitee?.isPaid || totalPaidAmount > 0;
 
                             if (lb.deal_id) {
                               // Has TeamLeader deal - show link to it
                               return (
-                                <Button variant="outline" size="sm" asChild className="h-7 gap-1.5">
-                                  <a
-                                    href={`https://focus.teamleader.eu/web/deals/${lb.deal_id}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    <Building2 className="h-3 w-3" />
-                                    <span className="text-xs">TeamLeader Deal</span>
-                                  </a>
-                                </Button>
+                                <>
+                                  <Button variant="outline" size="sm" asChild className="h-7 gap-1.5">
+                                    <a
+                                      href={`https://focus.teamleader.eu/web/deals/${lb.deal_id}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      <Building2 className="h-3 w-3" />
+                                      <span className="text-xs">TeamLeader Deal</span>
+                                    </a>
+                                  </Button>
+                                  {totalPaidAmount > 0 && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      Paid: €{totalPaidAmount.toFixed(2)}
+                                    </Badge>
+                                  )}
+                                </>
                               );
                             } else if (isPaid) {
-                              // Paid but no deal yet - show paid badge
+                              // Paid but no deal yet - show paid badge with total amount
                               return (
                                 <Badge variant="secondary" className="text-xs">
-                                  Paid {matchingInvitee?.amount ? `€${matchingInvitee.amount.toFixed(2)}` : ''}
+                                  Paid: €{totalPaidAmount.toFixed(2)}
                                 </Badge>
                               );
                             } else if (matchingInvitee?.paymentLinksSent && matchingInvitee.paymentLinksSent.length > 0) {
