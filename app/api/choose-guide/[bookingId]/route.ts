@@ -165,7 +165,7 @@ export async function GET(
         .filter((item: any) => item && typeof item === 'object' && 'id' in item)
         .map((item: any) => {
           // The item might be a full guide object or a simplified one
-          // Extract the status info that we've added
+          // Extract all fields including new format fields
           return {
             id: typeof item.id === 'number' ? item.id : parseInt(String(item.id), 10),
             name: item.name || null,
@@ -176,8 +176,12 @@ export async function GET(
             phonenumber: item.phonenumber || null,
             Email: item.Email || null,
             tours_done: item.tours_done || null,
+            relevance_score: item.relevance_score ?? null,
+            availability: item.availability || null,
+            profile_picture: item.profile_picture || null,
+            is_favourite: item.is_favourite ?? null,
             // Status fields - these are added when guide is offered/declined/accepted
-            selectionStatus: item.status || null,
+            status: item.status || null,
             offeredAt: item.offeredAt || null,
             respondedAt: item.respondedAt || null,
           };

@@ -2380,19 +2380,19 @@ export default function BookingDetailPage() {
                               className="h-7 gap-1.5 text-green-600 border-green-200 hover:bg-green-50"
                               asChild
                             >
-                              <Link href={booking.invoice_link} target="_blank" rel="noopener noreferrer">
+                              <Link href={`https://focus.teamleader.eu/invoice_detail.php?id=${booking.invoice_link}`} target="_blank" rel="noopener noreferrer">
                                 <FileText className="h-3 w-3" />
                                 <span className="text-xs">Invoice</span>
                                 <ExternalLink className="h-3 w-3 ml-0.5" />
                               </Link>
                             </Button>
                           )}
-                          {booking.invoice_id && inv.amount !== undefined && inv.amount !== null && (
+                          {booking.invoice_link && inv.amount !== undefined && inv.amount !== null && (
                             <Button
                               variant="outline"
                               size="sm"
                               className="h-7 gap-1.5 text-purple-600 border-purple-200 hover:bg-purple-50"
-                              onClick={() => handleCallInvoiceWebhook(booking.invoice_id!, inv.amount!)}
+                              onClick={() => handleCallInvoiceWebhook(booking.invoice_link!, inv.amount!)}
                             >
                               <Send className="h-3 w-3" />
                               <span className="text-xs">Send Webhook</span>
