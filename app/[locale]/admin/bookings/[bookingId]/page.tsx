@@ -66,6 +66,11 @@ interface Invitee {
   specialRequests?: string;
   amount?: number;
   currency?: string;
+  originalAmount?: number; // Original amount before discount
+  promoCode?: string;
+  promoDiscountAmount?: number;
+  promoDiscountPercent?: number;
+  discountApplied?: number;
   upsellProducts?: any[];
   isPaid?: boolean;
   pendingPaymentPeople?: number;
@@ -2147,21 +2152,53 @@ export default function BookingDetailPage() {
                           const totalPaidAmount = initialPaidAmount + extraPaymentsTotal;
                           
                           // Show breakdown if there's any payment info
-                          if (totalPaidAmount > 0 || matchingInvitee?.pricePerPerson !== undefined || matchingInvitee?.amount !== undefined) {
+                          if (matchingInvitee && (totalPaidAmount > 0 || matchingInvitee.originalAmount !== undefined || matchingInvitee.amount !== undefined || matchingInvitee.tanguyCost !== undefined || matchingInvitee.extraHourCost !== undefined || matchingInvitee.weekendFeeCost !== undefined || matchingInvitee.eveningFeeCost !== undefined || matchingInvitee.promoDiscountAmount !== undefined)) {
                             return (
                               <div className="mt-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
                                 <p className="text-xs font-semibold text-blue-900 mb-2">Price Breakdown</p>
                                 <div className="space-y-1 text-xs">
-                                  {matchingInvitee?.pricePerPerson !== undefined && lb.amnt_of_people !== undefined && (
+                                  {matchingInvitee.originalAmount !== undefined && (
                                     <div className="flex justify-between">
-                                      <span className="text-blue-700">Base Price ({lb.amnt_of_people} {lb.amnt_of_people === 1 ? 'person' : 'people'} × €{matchingInvitee.pricePerPerson.toFixed(2)})</span>
-                                      <span className="font-medium text-blue-900">€{((matchingInvitee.pricePerPerson || 0) * (lb.amnt_of_people || 1)).toFixed(2)}</span>
+                                      <span className="text-blue-700">Original Amount ({lb.amnt_of_people || matchingInvitee.numberOfPeople || 1} {lb.amnt_of_people === 1 ? 'person' : 'people'})</span>
+                                      <span className="font-medium text-blue-900">€{matchingInvitee.originalAmount.toFixed(2)}</span>
                                     </div>
                                   )}
-                                  {initialPaidAmount > 0 && (
+                                  {matchingInvitee.tanguyCost !== undefined && matchingInvitee.tanguyCost > 0 && (
                                     <div className="flex justify-between">
-                                      <span className="text-blue-700">Initial Payment</span>
-                                      <span className="font-medium text-blue-900">€{initialPaidAmount.toFixed(2)}</span>
+                                      <span className="text-blue-700">Tanguy Cost</span>
+                                      <span className="font-medium text-blue-900">€{matchingInvitee.tanguyCost.toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                  {matchingInvitee.extraHourCost !== undefined && matchingInvitee.extraHourCost > 0 && (
+                                    <div className="flex justify-between">
+                                      <span className="text-blue-700">Extra Hour</span>
+                                      <span className="font-medium text-blue-900">€{matchingInvitee.extraHourCost.toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                  {matchingInvitee.weekendFeeCost !== undefined && matchingInvitee.weekendFeeCost > 0 && (
+                                    <div className="flex justify-between">
+                                      <span className="text-blue-700">Weekend Fee</span>
+                                      <span className="font-medium text-blue-900">€{matchingInvitee.weekendFeeCost.toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                  {matchingInvitee.eveningFeeCost !== undefined && matchingInvitee.eveningFeeCost > 0 && (
+                                    <div className="flex justify-between">
+                                      <span className="text-blue-700">Evening Fee</span>
+                                      <span className="font-medium text-blue-900">€{matchingInvitee.eveningFeeCost.toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                  {matchingInvitee.promoDiscountAmount !== undefined && matchingInvitee.promoDiscountAmount > 0 && (
+                                    <div className="flex justify-between">
+                                      <span className="text-blue-700">
+                                        Discount {matchingInvitee.promoCode ? `(${matchingInvitee.promoCode})` : ''} {matchingInvitee.promoDiscountPercent !== undefined ? `(${matchingInvitee.promoDiscountPercent}%)` : ''}
+                                      </span>
+                                      <span className="font-medium text-green-600">-€{matchingInvitee.promoDiscountAmount.toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                  {matchingInvitee.discountApplied !== undefined && matchingInvitee.discountApplied > 0 && matchingInvitee.promoDiscountAmount === undefined && (
+                                    <div className="flex justify-between">
+                                      <span className="text-blue-700">Discount Applied</span>
+                                      <span className="font-medium text-green-600">-€{matchingInvitee.discountApplied.toFixed(2)}</span>
                                     </div>
                                   )}
                                   {extraPaymentsTotal > 0 && (
@@ -2367,14 +2404,14 @@ export default function BookingDetailPage() {
                           </div>
                         )}
                         {/* Price Breakdown */}
-                        {(inv.pricePerPerson !== undefined || inv.amount !== undefined || inv.tanguyCost !== undefined || inv.extraHourCost !== undefined || inv.weekendFeeCost !== undefined || inv.eveningFeeCost !== undefined) && (
+                        {(inv.amount !== undefined || inv.originalAmount !== undefined || inv.tanguyCost !== undefined || inv.extraHourCost !== undefined || inv.weekendFeeCost !== undefined || inv.eveningFeeCost !== undefined || inv.promoDiscountAmount !== undefined) && (
                           <div className="mt-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
                             <p className="text-xs font-semibold text-blue-900 mb-2">Price Breakdown</p>
                             <div className="space-y-1 text-xs">
-                              {inv.pricePerPerson !== undefined && inv.numberOfPeople !== undefined && (
+                              {inv.originalAmount !== undefined && (
                                 <div className="flex justify-between">
-                                  <span className="text-blue-700">Base Price ({inv.numberOfPeople} {inv.numberOfPeople === 1 ? 'person' : 'people'} × €{inv.pricePerPerson.toFixed(2)})</span>
-                                  <span className="font-medium text-blue-900">€{((inv.pricePerPerson || 0) * (inv.numberOfPeople || 1)).toFixed(2)}</span>
+                                  <span className="text-blue-700">Original Amount ({inv.numberOfPeople || 1} {inv.numberOfPeople === 1 ? 'person' : 'people'})</span>
+                                  <span className="font-medium text-blue-900">€{inv.originalAmount.toFixed(2)}</span>
                                 </div>
                               )}
                               {inv.tanguyCost !== undefined && inv.tanguyCost > 0 && (
@@ -2401,21 +2438,24 @@ export default function BookingDetailPage() {
                                   <span className="font-medium text-blue-900">€{inv.eveningFeeCost.toFixed(2)}</span>
                                 </div>
                               )}
-                              {(inv.amount !== undefined || inv.pricePerPerson !== undefined) && (
-                                <div className="flex justify-between pt-1 mt-1 border-t border-blue-300">
-                                  <span className="font-semibold text-blue-900">Total</span>
-                                  <span className="font-bold text-blue-900">
-                                    €{inv.amount !== undefined && inv.amount !== null 
-                                      ? inv.amount.toFixed(2) 
-                                      : (
-                                          ((inv.pricePerPerson || 0) * (inv.numberOfPeople || 1)) +
-                                          (inv.tanguyCost || 0) +
-                                          (inv.extraHourCost || 0) +
-                                          (inv.weekendFeeCost || 0) +
-                                          (inv.eveningFeeCost || 0)
-                                        ).toFixed(2)
-                                    }
+                              {inv.promoDiscountAmount !== undefined && inv.promoDiscountAmount > 0 && (
+                                <div className="flex justify-between">
+                                  <span className="text-blue-700">
+                                    Discount {inv.promoCode ? `(${inv.promoCode})` : ''} {inv.promoDiscountPercent !== undefined ? `(${inv.promoDiscountPercent}%)` : ''}
                                   </span>
+                                  <span className="font-medium text-green-600">-€{inv.promoDiscountAmount.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {inv.discountApplied !== undefined && inv.discountApplied > 0 && inv.promoDiscountAmount === undefined && (
+                                <div className="flex justify-between">
+                                  <span className="text-blue-700">Discount Applied</span>
+                                  <span className="font-medium text-green-600">-€{inv.discountApplied.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {inv.amount !== undefined && (
+                                <div className="flex justify-between pt-1 mt-1 border-t border-blue-300">
+                                  <span className="font-semibold text-blue-900">Total Paid</span>
+                                  <span className="font-bold text-blue-900">€{inv.amount.toFixed(2)}</span>
                                 </div>
                               )}
                             </div>
