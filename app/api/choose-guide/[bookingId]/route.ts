@@ -161,32 +161,62 @@ export async function GET(
     let guides: any[] = [];
     
     if (booking.selectedGuides && Array.isArray(booking.selectedGuides)) {
+      // Extract guide IDs from selectedGuides
+      const guideIds = booking.selectedGuides
+        .filter((item: any) => item && typeof item === 'object' && 'id' in item)
+        .map((item: any) => {
+          const id = typeof item.id === 'number' ? item.id : parseInt(String(item.id), 10);
+          return isNaN(id) ? null : id;
+        })
+        .filter((id): id is number => id !== null);
+
+      // Fetch full guide details from database for guides that don't have complete info
+      let guideDetailsMap = new Map<number, any>();
+      if (guideIds.length > 0) {
+        const { data: guideDetails } = await supabase
+          .from('guides_temp')
+          .select('id, name, cities, languages, tour_types, content, phonenumber, Email, tours_done, relevance_score, availability, profile_picture, is_favourite')
+          .in('id', guideIds);
+
+        if (guideDetails) {
+          guideDetails.forEach((guide: any) => {
+            guideDetailsMap.set(guide.id, guide);
+          });
+        }
+      }
+
+      // Map selectedGuides and enrich with database data if needed
       guides = booking.selectedGuides
         .filter((item: any) => item && typeof item === 'object' && 'id' in item)
         .map((item: any) => {
-          // The item might be a full guide object or a simplified one
-          // Extract all fields including new format fields
+          const guideId = typeof item.id === 'number' ? item.id : parseInt(String(item.id), 10);
+          if (isNaN(guideId)) return null;
+
+          // Get guide details from database if available
+          const dbGuide = guideDetailsMap.get(guideId);
+
+          // Merge: use item data first, fallback to database data
           return {
-            id: typeof item.id === 'number' ? item.id : parseInt(String(item.id), 10),
-            name: item.name || null,
-            cities: item.cities || null,
-            languages: item.languages || null,
-            tour_types: item.tour_types || null,
-            content: item.content || null,
-            phonenumber: item.phonenumber || null,
-            Email: item.Email || null,
-            tours_done: item.tours_done || null,
-            relevance_score: item.relevance_score ?? null,
-            availability: item.availability || null,
-            profile_picture: item.profile_picture || null,
-            is_favourite: item.is_favourite ?? null,
+            id: guideId,
+            name: item.name || dbGuide?.name || null,
+            cities: item.cities || dbGuide?.cities || null,
+            languages: item.languages || dbGuide?.languages || null,
+            tour_types: item.tour_types || dbGuide?.tour_types || null,
+            content: item.content || dbGuide?.content || null,
+            phonenumber: item.phonenumber || dbGuide?.phonenumber || null,
+            Email: item.Email || dbGuide?.Email || null,
+            tours_done: item.tours_done !== undefined ? item.tours_done : (dbGuide?.tours_done ?? null),
+            relevance_score: item.relevance_score !== undefined ? item.relevance_score : (dbGuide?.relevance_score ?? null),
+            availability: item.availability || dbGuide?.availability || null,
+            profile_picture: item.profile_picture || dbGuide?.profile_picture || null,
+            is_favourite: item.is_favourite !== undefined ? item.is_favourite : (dbGuide?.is_favourite ?? null),
             // Status fields - these are added when guide is offered/declined/accepted
             status: item.status || null,
             offeredAt: item.offeredAt || null,
             respondedAt: item.respondedAt || null,
           };
         })
-        .filter((item: any) => !isNaN(item.id));
+        .filter((item: any): item is any => item !== null);
     }
 
     return NextResponse.json({
