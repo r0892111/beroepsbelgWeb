@@ -81,16 +81,33 @@ export async function POST(
       );
     }
 
-    // Check if booking is already confirmed - if so, return error
-    if (booking.status === 'confirmed') {
+    // Check if booking is already confirmed - confirmed means status is 'confirmed' AND guide_id is not null
+    if (booking.status === 'confirmed' && booking.guide_id !== null) {
       return NextResponse.json(
         { error: 'This assignment has already been confirmed and can no longer be modified.' },
         { status: 403 }
       );
     }
 
-    // Use booking's guide_id
-    const finalGuideId = booking.guide_id;
+    // For accept action, guide_id must be provided (from selectedGuides or booking)
+    // Use booking's guide_id if available, otherwise find it from selectedGuides
+    let finalGuideId = booking.guide_id;
+    
+    // If guide_id is null but we're accepting, try to find guide from selectedGuides
+    // Look for a guide with status 'offered' (the one being accepted)
+    if (action === 'accept' && !finalGuideId && booking.selectedGuides) {
+      const selectedGuidesArray = Array.isArray(booking.selectedGuides) ? booking.selectedGuides : [];
+      // Find the guide that was offered (status: 'offered')
+      for (const item of selectedGuidesArray) {
+        if (typeof item === 'object' && item !== null && 'id' in item) {
+          const itemId = typeof item.id === 'number' ? item.id : parseInt(String(item.id), 10);
+          if (!isNaN(itemId) && item.status === 'offered') {
+            finalGuideId = itemId;
+            break;
+          }
+        }
+      }
+    }
     
     // Trigger webhook with booking_id
     const webhookSuccess = await triggerWebhook(booking.id, finalGuideId, action);
@@ -113,6 +130,14 @@ export async function POST(
     // When guide declines, status remains unchanged (payment_completed for B2C, pending_guide_confirmation for B2B)
     // This allows another guide to accept the booking offer
     if (action === 'accept') {
+      // Ensure guide_id is not null before confirming
+      if (!finalGuideId) {
+        return NextResponse.json(
+          { error: 'Guide ID is required to confirm this assignment.' },
+          { status: 400 }
+        );
+      }
+
       // Update selectedGuides to mark this guide as accepted
       let updatedSelectedGuides = booking.selectedGuides || [];
       if (Array.isArray(updatedSelectedGuides)) {
@@ -129,11 +154,12 @@ export async function POST(
         });
       }
 
+      // Only set status to 'confirmed' if guide_id is not null
       const { error: updateError } = await supabase
         .from('tourbooking')
         .update({ 
           status: 'confirmed', 
-          guide_id: finalGuideId,
+          guide_id: finalGuideId, // This ensures guide_id is set
           selectedGuides: updatedSelectedGuides,
         })
         .eq('id', booking.id);

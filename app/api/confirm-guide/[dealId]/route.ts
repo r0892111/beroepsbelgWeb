@@ -72,8 +72,8 @@ export async function GET(
       tour = tourData;
     }
 
-    // Check if booking is already confirmed - if so, return error
-    if (booking.status === 'confirmed') {
+    // Check if booking is already confirmed - confirmed means status is 'confirmed' AND guide_id is not null
+    if (booking.status === 'confirmed' && booking.guide_id !== null) {
       return NextResponse.json(
         { error: 'This assignment has already been confirmed and is no longer accessible.' },
         { status: 403 }

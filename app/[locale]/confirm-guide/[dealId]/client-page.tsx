@@ -59,8 +59,8 @@ export default function ConfirmGuideClientPage() {
         } else {
           const data = await response.json();
           setBooking(data.booking);
-          // Also check if status is confirmed
-          if (data.booking?.status === 'confirmed') {
+          // Also check if status is confirmed AND guide_id is not null
+          if (data.booking?.status === 'confirmed' && data.booking?.guide_id !== null) {
             setAlreadyConfirmed(true);
             setError('This assignment has already been confirmed.');
           }
@@ -77,7 +77,8 @@ export default function ConfirmGuideClientPage() {
   }, [bookingId]);
 
   const handleAction = async (action: 'accept' | 'decline') => {
-    if (alreadyConfirmed || booking?.status === 'confirmed') {
+    // Check if already confirmed - confirmed means status is 'confirmed' AND guide_id is not null
+    if (alreadyConfirmed || (booking?.status === 'confirmed' && booking?.guide_id !== null)) {
       setError('This assignment has already been confirmed and can no longer be modified.');
       return;
     }
@@ -97,10 +98,12 @@ export default function ConfirmGuideClientPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        // Check if it's a 403 (already confirmed)
+        // Check if it's a 403 (already confirmed) or 400 (missing guide_id)
         if (response.status === 403) {
           setAlreadyConfirmed(true);
           setError(data.error || 'This assignment has already been confirmed.');
+        } else if (response.status === 400 && data.error?.includes('Guide ID')) {
+          setError(data.error || 'Guide ID is required to confirm this assignment.');
         } else {
           throw new Error(data.error || `Failed to ${action} assignment`);
         }
@@ -148,8 +151,8 @@ export default function ConfirmGuideClientPage() {
     );
   }
 
-  // Show already confirmed message if booking is confirmed
-  if (alreadyConfirmed || booking?.status === 'confirmed') {
+  // Show already confirmed message if booking is confirmed AND guide_id is not null
+  if (alreadyConfirmed || (booking?.status === 'confirmed' && booking?.guide_id !== null)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg text-center">
