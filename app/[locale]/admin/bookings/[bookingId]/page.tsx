@@ -2380,14 +2380,30 @@ export default function BookingDetailPage() {
                               className="h-7 gap-1.5 text-green-600 border-green-200 hover:bg-green-50"
                               asChild
                             >
-                              <Link href={`https://focus.teamleader.eu/invoice_detail.php?id=${booking.invoice_link}`} target="_blank" rel="noopener noreferrer">
+                              <Link 
+                                href={
+                                  booking.status && ['quote_pending', 'quote_sent', 'quote_accepted', 'quote_paid'].includes(booking.status)
+                                    ? `https://focus.teamleader.eu/quotations/${booking.invoice_link}`
+                                    : `https://focus.teamleader.eu/invoice_detail.php?id=${booking.invoice_link}`
+                                } 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                              >
                                 <FileText className="h-3 w-3" />
-                                <span className="text-xs">Invoice</span>
+                                <span className="text-xs">
+                                  {booking.status && ['quote_pending', 'quote_sent', 'quote_accepted', 'quote_paid'].includes(booking.status)
+                                    ? 'View Quote'
+                                    : 'View Invoice'}
+                                </span>
                                 <ExternalLink className="h-3 w-3 ml-0.5" />
                               </Link>
                             </Button>
                           )}
-                          {booking.invoice_link && inv.amount !== undefined && inv.amount !== null && (
+                          {booking.invoice_link && 
+                           inv.amount !== undefined && 
+                           inv.amount !== null &&
+                           booking.status &&
+                           !['quote_pending', 'quote_sent', 'quote_accepted', 'quote_paid'].includes(booking.status) && (
                             <Button
                               variant="outline"
                               size="sm"
@@ -2395,7 +2411,7 @@ export default function BookingDetailPage() {
                               onClick={() => handleCallInvoiceWebhook(booking.invoice_link!, inv.amount!)}
                             >
                               <Send className="h-3 w-3" />
-                              <span className="text-xs">Send Webhook</span>
+                              <span className="text-xs">Set Invoice as Paid</span>
                             </Button>
                           )}
                           <Button
