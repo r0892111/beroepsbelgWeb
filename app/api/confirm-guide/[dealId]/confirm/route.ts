@@ -133,23 +133,6 @@ export async function POST(
         }
       }
     }
-    
-    // Trigger webhook with booking_id
-    const webhookSuccess = await triggerWebhook(booking.id, finalGuideId, action);
-    
-    console.info('[Webhook] Sent to webhook:', {
-      webhookUrl: 'https://alexfinit.app.n8n.cloud/webhook/d83af522-aa75-431d-bbf8-6b9f4faa1a14',
-      booking_id: booking.id,
-      guide_id: finalGuideId,
-      action,
-    });
-
-    if (!webhookSuccess) {
-      return NextResponse.json(
-        { error: 'Failed to trigger webhook' },
-        { status: 500 }
-      );
-    }
 
     // Update booking status only when guide accepts
     // When guide declines, status remains unchanged (payment_completed for B2C, pending_guide_confirmation for B2B)
@@ -192,6 +175,28 @@ export async function POST(
       if (!updateError) {
         // Update guide metrics when guide accepts (tours_done will be recalculated)
         await updateGuideMetrics(finalGuideId);
+
+        // Trigger webhook AFTER status update so webhook receives updated booking data
+        // Don't block the response if webhook fails - log error but continue
+        triggerWebhook(booking.id, finalGuideId, action).then((success) => {
+          if (success) {
+            console.info('[Webhook] Successfully sent to webhook:', {
+              webhookUrl: 'https://alexfinit.app.n8n.cloud/webhook/d83af522-aa75-431d-bbf8-6b9f4faa1a14',
+              booking_id: booking.id,
+              guide_id: finalGuideId,
+              action,
+            });
+          } else {
+            console.error('[Webhook] Failed to send webhook:', {
+              webhookUrl: 'https://alexfinit.app.n8n.cloud/webhook/d83af522-aa75-431d-bbf8-6b9f4faa1a14',
+              booking_id: booking.id,
+              guide_id: finalGuideId,
+              action,
+            });
+          }
+        }).catch((error) => {
+          console.error('[Webhook] Error sending webhook:', error);
+        });
       }
     } else if (action === 'decline') {
       // Update selectedGuides to mark this guide as declined
@@ -211,13 +216,37 @@ export async function POST(
       }
 
       // Update the selectedGuides in the database
-      await supabase
+      const { error: declineUpdateError } = await supabase
         .from('tourbooking')
         .update({ selectedGuides: updatedSelectedGuides })
         .eq('id', booking.id);
 
-      // Increment denied_assignment count when guide declines
-      await incrementGuideDeniedAssignment(finalGuideId);
+      if (!declineUpdateError) {
+        // Increment denied_assignment count when guide declines
+        await incrementGuideDeniedAssignment(finalGuideId);
+
+        // Trigger webhook AFTER status update for decline action too
+        // Don't block the response if webhook fails - log error but continue
+        triggerWebhook(booking.id, finalGuideId, action).then((success) => {
+          if (success) {
+            console.info('[Webhook] Successfully sent to webhook:', {
+              webhookUrl: 'https://alexfinit.app.n8n.cloud/webhook/d83af522-aa75-431d-bbf8-6b9f4faa1a14',
+              booking_id: booking.id,
+              guide_id: finalGuideId,
+              action,
+            });
+          } else {
+            console.error('[Webhook] Failed to send webhook:', {
+              webhookUrl: 'https://alexfinit.app.n8n.cloud/webhook/d83af522-aa75-431d-bbf8-6b9f4faa1a14',
+              booking_id: booking.id,
+              guide_id: finalGuideId,
+              action,
+            });
+          }
+        }).catch((error) => {
+          console.error('[Webhook] Error sending webhook:', error);
+        });
+      }
     }
     // If declined, don't update status - keep current status so another guide can accept
 
