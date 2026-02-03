@@ -19,7 +19,7 @@ import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { getBookingTypeShortLabel } from '@/lib/utils';
-import { formatBrusselsDateTime, parseBrusselsDateTime, toBrusselsISO, isWeekendBrussels, addMinutesBrussels } from '@/lib/utils/timezone';
+import { formatBrusselsDateTime, parseBrusselsDateTime, toBrusselsLocalISO, isWeekendBrussels, addMinutesBrussels } from '@/lib/utils/timezone';
 
 interface SelectedGuide {
   id: number;
@@ -610,8 +610,8 @@ export default function AdminBookingsPage() {
       .from('tourbooking')
       .select('*')
       .eq('tour_id', createForm.tourId)
-      .gte('tour_datetime', toBrusselsISO(parseBrusselsDateTime(createForm.date, '00:00')))
-      .lt('tour_datetime', toBrusselsISO(parseBrusselsDateTime(createForm.date, '23:59')));
+      .gte('tour_datetime', toBrusselsLocalISO(parseBrusselsDateTime(createForm.date, '00:00')))
+      .lt('tour_datetime', toBrusselsLocalISO(parseBrusselsDateTime(createForm.date, '23:59')));
 
     if (existingBookings && existingBookings.length > 0) {
       return existingBookings[0] as TourBooking;
@@ -645,9 +645,9 @@ export default function AdminBookingsPage() {
         return;
       }
 
-      // Build tour datetime - parse as Brussels time and convert to ISO
+      // Build tour datetime - parse as Brussels time and convert to ISO (without timezone offset)
       const parsedDate = parseBrusselsDateTime(createForm.date, createForm.time);
-      const tourDatetime = toBrusselsISO(parsedDate);
+      const tourDatetime = toBrusselsLocalISO(parsedDate);
       
       // Calculate tour end datetime (start + duration)
       // IMPORTANT: Add extra hour (60 minutes) if checkbox is checked
@@ -774,9 +774,9 @@ export default function AdminBookingsPage() {
           const contactFirstName = nameParts[0] || '';
           const contactLastName = nameParts.slice(1).join(' ') || '';
 
-          // Build datetime string (ISO format) - parse as Brussels time and convert to ISO
+          // Build datetime string (ISO format) - parse as Brussels time and convert to ISO (without timezone offset)
           const parsedDate = parseBrusselsDateTime(createForm.date, createForm.time);
-          const dateTime = toBrusselsISO(parsedDate);
+          const dateTime = toBrusselsLocalISO(parsedDate);
 
           // Get city slug from tour (tour.city is already the slug)
           const citySlug = tour.city || '';

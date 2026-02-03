@@ -46,7 +46,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { format } from 'date-fns';
-import { formatBrusselsDateTime, parseBrusselsDateTime, toBrusselsISO, isWeekendBrussels, getHourBrussels, nowBrussels, addMinutesBrussels } from '@/lib/utils/timezone';
+import { formatBrusselsDateTime, parseBrusselsDateTime, toBrusselsLocalISO, isWeekendBrussels, getHourBrussels, nowBrussels, addMinutesBrussels } from '@/lib/utils/timezone';
 import { toast } from 'sonner';
 
 interface SelectedGuide {
@@ -673,7 +673,7 @@ export default function BookingDetailPage() {
     try {
       // Parse the date/time as Brussels time and convert to ISO string
       const parsedDate = parseBrusselsDateTime(editForm.date, editForm.time);
-      const tourDatetime = toBrusselsISO(parsedDate);
+      const tourDatetime = toBrusselsLocalISO(parsedDate);
       
       // Calculate tour_end based on tour duration
       // Get duration from tour or use existing booking's duration, default to 120 minutes

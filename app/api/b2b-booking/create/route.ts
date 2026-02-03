@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { toBrusselsISO, addMinutesBrussels } from '@/lib/utils/timezone';
+import { toBrusselsLocalISO, addMinutesBrussels } from '@/lib/utils/timezone';
 
 function getSupabaseServer() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -73,14 +73,14 @@ export async function POST(request: NextRequest) {
     const finalDurationMinutes = durationMinutes || actualDuration;
     
 
-    // Format tour_datetime - convert dateTime to Brussels timezone ISO string
+    // Format tour_datetime - convert dateTime to Brussels timezone ISO string WITHOUT timezone offset
     // Use centralized timezone utility for proper DST handling
     let tourDatetime: string | null = null;
     if (dateTime) {
       try {
         const dateObj = new Date(dateTime);
         if (!isNaN(dateObj.getTime())) {
-          tourDatetime = toBrusselsISO(dateObj);
+          tourDatetime = toBrusselsLocalISO(dateObj);
         }
       } catch (e) {
         console.error('Error parsing dateTime:', e);

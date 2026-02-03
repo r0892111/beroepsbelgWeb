@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { parseBrusselsDateTime, toBrusselsISO } from '@/lib/utils/timezone';
+import { parseBrusselsDateTime, toBrusselsLocalISO } from '@/lib/utils/timezone';
 
 const AVAILABILITY_WEBHOOK_URL = 'https://alexfinit.app.n8n.cloud/webhook/a4fb9e85-ebd0-4ea5-a8a9-18a411018f33';
 
@@ -24,16 +24,16 @@ export async function POST(request: NextRequest) {
     // Calculate end time (start + duration)
     const endDate = new Date(bookingDate.getTime() + durationMinutes * 60 * 1000);
 
-    // Format dates as UTC+1 (Europe/Brussels) ISO strings
-    const startDateTimeUTC1 = toBrusselsISO(bookingDate);
-    const endDateTimeUTC1 = toBrusselsISO(endDate);
+    // Format dates as Brussels local time ISO strings (without timezone offset)
+    const startDateTimeUTC1 = toBrusselsLocalISO(bookingDate);
+    const endDateTimeUTC1 = toBrusselsLocalISO(endDate);
 
     console.log('[check-tanguy-availability] Checking availability:', {
       startDateTimeUTC1,
       endDateTimeUTC1,
     });
 
-    // POST to webhook with UTC+1 formatted datetimes
+    // POST to webhook with Brussels local time formatted datetimes (no timezone offset)
     const webhookResponse = await fetch(AVAILABILITY_WEBHOOK_URL, {
       method: 'POST',
       headers: {
