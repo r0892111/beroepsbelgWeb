@@ -336,10 +336,11 @@ export default function B2BQuotePage() {
 
   // Calculate actual duration (accounting for extra hour for opMaat tours)
   const actualDuration = useMemo(() => {
+    const baseDuration = selectedTour?.durationMinutes ?? 120; // Default 2 hours
     if (isOpMaat && extraHour) {
-      return 180; // 3 hours
+      return baseDuration + 60; // Add 60 minutes (1 hour) to base duration
     }
-    return selectedTour?.durationMinutes ?? 120; // Default 2 hours
+    return baseDuration;
   }, [isOpMaat, extraHour, selectedTour?.durationMinutes]);
 
   // Generate time slots based on tour type:
