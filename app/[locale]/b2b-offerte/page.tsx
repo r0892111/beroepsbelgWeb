@@ -670,6 +670,17 @@ export default function B2BQuotePage() {
   };
 
   const onSubmit = async (data: QuoteFormData) => {
+    // Check for validation errors before submitting
+    if (Object.keys(errors).length > 0) {
+      // If we're on the payment/confirmation step, scroll to top to show errors
+      if (step === 'payment') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      // Trigger validation to show errors
+      trigger();
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -747,12 +758,22 @@ export default function B2BQuotePage() {
         if (!bookingResponse.ok) {
           const errorData = await bookingResponse.json();
           console.error('Error creating B2B booking:', errorData);
-          toast.error(t('error') || 'Failed to create booking');
+          const errorMessage = errorData.error || errorData.message || t('error') || 'Failed to create booking';
+          toast.error(errorMessage);
+          // If we're on the payment step, show error on screen as well
+          if (step === 'payment') {
+            setDataError(errorMessage);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+          setIsSubmitting(false);
           return;
         }
 
         const bookingData = await bookingResponse.json();
         console.log('B2B booking created:', bookingData);
+        
+        // Clear any previous errors on success
+        setDataError(null);
         
         if (bookingData.bookingId) {
           createdBookingId = bookingData.bookingId;
@@ -760,7 +781,14 @@ export default function B2BQuotePage() {
         }
       } catch (error) {
         console.error('Error creating B2B booking:', error);
-        toast.error(t('error') || 'Failed to create booking');
+        const errorMessage = error instanceof Error ? error.message : (t('error') || 'Failed to create booking');
+        toast.error(errorMessage);
+        // If we're on the payment step, show error on screen as well
+        if (step === 'payment') {
+          setDataError(errorMessage);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        setIsSubmitting(false);
         return;
       }
       
@@ -1633,6 +1661,41 @@ export default function B2BQuotePage() {
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <h2 className="text-2xl font-serif font-bold text-navy mb-6">{t('step4')}</h2>
 
+                {/* Display validation errors if any */}
+                {(Object.keys(errors).length > 0 || dataError) && (
+                  <div className="p-4 rounded-lg bg-red-50 border-2 border-red-200">
+                    <h3 className="font-semibold text-red-800 mb-2">
+                      {dataError ? (t('error') || 'Fout') : (t('validationErrors') || 'Er zijn validatiefouten:')}
+                    </h3>
+                    {dataError ? (
+                      <p className="text-sm text-red-700">{dataError}</p>
+                    ) : (
+                      <>
+                        <ul className="list-disc list-inside space-y-1 text-sm text-red-700">
+                          {errors.contactFirstName && (
+                            <li>{tForms('required')} - {t('contactFirstName') || 'Voornaam'}</li>
+                          )}
+                          {errors.contactLastName && (
+                            <li>{tForms('required')} - {t('contactLastName') || 'Achternaam'}</li>
+                          )}
+                          {errors.contactEmail && (
+                            <li>{errors.contactEmail.message || tForms('invalidEmail')} - {t('contactEmail') || 'E-mail'}</li>
+                          )}
+                          {errors.contactPhone && (
+                            <li>{tForms('required')} - {t('contactPhone') || 'Telefoon'}</li>
+                          )}
+                          {errors.vatNumber && (
+                            <li>{errors.vatNumber.message || tForms('invalidVAT')} - {t('vatNumber') || 'BTW-nummer'}</li>
+                          )}
+                        </ul>
+                        <p className="mt-3 text-sm text-red-600 font-medium">
+                          {t('pleaseFixErrors') || 'Gelieve de bovenstaande fouten te corrigeren en opnieuw te proberen.'}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                )}
+
                 {/* Order summary with pricing */}
                 <div className="p-6 rounded-lg" style={{ backgroundColor: 'white', border: '2px solid var(--brass)' }}>
                   <h3 className="font-semibold text-navy mb-4">{t('summaryTitle')}</h3>
@@ -1770,7 +1833,10 @@ export default function B2BQuotePage() {
                 <div className="flex gap-3">
                   <Button 
                     type="button" 
-                    onClick={() => setStep('upsell')} 
+                    onClick={() => {
+                      setDataError(null); // Clear errors when going back
+                      setStep('upsell');
+                    }} 
                     variant="outline" 
                     className="flex-1"
                   >

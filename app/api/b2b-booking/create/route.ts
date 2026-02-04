@@ -68,9 +68,12 @@ export async function POST(request: NextRequest) {
     const baseDuration = tour?.duration_minutes || 120; // Default to 120 if not specified
     const extraHour = opMaatAnswers?.extraHour === true;
     
-    // If durationMinutes is provided from frontend, use it (it already includes extra hour if applicable)
+    // If durationMinutes is provided from frontend, use it directly (it already includes extra hour if applicable)
+    // Convert to number to ensure proper calculation
     // Otherwise, calculate it here: base duration + 60 minutes if extra hour is selected
-    const finalDurationMinutes = durationMinutes ?? (extraHour ? baseDuration + 60 : baseDuration);
+    const finalDurationMinutes = durationMinutes != null 
+      ? Number(durationMinutes) 
+      : (extraHour ? baseDuration + 60 : baseDuration);
     
 
     // Format tour_datetime - parse dateTime as Brussels local time and convert to ISO string WITHOUT timezone offset
