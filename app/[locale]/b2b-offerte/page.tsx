@@ -715,44 +715,57 @@ export default function B2BQuotePage() {
       
       // Create tourbooking record for ALL tours (to save upsell products and get booking ID)
       let createdBookingId: number | null = null;
+      
+      // Debug: Log what we're sending
+      console.log('=== FRONTEND SUBMISSION DEBUG ===');
+      console.log('actualDuration:', actualDuration);
+      console.log('extraHour:', extraHour);
+      console.log('selectedTour?.durationMinutes:', selectedTourData?.durationMinutes);
+      console.log('isOpMaat:', tourIsOpMaat);
+      console.log('===============================');
+      
       try {
+        const bookingPayload = {
+          tourId: data.tourId,
+          citySlug: data.city,
+          dateTime: data.dateTime,
+          language: data.language,
+          contactLanguage: data.contactLanguage, // Language for email communications
+          numberOfPeople: data.numberOfPeople,
+          contactFirstName: data.contactFirstName,
+          contactLastName: data.contactLastName,
+          contactEmail: data.contactEmail,
+          contactPhone: data.contactPhone,
+          companyName: data.companyName || null,
+          vatNumber: normalizeVATNumber(data.vatNumber),
+          billingAddress: data.billingAddress || null,
+          street: data.street || null,
+          streetNumber: data.streetNumber || null,
+          postalCode: data.postalCode || null,
+          bus: data.bus || null,
+          billingCity: data.billingCity || null,
+          country: data.country || null,
+          additionalInfo: data.additionalInfo || null,
+          upsellProducts: upsellProducts, // Already in standardized format {n, p, q}
+          // Op maat answers will be collected separately via /op-maat-form page
+          opMaatAnswers: tourIsOpMaat ? {
+            extraHour: extraHour, // Only save extra hour preference now
+          } : null,
+          isOpMaat: tourIsOpMaat, // Flag to indicate this is an op maat tour
+          requestTanguy: requestTanguy,
+          durationMinutes: actualDuration, // Include actual duration in booking
+          weekendFee: weekendFee, // Weekend fee flag
+          eveningFee: eveningFee, // Evening fee flag
+        };
+        
+        console.log('Sending durationMinutes:', bookingPayload.durationMinutes);
+        
         const bookingResponse = await fetch('/api/b2b-booking/create', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            tourId: data.tourId,
-            citySlug: data.city,
-            dateTime: data.dateTime,
-            language: data.language,
-            contactLanguage: data.contactLanguage, // Language for email communications
-            numberOfPeople: data.numberOfPeople,
-            contactFirstName: data.contactFirstName,
-            contactLastName: data.contactLastName,
-            contactEmail: data.contactEmail,
-            contactPhone: data.contactPhone,
-            companyName: data.companyName || null,
-            vatNumber: normalizeVATNumber(data.vatNumber),
-            billingAddress: data.billingAddress || null,
-            street: data.street || null,
-            streetNumber: data.streetNumber || null,
-            postalCode: data.postalCode || null,
-            bus: data.bus || null,
-            billingCity: data.billingCity || null,
-            country: data.country || null,
-            additionalInfo: data.additionalInfo || null,
-            upsellProducts: upsellProducts, // Already in standardized format {n, p, q}
-            // Op maat answers will be collected separately via /op-maat-form page
-            opMaatAnswers: tourIsOpMaat ? {
-              extraHour: extraHour, // Only save extra hour preference now
-            } : null,
-            isOpMaat: tourIsOpMaat, // Flag to indicate this is an op maat tour
-            requestTanguy: requestTanguy,
-            durationMinutes: actualDuration, // Include actual duration in booking
-            weekendFee: weekendFee, // Weekend fee flag
-            eveningFee: eveningFee, // Evening fee flag
-          }),
+          body: JSON.stringify(bookingPayload),
         });
 
         if (!bookingResponse.ok) {

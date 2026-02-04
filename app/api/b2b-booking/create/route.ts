@@ -21,6 +21,12 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = getSupabaseServer();
     const body = await request.json();
+    
+    // Debug: Log what we received
+    console.log('=== API RECEIVED DATA ===');
+    console.log('durationMinutes:', body.durationMinutes, 'type:', typeof body.durationMinutes);
+    console.log('opMaatAnswers:', body.opMaatAnswers);
+    console.log('========================');
 
     const {
       tourId,
@@ -98,25 +104,35 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate tour end datetime based on start time and duration
+    // Subtract 60 minutes to fix the calculation issue
     let tourEndDatetime: string | null = null;
     if (tourDatetime) {
       try {
-        tourEndDatetime = addMinutesBrussels(tourDatetime, finalDurationMinutes);
+        tourEndDatetime = addMinutesBrussels(tourDatetime, finalDurationMinutes - 60);
       } catch (e) {
         console.error('Error calculating tour end:', e);
       }
     }
 
-    console.log('Tour timing calculation:', {
-      tourDatetime,
-      tourEndDatetime,
-      finalDurationMinutes,
-      baseDuration,
-      extraHour,
-      durationMinutesProvided: durationMinutes,
+    console.log('=== TOUR TIMING CALCULATION DEBUG ===');
+    console.log('Input values:', {
+      durationMinutes: durationMinutes,
       durationMinutesType: typeof durationMinutes,
-      calculatedDuration: extraHour ? baseDuration + 60 : baseDuration,
+      opMaatAnswers: opMaatAnswers,
+      extraHour: extraHour,
+      baseDuration: baseDuration,
     });
+    console.log('Calculated values:', {
+      finalDurationMinutes: finalDurationMinutes,
+      tourDatetime: tourDatetime,
+      tourEndDatetime: tourEndDatetime,
+    });
+    console.log('Expected:', {
+      withoutExtraHour: baseDuration,
+      withExtraHour: baseDuration + 60,
+      actualUsed: finalDurationMinutes,
+    });
+    console.log('=====================================');
 
     // Build invitees array similar to B2C flow
     const invitees = [{
