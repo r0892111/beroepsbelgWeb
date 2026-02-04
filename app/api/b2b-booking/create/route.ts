@@ -68,12 +68,16 @@ export async function POST(request: NextRequest) {
     const baseDuration = tour?.duration_minutes || 120; // Default to 120 if not specified
     const extraHour = opMaatAnswers?.extraHour === true;
     
-    // If durationMinutes is provided from frontend, use it directly (it already includes extra hour if applicable)
-    // Convert to number to ensure proper calculation
-    // Otherwise, calculate it here: base duration + 60 minutes if extra hour is selected
-    const finalDurationMinutes = durationMinutes != null 
-      ? Number(durationMinutes) 
-      : (extraHour ? baseDuration + 60 : baseDuration);
+    // IMPORTANT: If durationMinutes is provided from frontend, ALWAYS use it directly
+    // The frontend already calculates the correct duration (baseDuration + 60 if extraHour, otherwise baseDuration)
+    // Do NOT recalculate based on extraHour flag - trust the frontend value completely
+    let finalDurationMinutes: number;
+    if (durationMinutes != null && durationMinutes !== undefined && durationMinutes !== '' && !isNaN(Number(durationMinutes))) {
+      finalDurationMinutes = Number(durationMinutes);
+    } else {
+      // Fallback: only calculate if durationMinutes was not provided
+      finalDurationMinutes = extraHour ? baseDuration + 60 : baseDuration;
+    }
     
 
     // Format tour_datetime - parse dateTime as Brussels local time and convert to ISO string WITHOUT timezone offset
@@ -112,6 +116,9 @@ export async function POST(request: NextRequest) {
       finalDurationMinutes,
       baseDuration,
       extraHour,
+      durationMinutesProvided: durationMinutes,
+      durationMinutesType: typeof durationMinutes,
+      calculatedDuration: extraHour ? baseDuration + 60 : baseDuration,
     });
 
     // Build invitees array similar to B2C flow
