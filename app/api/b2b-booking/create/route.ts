@@ -64,20 +64,17 @@ export async function POST(request: NextRequest) {
       // Continue with default if tour not found
     }
 
-    // Calculate actual duration: use tour's duration_minutes, add 60 if extra hour is selected
+    // Use durationMinutes directly from frontend - it's already calculated correctly
+    // The frontend calculates: actualDuration = baseDuration + (extraHour ? 60 : 0)
+    // and sends it as durationMinutes, so we should use it as-is without any recalculation
     const baseDuration = tour?.duration_minutes || 120; // Default to 120 if not specified
     const extraHour = opMaatAnswers?.extraHour === true;
     
-    // IMPORTANT: If durationMinutes is provided from frontend, ALWAYS use it directly
-    // The frontend already calculates the correct duration (baseDuration + 60 if extraHour, otherwise baseDuration)
-    // Do NOT recalculate based on extraHour flag - trust the frontend value completely
-    let finalDurationMinutes: number;
-    if (durationMinutes != null && durationMinutes !== undefined && durationMinutes !== '' && !isNaN(Number(durationMinutes))) {
-      finalDurationMinutes = Number(durationMinutes);
-    } else {
-      // Fallback: only calculate if durationMinutes was not provided
-      finalDurationMinutes = extraHour ? baseDuration + 60 : baseDuration;
-    }
+    // Simply use the provided durationMinutes - the frontend has already done the calculation
+    // Only fallback to calculation if durationMinutes is truly missing
+    const finalDurationMinutes = durationMinutes != null && durationMinutes !== undefined
+      ? Number(durationMinutes)
+      : (extraHour ? baseDuration + 60 : baseDuration);
     
 
     // Format tour_datetime - parse dateTime as Brussels local time and convert to ISO string WITHOUT timezone offset
