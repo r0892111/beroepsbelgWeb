@@ -103,38 +103,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if a booking already exists for this date
-    const { data: existingBooking, error: fetchError } = await supabaseServer
+    // Check if any bookings exist for this date
+    const { data: existingBookings, error: fetchError } = await supabaseServer
       .from('local_tours_bookings')
       .select('id')
       .eq('tour_id', tourId)
-      .eq('booking_date', bookingDate)
-      .single();
+      .eq('booking_date', bookingDate);
 
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows returned
-      console.error('Error fetching existing booking:', fetchError);
+    if (fetchError) {
+      console.error('Error fetching existing bookings:', fetchError);
       return NextResponse.json(
-        { error: 'Failed to check existing booking' },
+        { error: 'Failed to check existing bookings' },
         { status: 500 }
       );
     }
 
-    if (existingBooking) {
-      // Update existing booking
+    if (existingBookings && existingBookings.length > 0) {
+      // Update ALL existing bookings for this date (there can be multiple customer bookings)
       const { error: updateError } = await supabaseServer
         .from('local_tours_bookings')
         .update({ status })
-        .eq('id', existingBooking.id);
+        .eq('tour_id', tourId)
+        .eq('booking_date', bookingDate);
 
       if (updateError) {
-        console.error('Error updating booking:', updateError);
+        console.error('Error updating bookings:', updateError);
         return NextResponse.json(
           { error: 'Failed to update booking status' },
           { status: 500 }
         );
       }
     } else {
-      // Create new booking with unavailable status
+      // Create new booking entry with unavailable status (for dates with no bookings yet)
       const { error: insertError } = await supabaseServer
         .from('local_tours_bookings')
         .insert({
@@ -151,6 +151,44 @@ export async function POST(request: NextRequest) {
           { error: 'Failed to create booking' },
           { status: 500 }
         );
+      }
+    }
+
+    // If marking as unavailable, also cancel related tourbooking entries for this date
+    if (status === 'unavailable') {
+      // Find all tourbookings for this tour and date
+      const { data: relatedTourBookings, error: tourBookingsError } = await supabaseServer
+        .from('tourbooking')
+        .select('id, tour_datetime, status')
+        .eq('tour_id', tourId);
+
+      if (!tourBookingsError && relatedTourBookings) {
+        // Filter tourbookings that match the booking date
+        const dateStr = bookingDate; // YYYY-MM-DD format
+        const matchingTourBookings = relatedTourBookings.filter((tb: any) => {
+          if (!tb.tour_datetime) return false;
+          const dateMatch = tb.tour_datetime.match(/^(\d{4}-\d{2}-\d{2})/);
+          return dateMatch && dateMatch[1] === dateStr;
+        });
+
+        // Update matching tourbookings to cancelled (only if not already completed or cancelled)
+        if (matchingTourBookings.length > 0) {
+          const bookingIds = matchingTourBookings
+            .filter((tb: any) => tb.status !== 'completed' && tb.status !== 'cancelled')
+            .map((tb: any) => tb.id);
+
+          if (bookingIds.length > 0) {
+            const { error: cancelError } = await supabaseServer
+              .from('tourbooking')
+              .update({ status: 'cancelled' })
+              .in('id', bookingIds);
+
+            if (cancelError) {
+              console.error('Error cancelling related tourbookings:', cancelError);
+              // Don't fail the request, just log the error
+            }
+          }
+        }
       }
     }
 

@@ -1191,11 +1191,61 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
     (existingBookings || []).forEach((booking: any) => {
       const dateStr = booking.booking_date;
       const numberOfPeople = peopleCountByDate.get(dateStr) || 0;
+      const bookingStatus = booking.status || 'booked';
       
-      // If multiple bookings exist for the same date, prioritize one with booking_id
+      // If multiple bookings exist for the same date:
+      // 1. Prioritize 'unavailable' status (if ANY entry is unavailable, the date is unavailable)
+      // 2. Otherwise prioritize one with booking_id
       const existing = bookingsMap.get(dateStr);
-      if (existing && !existing.booking_id && booking.booking_id) {
-        // Replace existing entry with one that has booking_id
+      
+      // If current booking is unavailable, always use it (date should be unavailable)
+      if (bookingStatus === 'unavailable') {
+        bookingsMap.set(dateStr, {
+          id: booking.id,
+          tour_id: booking.tour_id,
+          booking_date: dateStr,
+          booking_time: booking.booking_time || '14:00:00',
+          is_booked: booking.is_booked !== undefined ? booking.is_booked : false,
+          user_id: booking.user_id,
+          customer_name: booking.customer_name,
+          customer_email: booking.customer_email,
+          customer_phone: booking.customer_phone,
+          stripe_session_id: booking.stripe_session_id,
+          booking_id: booking.booking_id || undefined,
+          status: 'unavailable',
+          number_of_people: numberOfPeople,
+          created_at: booking.created_at,
+          updated_at: booking.updated_at,
+        });
+      } else if (existing) {
+        // If existing is unavailable, keep it (don't replace with non-unavailable)
+        if (existing.status === 'unavailable') {
+          // Keep the unavailable one
+          return;
+        }
+        // If existing doesn't have booking_id but current does, replace it
+        if (!existing.booking_id && booking.booking_id) {
+          bookingsMap.set(dateStr, {
+            id: booking.id,
+            tour_id: booking.tour_id,
+            booking_date: dateStr,
+            booking_time: booking.booking_time || '14:00:00',
+            is_booked: booking.is_booked !== undefined ? booking.is_booked : true,
+            user_id: booking.user_id,
+            customer_name: booking.customer_name,
+            customer_email: booking.customer_email,
+            customer_phone: booking.customer_phone,
+            stripe_session_id: booking.stripe_session_id,
+            booking_id: booking.booking_id || undefined,
+            status: bookingStatus,
+            number_of_people: numberOfPeople,
+            created_at: booking.created_at,
+            updated_at: booking.updated_at,
+          });
+        }
+        // If existing already has booking_id, keep it (don't replace)
+      } else if (!existing) {
+        // First booking for this date
         bookingsMap.set(dateStr, {
           id: booking.id,
           tour_id: booking.tour_id,
@@ -1207,33 +1257,13 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
           customer_email: booking.customer_email,
           customer_phone: booking.customer_phone,
           stripe_session_id: booking.stripe_session_id,
-          booking_id: booking.booking_id || undefined, // Reference to tourbooking.id
-          status: booking.status || 'booked',
-          number_of_people: numberOfPeople,
-          created_at: booking.created_at,
-          updated_at: booking.updated_at,
-        });
-      } else if (!existing) {
-        // First booking for this date
-        bookingsMap.set(dateStr, {
-          id: booking.id,
-          tour_id: booking.tour_id,
-          booking_date: dateStr,
-          booking_time: booking.booking_time || '14:00:00',
-          is_booked: booking.is_booked !== undefined ? booking.is_booked : true, // Default to booked
-          user_id: booking.user_id,
-          customer_name: booking.customer_name,
-          customer_email: booking.customer_email,
-          customer_phone: booking.customer_phone,
-          stripe_session_id: booking.stripe_session_id,
-          booking_id: booking.booking_id || undefined, // Reference to tourbooking.id
-          status: booking.status || 'booked', // Default to booked
+          booking_id: booking.booking_id || undefined,
+          status: bookingStatus,
           number_of_people: numberOfPeople,
           created_at: booking.created_at,
           updated_at: booking.updated_at,
         });
       }
-      // If existing already has booking_id, keep it (don't replace)
     });
     
     // Also create entries from tourbookings if they don't exist in local_tours_bookings
