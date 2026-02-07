@@ -162,11 +162,36 @@ export function LocalToursDateManager({ open, onOpenChange, tourId, tourTitle }:
     }
   };
 
+  // Merge database entries with generated Saturdays
+  // Use database entries as source of truth, fill in missing Saturdays
+  const mergedDates = useMemo(() => {
+    // Create a set of all dates from database entries
+    const dbDates = new Set<string>();
+    bookings.forEach((booking) => {
+      const dateMatch = booking.booking_date.match(/^(\d{4}-\d{2}-\d{2})/);
+      if (dateMatch) {
+        dbDates.add(dateMatch[1]);
+      }
+    });
+
+    // Combine database dates with generated Saturdays
+    const allDates = new Set<string>();
+    
+    // Add all database dates first
+    dbDates.forEach(date => allDates.add(date));
+    
+    // Add generated Saturdays that aren't in database
+    allSaturdays.forEach(date => allDates.add(date));
+
+    // Convert to array and sort
+    return Array.from(allDates).sort();
+  }, [allSaturdays, bookings]);
+
   // Group dates by month
   const datesByMonth = useMemo(() => {
     const grouped: { [key: string]: string[] } = {};
     
-    allSaturdays.forEach((dateStr) => {
+    mergedDates.forEach((dateStr) => {
       const [year, month] = dateStr.split('-');
       const monthKey = `${year}-${month}`;
       
@@ -189,7 +214,7 @@ export function LocalToursDateManager({ open, onOpenChange, tourId, tourTitle }:
           dates: grouped[monthKey],
         };
       });
-  }, [allSaturdays]);
+  }, [mergedDates]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
