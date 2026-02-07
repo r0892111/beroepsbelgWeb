@@ -154,9 +154,78 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Return updated bookings list
-    const bookings = await getLocalToursBookings(tourId);
-    return NextResponse.json({ success: true, bookings });
+    // Return updated bookings list - fetch directly from database to include unavailable dates
+    // (getLocalToursBookings filters out unavailable dates, but admin needs to see them)
+    const { data: allBookings, error: fetchError } = await supabaseServer
+      .from('local_tours_bookings')
+      .select('*')
+      .eq('tour_id', tourId)
+      .order('booking_date', { ascending: true });
+
+    if (fetchError) {
+      console.error('Error fetching bookings:', fetchError);
+      // Fallback to getLocalToursBookings if direct fetch fails
+      const bookings = await getLocalToursBookings(tourId);
+      return NextResponse.json({ success: true, bookings });
+    }
+
+    // Also fetch tourbookings to get accurate people counts
+    const { data: tourBookings } = await supabaseServer
+      .from('tourbooking')
+      .select('id, tour_datetime, invitees')
+      .eq('tour_id', tourId)
+      .eq('status', 'payment_completed');
+
+    // Calculate people count by date
+    const peopleCountByDate = new Map<string, number>();
+    (allBookings || []).forEach((booking: any) => {
+      const dateStr = booking.booking_date;
+      const amntOfPeople = booking.amnt_of_people || 0;
+      const currentCount = peopleCountByDate.get(dateStr) || 0;
+      peopleCountByDate.set(dateStr, currentCount + amntOfPeople);
+    });
+
+    if (tourBookings) {
+      tourBookings.forEach((tb: any) => {
+        const tourDatetime = tb.tour_datetime;
+        if (tourDatetime && typeof tourDatetime === 'string') {
+          const dateMatch = tourDatetime.match(/^(\d{4}-\d{2}-\d{2})/);
+          if (dateMatch) {
+            const dateStr = dateMatch[1];
+            const invitees = Array.isArray(tb.invitees) ? tb.invitees : [];
+            const totalPeople = invitees.reduce((sum: number, invitee: any) => {
+              return sum + (invitee.numberOfPeople || 0);
+            }, 0);
+            const currentCount = peopleCountByDate.get(dateStr) || 0;
+            if (totalPeople > currentCount) {
+              peopleCountByDate.set(dateStr, totalPeople);
+            }
+          }
+        }
+      });
+    }
+
+    // Format bookings for response
+    const formattedBookings = (allBookings || []).map((booking: any) => ({
+      id: booking.id,
+      tour_id: booking.tour_id,
+      booking_date: booking.booking_date,
+      booking_time: booking.booking_time || '14:00:00',
+      is_booked: booking.is_booked !== undefined ? booking.is_booked : false,
+      user_id: booking.user_id,
+      customer_name: booking.customer_name,
+      customer_email: booking.customer_email,
+      customer_phone: booking.customer_phone,
+      stripe_session_id: booking.stripe_session_id,
+      booking_id: booking.booking_id,
+      status: booking.status || 'available',
+      number_of_people: peopleCountByDate.get(booking.booking_date) || 0,
+      amnt_of_people: booking.amnt_of_people || 0,
+      created_at: booking.created_at,
+      updated_at: booking.updated_at,
+    }));
+
+    return NextResponse.json({ success: true, bookings: formattedBookings });
   } catch (error) {
     console.error('Error updating availability:', error);
     return NextResponse.json(

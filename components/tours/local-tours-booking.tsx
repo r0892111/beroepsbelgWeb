@@ -141,6 +141,8 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
     now.setHours(0, 0, 0, 0);
     return bookings.filter((booking) => {
       if (!booking.booking_date) return false;
+      // Filter out unavailable dates
+      if (booking.status === 'unavailable') return false;
       // Parse date string as local date (YYYY-MM-DD format)
       const dateMatch = booking.booking_date.match(/^(\d{4}-\d{2}-\d{2})/);
       if (!dateMatch) return false;
