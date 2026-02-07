@@ -27,13 +27,19 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
 
   useEffect(() => {
     async function fetchBookings() {
+      console.log('LocalToursBooking: Fetching bookings for tourId:', tourId);
       try {
         const response = await fetch(`/api/local-tours-bookings?tourId=${tourId}`);
+        console.log('LocalToursBooking: API response status:', response.status);
         if (response.ok) {
           const data = await response.json();
+          console.log('LocalToursBooking: Received', Array.isArray(data) ? data.length : 0, 'bookings from API');
+          const unavailableInResponse = Array.isArray(data) ? data.filter((b: any) => b.status === 'unavailable').length : 0;
+          console.log('LocalToursBooking: Unavailable dates in API response:', unavailableInResponse);
           setBookings(Array.isArray(data) ? data : []);
           setCurrentMonthIndex(0); // Reset to first month when bookings change
         } else {
+          console.error('LocalToursBooking: API error - status:', response.status);
           // Still set empty array so component can render
           setBookings([]);
         }
@@ -136,6 +142,8 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
   // Use only the bookings returned from the API
   // The API filters out unavailable dates, so we only show available/booked dates
   const futureBookings = useMemo(() => {
+    console.log('LocalToursBooking: Processing futureBookings - filteredBookings count:', filteredBookings.length);
+    
     // Simply use the filtered bookings - the API already handles:
     // 1. Filtering out unavailable dates
     // 2. Creating virtual placeholders for available dates
@@ -145,14 +153,21 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     
-    return filteredBookings.filter((booking) => {
+    const result = filteredBookings.filter((booking) => {
       if (!booking.booking_date) return false;
+      if (booking.status === 'unavailable') {
+        console.log('LocalToursBooking: WARNING - Found unavailable booking in filteredBookings:', booking.booking_date);
+        return false;
+      }
       const dateMatch = booking.booking_date.match(/^(\d{4}-\d{2}-\d{2})/);
       if (!dateMatch) return false;
       const [year, month, day] = dateMatch[1].split('-').map(Number);
       const bookingDate = new Date(year, month - 1, day);
       return bookingDate >= now && bookingDate <= nineMonthsFromNow;
     });
+    
+    console.log('LocalToursBooking: futureBookings count after filtering:', result.length);
+    return result;
   }, [filteredBookings, nineMonthsFromNow]);
 
   // Group bookings by month

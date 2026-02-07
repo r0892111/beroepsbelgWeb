@@ -114,17 +114,11 @@ export async function GET(request: NextRequest) {
       .eq('status', 'payment_completed');
 
     // Calculate people count by date
+    // Use tourbooking invitees as source of truth (most accurate)
+    // Then add pending_payment_people from local_tours_bookings
     const peopleCountByDate = new Map<string, number>();
-    (allBookings || []).forEach((booking: any) => {
-      const dateStr = booking.booking_date;
-      // amnt_of_people is numeric, convert to number
-      const amntOfPeople = booking.amnt_of_people ? Number(booking.amnt_of_people) : 0;
-      // pending_payment_people are people added but not yet paid
-      const pendingPeople = booking.pending_payment_people ? Number(booking.pending_payment_people) : 0;
-      const currentCount = peopleCountByDate.get(dateStr) || 0;
-      peopleCountByDate.set(dateStr, currentCount + amntOfPeople + pendingPeople);
-    });
-
+    
+    // First, get counts from tourbooking invitees (source of truth)
     if (tourBookings) {
       tourBookings.forEach((tb: any) => {
         const tourDatetime = tb.tour_datetime;
@@ -136,14 +130,22 @@ export async function GET(request: NextRequest) {
             const totalPeople = invitees.reduce((sum: number, invitee: any) => {
               return sum + (invitee.numberOfPeople || 0);
             }, 0);
-            const currentCount = peopleCountByDate.get(dateStr) || 0;
-            if (totalPeople > currentCount) {
-              peopleCountByDate.set(dateStr, totalPeople);
-            }
+            // Use tourbooking count as base (this is the accurate count)
+            peopleCountByDate.set(dateStr, totalPeople);
           }
         }
       });
     }
+    
+    // Then add pending_payment_people from local_tours_bookings (people added but not paid yet)
+    (allBookings || []).forEach((booking: any) => {
+      const dateStr = booking.booking_date;
+      const pendingPeople = booking.pending_payment_people ? Number(booking.pending_payment_people) : 0;
+      if (pendingPeople > 0) {
+        const currentCount = peopleCountByDate.get(dateStr) || 0;
+        peopleCountByDate.set(dateStr, currentCount + pendingPeople);
+      }
+    });
 
     // Format bookings for response - match LocalTourBooking type
     const formattedBookings = (allBookings || []).map((booking: any) => ({

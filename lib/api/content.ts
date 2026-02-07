@@ -1106,12 +1106,19 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
     }
     
     // Fetch existing bookings for these dates
+    console.log('getLocalToursBookings: Fetching bookings for dates:', saturdayDates.slice(0, 5), '... (total:', saturdayDates.length, ')');
     const { data: existingBookings, error } = await supabaseServer
       .from('local_tours_bookings')
       .select('*')
       .eq('tour_id', tourId)
       .in('booking_date', saturdayDates)
       .order('booking_date', { ascending: true });
+    
+    console.log('getLocalToursBookings: Fetched', existingBookings?.length || 0, 'bookings from database');
+    if (existingBookings && existingBookings.length > 0) {
+      const unavailableCount = existingBookings.filter((b: any) => b.status === 'unavailable').length;
+      console.log('getLocalToursBookings: Found', unavailableCount, 'unavailable bookings in database');
+    }
     
     if (error) {
       console.error('Error fetching local tours bookings:', error);
@@ -1339,6 +1346,7 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
     bookingsMap.forEach((booking, dateStr) => {
       if (booking.status === 'unavailable') {
         unavailableDates.add(dateStr);
+        console.log('getLocalToursBookings: Found unavailable date in bookingsMap:', dateStr);
       }
     });
 
@@ -1346,6 +1354,7 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
     (existingBookings || []).forEach((booking: any) => {
       if (booking.status === 'unavailable' && booking.booking_date) {
         unavailableDates.add(booking.booking_date);
+        console.log('getLocalToursBookings: Found unavailable date in existingBookings:', booking.booking_date);
       }
     });
 
@@ -1358,11 +1367,15 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
       .eq('status', 'unavailable')
       .in('booking_date', saturdayDates);
 
+    console.log('getLocalToursBookings: Direct query found', directUnavailable?.length || 0, 'unavailable dates');
     (directUnavailable || []).forEach((booking: any) => {
       if (booking.booking_date) {
         unavailableDates.add(booking.booking_date);
+        console.log('getLocalToursBookings: Found unavailable date in direct query:', booking.booking_date);
       }
     });
+
+    console.log('getLocalToursBookings: Total unavailable dates found:', unavailableDates.size, Array.from(unavailableDates));
 
     // Build bookings array - use existing entries or create virtual placeholders for display
     // NOTE: We no longer create placeholder entries in the database - they're only virtual for the UI
@@ -1416,7 +1429,13 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
       .filter((booking): booking is LocalTourBooking => booking !== null);
     
     // Filter out unavailable dates at the end (frontend will also filter, but this is a safety measure)
-    return bookings.filter(booking => booking.status !== 'unavailable');
+    const filteredBookings = bookings.filter(booking => booking.status !== 'unavailable');
+    
+    console.log('getLocalToursBookings: Before filtering -', bookings.length, 'bookings');
+    console.log('getLocalToursBookings: After filtering unavailable -', filteredBookings.length, 'bookings');
+    console.log('getLocalToursBookings: Filtered out', bookings.length - filteredBookings.length, 'unavailable dates');
+    
+    return filteredBookings;
     
     return bookings;
   } catch (err) {
