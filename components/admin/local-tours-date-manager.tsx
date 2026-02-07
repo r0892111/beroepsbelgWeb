@@ -206,6 +206,9 @@ export function LocalToursDateManager({ open, onOpenChange, tourId, tourTitle }:
                     const status = booking?.status || 'available';
                     const isUnavailable = status === 'unavailable';
                     const isUpdating = updating === dateStr;
+                    
+                    // Check if there are subscriptions (bookings) for this date
+                    const hasSubscriptions = (booking?.number_of_people || 0) > 0 || !!booking?.booking_id;
 
                     return (
                       <div
@@ -226,16 +229,16 @@ export function LocalToursDateManager({ open, onOpenChange, tourId, tourTitle }:
                               Unavailable
                             </Badge>
                           )}
-                          {!isUnavailable && status === 'booked' && (
+                          {!isUnavailable && hasSubscriptions && (
                             <Badge variant="outline" className="bg-blue-100 text-blue-900 border-blue-300">
-                              Booked
+                              {booking?.number_of_people || 0} {booking?.number_of_people === 1 ? 'person' : 'people'}
                             </Badge>
                           )}
                           <Button
                             variant={isUnavailable ? 'default' : 'outline'}
                             size="sm"
                             onClick={() => handleToggleAvailability(dateStr, status)}
-                            disabled={isUpdating || status === 'booked'}
+                            disabled={isUpdating}
                             className={isUnavailable ? 'bg-red-600 hover:bg-red-700' : ''}
                           >
                             {isUpdating ? (
@@ -244,6 +247,11 @@ export function LocalToursDateManager({ open, onOpenChange, tourId, tourTitle }:
                               <>
                                 <Check className="h-4 w-4 mr-1" />
                                 Available
+                              </>
+                            ) : hasSubscriptions ? (
+                              <>
+                                <X className="h-4 w-4 mr-1" />
+                                Cancel
                               </>
                             ) : (
                               <>
