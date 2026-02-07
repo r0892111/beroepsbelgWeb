@@ -1070,7 +1070,6 @@ function getNextSaturdays(count: number = 8): Date[] {
  * Automatically creates bookings for upcoming Saturdays if they don't exist (with 0 people, status 'booked')
  */
 export async function getLocalToursBookings(tourId: string): Promise<LocalTourBooking[]> {
-  console.log('getLocalToursBookings called for tourId:', tourId);
   try {
     // Get the next 9 months of Saturdays (matching frontend)
     // Calculate how many Saturdays are in 9 months (~40 Saturdays)
@@ -1105,23 +1104,13 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
       saturdayDates.push(dateStr);
     }
     
-    console.log('getLocalToursBookings: Next Saturdays (9 months):', saturdayDates);
-    
     // Fetch existing bookings for these dates
-    
-    console.log('getLocalToursBookings: Fetching existing bookings for dates:', saturdayDates);
     const { data: existingBookings, error } = await supabaseServer
       .from('local_tours_bookings')
       .select('*')
       .eq('tour_id', tourId)
       .in('booking_date', saturdayDates)
       .order('booking_date', { ascending: true });
-    
-    console.log('getLocalToursBookings: Supabase query result:', {
-      existingBookingsCount: existingBookings?.length || 0,
-      existingBookings,
-      error,
-    });
     
     if (error) {
       console.error('Error fetching local tours bookings:', error);
@@ -1135,12 +1124,6 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
       .select('id, tour_datetime, invitees')
       .eq('tour_id', tourId)
       .eq('status', 'payment_completed');
-    
-    console.log('getLocalToursBookings: Tourbookings query result:', {
-      tourBookingsCount: tourBookings?.length || 0,
-      tourBookings,
-      error: tourBookingsError,
-    });
     
     // Calculate number of people per date from local_tours_bookings (sum amnt_of_people for all rows per date)
     const peopleCountByDate = new Map<string, number>();
@@ -1174,7 +1157,6 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
               const currentCount = peopleCountByDate.get(dateStr) || 0;
               if (totalPeople > currentCount) {
                 peopleCountByDate.set(dateStr, totalPeople);
-                console.log(`getLocalToursBookings: Updated count for ${dateStr} from tourbooking invitees: ${totalPeople} (was ${currentCount})`);
               }
             }
           }
@@ -1182,7 +1164,6 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
       });
     }
 
-    console.log('getLocalToursBookings: People count by date (from local_tours_bookings + tourbooking):', Array.from(peopleCountByDate.entries()));
     
     // Create a map of existing bookings by date
     const bookingsMap = new Map<string, LocalTourBooking>();
@@ -1293,7 +1274,6 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
                 const saturdayStr = `${satYear}-${satMonth}-${satDay}`;
                 
                 if (saturdayDates.includes(saturdayStr)) {
-                  console.log(`getLocalToursBookings: Mapping Friday ${dateStr} to Saturday ${saturdayStr}`);
                   dateStr = saturdayStr;
                 }
               }
@@ -1307,7 +1287,6 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
                 const saturdayStr = `${satYear}-${satMonth}-${satDay}`;
                 
                 if (saturdayDates.includes(saturdayStr)) {
-                  console.log(`getLocalToursBookings: Mapping Sunday ${dateStr} to Saturday ${saturdayStr}`);
                   dateStr = saturdayStr;
                 }
               }
@@ -1354,15 +1333,40 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
       });
     }
     
+    // First, check for any unavailable dates in the database (even if not in saturdayDates)
+    // This ensures we don't create virtual placeholders for unavailable dates
+    const { data: unavailableBookings } = await supabaseServer
+      .from('local_tours_bookings')
+      .select('booking_date')
+      .eq('tour_id', tourId)
+      .eq('status', 'unavailable')
+      .in('booking_date', saturdayDates);
+
+    const unavailableDates = new Set<string>();
+    (unavailableBookings || []).forEach((booking: any) => {
+      if (booking.booking_date) {
+        unavailableDates.add(booking.booking_date);
+      }
+    });
+
     // Build bookings array - use existing entries or create virtual placeholders for display
     // NOTE: We no longer create placeholder entries in the database - they're only virtual for the UI
     // Real entries are created by the webhook when someone actually books
     // Filter out unavailable dates
     const bookings: LocalTourBooking[] = saturdayDates
       .map(dateStr => {
+        // Skip unavailable dates - don't create virtual placeholders for them
+        if (unavailableDates.has(dateStr)) {
+          return null;
+        }
+
         const existing = bookingsMap.get(dateStr);
 
         if (existing) {
+          // Double-check status (should already be handled, but be safe)
+          if (existing.status === 'unavailable') {
+            return null;
+          }
           return existing;
         }
 
@@ -1380,12 +1384,9 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
           number_of_people: numberOfPeople,
         };
       })
-      .filter(booking => booking.status !== 'unavailable'); // Filter out unavailable dates
-    
-    console.log('getLocalToursBookings: Final bookings to return (unavailable filtered):', {
-      bookingsCount: bookings.length,
-      bookings,
-    });
+      .filter((booking): booking is LocalTourBooking => 
+        booking !== null && booking.status !== 'unavailable'
+      ); // Filter out null entries and unavailable dates
     
     return bookings;
   } catch (err) {

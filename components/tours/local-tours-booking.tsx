@@ -25,35 +25,15 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
 
-  console.log('LocalToursBooking component rendered:', {
-    tourId,
-    tourTitle,
-    tourPrice,
-    tourDuration,
-  });
-
   useEffect(() => {
     async function fetchBookings() {
-      console.log('LocalToursBooking: Fetching bookings for tourId:', tourId);
       try {
         const response = await fetch(`/api/local-tours-bookings?tourId=${tourId}`);
-        console.log('LocalToursBooking: API response status:', response.status, response.statusText);
         if (response.ok) {
           const data = await response.json();
-          console.log('LocalToursBooking: Received bookings data:', {
-            bookingsCount: data?.length || 0,
-            bookings: data,
-            isArray: Array.isArray(data),
-          });
           setBookings(Array.isArray(data) ? data : []);
           setCurrentMonthIndex(0); // Reset to first month when bookings change
         } else {
-          const errorText = await response.text();
-          console.error('LocalToursBooking: API error response:', {
-            status: response.status,
-            statusText: response.statusText,
-            errorText,
-          });
           // Still set empty array so component can render
           setBookings([]);
         }
@@ -63,7 +43,6 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
         setBookings([]);
       } finally {
         setLoading(false);
-        console.log('LocalToursBooking: Loading complete, bookings count:', bookings.length);
       }
     }
 
@@ -95,7 +74,9 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
       fetch(`/api/local-tours-bookings?tourId=${tourId}`)
         .then(res => res.json())
         .then(data => setBookings(data))
-        .catch(err => console.error('Error refreshing bookings:', err));
+        .catch(() => {
+          // Silently fail on refresh
+        });
     }
   };
 
@@ -154,17 +135,6 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
 
   // Merge all Saturdays with existing bookings
   const futureBookings = useMemo(() => {
-    console.log('LocalToursBooking: Merging bookings:', {
-      allSaturdaysCount: allSaturdays.length,
-      filteredBookingsCount: filteredBookings.length,
-      firstFewSaturdays: allSaturdays.slice(0, 5),
-      firstFewBookings: filteredBookings.slice(0, 5).map(b => ({
-        date: b.booking_date,
-        id: b.id,
-        people: b.number_of_people,
-      })),
-    });
-
     // Create a map of existing bookings by date for quick lookup
     // Normalize booking dates to YYYY-MM-DD format to ensure matching
     const bookingsMap = new Map<string, LocalTourBooking>();
@@ -186,7 +156,6 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
             }
           }
         }
-        console.log(`LocalToursBooking: Normalized booking date: ${booking.booking_date} -> ${normalizedDate}`);
         bookingsMap.set(normalizedDate, booking);
       }
     });
@@ -194,7 +163,6 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
     const result = allSaturdays.map((dateStr) => {
       const existingBooking = bookingsMap.get(dateStr);
       if (existingBooking) {
-        console.log(`LocalToursBooking: Found booking for ${dateStr}:`, existingBooking.id);
         return existingBooking;
       }
       // Create a placeholder booking for Saturdays without existing bookings
@@ -211,12 +179,6 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
         number_of_people: 0,
         booking_id: undefined,
       } as LocalTourBooking;
-    });
-
-    console.log('LocalToursBooking: Future bookings result:', {
-      totalCount: result.length,
-      withBookings: result.filter(b => !b.id?.startsWith('placeholder-')).length,
-      placeholders: result.filter(b => b.id?.startsWith('placeholder-')).length,
     });
 
     return result;
@@ -265,33 +227,7 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
   const canGoPrevious = currentMonthIndex > 0;
   const canGoNext = currentMonthIndex < bookingsByMonth.length - 1;
 
-  // Debug: Log month generation
-  useEffect(() => {
-    if (bookingsByMonth.length > 0) {
-      const currentMonthData = bookingsByMonth[currentMonthIndex] || null;
-      console.log('LocalToursBooking: Generated months:', {
-        totalMonths: bookingsByMonth.length,
-        months: bookingsByMonth.map(m => ({
-          label: m.monthLabel,
-          bookingCount: m.bookings.length,
-          placeholderCount: m.bookings.filter(b => b.id?.startsWith('placeholder-')).length,
-          realBookingCount: m.bookings.filter(b => !b.id?.startsWith('placeholder-')).length,
-        })),
-        currentMonthIndex,
-        currentMonth: currentMonthData?.monthLabel,
-        currentMonthBookings: currentMonthData?.bookings.length || 0,
-      });
-    }
-  }, [bookingsByMonth, currentMonthIndex]);
-
-  console.log('LocalToursBooking: Render state:', {
-    loading,
-    bookingsCount: bookings.length,
-    bookings,
-  });
-
   if (loading) {
-    console.log('LocalToursBooking: Showing loading state');
     return (
       <div className="mb-12 rounded-lg bg-sand p-8 brass-corner">
         <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>Loading availability...</p>
@@ -300,7 +236,6 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
   }
 
   if (bookings.length === 0) {
-    console.log('LocalToursBooking: No bookings found, showing message with retry');
     return (
       <div className="mb-12 rounded-lg bg-sand p-8 brass-corner">
         <h3 className="text-2xl font-serif font-bold text-navy mb-6 flex items-center gap-2">
@@ -316,12 +251,10 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
             fetch(`/api/local-tours-bookings?tourId=${tourId}`)
               .then(res => res.json())
               .then(data => {
-                console.log('LocalToursBooking: Retry fetched data:', data);
                 setBookings(Array.isArray(data) ? data : []);
                 setLoading(false);
               })
-              .catch(err => {
-                console.error('LocalToursBooking: Retry error:', err);
+              .catch(() => {
                 setLoading(false);
               });
           }}
@@ -345,15 +278,7 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
     }
   };
 
-  console.log('LocalToursBooking: Filtered future bookings:', {
-    totalBookings: bookings.length,
-    futureBookingsCount: futureBookings.length,
-    bookingsByMonth: bookingsByMonth.length,
-    currentMonthIndex,
-  });
-
   if (futureBookings.length === 0) {
-    console.log('LocalToursBooking: No future bookings, showing message');
     return (
       <div className="mb-12 rounded-lg bg-sand p-8 brass-corner">
         <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>
