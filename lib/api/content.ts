@@ -18,7 +18,8 @@ export type LocalTourBooking = {
   booking_id?: number; // Reference to tourbooking.id (parent booking)
   status: 'available' | 'booked' | 'cancelled' | 'unavailable';
   number_of_people?: number; // Total number of people signed up for this slot (calculated)
-  amnt_of_people?: number; // Number of people for this specific booking
+  amnt_of_people?: number; // Number of people for this specific booking (numeric from DB)
+  pending_payment_people?: number; // People with pending payment
   created_at?: string;
   updated_at?: string;
 };

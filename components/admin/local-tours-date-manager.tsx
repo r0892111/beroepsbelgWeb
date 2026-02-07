@@ -30,12 +30,26 @@ export function LocalToursDateManager({ open, onOpenChange, tourId, tourTitle }:
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/local-tours-bookings?tourId=${tourId}`);
+      // Get the session token from Supabase for admin authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+
+      const headers: Record<string, string> = {};
+
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+
+      const response = await fetch(`/api/local-tours-bookings/admin?tourId=${tourId}`, {
+        headers,
+      });
+
       if (response.ok) {
         const data = await response.json();
         setBookings(Array.isArray(data) ? data : []);
       } else {
-        toast.error('Failed to load bookings');
+        const errorData = await response.json().catch(() => ({ error: 'Failed to load bookings' }));
+        toast.error(errorData.error || 'Failed to load bookings');
         setBookings([]);
       }
     } catch (error) {
@@ -129,7 +143,8 @@ export function LocalToursDateManager({ open, onOpenChange, tourId, tourTitle }:
 
       if (response.ok) {
         const data = await response.json();
-        setBookings(data.bookings || []);
+        // Refresh bookings after update
+        await fetchBookings();
         toast.success(
           newStatus === 'unavailable'
             ? 'Date marked as unavailable'
@@ -208,7 +223,11 @@ export function LocalToursDateManager({ open, onOpenChange, tourId, tourTitle }:
                     const isUpdating = updating === dateStr;
                     
                     // Check if there are subscriptions (bookings) for this date
-                    const hasSubscriptions = (booking?.number_of_people || 0) > 0 || !!booking?.booking_id;
+                    // Check number_of_people, amnt_of_people, pending_payment_people, or booking_id
+                    const totalPeople = (booking?.number_of_people || 0) + 
+                                      (booking?.amnt_of_people || 0) + 
+                                      (booking?.pending_payment_people || 0);
+                    const hasSubscriptions = totalPeople > 0 || !!booking?.booking_id;
 
                     return (
                       <div
@@ -231,7 +250,7 @@ export function LocalToursDateManager({ open, onOpenChange, tourId, tourTitle }:
                           )}
                           {!isUnavailable && hasSubscriptions && (
                             <Badge variant="outline" className="bg-blue-100 text-blue-900 border-blue-300">
-                              {booking?.number_of_people || 0} {booking?.number_of_people === 1 ? 'person' : 'people'}
+                              {totalPeople} {totalPeople === 1 ? 'person' : 'people'}
                             </Badge>
                           )}
                           <Button

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
-import { getLocalToursBookings } from '@/lib/api/content';
 import { createClient } from '@supabase/supabase-js';
 
 function getSupabaseServer() {
@@ -65,17 +64,11 @@ async function checkAdminAccess(request: NextRequest): Promise<{ isAdmin: boolea
 }
 
 /**
- * POST /api/local-tours-bookings/update-availability
- * Updates the availability status of a date for a local tour
+ * GET /api/local-tours-bookings/admin
+ * Fetches all local tours bookings for admin (including unavailable dates)
  * Requires admin authentication
- * 
- * Body: {
- *   tourId: string,
- *   bookingDate: string (YYYY-MM-DD),
- *   status: 'available' | 'unavailable'
- * }
  */
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     // Check admin access
     const { isAdmin } = await checkAdminAccess(request);
@@ -86,87 +79,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
-    const { tourId, bookingDate, status } = body;
+    const searchParams = request.nextUrl.searchParams;
+    const tourId = searchParams.get('tourId');
 
-    if (!tourId || !bookingDate || !status) {
+    if (!tourId) {
       return NextResponse.json(
-        { error: 'tourId, bookingDate, and status are required' },
+        { error: 'tourId is required' },
         { status: 400 }
       );
     }
 
-    if (!['available', 'unavailable'].includes(status)) {
-      return NextResponse.json(
-        { error: 'status must be "available" or "unavailable"' },
-        { status: 400 }
-      );
-    }
+    const supabaseServer = getSupabaseServer();
 
-    // Check if a booking already exists for this date
-    const { data: existingBooking, error: fetchError } = await supabaseServer
-      .from('local_tours_bookings')
-      .select('id')
-      .eq('tour_id', tourId)
-      .eq('booking_date', bookingDate)
-      .single();
-
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows returned
-      console.error('Error fetching existing booking:', fetchError);
-      return NextResponse.json(
-        { error: 'Failed to check existing booking' },
-        { status: 500 }
-      );
-    }
-
-    if (existingBooking) {
-      // Update existing booking
-      const { error: updateError } = await supabaseServer
-        .from('local_tours_bookings')
-        .update({ status })
-        .eq('id', existingBooking.id);
-
-      if (updateError) {
-        console.error('Error updating booking:', updateError);
-        return NextResponse.json(
-          { error: 'Failed to update booking status' },
-          { status: 500 }
-        );
-      }
-    } else {
-      // Create new booking with unavailable status
-      const { error: insertError } = await supabaseServer
-        .from('local_tours_bookings')
-        .insert({
-          tour_id: tourId,
-          booking_date: bookingDate,
-          booking_time: '14:00:00',
-          status,
-          is_booked: false,
-        });
-
-      if (insertError) {
-        console.error('Error creating booking:', insertError);
-        return NextResponse.json(
-          { error: 'Failed to create booking' },
-          { status: 500 }
-        );
-      }
-    }
-
-    // Return updated bookings list - fetch directly from database to include unavailable dates
-    // (getLocalToursBookings filters out unavailable dates, but admin needs to see them)
-    const { data: allBookings, error: allBookingsError } = await supabaseServer
+    // Fetch all bookings including unavailable
+    const { data: allBookings, error: fetchError } = await supabaseServer
       .from('local_tours_bookings')
       .select('*')
       .eq('tour_id', tourId)
       .order('booking_date', { ascending: true });
 
-    if (allBookingsError) {
-      console.error('Error fetching bookings:', allBookingsError);
-      // Fallback to getLocalToursBookings if direct fetch fails
-      const bookings = await getLocalToursBookings(tourId);
-      return NextResponse.json({ success: true, bookings });
+    if (fetchError) {
+      console.error('Error fetching bookings:', fetchError);
+      return NextResponse.json(
+        { error: 'Failed to fetch bookings' },
+        { status: 500 }
+      );
     }
 
     // Also fetch tourbookings to get accurate people counts
@@ -180,6 +117,7 @@ export async function POST(request: NextRequest) {
     const peopleCountByDate = new Map<string, number>();
     (allBookings || []).forEach((booking: any) => {
       const dateStr = booking.booking_date;
+      // amnt_of_people is numeric, convert to number
       const amntOfPeople = booking.amnt_of_people ? Number(booking.amnt_of_people) : 0;
       // pending_payment_people are people added but not yet paid
       const pendingPeople = booking.pending_payment_people ? Number(booking.pending_payment_people) : 0;
@@ -228,9 +166,9 @@ export async function POST(request: NextRequest) {
       updated_at: booking.updated_at,
     }));
 
-    return NextResponse.json({ success: true, bookings: formattedBookings });
+    return NextResponse.json(formattedBookings);
   } catch (error) {
-    console.error('Error updating availability:', error);
+    console.error('Error in admin bookings fetch:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
