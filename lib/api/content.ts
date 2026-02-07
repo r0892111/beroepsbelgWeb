@@ -1325,8 +1325,6 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
                 number_of_people: totalPeople,
                 amnt_of_people: totalPeople,
               });
-              
-              console.log(`getLocalToursBookings: Created booking entry from tourbooking ${tb.id} for date ${dateStr} with ${totalPeople} people`);
             }
           }
         }
