@@ -133,56 +133,27 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
     });
   }, [bookings, nineMonthsFromNow]);
 
-  // Merge all Saturdays with existing bookings
+  // Use only the bookings returned from the API
+  // The API filters out unavailable dates, so we only show available/booked dates
   const futureBookings = useMemo(() => {
-    // Create a map of existing bookings by date for quick lookup
-    // Normalize booking dates to YYYY-MM-DD format to ensure matching
-    const bookingsMap = new Map<string, LocalTourBooking>();
-    filteredBookings.forEach((booking) => {
-      // Normalize the booking_date to YYYY-MM-DD format
-      let normalizedDate = booking.booking_date;
-      if (normalizedDate) {
-        // Handle various date formats (YYYY-MM-DD, YYYY-MM-DDTHH:mm:ss, etc.)
-        const dateMatch = normalizedDate.match(/^(\d{4}-\d{2}-\d{2})/);
-        if (dateMatch) {
-          normalizedDate = dateMatch[1];
-        } else {
-          // Try parsing as Date and reformatting
-          const parts = normalizedDate.split('-');
-          if (parts.length >= 3) {
-            const [year, month, day] = parts.map(Number);
-            if (year && month && day) {
-              normalizedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            }
-          }
-        }
-        bookingsMap.set(normalizedDate, booking);
-      }
+    // Simply use the filtered bookings - the API already handles:
+    // 1. Filtering out unavailable dates
+    // 2. Creating virtual placeholders for available dates
+    // 3. Returning actual bookings for booked dates
+    
+    // Filter out past dates and ensure we're within the 9-month window
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    
+    return filteredBookings.filter((booking) => {
+      if (!booking.booking_date) return false;
+      const dateMatch = booking.booking_date.match(/^(\d{4}-\d{2}-\d{2})/);
+      if (!dateMatch) return false;
+      const [year, month, day] = dateMatch[1].split('-').map(Number);
+      const bookingDate = new Date(year, month - 1, day);
+      return bookingDate >= now && bookingDate <= nineMonthsFromNow;
     });
-
-    const result = allSaturdays.map((dateStr) => {
-      const existingBooking = bookingsMap.get(dateStr);
-      if (existingBooking) {
-        return existingBooking;
-      }
-      // Create a placeholder booking for Saturdays without existing bookings
-      return {
-        id: `placeholder-${dateStr}`,
-        tour_id: tourId,
-        booking_date: dateStr,
-        booking_time: '14:00:00',
-        is_booked: false,
-        status: 'available',
-        customer_name: undefined,
-        customer_email: undefined,
-        customer_phone: undefined,
-        number_of_people: 0,
-        booking_id: undefined,
-      } as LocalTourBooking;
-    });
-
-    return result;
-  }, [allSaturdays, filteredBookings, tourId]);
+  }, [filteredBookings, nineMonthsFromNow]);
 
   // Group bookings by month
   const bookingsByMonth = useMemo(() => {

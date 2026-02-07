@@ -1070,6 +1070,7 @@ function getNextSaturdays(count: number = 8): Date[] {
  * Automatically creates bookings for upcoming Saturdays if they don't exist (with 0 people, status 'booked')
  */
 export async function getLocalToursBookings(tourId: string): Promise<LocalTourBooking[]> {
+  console.log('getLocalToursBookings called for tourId:', tourId);
   try {
     // Get the next 9 months of Saturdays (matching frontend)
     // Calculate how many Saturdays are in 9 months (~40 Saturdays)
@@ -1331,17 +1332,33 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
       });
     }
     
-    // First, check for any unavailable dates in the database (even if not in saturdayDates)
-    // This ensures we don't create virtual placeholders for unavailable dates
-    const { data: unavailableBookings } = await supabaseServer
+    // Build a set of unavailable dates - check multiple sources to be absolutely sure
+    const unavailableDates = new Set<string>();
+    
+    // 1. Check bookingsMap for unavailable entries
+    bookingsMap.forEach((booking, dateStr) => {
+      if (booking.status === 'unavailable') {
+        unavailableDates.add(dateStr);
+      }
+    });
+
+    // 2. Check existingBookings directly for any unavailable entries
+    (existingBookings || []).forEach((booking: any) => {
+      if (booking.status === 'unavailable' && booking.booking_date) {
+        unavailableDates.add(booking.booking_date);
+      }
+    });
+
+    // 3. Query database directly for unavailable dates as a final check
+    // This ensures we catch any unavailable entries even if they weren't in the initial query
+    const { data: directUnavailable } = await supabaseServer
       .from('local_tours_bookings')
       .select('booking_date')
       .eq('tour_id', tourId)
       .eq('status', 'unavailable')
       .in('booking_date', saturdayDates);
 
-    const unavailableDates = new Set<string>();
-    (unavailableBookings || []).forEach((booking: any) => {
+    (directUnavailable || []).forEach((booking: any) => {
       if (booking.booking_date) {
         unavailableDates.add(booking.booking_date);
       }
@@ -1350,12 +1367,26 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
     // Build bookings array - use existing entries or create virtual placeholders for display
     // NOTE: We no longer create placeholder entries in the database - they're only virtual for the UI
     // Real entries are created by the webhook when someone actually books
-    // Filter out unavailable dates
+    // IMPORTANT: Return unavailable dates with their status so frontend can filter them
     const bookings: LocalTourBooking[] = saturdayDates
       .map(dateStr => {
-        // Skip unavailable dates - don't create virtual placeholders for them
+        // Check if date is unavailable
         if (unavailableDates.has(dateStr)) {
-          return null;
+          // Return unavailable entry so frontend knows to filter it
+          const existing = bookingsMap.get(dateStr);
+          if (existing && existing.status === 'unavailable') {
+            return existing;
+          }
+          // Create unavailable entry if it doesn't exist in map
+          return {
+            id: `unavailable-${dateStr}`,
+            tour_id: tourId,
+            booking_date: dateStr,
+            booking_time: '14:00:00',
+            is_booked: false,
+            status: 'unavailable' as const,
+            number_of_people: 0,
+          };
         }
 
         const existing = bookingsMap.get(dateStr);
@@ -1363,7 +1394,7 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
         if (existing) {
           // Double-check status (should already be handled, but be safe)
           if (existing.status === 'unavailable') {
-            return null;
+            return existing; // Return it so frontend can filter
           }
           return existing;
         }
@@ -1382,9 +1413,10 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
           number_of_people: numberOfPeople,
         };
       })
-      .filter((booking): booking is LocalTourBooking => 
-        booking !== null && booking.status !== 'unavailable'
-      ); // Filter out null entries and unavailable dates
+      .filter((booking): booking is LocalTourBooking => booking !== null);
+    
+    // Filter out unavailable dates at the end (frontend will also filter, but this is a safety measure)
+    return bookings.filter(booking => booking.status !== 'unavailable');
     
     return bookings;
   } catch (err) {
