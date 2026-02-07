@@ -16,7 +16,7 @@ export type LocalTourBooking = {
   customer_phone?: string;
   stripe_session_id?: string;
   booking_id?: number; // Reference to tourbooking.id (parent booking)
-  status: 'available' | 'booked' | 'cancelled';
+  status: 'available' | 'booked' | 'cancelled' | 'unavailable';
   number_of_people?: number; // Total number of people signed up for this slot (calculated)
   amnt_of_people?: number; // Number of people for this specific booking
   created_at?: string;
