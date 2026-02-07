@@ -1326,29 +1326,32 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
     // Build bookings array - use existing entries or create virtual placeholders for display
     // NOTE: We no longer create placeholder entries in the database - they're only virtual for the UI
     // Real entries are created by the webhook when someone actually books
-    const bookings: LocalTourBooking[] = saturdayDates.map(dateStr => {
-      const existing = bookingsMap.get(dateStr);
+    // Filter out unavailable dates
+    const bookings: LocalTourBooking[] = saturdayDates
+      .map(dateStr => {
+        const existing = bookingsMap.get(dateStr);
 
-      if (existing) {
-        return existing;
-      }
+        if (existing) {
+          return existing;
+        }
 
-      // Get number of people for this date (from tourbooking invitees)
-      const numberOfPeople = peopleCountByDate.get(dateStr) || 0;
+        // Get number of people for this date (from tourbooking invitees)
+        const numberOfPeople = peopleCountByDate.get(dateStr) || 0;
 
-      // Return virtual placeholder for display (not stored in database)
-      return {
-        id: `virtual-${dateStr}`,
-        tour_id: tourId,
-        booking_date: dateStr,
-        booking_time: '14:00:00',
-        is_booked: true, // Always show as bookable
-        status: 'booked' as const,
-        number_of_people: numberOfPeople,
-      };
-    });
+        // Return virtual placeholder for display (not stored in database)
+        return {
+          id: `virtual-${dateStr}`,
+          tour_id: tourId,
+          booking_date: dateStr,
+          booking_time: '14:00:00',
+          is_booked: true, // Always show as bookable
+          status: 'booked' as const,
+          number_of_people: numberOfPeople,
+        };
+      })
+      .filter(booking => booking.status !== 'unavailable'); // Filter out unavailable dates
     
-    console.log('getLocalToursBookings: Final bookings to return:', {
+    console.log('getLocalToursBookings: Final bookings to return (unavailable filtered):', {
       bookingsCount: bookings.length,
       bookings,
     });
