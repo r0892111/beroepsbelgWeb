@@ -922,21 +922,6 @@ export default function BookingSuccessPage() {
                   </div>
                 )}
 
-                {/* Promo code discount if applicable */}
-                {booking.promoCode && booking.promoDiscountAmount > 0 && (
-                  <div className="flex justify-between items-center py-1">
-                    <span className="text-sm" style={{ color: 'var(--primary-base)' }}>
-                      {t('promoCode') || 'Kortingscode'}: <span className="font-semibold">{booking.promoCode}</span>
-                      {booking.promoDiscountPercent && (
-                        <span className="text-xs ml-1">({booking.promoDiscountPercent}%)</span>
-                      )}
-                    </span>
-                    <span className="font-medium text-sm" style={{ color: 'var(--primary-base)' }}>
-                      -€{(parseFloat(booking.promoDiscountAmount) || 0).toFixed(2)}
-                    </span>
-                  </div>
-                )}
-
                 {/* Upsell products */}
                 {purchasedUpsellProducts.map((product: any, index) => {
                   const quantity = product.quantity || 1;
