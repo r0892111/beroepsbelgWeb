@@ -59,7 +59,7 @@ async function checkAdminAccess(request: NextRequest): Promise<{ isAdmin: boolea
       const supabaseServer = getSupabaseServer();
       const { data: profile, error: profileError } = await supabaseServer
         .from('profiles')
-        .select('isAdmin')
+        .select('isAdmin, is_admin')
         .eq('id', user.id)
         .single();
 
@@ -67,7 +67,7 @@ async function checkAdminAccess(request: NextRequest): Promise<{ isAdmin: boolea
         return { isAdmin: false, userId: user.id };
       }
 
-      const isAdmin = profile.isAdmin === true;
+      const isAdmin = profile.isAdmin === true || profile.is_admin === true;
       return { isAdmin, userId: user.id };
     }
 
@@ -97,7 +97,7 @@ async function checkAdminAccess(request: NextRequest): Promise<{ isAdmin: boolea
     const supabaseServer = getSupabaseServer();
     const { data: profile, error: profileError } = await supabaseServer
       .from('profiles')
-      .select('isAdmin')
+      .select('isAdmin, is_admin')
       .eq('id', user.id)
       .single();
 
@@ -105,7 +105,7 @@ async function checkAdminAccess(request: NextRequest): Promise<{ isAdmin: boolea
       return { isAdmin: false, userId: user.id };
     }
 
-    const isAdmin = profile.isAdmin === true;
+    const isAdmin = profile.isAdmin === true || profile.is_admin === true;
     return { isAdmin, userId: user.id };
     }
 
