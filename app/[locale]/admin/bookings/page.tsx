@@ -93,7 +93,7 @@ interface Guide {
 }
 
 export default function AdminBookingsPage() {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
   const params = useParams();
   const locale = params.locale as string;
@@ -200,10 +200,13 @@ export default function AdminBookingsPage() {
   const EVENING_FEE_COST = 25;
 
   useEffect(() => {
+    // Wait for auth to finish loading before checking admin access
+    if (authLoading) return;
+    
     if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
       router.push(`/${locale}`);
     }
-  }, [user, profile, router, locale]);
+  }, [user, profile, router, locale, authLoading]);
 
   const fetchBookings = async () => {
     setLoading(true);
@@ -896,6 +899,17 @@ export default function AdminBookingsPage() {
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  // Wait for auth to finish loading before checking admin access
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
     return null;
