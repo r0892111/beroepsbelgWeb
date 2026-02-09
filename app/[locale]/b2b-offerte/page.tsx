@@ -336,10 +336,11 @@ export default function B2BQuotePage() {
 
   // Calculate actual duration (accounting for extra hour for opMaat tours)
   const actualDuration = useMemo(() => {
+    const baseDuration = selectedTour?.durationMinutes ?? 120; // Default 2 hours
     if (isOpMaat && extraHour) {
-      return 180; // 3 hours
+      return baseDuration + 60; // Add 60 minutes (1 hour) to base duration
     }
-    return selectedTour?.durationMinutes ?? 120; // Default 2 hours
+    return baseDuration;
   }, [isOpMaat, extraHour, selectedTour?.durationMinutes]);
 
   // Generate time slots based on tour type:
@@ -669,6 +670,17 @@ export default function B2BQuotePage() {
   };
 
   const onSubmit = async (data: QuoteFormData) => {
+    // Check for validation errors before submitting
+    if (Object.keys(errors).length > 0) {
+      // If we're on the payment/confirmation step, scroll to top to show errors
+      if (step === 'payment') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      // Trigger validation to show errors
+      trigger();
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -703,55 +715,78 @@ export default function B2BQuotePage() {
       
       // Create tourbooking record for ALL tours (to save upsell products and get booking ID)
       let createdBookingId: number | null = null;
+      
+      // Debug: Log what we're sending
+      console.log('=== FRONTEND SUBMISSION DEBUG ===');
+      console.log('actualDuration:', actualDuration);
+      console.log('extraHour:', extraHour);
+      console.log('selectedTour?.durationMinutes:', selectedTourData?.durationMinutes);
+      console.log('isOpMaat:', tourIsOpMaat);
+      console.log('===============================');
+      
       try {
+        const bookingPayload = {
+          tourId: data.tourId,
+          citySlug: data.city,
+          dateTime: data.dateTime,
+          language: data.language,
+          contactLanguage: data.contactLanguage, // Language for email communications
+          numberOfPeople: data.numberOfPeople,
+          contactFirstName: data.contactFirstName,
+          contactLastName: data.contactLastName,
+          contactEmail: data.contactEmail,
+          contactPhone: data.contactPhone,
+          companyName: data.companyName || null,
+          vatNumber: normalizeVATNumber(data.vatNumber),
+          billingAddress: data.billingAddress || null,
+          street: data.street || null,
+          streetNumber: data.streetNumber || null,
+          postalCode: data.postalCode || null,
+          bus: data.bus || null,
+          billingCity: data.billingCity || null,
+          country: data.country || null,
+          additionalInfo: data.additionalInfo || null,
+          upsellProducts: upsellProducts, // Already in standardized format {n, p, q}
+          // Op maat answers will be collected separately via /op-maat-form page
+          opMaatAnswers: tourIsOpMaat ? {
+            extraHour: extraHour, // Only save extra hour preference now
+          } : null,
+          isOpMaat: tourIsOpMaat, // Flag to indicate this is an op maat tour
+          requestTanguy: requestTanguy,
+          durationMinutes: actualDuration, // Include actual duration in booking
+          weekendFee: weekendFee, // Weekend fee flag
+          eveningFee: eveningFee, // Evening fee flag
+        };
+        
+        console.log('Sending durationMinutes:', bookingPayload.durationMinutes);
+        
         const bookingResponse = await fetch('/api/b2b-booking/create', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            tourId: data.tourId,
-            citySlug: data.city,
-            dateTime: data.dateTime,
-            language: data.language,
-            contactLanguage: data.contactLanguage, // Language for email communications
-            numberOfPeople: data.numberOfPeople,
-            contactFirstName: data.contactFirstName,
-            contactLastName: data.contactLastName,
-            contactEmail: data.contactEmail,
-            contactPhone: data.contactPhone,
-            companyName: data.companyName || null,
-            vatNumber: normalizeVATNumber(data.vatNumber),
-            billingAddress: data.billingAddress || null,
-            street: data.street || null,
-            streetNumber: data.streetNumber || null,
-            postalCode: data.postalCode || null,
-            bus: data.bus || null,
-            billingCity: data.billingCity || null,
-            country: data.country || null,
-            additionalInfo: data.additionalInfo || null,
-            upsellProducts: upsellProducts, // Already in standardized format {n, p, q}
-            // Op maat answers will be collected separately via /op-maat-form page
-            opMaatAnswers: tourIsOpMaat ? {
-              extraHour: extraHour, // Only save extra hour preference now
-            } : null,
-            isOpMaat: tourIsOpMaat, // Flag to indicate this is an op maat tour
-            requestTanguy: requestTanguy,
-            durationMinutes: actualDuration, // Include actual duration in booking
-            weekendFee: weekendFee, // Weekend fee flag
-            eveningFee: eveningFee, // Evening fee flag
-          }),
+          body: JSON.stringify(bookingPayload),
         });
 
         if (!bookingResponse.ok) {
           const errorData = await bookingResponse.json();
           console.error('Error creating B2B booking:', errorData);
-          toast.error(t('error') || 'Failed to create booking');
+          const errorMessage = errorData.error || errorData.message || t('error') || 'Failed to create booking';
+          toast.error(errorMessage);
+          // If we're on the payment step, show error on screen as well
+          if (step === 'payment') {
+            setDataError(errorMessage);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+          setIsSubmitting(false);
           return;
         }
 
         const bookingData = await bookingResponse.json();
         console.log('B2B booking created:', bookingData);
+        
+        // Clear any previous errors on success
+        setDataError(null);
         
         if (bookingData.bookingId) {
           createdBookingId = bookingData.bookingId;
@@ -759,7 +794,14 @@ export default function B2BQuotePage() {
         }
       } catch (error) {
         console.error('Error creating B2B booking:', error);
-        toast.error(t('error') || 'Failed to create booking');
+        const errorMessage = error instanceof Error ? error.message : (t('error') || 'Failed to create booking');
+        toast.error(errorMessage);
+        // If we're on the payment step, show error on screen as well
+        if (step === 'payment') {
+          setDataError(errorMessage);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        setIsSubmitting(false);
         return;
       }
       
@@ -1632,6 +1674,41 @@ export default function B2BQuotePage() {
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <h2 className="text-2xl font-serif font-bold text-navy mb-6">{t('step4')}</h2>
 
+                {/* Display validation errors if any */}
+                {(Object.keys(errors).length > 0 || dataError) && (
+                  <div className="p-4 rounded-lg bg-red-50 border-2 border-red-200">
+                    <h3 className="font-semibold text-red-800 mb-2">
+                      {dataError ? (t('error') || 'Fout') : (t('validationErrors') || 'Er zijn validatiefouten:')}
+                    </h3>
+                    {dataError ? (
+                      <p className="text-sm text-red-700">{dataError}</p>
+                    ) : (
+                      <>
+                        <ul className="list-disc list-inside space-y-1 text-sm text-red-700">
+                          {errors.contactFirstName && (
+                            <li>{tForms('required')} - {t('contactFirstName') || 'Voornaam'}</li>
+                          )}
+                          {errors.contactLastName && (
+                            <li>{tForms('required')} - {t('contactLastName') || 'Achternaam'}</li>
+                          )}
+                          {errors.contactEmail && (
+                            <li>{errors.contactEmail.message || tForms('invalidEmail')} - {t('contactEmail') || 'E-mail'}</li>
+                          )}
+                          {errors.contactPhone && (
+                            <li>{tForms('required')} - {t('contactPhone') || 'Telefoon'}</li>
+                          )}
+                          {errors.vatNumber && (
+                            <li>{errors.vatNumber.message || tForms('invalidVAT')} - {t('vatNumber') || 'BTW-nummer'}</li>
+                          )}
+                        </ul>
+                        <p className="mt-3 text-sm text-red-600 font-medium">
+                          {t('pleaseFixErrors') || 'Gelieve de bovenstaande fouten te corrigeren en opnieuw te proberen.'}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                )}
+
                 {/* Order summary with pricing */}
                 <div className="p-6 rounded-lg" style={{ backgroundColor: 'white', border: '2px solid var(--brass)' }}>
                   <h3 className="font-semibold text-navy mb-4">{t('summaryTitle')}</h3>
@@ -1769,7 +1846,10 @@ export default function B2BQuotePage() {
                 <div className="flex gap-3">
                   <Button 
                     type="button" 
-                    onClick={() => setStep('upsell')} 
+                    onClick={() => {
+                      setDataError(null); // Clear errors when going back
+                      setStep('upsell');
+                    }} 
                     variant="outline" 
                     className="flex-1"
                   >

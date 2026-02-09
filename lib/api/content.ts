@@ -16,9 +16,10 @@ export type LocalTourBooking = {
   customer_phone?: string;
   stripe_session_id?: string;
   booking_id?: number; // Reference to tourbooking.id (parent booking)
-  status: 'available' | 'booked' | 'cancelled';
+  status: 'available' | 'booked' | 'cancelled' | 'unavailable';
   number_of_people?: number; // Total number of people signed up for this slot (calculated)
-  amnt_of_people?: number; // Number of people for this specific booking
+  amnt_of_people?: number; // Number of people for this specific booking (numeric from DB)
+  pending_payment_people?: number; // People with pending payment
   created_at?: string;
   updated_at?: string;
 };
@@ -1104,11 +1105,8 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
       saturdayDates.push(dateStr);
     }
     
-    console.log('getLocalToursBookings: Next Saturdays (9 months):', saturdayDates);
-    
     // Fetch existing bookings for these dates
-    
-    console.log('getLocalToursBookings: Fetching existing bookings for dates:', saturdayDates);
+    console.log('getLocalToursBookings: Fetching bookings for dates:', saturdayDates.slice(0, 5), '... (total:', saturdayDates.length, ')');
     const { data: existingBookings, error } = await supabaseServer
       .from('local_tours_bookings')
       .select('*')
@@ -1116,11 +1114,11 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
       .in('booking_date', saturdayDates)
       .order('booking_date', { ascending: true });
     
-    console.log('getLocalToursBookings: Supabase query result:', {
-      existingBookingsCount: existingBookings?.length || 0,
-      existingBookings,
-      error,
-    });
+    console.log('getLocalToursBookings: Fetched', existingBookings?.length || 0, 'bookings from database');
+    if (existingBookings && existingBookings.length > 0) {
+      const unavailableCount = existingBookings.filter((b: any) => b.status === 'unavailable').length;
+      console.log('getLocalToursBookings: Found', unavailableCount, 'unavailable bookings in database');
+    }
     
     if (error) {
       console.error('Error fetching local tours bookings:', error);
@@ -1134,12 +1132,6 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
       .select('id, tour_datetime, invitees')
       .eq('tour_id', tourId)
       .eq('status', 'payment_completed');
-    
-    console.log('getLocalToursBookings: Tourbookings query result:', {
-      tourBookingsCount: tourBookings?.length || 0,
-      tourBookings,
-      error: tourBookingsError,
-    });
     
     // Calculate number of people per date from local_tours_bookings (sum amnt_of_people for all rows per date)
     const peopleCountByDate = new Map<string, number>();
@@ -1173,7 +1165,6 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
               const currentCount = peopleCountByDate.get(dateStr) || 0;
               if (totalPeople > currentCount) {
                 peopleCountByDate.set(dateStr, totalPeople);
-                console.log(`getLocalToursBookings: Updated count for ${dateStr} from tourbooking invitees: ${totalPeople} (was ${currentCount})`);
               }
             }
           }
@@ -1181,7 +1172,6 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
       });
     }
 
-    console.log('getLocalToursBookings: People count by date (from local_tours_bookings + tourbooking):', Array.from(peopleCountByDate.entries()));
     
     // Create a map of existing bookings by date
     const bookingsMap = new Map<string, LocalTourBooking>();
@@ -1190,11 +1180,61 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
     (existingBookings || []).forEach((booking: any) => {
       const dateStr = booking.booking_date;
       const numberOfPeople = peopleCountByDate.get(dateStr) || 0;
+      const bookingStatus = booking.status || 'booked';
       
-      // If multiple bookings exist for the same date, prioritize one with booking_id
+      // If multiple bookings exist for the same date:
+      // 1. Prioritize 'unavailable' status (if ANY entry is unavailable, the date is unavailable)
+      // 2. Otherwise prioritize one with booking_id
       const existing = bookingsMap.get(dateStr);
-      if (existing && !existing.booking_id && booking.booking_id) {
-        // Replace existing entry with one that has booking_id
+      
+      // If current booking is unavailable, always use it (date should be unavailable)
+      if (bookingStatus === 'unavailable') {
+        bookingsMap.set(dateStr, {
+          id: booking.id,
+          tour_id: booking.tour_id,
+          booking_date: dateStr,
+          booking_time: booking.booking_time || '14:00:00',
+          is_booked: booking.is_booked !== undefined ? booking.is_booked : false,
+          user_id: booking.user_id,
+          customer_name: booking.customer_name,
+          customer_email: booking.customer_email,
+          customer_phone: booking.customer_phone,
+          stripe_session_id: booking.stripe_session_id,
+          booking_id: booking.booking_id || undefined,
+          status: 'unavailable',
+          number_of_people: numberOfPeople,
+          created_at: booking.created_at,
+          updated_at: booking.updated_at,
+        });
+      } else if (existing) {
+        // If existing is unavailable, keep it (don't replace with non-unavailable)
+        if (existing.status === 'unavailable') {
+          // Keep the unavailable one
+          return;
+        }
+        // If existing doesn't have booking_id but current does, replace it
+        if (!existing.booking_id && booking.booking_id) {
+          bookingsMap.set(dateStr, {
+            id: booking.id,
+            tour_id: booking.tour_id,
+            booking_date: dateStr,
+            booking_time: booking.booking_time || '14:00:00',
+            is_booked: booking.is_booked !== undefined ? booking.is_booked : true,
+            user_id: booking.user_id,
+            customer_name: booking.customer_name,
+            customer_email: booking.customer_email,
+            customer_phone: booking.customer_phone,
+            stripe_session_id: booking.stripe_session_id,
+            booking_id: booking.booking_id || undefined,
+            status: bookingStatus,
+            number_of_people: numberOfPeople,
+            created_at: booking.created_at,
+            updated_at: booking.updated_at,
+          });
+        }
+        // If existing already has booking_id, keep it (don't replace)
+      } else if (!existing) {
+        // First booking for this date
         bookingsMap.set(dateStr, {
           id: booking.id,
           tour_id: booking.tour_id,
@@ -1206,33 +1246,13 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
           customer_email: booking.customer_email,
           customer_phone: booking.customer_phone,
           stripe_session_id: booking.stripe_session_id,
-          booking_id: booking.booking_id || undefined, // Reference to tourbooking.id
-          status: booking.status || 'booked',
-          number_of_people: numberOfPeople,
-          created_at: booking.created_at,
-          updated_at: booking.updated_at,
-        });
-      } else if (!existing) {
-        // First booking for this date
-        bookingsMap.set(dateStr, {
-          id: booking.id,
-          tour_id: booking.tour_id,
-          booking_date: dateStr,
-          booking_time: booking.booking_time || '14:00:00',
-          is_booked: booking.is_booked !== undefined ? booking.is_booked : true, // Default to booked
-          user_id: booking.user_id,
-          customer_name: booking.customer_name,
-          customer_email: booking.customer_email,
-          customer_phone: booking.customer_phone,
-          stripe_session_id: booking.stripe_session_id,
-          booking_id: booking.booking_id || undefined, // Reference to tourbooking.id
-          status: booking.status || 'booked', // Default to booked
+          booking_id: booking.booking_id || undefined,
+          status: bookingStatus,
           number_of_people: numberOfPeople,
           created_at: booking.created_at,
           updated_at: booking.updated_at,
         });
       }
-      // If existing already has booking_id, keep it (don't replace)
     });
     
     // Also create entries from tourbookings if they don't exist in local_tours_bookings
@@ -1262,7 +1282,6 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
                 const saturdayStr = `${satYear}-${satMonth}-${satDay}`;
                 
                 if (saturdayDates.includes(saturdayStr)) {
-                  console.log(`getLocalToursBookings: Mapping Friday ${dateStr} to Saturday ${saturdayStr}`);
                   dateStr = saturdayStr;
                 }
               }
@@ -1276,7 +1295,6 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
                 const saturdayStr = `${satYear}-${satMonth}-${satDay}`;
                 
                 if (saturdayDates.includes(saturdayStr)) {
-                  console.log(`getLocalToursBookings: Mapping Sunday ${dateStr} to Saturday ${saturdayStr}`);
                   dateStr = saturdayStr;
                 }
               }
@@ -1315,43 +1333,109 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
                 number_of_people: totalPeople,
                 amnt_of_people: totalPeople,
               });
-              
-              console.log(`getLocalToursBookings: Created booking entry from tourbooking ${tb.id} for date ${dateStr} with ${totalPeople} people`);
             }
           }
         }
       });
     }
     
+    // Build a set of unavailable dates - check multiple sources to be absolutely sure
+    const unavailableDates = new Set<string>();
+    
+    // 1. Check bookingsMap for unavailable entries
+    bookingsMap.forEach((booking, dateStr) => {
+      if (booking.status === 'unavailable') {
+        unavailableDates.add(dateStr);
+        console.log('getLocalToursBookings: Found unavailable date in bookingsMap:', dateStr);
+      }
+    });
+
+    // 2. Check existingBookings directly for any unavailable entries
+    (existingBookings || []).forEach((booking: any) => {
+      if (booking.status === 'unavailable' && booking.booking_date) {
+        unavailableDates.add(booking.booking_date);
+        console.log('getLocalToursBookings: Found unavailable date in existingBookings:', booking.booking_date);
+      }
+    });
+
+    // 3. Query database directly for unavailable dates as a final check
+    // This ensures we catch any unavailable entries even if they weren't in the initial query
+    const { data: directUnavailable } = await supabaseServer
+      .from('local_tours_bookings')
+      .select('booking_date')
+      .eq('tour_id', tourId)
+      .eq('status', 'unavailable')
+      .in('booking_date', saturdayDates);
+
+    console.log('getLocalToursBookings: Direct query found', directUnavailable?.length || 0, 'unavailable dates');
+    (directUnavailable || []).forEach((booking: any) => {
+      if (booking.booking_date) {
+        unavailableDates.add(booking.booking_date);
+        console.log('getLocalToursBookings: Found unavailable date in direct query:', booking.booking_date);
+      }
+    });
+
+    console.log('getLocalToursBookings: Total unavailable dates found:', unavailableDates.size, Array.from(unavailableDates));
+
     // Build bookings array - use existing entries or create virtual placeholders for display
     // NOTE: We no longer create placeholder entries in the database - they're only virtual for the UI
     // Real entries are created by the webhook when someone actually books
-    const bookings: LocalTourBooking[] = saturdayDates.map(dateStr => {
-      const existing = bookingsMap.get(dateStr);
+    // IMPORTANT: Return unavailable dates with their status so frontend can filter them
+    const bookings: LocalTourBooking[] = saturdayDates
+      .map(dateStr => {
+        // Check if date is unavailable
+        if (unavailableDates.has(dateStr)) {
+          // Return unavailable entry so frontend knows to filter it
+          const existing = bookingsMap.get(dateStr);
+          if (existing && existing.status === 'unavailable') {
+            return existing;
+          }
+          // Create unavailable entry if it doesn't exist in map
+          return {
+            id: `unavailable-${dateStr}`,
+            tour_id: tourId,
+            booking_date: dateStr,
+            booking_time: '14:00:00',
+            is_booked: false,
+            status: 'unavailable' as const,
+            number_of_people: 0,
+          };
+        }
 
-      if (existing) {
-        return existing;
-      }
+        const existing = bookingsMap.get(dateStr);
 
-      // Get number of people for this date (from tourbooking invitees)
-      const numberOfPeople = peopleCountByDate.get(dateStr) || 0;
+        if (existing) {
+          // Double-check status (should already be handled, but be safe)
+          if (existing.status === 'unavailable') {
+            return existing; // Return it so frontend can filter
+          }
+          return existing;
+        }
 
-      // Return virtual placeholder for display (not stored in database)
-      return {
-        id: `virtual-${dateStr}`,
-        tour_id: tourId,
-        booking_date: dateStr,
-        booking_time: '14:00:00',
-        is_booked: true, // Always show as bookable
-        status: 'booked' as const,
-        number_of_people: numberOfPeople,
-      };
-    });
+        // Get number of people for this date (from tourbooking invitees)
+        const numberOfPeople = peopleCountByDate.get(dateStr) || 0;
+
+        // Return virtual placeholder for display (not stored in database)
+        return {
+          id: `virtual-${dateStr}`,
+          tour_id: tourId,
+          booking_date: dateStr,
+          booking_time: '14:00:00',
+          is_booked: true, // Always show as bookable
+          status: 'booked' as const,
+          number_of_people: numberOfPeople,
+        };
+      })
+      .filter((booking): booking is LocalTourBooking => booking !== null);
     
-    console.log('getLocalToursBookings: Final bookings to return:', {
-      bookingsCount: bookings.length,
-      bookings,
-    });
+    // Filter out unavailable dates at the end (frontend will also filter, but this is a safety measure)
+    const filteredBookings = bookings.filter(booking => booking.status !== 'unavailable');
+    
+    console.log('getLocalToursBookings: Before filtering -', bookings.length, 'bookings');
+    console.log('getLocalToursBookings: After filtering unavailable -', filteredBookings.length, 'bookings');
+    console.log('getLocalToursBookings: Filtered out', bookings.length - filteredBookings.length, 'unavailable dates');
+    
+    return filteredBookings;
     
     return bookings;
   } catch (err) {
@@ -1477,6 +1561,7 @@ export async function getBlogs(locale: Locale = 'nl', limit?: number): Promise<B
       excerpt: row.excerpt || undefined,
       content: row.content || '',
       thumbnail_url: row.thumbnail_url || undefined,
+      video_url: row.video_url || undefined,
       title_en: row.title_en || undefined,
       excerpt_en: row.excerpt_en || undefined,
       content_en: row.content_en || undefined,
@@ -1542,6 +1627,7 @@ export async function getBlogBySlug(slug: string, locale: Locale = 'nl'): Promis
       excerpt: data.excerpt || undefined,
       content: data.content || '',
       thumbnail_url: data.thumbnail_url || undefined,
+      video_url: data.video_url || undefined,
       title_en: data.title_en || undefined,
       excerpt_en: data.excerpt_en || undefined,
       content_en: data.content_en || undefined,
@@ -1607,6 +1693,7 @@ export async function getAllBlogs(): Promise<Blog[]> {
       excerpt: row.excerpt || undefined,
       content: row.content || '',
       thumbnail_url: row.thumbnail_url || undefined,
+      video_url: row.video_url || undefined,
       title_en: row.title_en || undefined,
       excerpt_en: row.excerpt_en || undefined,
       content_en: row.content_en || undefined,

@@ -1,7 +1,8 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import Stripe from 'npm:stripe@17.7.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
-import { nowBrussels, parseBrusselsDateTime, toBrusselsISO, addMinutesBrussels } from '../_shared/timezone.ts';
+import { toBrusselsLocalISO, parseBrusselsDateTime } from '../_shared/timezone.ts';
+import { nowBrussels, parseBrusselsDateTime, toBrusselsLocalISO, addMinutesBrussels } from '../_shared/timezone.ts';
 
 const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
 const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')!;
@@ -330,12 +331,12 @@ async function handleEvent(event: Stripe.Event) {
           console.info(`Processing local stories booking for Saturday: ${saturdayDateStr || 'NO DATE AVAILABLE'}`);
 
           let tourbookingId: number | null = null;
-          // Create proper ISO string with Brussels timezone offset for Saturday 14:00
+          // Create proper ISO string WITHOUT timezone offset for Saturday 14:00 (Brussels local time)
           let saturdayDateTime: string | null = null;
           if (saturdayDateStr) {
             try {
               const parsedDate = parseBrusselsDateTime(saturdayDateStr, '14:00');
-              saturdayDateTime = toBrusselsISO(parsedDate);
+              saturdayDateTime = toBrusselsLocalISO(parsedDate);
             } catch (e) {
               console.error('Error creating saturdayDateTime:', e);
             }
@@ -343,9 +344,9 @@ async function handleEvent(event: Stripe.Event) {
 
           // Look for existing tourbooking for this Saturday
           if (saturdayDateStr) {
-            // Create proper ISO strings with timezone offset for query comparison
-            const startOfDay = toBrusselsISO(parseBrusselsDateTime(saturdayDateStr, '00:00'));
-            const endOfDay = toBrusselsISO(parseBrusselsDateTime(saturdayDateStr, '23:59'));
+            // Create proper ISO strings WITHOUT timezone offset for query comparison (Brussels local time)
+            const startOfDay = toBrusselsLocalISO(parseBrusselsDateTime(saturdayDateStr, '00:00'));
+            const endOfDay = toBrusselsLocalISO(parseBrusselsDateTime(saturdayDateStr, '23:59'));
             
             const { data: existingTourBookings } = await supabase
               .from('tourbooking')

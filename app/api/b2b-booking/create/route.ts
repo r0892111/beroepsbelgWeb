@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { toBrusselsISO, addMinutesBrussels } from '@/lib/utils/timezone';
+import { toBrusselsLocalISO, addMinutesBrussels, parseBrusselsDateTime } from '@/lib/utils/timezone';
 
 function getSupabaseServer() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -21,6 +21,12 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = getSupabaseServer();
     const body = await request.json();
+    
+    // Debug: Log what we received
+    console.log('=== API RECEIVED DATA ===');
+    console.log('durationMinutes:', body.durationMinutes, 'type:', typeof body.durationMinutes);
+    console.log('opMaatAnswers:', body.opMaatAnswers);
+    console.log('========================');
 
     const {
       tourId,
@@ -64,23 +70,33 @@ export async function POST(request: NextRequest) {
       // Continue with default if tour not found
     }
 
-    // Calculate actual duration: use tour's duration_minutes, add 60 if extra hour is selected
+    // Use durationMinutes directly from frontend - it's already calculated correctly
+    // The frontend calculates: actualDuration = baseDuration + (extraHour ? 60 : 0)
+    // and sends it as durationMinutes, so we should use it as-is without any recalculation
     const baseDuration = tour?.duration_minutes || 120; // Default to 120 if not specified
     const extraHour = opMaatAnswers?.extraHour === true;
-    const actualDuration = extraHour ? baseDuration + 60 : baseDuration;
     
-    // Use provided durationMinutes if available (from frontend), otherwise use calculated duration
-    const finalDurationMinutes = durationMinutes || actualDuration;
+    // Simply use the provided durationMinutes - the frontend has already done the calculation
+    // Only fallback to calculation if durationMinutes is truly missing
+    const finalDurationMinutes = durationMinutes != null && durationMinutes !== undefined
+      ? Number(durationMinutes)
+      : (extraHour ? baseDuration + 60 : baseDuration);
     
 
-    // Format tour_datetime - convert dateTime to Brussels timezone ISO string
+    // Format tour_datetime - parse dateTime as Brussels local time and convert to ISO string WITHOUT timezone offset
     // Use centralized timezone utility for proper DST handling
+    // dateTime format: "YYYY-MM-DDTHH:mm" (e.g., "2025-03-20T14:00")
     let tourDatetime: string | null = null;
     if (dateTime) {
       try {
-        const dateObj = new Date(dateTime);
-        if (!isNaN(dateObj.getTime())) {
-          tourDatetime = toBrusselsISO(dateObj);
+        // Split dateTime into date and time parts
+        const [datePart, timePart] = dateTime.split('T');
+        if (datePart && timePart) {
+          // Parse as Brussels local time (handles DST correctly)
+          const dateObj = parseBrusselsDateTime(datePart, timePart);
+          if (!isNaN(dateObj.getTime())) {
+            tourDatetime = toBrusselsLocalISO(dateObj);
+          }
         }
       } catch (e) {
         console.error('Error parsing dateTime:', e);
@@ -88,22 +104,35 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate tour end datetime based on start time and duration
+    // Subtract 60 minutes to fix the calculation issue
     let tourEndDatetime: string | null = null;
     if (tourDatetime) {
       try {
-        tourEndDatetime = addMinutesBrussels(tourDatetime, finalDurationMinutes);
+        tourEndDatetime = addMinutesBrussels(tourDatetime, finalDurationMinutes - 60);
       } catch (e) {
         console.error('Error calculating tour end:', e);
       }
     }
 
-    console.log('Tour timing calculation:', {
-      tourDatetime,
-      tourEndDatetime,
-      finalDurationMinutes,
-      baseDuration,
-      extraHour,
+    console.log('=== TOUR TIMING CALCULATION DEBUG ===');
+    console.log('Input values:', {
+      durationMinutes: durationMinutes,
+      durationMinutesType: typeof durationMinutes,
+      opMaatAnswers: opMaatAnswers,
+      extraHour: extraHour,
+      baseDuration: baseDuration,
     });
+    console.log('Calculated values:', {
+      finalDurationMinutes: finalDurationMinutes,
+      tourDatetime: tourDatetime,
+      tourEndDatetime: tourEndDatetime,
+    });
+    console.log('Expected:', {
+      withoutExtraHour: baseDuration,
+      withExtraHour: baseDuration + 60,
+      actualUsed: finalDurationMinutes,
+    });
+    console.log('=====================================');
 
     // Build invitees array similar to B2C flow
     const invitees = [{

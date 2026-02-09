@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
-import { nowBrussels, addMinutesBrussels } from '../_shared/timezone.ts';
+import { nowBrussels, addMinutesBrussels, toBrusselsLocalISO } from '../_shared/timezone.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -78,15 +78,15 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // Calculate 7 days ago in Brussels time, then convert to UTC for database comparison
+  // Calculate 7 days ago in Brussels local time (without timezone offset)
+  // tour_end is stored as Brussels local time without offset, so compare as strings
   const sevenDaysAgoBrussels = addMinutesBrussels(nowBrusselsISO, -7 * 24 * 60);
-  const sevenDaysAgoUTC = new Date(sevenDaysAgoBrussels).toISOString();
 
   const { data: bookings, error } = await supabase
     .from("tourbooking")
     .select("id,google_drive_link,tour_end")
     .not("google_drive_link", "is", null)
-    .lt("tour_end", sevenDaysAgoUTC);
+    .lt("tour_end", sevenDaysAgoBrussels); // Compare as Brussels local time strings
 
   if (error) {
     return new Response(JSON.stringify(error), { status: 500, headers: corsHeaders });

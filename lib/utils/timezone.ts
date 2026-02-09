@@ -9,9 +9,50 @@ import { toZonedTime } from 'date-fns-tz';
 const BRUSSELS_TIMEZONE = 'Europe/Brussels';
 
 /**
+ * Convert a date to Brussels timezone and return ISO string WITHOUT timezone offset
+ * This is used for storing datetimes in the database as Brussels local time
+ * @param date - Date object or ISO string
+ * @returns ISO string without timezone offset (e.g., "2025-01-15T14:00:00")
+ */
+export function toBrusselsLocalISO(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+
+  if (isNaN(d.getTime())) {
+    throw new Error(`Invalid date: ${date}`);
+  }
+  
+  // Get what Brussels time this UTC date represents
+  // The Date object d represents a UTC moment, we need to show what Brussels local time that is
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: BRUSSELS_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+
+  const parts = formatter.formatToParts(d);
+  const get = (type: string) => parts.find(p => p.type === type)?.value || '00';
+
+  const year = get('year');
+  const month = get('month');
+  const day = get('day');
+  const hour = get('hour');
+  const minute = get('minute');
+  const second = get('second');
+
+  // Return ISO string WITHOUT timezone offset (Brussels local time)
+  return `${year}-${month}-${day}T${hour}:${minute}:${second}`;
+}
+
+/**
  * Convert a date to Brussels timezone and return ISO string with correct offset
  * @param date - Date object or ISO string
  * @returns ISO string with Brussels timezone offset (e.g., "2025-01-15T14:00:00+01:00")
+ * @deprecated Use toBrusselsLocalISO for database storage to avoid timezone offsets
  */
 export function toBrusselsISO(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
@@ -96,10 +137,10 @@ export function nowBrussels(): string {
 }
 
 /**
- * Add duration to a date and return Brussels ISO string
+ * Add duration to a date and return Brussels ISO string WITHOUT timezone offset
  * @param date - Start date (Date object or ISO string)
  * @param minutes - Minutes to add
- * @returns ISO string with Brussels timezone offset
+ * @returns ISO string without timezone offset (Brussels local time)
  */
 export function addMinutesBrussels(date: Date | string, minutes: number): string {
   // Parse the date string to a Date object
@@ -113,8 +154,8 @@ export function addMinutesBrussels(date: Date | string, minutes: number): string
   // Add minutes (works correctly with Date objects regardless of timezone)
   const resultDate = new Date(d.getTime() + minutes * 60 * 1000);
   
-  // Convert back to Brussels ISO string
-  return toBrusselsISO(resultDate);
+  // Convert back to Brussels local ISO string (without timezone offset)
+  return toBrusselsLocalISO(resultDate);
 }
 
 /**

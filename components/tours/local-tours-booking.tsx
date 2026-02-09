@@ -25,35 +25,21 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
 
-  console.log('LocalToursBooking component rendered:', {
-    tourId,
-    tourTitle,
-    tourPrice,
-    tourDuration,
-  });
-
   useEffect(() => {
     async function fetchBookings() {
       console.log('LocalToursBooking: Fetching bookings for tourId:', tourId);
       try {
         const response = await fetch(`/api/local-tours-bookings?tourId=${tourId}`);
-        console.log('LocalToursBooking: API response status:', response.status, response.statusText);
+        console.log('LocalToursBooking: API response status:', response.status);
         if (response.ok) {
           const data = await response.json();
-          console.log('LocalToursBooking: Received bookings data:', {
-            bookingsCount: data?.length || 0,
-            bookings: data,
-            isArray: Array.isArray(data),
-          });
+          console.log('LocalToursBooking: Received', Array.isArray(data) ? data.length : 0, 'bookings from API');
+          const unavailableInResponse = Array.isArray(data) ? data.filter((b: any) => b.status === 'unavailable').length : 0;
+          console.log('LocalToursBooking: Unavailable dates in API response:', unavailableInResponse);
           setBookings(Array.isArray(data) ? data : []);
           setCurrentMonthIndex(0); // Reset to first month when bookings change
         } else {
-          const errorText = await response.text();
-          console.error('LocalToursBooking: API error response:', {
-            status: response.status,
-            statusText: response.statusText,
-            errorText,
-          });
+          console.error('LocalToursBooking: API error - status:', response.status);
           // Still set empty array so component can render
           setBookings([]);
         }
@@ -63,7 +49,6 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
         setBookings([]);
       } finally {
         setLoading(false);
-        console.log('LocalToursBooking: Loading complete, bookings count:', bookings.length);
       }
     }
 
@@ -95,7 +80,9 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
       fetch(`/api/local-tours-bookings?tourId=${tourId}`)
         .then(res => res.json())
         .then(data => setBookings(data))
-        .catch(err => console.error('Error refreshing bookings:', err));
+        .catch(() => {
+          // Silently fail on refresh
+        });
     }
   };
 
@@ -141,6 +128,8 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
     now.setHours(0, 0, 0, 0);
     return bookings.filter((booking) => {
       if (!booking.booking_date) return false;
+      // Filter out unavailable dates
+      if (booking.status === 'unavailable') return false;
       // Parse date string as local date (YYYY-MM-DD format)
       const dateMatch = booking.booking_date.match(/^(\d{4}-\d{2}-\d{2})/);
       if (!dateMatch) return false;
@@ -150,75 +139,36 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
     });
   }, [bookings, nineMonthsFromNow]);
 
-  // Merge all Saturdays with existing bookings
+  // Use only the bookings returned from the API
+  // The API filters out unavailable dates, so we only show available/booked dates
   const futureBookings = useMemo(() => {
-    console.log('LocalToursBooking: Merging bookings:', {
-      allSaturdaysCount: allSaturdays.length,
-      filteredBookingsCount: filteredBookings.length,
-      firstFewSaturdays: allSaturdays.slice(0, 5),
-      firstFewBookings: filteredBookings.slice(0, 5).map(b => ({
-        date: b.booking_date,
-        id: b.id,
-        people: b.number_of_people,
-      })),
-    });
-
-    // Create a map of existing bookings by date for quick lookup
-    // Normalize booking dates to YYYY-MM-DD format to ensure matching
-    const bookingsMap = new Map<string, LocalTourBooking>();
-    filteredBookings.forEach((booking) => {
-      // Normalize the booking_date to YYYY-MM-DD format
-      let normalizedDate = booking.booking_date;
-      if (normalizedDate) {
-        // Handle various date formats (YYYY-MM-DD, YYYY-MM-DDTHH:mm:ss, etc.)
-        const dateMatch = normalizedDate.match(/^(\d{4}-\d{2}-\d{2})/);
-        if (dateMatch) {
-          normalizedDate = dateMatch[1];
-        } else {
-          // Try parsing as Date and reformatting
-          const parts = normalizedDate.split('-');
-          if (parts.length >= 3) {
-            const [year, month, day] = parts.map(Number);
-            if (year && month && day) {
-              normalizedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            }
-          }
-        }
-        console.log(`LocalToursBooking: Normalized booking date: ${booking.booking_date} -> ${normalizedDate}`);
-        bookingsMap.set(normalizedDate, booking);
+    console.log('LocalToursBooking: Processing futureBookings - filteredBookings count:', filteredBookings.length);
+    
+    // Simply use the filtered bookings - the API already handles:
+    // 1. Filtering out unavailable dates
+    // 2. Creating virtual placeholders for available dates
+    // 3. Returning actual bookings for booked dates
+    
+    // Filter out past dates and ensure we're within the 9-month window
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    
+    const result = filteredBookings.filter((booking) => {
+      if (!booking.booking_date) return false;
+      if (booking.status === 'unavailable') {
+        console.log('LocalToursBooking: WARNING - Found unavailable booking in filteredBookings:', booking.booking_date);
+        return false;
       }
+      const dateMatch = booking.booking_date.match(/^(\d{4}-\d{2}-\d{2})/);
+      if (!dateMatch) return false;
+      const [year, month, day] = dateMatch[1].split('-').map(Number);
+      const bookingDate = new Date(year, month - 1, day);
+      return bookingDate >= now && bookingDate <= nineMonthsFromNow;
     });
-
-    const result = allSaturdays.map((dateStr) => {
-      const existingBooking = bookingsMap.get(dateStr);
-      if (existingBooking) {
-        console.log(`LocalToursBooking: Found booking for ${dateStr}:`, existingBooking.id);
-        return existingBooking;
-      }
-      // Create a placeholder booking for Saturdays without existing bookings
-      return {
-        id: `placeholder-${dateStr}`,
-        tour_id: tourId,
-        booking_date: dateStr,
-        booking_time: '14:00:00',
-        is_booked: false,
-        status: 'available',
-        customer_name: undefined,
-        customer_email: undefined,
-        customer_phone: undefined,
-        number_of_people: 0,
-        booking_id: undefined,
-      } as LocalTourBooking;
-    });
-
-    console.log('LocalToursBooking: Future bookings result:', {
-      totalCount: result.length,
-      withBookings: result.filter(b => !b.id?.startsWith('placeholder-')).length,
-      placeholders: result.filter(b => b.id?.startsWith('placeholder-')).length,
-    });
-
+    
+    console.log('LocalToursBooking: futureBookings count after filtering:', result.length);
     return result;
-  }, [allSaturdays, filteredBookings, tourId]);
+  }, [filteredBookings, nineMonthsFromNow]);
 
   // Group bookings by month
   const bookingsByMonth = useMemo(() => {
@@ -263,33 +213,7 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
   const canGoPrevious = currentMonthIndex > 0;
   const canGoNext = currentMonthIndex < bookingsByMonth.length - 1;
 
-  // Debug: Log month generation
-  useEffect(() => {
-    if (bookingsByMonth.length > 0) {
-      const currentMonthData = bookingsByMonth[currentMonthIndex] || null;
-      console.log('LocalToursBooking: Generated months:', {
-        totalMonths: bookingsByMonth.length,
-        months: bookingsByMonth.map(m => ({
-          label: m.monthLabel,
-          bookingCount: m.bookings.length,
-          placeholderCount: m.bookings.filter(b => b.id?.startsWith('placeholder-')).length,
-          realBookingCount: m.bookings.filter(b => !b.id?.startsWith('placeholder-')).length,
-        })),
-        currentMonthIndex,
-        currentMonth: currentMonthData?.monthLabel,
-        currentMonthBookings: currentMonthData?.bookings.length || 0,
-      });
-    }
-  }, [bookingsByMonth, currentMonthIndex]);
-
-  console.log('LocalToursBooking: Render state:', {
-    loading,
-    bookingsCount: bookings.length,
-    bookings,
-  });
-
   if (loading) {
-    console.log('LocalToursBooking: Showing loading state');
     return (
       <div className="mb-12 rounded-lg bg-sand p-8 brass-corner">
         <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>Loading availability...</p>
@@ -298,7 +222,6 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
   }
 
   if (bookings.length === 0) {
-    console.log('LocalToursBooking: No bookings found, showing message with retry');
     return (
       <div className="mb-12 rounded-lg bg-sand p-8 brass-corner">
         <h3 className="text-2xl font-serif font-bold text-navy mb-6 flex items-center gap-2">
@@ -314,12 +237,10 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
             fetch(`/api/local-tours-bookings?tourId=${tourId}`)
               .then(res => res.json())
               .then(data => {
-                console.log('LocalToursBooking: Retry fetched data:', data);
                 setBookings(Array.isArray(data) ? data : []);
                 setLoading(false);
               })
-              .catch(err => {
-                console.error('LocalToursBooking: Retry error:', err);
+              .catch(() => {
                 setLoading(false);
               });
           }}
@@ -343,15 +264,7 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
     }
   };
 
-  console.log('LocalToursBooking: Filtered future bookings:', {
-    totalBookings: bookings.length,
-    futureBookingsCount: futureBookings.length,
-    bookingsByMonth: bookingsByMonth.length,
-    currentMonthIndex,
-  });
-
   if (futureBookings.length === 0) {
-    console.log('LocalToursBooking: No future bookings, showing message');
     return (
       <div className="mb-12 rounded-lg bg-sand p-8 brass-corner">
         <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>

@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, MapPin, X, Search, Image as ImageIcon, GripVertical, ChevronDown, ChevronUp, Upload, ArrowUp, ArrowDown } from 'lucide-react';
+import { Home, LogOut, RefreshCw, Plus, Pencil, Trash2, MapPin, X, Search, Image as ImageIcon, GripVertical, ChevronDown, ChevronUp, Upload, ArrowUp, ArrowDown, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
@@ -36,6 +36,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { LocalToursDateManager } from '@/components/admin/local-tours-date-manager';
 
 interface Tour {
   id: string;
@@ -223,6 +224,8 @@ export default function AdminToursPage() {
   const [editingTour, setEditingTour] = useState<Tour | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [expandedCities, setExpandedCities] = useState<Set<string>>(new Set());
+  const [dateManagerOpen, setDateManagerOpen] = useState(false);
+  const [selectedTourForDates, setSelectedTourForDates] = useState<Tour | null>(null);
 
   // City management state
   const [cities, setCities] = useState<CityData[]>([]);
@@ -1795,6 +1798,19 @@ export default function AdminToursPage() {
         </TableCell>
         <TableCell>
           <div className="flex items-center gap-2">
+            {tour.local_stories && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSelectedTourForDates(tour);
+                  setDateManagerOpen(true);
+                }}
+                title="Manage dates"
+              >
+                <Calendar className="h-4 w-4" />
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -3100,6 +3116,16 @@ export default function AdminToursPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Date Manager Dialog for Local Tours */}
+      {selectedTourForDates && (
+        <LocalToursDateManager
+          open={dateManagerOpen}
+          onOpenChange={setDateManagerOpen}
+          tourId={selectedTourForDates.id}
+          tourTitle={selectedTourForDates.title}
+        />
+      )}
     </div>
   );
 }

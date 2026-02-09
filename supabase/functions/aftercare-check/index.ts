@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
-import { nowBrussels, toBrusselsISO } from '../_shared/timezone.ts';
+import { nowBrussels, toBrusselsLocalISO } from '../_shared/timezone.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -34,8 +34,8 @@ Deno.serve(async (req: Request) => {
       "[aftercare-check] Fetching bookings with status=aftercare_ready and tour_end < now (Brussels time)"
     );
 
-    // Use Brussels timezone ISO string for comparison (tour_datetime is stored as text with Brussels timezone offset)
-    const nowBrusselsISOString = toBrusselsISO(new Date(nowBrusselsISO));
+    // Use Brussels timezone ISO string WITHOUT timezone offset for comparison (tour_datetime is stored as text without timezone offset)
+    const nowBrusselsISOString = toBrusselsLocalISO(new Date(nowBrusselsISO));
 
     // ✅ SINGLE SOURCE OF TRUTH — DB does the filtering
     const { data: bookings, error } = await supabase

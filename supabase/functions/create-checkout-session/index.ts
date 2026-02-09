@@ -1,7 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import Stripe from 'npm:stripe@^14.0.0'
 import { createClient } from 'npm:@supabase/supabase-js@^2.0.0'
-import { toBrusselsISO, parseBrusselsDateTime, addMinutesBrussels } from '../_shared/timezone.ts'
+import { toBrusselsLocalISO, parseBrusselsDateTime, addMinutesBrussels } from '../_shared/timezone.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -338,7 +338,7 @@ const {
         try {
           const dateObj = parseBrusselsDateTime(datePart, timeStr);
           if (!isNaN(dateObj.getTime())) {
-            tourDatetime = toBrusselsISO(dateObj);
+            tourDatetime = toBrusselsLocalISO(dateObj);
           }
         } catch (e) {
           console.error('Error parsing bookingDateTime:', e);
@@ -348,7 +348,7 @@ const {
       try {
         const dateObj = parseBrusselsDateTime(bookingDate.trim(), bookingTime.trim());
         if (!isNaN(dateObj.getTime())) {
-          tourDatetime = toBrusselsISO(dateObj);
+          tourDatetime = toBrusselsLocalISO(dateObj);
         }
       } catch (e) {
         console.error('Error parsing bookingDate/bookingTime:', e);
