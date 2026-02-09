@@ -19,21 +19,60 @@ function getSupabaseServer() {
 }
 
 async function triggerWebhook(bookingId: number, guideId: number | null, action: 'accept' | 'decline') {
+  const webhookUrl = 'https://alexfinit.app.n8n.cloud/webhook/d83af522-aa75-431d-bbf8-6b9f4faa1a14';
+  const payload = { 
+    booking_id: bookingId,
+    guide_id: guideId,
+    action: action,
+  };
+
   try {
-    const response = await fetch('https://alexfinit.app.n8n.cloud/webhook/d83af522-aa75-431d-bbf8-6b9f4faa1a14', {
+    console.info('[Webhook] Attempting to trigger webhook:', {
+      webhookUrl,
+      payload,
+      timestamp: new Date().toISOString(),
+    });
+
+    const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ 
-        booking_id: bookingId,
-        guide_id: guideId,
-        action: action,
-      }),
+      body: JSON.stringify(payload),
     });
 
-    return response.ok;
+    const responseText = await response.text();
+    const isSuccess = response.ok;
+
+    console.info('[Webhook] Webhook response:', {
+      webhookUrl,
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+      responseText: responseText.substring(0, 500), // Limit response text length
+      payload,
+      timestamp: new Date().toISOString(),
+    });
+
+    if (!isSuccess) {
+      console.error('[Webhook] Webhook failed:', {
+        webhookUrl,
+        status: response.status,
+        statusText: response.statusText,
+        responseText: responseText.substring(0, 500),
+        payload,
+      });
+    }
+
+    return isSuccess;
   } catch (error) {
+    console.error('[Webhook] Webhook error:', {
+      webhookUrl,
+      error: error instanceof Error ? error.message : String(error),
+      errorStack: error instanceof Error ? error.stack : undefined,
+      payload,
+      timestamp: new Date().toISOString(),
+    });
     return false;
   }
 }
@@ -133,20 +172,22 @@ export async function POST(
         }
       }
     }
+
+    // For accept actions, ensure guide_id is not null before proceeding
+    if (action === 'accept' && !finalGuideId) {
+      return NextResponse.json(
+        { error: 'Guide ID is required to confirm this assignment.' },
+        { status: 400 }
+      );
+    }
     
     // Trigger webhook with booking_id
     const webhookSuccess = await triggerWebhook(booking.id, finalGuideId, action);
-    
-    console.info('[Webhook] Sent to webhook:', {
-      webhookUrl: 'https://alexfinit.app.n8n.cloud/webhook/d83af522-aa75-431d-bbf8-6b9f4faa1a14',
-      booking_id: booking.id,
-      guide_id: finalGuideId,
-      action,
-    });
 
     if (!webhookSuccess) {
+      console.error('[Webhook] Webhook failed - returning error to prevent database update');
       return NextResponse.json(
-        { error: 'Failed to trigger webhook' },
+        { error: 'Failed to trigger webhook. Please try again or contact support if the issue persists.' },
         { status: 500 }
       );
     }
@@ -155,13 +196,6 @@ export async function POST(
     // When guide declines, status remains unchanged (payment_completed for B2C, pending_guide_confirmation for B2B)
     // This allows another guide to accept the booking offer
     if (action === 'accept') {
-      // Ensure guide_id is not null before confirming
-      if (!finalGuideId) {
-        return NextResponse.json(
-          { error: 'Guide ID is required to confirm this assignment.' },
-          { status: 400 }
-        );
-      }
 
       // Update selectedGuides to mark this guide as accepted
       let updatedSelectedGuides = booking.selectedGuides || [];

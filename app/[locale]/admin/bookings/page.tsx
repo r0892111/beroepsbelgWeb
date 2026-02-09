@@ -52,6 +52,9 @@ interface Tour {
   duration_minutes?: number | null;
   op_maat?: boolean;
   local_stories?: boolean;
+  description?: string;
+  type?: string;
+  slug?: string;
 }
 
 interface CreateBookingForm {
@@ -224,7 +227,7 @@ export default function AdminBookingsPage() {
       // Fetch tours
       const { data: toursData } = await supabase
         .from('tours_table_prod')
-        .select('id, title, city, price, duration_minutes, op_maat, local_stories')
+        .select('id, title, city, price, duration_minutes, op_maat, local_stories, description, type, slug')
         .order('title', { ascending: true });
 
       if (toursData) {
@@ -276,12 +279,26 @@ export default function AdminBookingsPage() {
     // Get customer name from first invitee
     const customerName = (booking.invitees?.[0] as any)?.name?.toLowerCase() || '';
     const customerEmail = (booking.invitees?.[0] as any)?.email?.toLowerCase() || '';
+    
+    // Get tour metadata for search
+    const tour = booking.tour_id ? tours.get(booking.tour_id) : null;
+    const tourTitle = tour?.title?.toLowerCase() || '';
+    const tourDescription = tour?.description?.toLowerCase() || '';
+    const tourCity = tour?.city?.toLowerCase() || '';
+    const tourType = tour?.type?.toLowerCase() || '';
+    const tourSlug = tour?.slug?.toLowerCase() || '';
+    
     const matchesSearch = !searchQuery ||
       booking.id.toString().includes(searchLower) ||
       booking.city?.toLowerCase().includes(searchLower) ||
       booking.deal_id?.toLowerCase().includes(searchLower) ||
       customerName.includes(searchLower) ||
-      customerEmail.includes(searchLower);
+      customerEmail.includes(searchLower) ||
+      tourTitle.includes(searchLower) ||
+      tourDescription.includes(searchLower) ||
+      tourCity.includes(searchLower) ||
+      tourType.includes(searchLower) ||
+      tourSlug.includes(searchLower);
 
     const matchesStatus = filterStatus === 'all' || booking.status === filterStatus;
     const matchesCity = filterCity === 'all' || booking.city === filterCity;
