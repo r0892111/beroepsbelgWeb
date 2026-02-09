@@ -52,6 +52,9 @@ interface Tour {
   duration_minutes?: number | null;
   op_maat?: boolean;
   local_stories?: boolean;
+  description?: string;
+  type?: string;
+  slug?: string;
 }
 
 interface CreateBookingForm {
@@ -90,7 +93,7 @@ interface Guide {
 }
 
 export default function AdminBookingsPage() {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
   const params = useParams();
   const locale = params.locale as string;
@@ -197,10 +200,13 @@ export default function AdminBookingsPage() {
   const EVENING_FEE_COST = 25;
 
   useEffect(() => {
+    // Wait for auth to finish loading before checking admin access
+    if (authLoading) return;
+    
     if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
       router.push(`/${locale}`);
     }
-  }, [user, profile, router, locale]);
+  }, [user, profile, router, locale, authLoading]);
 
   const fetchBookings = async () => {
     setLoading(true);
@@ -224,7 +230,7 @@ export default function AdminBookingsPage() {
       // Fetch tours
       const { data: toursData } = await supabase
         .from('tours_table_prod')
-        .select('id, title, city, price, duration_minutes, op_maat, local_stories')
+        .select('id, title, city, price, duration_minutes, op_maat, local_stories, description, type, slug')
         .order('title', { ascending: true });
 
       if (toursData) {
@@ -276,12 +282,26 @@ export default function AdminBookingsPage() {
     // Get customer name from first invitee
     const customerName = (booking.invitees?.[0] as any)?.name?.toLowerCase() || '';
     const customerEmail = (booking.invitees?.[0] as any)?.email?.toLowerCase() || '';
+    
+    // Get tour metadata for search
+    const tour = booking.tour_id ? tours.get(booking.tour_id) : null;
+    const tourTitle = tour?.title?.toLowerCase() || '';
+    const tourDescription = tour?.description?.toLowerCase() || '';
+    const tourCity = tour?.city?.toLowerCase() || '';
+    const tourType = tour?.type?.toLowerCase() || '';
+    const tourSlug = tour?.slug?.toLowerCase() || '';
+    
     const matchesSearch = !searchQuery ||
       booking.id.toString().includes(searchLower) ||
       booking.city?.toLowerCase().includes(searchLower) ||
       booking.deal_id?.toLowerCase().includes(searchLower) ||
       customerName.includes(searchLower) ||
-      customerEmail.includes(searchLower);
+      customerEmail.includes(searchLower) ||
+      tourTitle.includes(searchLower) ||
+      tourDescription.includes(searchLower) ||
+      tourCity.includes(searchLower) ||
+      tourType.includes(searchLower) ||
+      tourSlug.includes(searchLower);
 
     const matchesStatus = filterStatus === 'all' || booking.status === filterStatus;
     const matchesCity = filterCity === 'all' || booking.city === filterCity;
@@ -879,6 +899,17 @@ export default function AdminBookingsPage() {
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  // Wait for auth to finish loading before checking admin access
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
     return null;

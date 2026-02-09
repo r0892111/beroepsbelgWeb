@@ -874,17 +874,23 @@ export default function BookingSuccessPage() {
                   </span>
                   <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
                     €{(() => {
-                      // Use originalAmount if available (tour price before fees/discount)
-                      // Otherwise calculate: amount - fees (amount is tour + fees, before discount)
-                      if (booking.originalAmount > 0) {
+                      // Always use originalAmount if available (tour price before discount)
+                      // originalAmount is the tour price before any discount is applied
+                      if (booking.originalAmount && booking.originalAmount > 0) {
                         return parseFloat(booking.originalAmount).toFixed(2);
                       }
+                      // Fallback: calculate from amount + discount - fees
+                      // amount is the final paid amount (after discount)
+                      // So: originalAmount = amount + discount - fees
                       const totalAmount = parseFloat(booking.amount) || 0;
+                      const promoDiscount = parseFloat(booking.promoDiscountAmount) || 0;
                       const tanguyCost = parseFloat(booking.tanguyCost) || 0;
                       const extraHourCost = parseFloat(booking.extraHourCost) || 0;
                       const weekendFeeCost = parseFloat(booking.weekendFeeCost) || 0;
                       const eveningFeeCost = parseFloat(booking.eveningFeeCost) || 0;
-                      const baseTourPrice = totalAmount - tanguyCost - extraHourCost - weekendFeeCost - eveningFeeCost;
+                      const totalFees = tanguyCost + extraHourCost + weekendFeeCost + eveningFeeCost;
+                      // Reconstruct original tour price: (amount + discount) - fees
+                      const baseTourPrice = (totalAmount + promoDiscount) - totalFees;
                       return baseTourPrice.toFixed(2);
                     })()}
                   </span>

@@ -17,7 +17,7 @@ const DEFAULT_LOCALE = 'en';
 export default function AftercareConfirmPage() {
   const params = useParams();
   const router = useRouter();
-  const dealId = params.dealId as string;
+  const bookingId = params.bookingId as string;
   const guideId = (params.guideId as string) || ''; // Handle optional guideId
   const rawLocale = params.locale as string;
   // Default to English if locale is invalid or not in valid locales list
@@ -31,42 +31,22 @@ export default function AftercareConfirmPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!dealId) {
+      if (!bookingId) {
         toast.error('Missing booking ID');
         return;
       }
 
       try {
-        // Fetch booking by deal_id (UUID) or by id (if deal_id is numeric)
-        let bookingData, bookingError;
-        
-        // Try to fetch by deal_id first (UUID)
-        const { data: dataByDealId, error: errorByDealId } = await supabase
+        // Parse booking ID - can be a number (like 551) or UUID format
+        const bookingIdNum = parseInt(bookingId, 10);
+        const isNumericId = !isNaN(bookingIdNum);
+
+        // Fetch booking by booking id (numeric ID)
+        const { data: bookingData, error: bookingError } = await supabase
           .from('tourbooking')
           .select('*')
-          .eq('deal_id', dealId)
+          .eq('id', isNumericId ? bookingIdNum : bookingId)
           .maybeSingle();
-
-        if (errorByDealId || !dataByDealId) {
-          // If not found by deal_id, try by id (numeric)
-          const bookingIdNum = parseInt(dealId, 10);
-          if (!isNaN(bookingIdNum)) {
-            const { data: dataById, error: errorById } = await supabase
-              .from('tourbooking')
-              .select('*')
-              .eq('id', bookingIdNum)
-              .maybeSingle();
-            
-            bookingData = dataById;
-            bookingError = errorById;
-          } else {
-            bookingData = null;
-            bookingError = errorByDealId;
-          }
-        } else {
-          bookingData = dataByDealId;
-          bookingError = null;
-        }
 
         if (bookingError || !bookingData) {
           toast.error('Booking not found');
@@ -109,7 +89,7 @@ export default function AftercareConfirmPage() {
     };
 
     void fetchData();
-  }, [dealId, guideId]);
+  }, [bookingId, guideId]);
 
   const handleSubmit = async (customerPresent: boolean) => {
     if (!booking) {
@@ -132,7 +112,6 @@ export default function AftercareConfirmPage() {
         const payload = {
           type: 'customer_presence_confirmation',
           booking_id: booking.id,
-          deal_id: booking.deal_id || booking.id.toString(),
           guide_id: finalGuideId,
           customer_present: customerPresent,
           confirmed_at: new Date().toISOString(),
@@ -304,4 +283,3 @@ export default function AftercareConfirmPage() {
     </div>
   );
 }
-

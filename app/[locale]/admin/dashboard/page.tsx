@@ -15,7 +15,7 @@ import { supabase } from '@/lib/supabase/client';
 
 export default function AdminDashboardPage() {
   const t = useTranslations('admin');
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -35,10 +35,13 @@ export default function AdminDashboardPage() {
   const [goedgepicktTesting, setGoedgepicktTesting] = useState(false);
 
   useEffect(() => {
+    // Wait for auth to finish loading before checking admin access
+    if (authLoading) return;
+    
     if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
       router.push(`/${locale}`);
     }
-  }, [user, profile, router, locale]);
+  }, [user, profile, router, locale, authLoading]);
 
   const fetchTeamleaderIntegration = useCallback(async () => {
     if (!user?.id) {
@@ -489,6 +492,17 @@ export default function AdminDashboardPage() {
     const name = [firstName, lastName].filter(Boolean).join(' ') || email || t('teamleaderUnknownUser') || 'Unknown User';
     return t('teamleaderStatusConnected', { name }) || `Connected as ${name}`;
   }, [teamleaderIntegration, t]);
+
+  // Wait for auth to finish loading before checking admin access
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
     return null;
