@@ -256,7 +256,7 @@ export async function getTours(citySlug?: string): Promise<Tour[]> {
       type: row.type, // Deprecated: kept for backward compatibility
       tour_types: parseTourTypes(row.tour_types, row.type), // New: with fallback to legacy type
       durationMinutes: row.duration_minutes,
-      price: row.price ? Number(row.price) : undefined,
+      price: row.price !== null && row.price !== undefined ? Number(row.price) : (row.local_stories === true || row.local_stories === 'true' || row.local_stories === 1 ? 35 : undefined),
       startLocation: row.start_location,
       endLocation: row.end_location,
       languages: row.languages || [],
@@ -388,7 +388,7 @@ export async function getTourBySlug(citySlug: string, slug: string): Promise<Tou
     type: matchingTour.type, // Deprecated: kept for backward compatibility
     tour_types: parseTourTypes(matchingTour.tour_types, matchingTour.type), // New: with fallback to legacy type
     durationMinutes: matchingTour.duration_minutes,
-    price: matchingTour.price ? Number(matchingTour.price) : undefined,
+    price: matchingTour.price !== null && matchingTour.price !== undefined ? Number(matchingTour.price) : (localStoriesValue ? 35 : undefined),
     startLocation: matchingTour.start_location,
     endLocation: matchingTour.end_location,
     languages: matchingTour.languages || [],
