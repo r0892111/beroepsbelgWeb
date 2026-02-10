@@ -1260,7 +1260,17 @@
     "submit": "Envoyer les Préférences",
     "thankYou": "Merci!",
     "submittedMessage": "Vos préférences ont été enregistrées avec succès. Nous vous contacterons pour discuter des détails de votre visite sur mesure.",
-    "footerNote": "Après avoir rempli ce formulaire, nous vous contacterons pour discuter des détails de votre visite sur mesure."
+    "footerNote": "Après avoir rempli ce formulaire, nous vous contacterons pour discuter des détails de votre visite sur mesure.",
+    "error": "Erreur",
+    "errorMissingParams": "tourId ou bookingId manquant dans l'URL",
+    "errorBookingNotFound": "Réservation introuvable",
+    "errorFailedToLoad": "Échec du chargement des données",
+    "errorFailedToFetch": "Échec de la récupération de la réservation",
+    "errorLocationsRequired": "Le lieu de départ et le lieu d'arrivée sont requis",
+    "errorFailedToSave": "Échec de l'enregistrement des réponses",
+    "errorNoBookingUpdated": "Aucune réservation n'a été mise à jour - la réservation peut ne pas exister",
+    "errorFailedToFetchUpdated": "Échec de la récupération de la réservation mise à jour",
+    "errorOccurred": "Une erreur s'est produite"
   },
   "giftcard": {
     "selectAmount": "Choisissez un montant",

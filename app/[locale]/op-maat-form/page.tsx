@@ -124,7 +124,7 @@ export default function OpMaatFormPage() {
   useEffect(() => {
     async function loadData() {
       if (!tourId || !bookingId) {
-        setError('Missing tourId or bookingId in URL');
+        setError(t('errorMissingParams') || 'Missing tourId or bookingId in URL');
         setLoading(false);
         return;
       }
@@ -139,7 +139,7 @@ export default function OpMaatFormPage() {
 
         if (bookingError) {
           console.error('Error fetching booking:', bookingError);
-          setError('Booking not found');
+          setError(t('errorBookingNotFound') || 'Booking not found');
           setLoading(false);
           return;
         }
@@ -198,7 +198,7 @@ export default function OpMaatFormPage() {
         setLoading(false);
       } catch (err) {
         console.error('Error loading data:', err);
-        setError('Failed to load data');
+        setError(t('errorFailedToLoad') || 'Failed to load data');
         setLoading(false);
       }
     }
@@ -221,7 +221,7 @@ export default function OpMaatFormPage() {
 
       if (fetchCurrentError || !currentBooking) {
         console.error('Error fetching current booking:', fetchCurrentError);
-        throw new Error('Failed to fetch booking');
+        throw new Error(t('errorFailedToFetch') || 'Failed to fetch booking');
       }
 
       // Extract start and end locations directly from separate fields
@@ -231,7 +231,7 @@ export default function OpMaatFormPage() {
 
       // Ensure we have valid location values (form fields are required, but double-check)
       if (!parsedStartLocation || !parsedEndLocation) {
-        throw new Error('Start location and end location are required');
+        throw new Error(t('errorLocationsRequired') || 'Start location and end location are required');
       }
 
       console.log('Updating tourbooking start_location and end_location:', {
@@ -288,11 +288,11 @@ export default function OpMaatFormPage() {
 
       if (updateError) {
         console.error('Error updating booking:', updateError);
-        throw new Error(`Failed to save answers: ${updateError.message}`);
+        throw new Error(`${t('errorFailedToSave') || 'Failed to save answers'}: ${updateError.message}`);
       }
 
       if (!updatedData || updatedData.length === 0) {
-        throw new Error('No booking was updated - booking may not exist');
+        throw new Error(t('errorNoBookingUpdated') || 'No booking was updated - booking may not exist');
       }
 
       const updatedBooking = updatedData[0];
@@ -322,7 +322,7 @@ export default function OpMaatFormPage() {
 
       if (fetchError) {
         console.error('Error fetching updated booking:', fetchError);
-        throw new Error('Failed to fetch updated booking');
+        throw new Error(t('errorFailedToFetchUpdated') || 'Failed to fetch updated booking');
       }
 
       // Trigger webhook via API route (to avoid CORS issues)
@@ -352,7 +352,7 @@ export default function OpMaatFormPage() {
       setSubmitted(true);
     } catch (err) {
       console.error('Submit error:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : (t('errorOccurred') || 'An error occurred'));
     } finally {
       setSubmitting(false);
     }
@@ -376,7 +376,7 @@ export default function OpMaatFormPage() {
       <div className="min-h-screen bg-[#F0F0EB] flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardHeader>
-            <CardTitle className="text-red-600">Error</CardTitle>
+            <CardTitle className="text-red-600">{t('error') || 'Error'}</CardTitle>
             <CardDescription>{error}</CardDescription>
           </CardHeader>
         </Card>

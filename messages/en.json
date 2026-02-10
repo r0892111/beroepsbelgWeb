@@ -1261,7 +1261,17 @@
     "submit": "Submit Preferences",
     "thankYou": "Thank You!",
     "submittedMessage": "Your preferences have been saved successfully. We will contact you to discuss the details of your custom tour.",
-    "footerNote": "After filling out this form, we will contact you to discuss the details of your custom tour."
+    "footerNote": "After filling out this form, we will contact you to discuss the details of your custom tour.",
+    "error": "Error",
+    "errorMissingParams": "Missing tourId or bookingId in URL",
+    "errorBookingNotFound": "Booking not found",
+    "errorFailedToLoad": "Failed to load data",
+    "errorFailedToFetch": "Failed to fetch booking",
+    "errorLocationsRequired": "Start location and end location are required",
+    "errorFailedToSave": "Failed to save answers",
+    "errorNoBookingUpdated": "No booking was updated - booking may not exist",
+    "errorFailedToFetchUpdated": "Failed to fetch updated booking",
+    "errorOccurred": "An error occurred"
   },
   "giftcard": {
     "selectAmount": "Select an amount",

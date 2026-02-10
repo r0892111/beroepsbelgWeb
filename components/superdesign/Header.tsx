@@ -53,9 +53,20 @@ export function Header({ locale }: HeaderProps) {
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   const getLocalizedPath = (newLocale: Locale) => {
-    const segments = pathname.split('/');
-    segments[1] = newLocale;
-    return segments.join('/');
+    if (!pathname) {
+      return `/${newLocale}`;
+    }
+    
+    const segments = pathname.split('/').filter(Boolean);
+    
+    // If first segment is a locale, replace it
+    if (segments.length > 0 && locales.includes(segments[0] as Locale)) {
+      segments[0] = newLocale;
+      return `/${segments.join('/')}`;
+    }
+    
+    // Otherwise, prepend the locale
+    return `/${newLocale}${pathname === '/' ? '' : pathname}`;
   };
 
   const languageLabels: Record<Locale, string> = {

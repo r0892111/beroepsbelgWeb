@@ -1248,7 +1248,17 @@
     "submit": "Präferenzen Absenden",
     "thankYou": "Vielen Dank!",
     "submittedMessage": "Ihre Präferenzen wurden erfolgreich gespeichert. Wir werden uns mit Ihnen in Verbindung setzen, um die Details Ihrer individuellen Tour zu besprechen.",
-    "footerNote": "Nach dem Ausfüllen dieses Formulars werden wir uns mit Ihnen in Verbindung setzen, um die Details Ihrer individuellen Tour zu besprechen."
+    "footerNote": "Nach dem Ausfüllen dieses Formulars werden wir uns mit Ihnen in Verbindung setzen, um die Details Ihrer individuellen Tour zu besprechen.",
+    "error": "Fehler",
+    "errorMissingParams": "tourId oder bookingId fehlt in der URL",
+    "errorBookingNotFound": "Buchung nicht gefunden",
+    "errorFailedToLoad": "Daten konnten nicht geladen werden",
+    "errorFailedToFetch": "Buchung konnte nicht abgerufen werden",
+    "errorLocationsRequired": "Startort und Zielort sind erforderlich",
+    "errorFailedToSave": "Antworten konnten nicht gespeichert werden",
+    "errorNoBookingUpdated": "Keine Buchung wurde aktualisiert - Buchung existiert möglicherweise nicht",
+    "errorFailedToFetchUpdated": "Aktualisierte Buchung konnte nicht abgerufen werden",
+    "errorOccurred": "Ein Fehler ist aufgetreten"
   },
   "giftcard": {
     "selectAmount": "Wählen Sie einen Betrag",

@@ -93,6 +93,11 @@ interface Invitee {
   extraHourCost?: number;
   weekendFeeCost?: number;
   eveningFeeCost?: number;
+  originalAmount?: number; // Original price before discount
+  discountApplied?: number; // Discount amount applied
+  promoCode?: string | null; // Promo code used
+  promoDiscountAmount?: number; // Discount amount from promo code
+  promoDiscountPercent?: number | null; // Discount percentage from promo code
 }
 
 interface TourBooking {
@@ -2158,6 +2163,30 @@ export default function BookingDetailPage() {
                                       <span className="font-medium text-blue-900">€{((matchingInvitee.pricePerPerson || 0) * (lb.amnt_of_people || 1)).toFixed(2)}</span>
                                     </div>
                                   )}
+                                  {/* Show original amount if discount was applied */}
+                                  {(matchingInvitee?.originalAmount !== undefined && matchingInvitee.originalAmount > 0 && (matchingInvitee?.discountApplied !== undefined && matchingInvitee.discountApplied > 0 || matchingInvitee?.promoDiscountAmount !== undefined && matchingInvitee.promoDiscountAmount > 0)) && (
+                                    <div className="flex justify-between pt-1 mt-1 border-t border-blue-300">
+                                      <span className="text-blue-700">Subtotal</span>
+                                      <span className="font-medium text-blue-900">€{matchingInvitee.originalAmount.toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                  {/* Show discount applied */}
+                                  {(matchingInvitee?.discountApplied !== undefined && matchingInvitee.discountApplied > 0) && (
+                                    <div className="flex justify-between">
+                                      <span className="text-green-700">Discount</span>
+                                      <span className="font-medium text-green-700">-€{matchingInvitee.discountApplied.toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                  {/* Show promo code discount */}
+                                  {(matchingInvitee?.promoDiscountAmount !== undefined && matchingInvitee.promoDiscountAmount > 0) && (
+                                    <div className="flex justify-between">
+                                      <span className="text-green-700">
+                                        Promo Code {matchingInvitee.promoCode && `(${matchingInvitee.promoCode})`}
+                                        {matchingInvitee.promoDiscountPercent && ` - ${matchingInvitee.promoDiscountPercent}%`}
+                                      </span>
+                                      <span className="font-medium text-green-700">-€{matchingInvitee.promoDiscountAmount.toFixed(2)}</span>
+                                    </div>
+                                  )}
                                   {initialPaidAmount > 0 && (
                                     <div className="flex justify-between">
                                       <span className="text-blue-700">Initial Payment</span>
@@ -2367,7 +2396,7 @@ export default function BookingDetailPage() {
                           </div>
                         )}
                         {/* Price Breakdown */}
-                        {(inv.pricePerPerson !== undefined || inv.amount !== undefined || inv.tanguyCost !== undefined || inv.extraHourCost !== undefined || inv.weekendFeeCost !== undefined || inv.eveningFeeCost !== undefined) && (
+                        {(inv.pricePerPerson !== undefined || inv.amount !== undefined || inv.tanguyCost !== undefined || inv.extraHourCost !== undefined || inv.weekendFeeCost !== undefined || inv.eveningFeeCost !== undefined || inv.discountApplied !== undefined || inv.promoDiscountAmount !== undefined) && (
                           <div className="mt-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
                             <p className="text-xs font-semibold text-blue-900 mb-2">Price Breakdown</p>
                             <div className="space-y-1 text-xs">
@@ -2401,6 +2430,30 @@ export default function BookingDetailPage() {
                                   <span className="font-medium text-blue-900">€{inv.eveningFeeCost.toFixed(2)}</span>
                                 </div>
                               )}
+                              {/* Show original amount if discount was applied */}
+                              {(inv.originalAmount !== undefined && inv.originalAmount > 0 && (inv.discountApplied !== undefined && inv.discountApplied > 0 || inv.promoDiscountAmount !== undefined && inv.promoDiscountAmount > 0)) && (
+                                <div className="flex justify-between pt-1 mt-1 border-t border-blue-300">
+                                  <span className="text-blue-700">Subtotal</span>
+                                  <span className="font-medium text-blue-900">€{inv.originalAmount.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {/* Show discount applied */}
+                              {(inv.discountApplied !== undefined && inv.discountApplied > 0) && (
+                                <div className="flex justify-between">
+                                  <span className="text-green-700">Discount</span>
+                                  <span className="font-medium text-green-700">-€{inv.discountApplied.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {/* Show promo code discount */}
+                              {(inv.promoDiscountAmount !== undefined && inv.promoDiscountAmount > 0) && (
+                                <div className="flex justify-between">
+                                  <span className="text-green-700">
+                                    Promo Code {inv.promoCode && `(${inv.promoCode})`}
+                                    {inv.promoDiscountPercent && ` - ${inv.promoDiscountPercent}%`}
+                                  </span>
+                                  <span className="font-medium text-green-700">-€{inv.promoDiscountAmount.toFixed(2)}</span>
+                                </div>
+                              )}
                               {(inv.amount !== undefined || inv.pricePerPerson !== undefined) && (
                                 <div className="flex justify-between pt-1 mt-1 border-t border-blue-300">
                                   <span className="font-semibold text-blue-900">Total</span>
@@ -2412,7 +2465,9 @@ export default function BookingDetailPage() {
                                           (inv.tanguyCost || 0) +
                                           (inv.extraHourCost || 0) +
                                           (inv.weekendFeeCost || 0) +
-                                          (inv.eveningFeeCost || 0)
+                                          (inv.eveningFeeCost || 0) -
+                                          (inv.discountApplied || 0) -
+                                          (inv.promoDiscountAmount || 0)
                                         ).toFixed(2)
                                     }
                                   </span>

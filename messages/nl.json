@@ -1329,7 +1329,17 @@
     "submit": "Voorkeuren Versturen",
     "thankYou": "Bedankt!",
     "submittedMessage": "Je voorkeuren zijn succesvol opgeslagen. We nemen contact met je op om de details van je tour op maat te bespreken.",
-    "footerNote": "Na het invullen van dit formulier nemen we contact met je op om de details van je tour op maat te bespreken."
+    "footerNote": "Na het invullen van dit formulier nemen we contact met je op om de details van je tour op maat te bespreken.",
+    "error": "Fout",
+    "errorMissingParams": "Ontbrekende tourId of bookingId in URL",
+    "errorBookingNotFound": "Boeking niet gevonden",
+    "errorFailedToLoad": "Gegevens laden mislukt",
+    "errorFailedToFetch": "Boeking ophalen mislukt",
+    "errorLocationsRequired": "Startlocatie en eindlocatie zijn verplicht",
+    "errorFailedToSave": "Antwoorden opslaan mislukt",
+    "errorNoBookingUpdated": "Geen boeking bijgewerkt - boeking bestaat mogelijk niet",
+    "errorFailedToFetchUpdated": "Bijgewerkte boeking ophalen mislukt",
+    "errorOccurred": "Er is een fout opgetreden"
   },
   "giftcard": {
     "selectAmount": "Kies een bedrag",
