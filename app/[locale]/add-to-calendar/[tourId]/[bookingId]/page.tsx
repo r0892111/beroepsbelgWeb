@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
-import { Loader2, Calendar, AlertCircle, Download } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Loader2, Calendar, AlertCircle } from 'lucide-react';
 import { formatBrusselsDateTime } from '@/lib/utils/timezone';
 
 interface TourData {
@@ -45,63 +44,6 @@ function buildGoogleCalendarUrl(
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
-function generateICSContent(
-  title: string,
-  startDate: string,
-  endDate: string,
-  location: string,
-  description: string,
-  bookingId: number
-): string {
-  // Format dates for ICS (YYYYMMDDTHHmmssZ format)
-  const formatICSDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    const hours = String(date.getUTCHours()).padStart(2, '0');
-    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-    const seconds = String(date.getUTCSeconds()).padStart(2, '0');
-    return `${year}${month}${day}T${hours}${minutes}${seconds}Z`;
-  };
-
-  // Escape special characters in ICS format
-  const escapeICS = (text: string): string => {
-    return text
-      .replace(/\\/g, '\\\\')
-      .replace(/;/g, '\\;')
-      .replace(/,/g, '\\,')
-      .replace(/\n/g, '\\n');
-  };
-
-  const icsStart = formatICSDate(startDate);
-  const icsEnd = formatICSDate(endDate);
-  const icsTitle = escapeICS(title);
-  const icsLocation = escapeICS(location);
-  const icsDescription = escapeICS(description || `Booking ID: ${bookingId}`);
-
-  return [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//Beroepsbelg//Tour Booking//EN',
-    'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH',
-    'BEGIN:VEVENT',
-    `UID:booking-${bookingId}@beroepsbelg.be`,
-    `DTSTAMP:${formatICSDate(new Date().toISOString())}`,
-    `DTSTART:${icsStart}`,
-    `DTEND:${icsEnd}`,
-    `SUMMARY:${icsTitle}`,
-    `LOCATION:${icsLocation}`,
-    `DESCRIPTION:${icsDescription}`,
-    'STATUS:CONFIRMED',
-    'SEQUENCE:0',
-    'END:VEVENT',
-    'END:VCALENDAR',
-  ].join('\r\n');
-}
-
-// Removed downloadICS function - now using direct API link for better mobile support
 
 export default function AddToCalendarPage() {
   const params = useParams();
@@ -203,17 +145,6 @@ export default function AddToCalendarPage() {
     details
   );
 
-  // Use API route for ICS file - works better on mobile
-  const icsUrl = `/api/calendar/${booking.id}/ics`;
-
-  // Handler for direct calendar add - opens calendar app without download
-  const handleAddToCalendar = () => {
-    // Direct navigation to ICS file
-    // Mobile browsers (iOS Safari, Android Chrome) will automatically
-    // open the calendar app when they encounter an ICS file with proper Content-Type
-    window.location.href = icsUrl;
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-8">
       <div className="w-full max-w-md mx-auto rounded-lg bg-white p-8 shadow-lg text-center">
@@ -228,22 +159,9 @@ export default function AddToCalendarPage() {
         </div>
 
         <div className="mt-6 space-y-3">
-          {/* Primary: Add to Calendar Button - Works on all phones */}
-          <Button
-            onClick={handleAddToCalendar}
-            size="lg"
-            className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            <Calendar className="h-5 w-5" />
-            Add to Calendar
-          </Button>
-          <p className="text-xs text-gray-500">
-            Tap to open your calendar app with this event
-          </p>
-
-          {/* Alternative: Google Calendar Button */}
-          <div className="pt-3 border-t">
-            <p className="text-sm text-gray-600 mb-3">Or add via Google Calendar:</p>
+          {/* Google Calendar Button */}
+          <div>
+            <p className="text-sm text-gray-600 mb-3">Add via Google Calendar:</p>
             <a
               href={calendarUrl}
               target="_blank"
@@ -258,19 +176,10 @@ export default function AddToCalendarPage() {
             </a>
           </div>
 
-          {/* Fallback: Direct ICS Link */}
+          {/* Message about email invite */}
           <div className="pt-3 border-t">
-            <p className="text-xs text-gray-500 mb-2">Direct calendar file link:</p>
-            <a
-              href={icsUrl}
-              className="text-xs text-blue-600 hover:underline break-all"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {icsUrl}
-            </a>
-            <p className="text-xs text-gray-400 mt-1">
-              Works with Apple Calendar, Google Calendar, Outlook, and more
+            <p className="text-sm text-gray-600">
+              Don't use Google Calendar? You can find a calendar invite (.ics file) in your confirmation email.
             </p>
           </div>
         </div>
