@@ -71,12 +71,6 @@ interface Invitee {
   pendingPaymentPeople?: number;
   pendingPaymentAmount?: number;
   pricePerPerson?: number; // Custom price per person (if set during booking creation)
-  paymentLinksSent?: Array<{
-    sentAt: string;
-    numberOfPeople: number;
-    amount: number;
-    type: string;
-  }>;
   opMaatAnswers?: {
     startEnd?: string;
     cityPart?: string;
@@ -228,26 +222,6 @@ export default function BookingDetailPage() {
     isPaid: false,
   });
 
-  // Send payment link state
-  const [paymentLinkDialogOpen, setPaymentLinkDialogOpen] = useState(false);
-  const [sendingPaymentLink, setSendingPaymentLink] = useState(false);
-  const [paymentLinkTarget, setPaymentLinkTarget] = useState<{
-    customerName: string;
-    customerEmail: string;
-    numberOfPeople: number;
-    localBookingId?: string;
-    inviteeIndex?: number;
-    pricePerPerson: number;
-  } | null>(null);
-  const [paymentLinkAmount, setPaymentLinkAmount] = useState(0);
-  const [paymentLinkFees, setPaymentLinkFees] = useState({
-    requestTanguy: false,
-    hasExtraHour: false,
-    weekendFee: false,
-    eveningFee: false,
-  });
-  const [paymentLinkIsExtraInvitees, setPaymentLinkIsExtraInvitees] = useState(false);
-
   // Add people state
   const [addPeopleDialogOpen, setAddPeopleDialogOpen] = useState(false);
   const [addingPeople, setAddingPeople] = useState(false);
@@ -259,7 +233,6 @@ export default function BookingDetailPage() {
     currentPeople: number;
   } | null>(null);
   const [additionalPeople, setAdditionalPeople] = useState(1);
-  const [sendPaymentForAdditional, setSendPaymentForAdditional] = useState(true);
   const [additionalPeoplePrice, setAdditionalPeoplePrice] = useState('');
   const [addPeopleFees, setAddPeopleFees] = useState({
     requestTanguy: false,
@@ -816,181 +789,6 @@ export default function BookingDetailPage() {
     }
   };
 
-  // Open payment link dialog for a specific invitee/booking
-  const openPaymentLinkDialog = (
-    customerName: string,
-    customerEmail: string,
-    numberOfPeople: number,
-    localBookingId?: string,
-    presetAmount?: number,
-    inviteePricePerPerson?: number, // Custom price per person from invitee (if set during booking creation)
-    inviteeIndex?: number, // Index in invitees array to get fee data
-    inviteeFees?: { requestTanguy?: boolean; hasExtraHour?: boolean; weekendFee?: boolean; eveningFee?: boolean },
-    isExtraInvitees?: boolean // True if this is for additional people added to existing booking
-  ) => {
-    // Set whether this is for extra invitees (additional people)
-    setPaymentLinkIsExtraInvitees(isExtraInvitees || false);
-
-    // Always reset fee toggles to false for pending payments (fees were already included in preset amount)
-    // For non-pending payments, load from invitee if available
-    const fees = presetAmount !== undefined ? {
-      requestTanguy: false,
-      hasExtraHour: false,
-      weekendFee: false,
-      eveningFee: false,
-    } : {
-      requestTanguy: inviteeFees?.requestTanguy || false,
-      hasExtraHour: inviteeFees?.hasExtraHour || false,
-      weekendFee: inviteeFees?.weekendFee || false,
-      eveningFee: inviteeFees?.eveningFee || false,
-    };
-    setPaymentLinkFees(fees);
-
-    // For pending payments, calculate pricePerPerson from stored amount so breakdown matches
-    // Otherwise use invitee's custom price or tour's default price
-    let pricePerPerson: number;
-    if (presetAmount !== undefined && numberOfPeople > 0) {
-      // Back-calculate price per person from stored total (fees already included, now reset to 0)
-      pricePerPerson = Math.round((presetAmount / numberOfPeople) * 100) / 100;
-    } else {
-      pricePerPerson = inviteePricePerPerson ?? tour?.price ?? 0;
-    }
-
-    setPaymentLinkTarget({
-      customerName,
-      customerEmail,
-      numberOfPeople,
-      localBookingId,
-      inviteeIndex,
-      pricePerPerson,
-    });
-
-    // Use preset amount if provided, otherwise calculate
-    if (presetAmount !== undefined) {
-      setPaymentLinkAmount(presetAmount);
-    } else {
-      // Calculate fee costs (admin can set any fee for any tour)
-      const tanguyCost = fees.requestTanguy ? TANGUY_COST : 0;
-      const extraHourCost = fees.hasExtraHour ? EXTRA_HOUR_COST : 0;
-      const weekendFeeCost = fees.weekendFee ? WEEKEND_FEE_COST : 0;
-      const eveningFeeCost = fees.eveningFee ? EVENING_FEE_COST : 0;
-      const totalFees = tanguyCost + extraHourCost + weekendFeeCost + eveningFeeCost;
-
-      const baseTourPrice = Math.round(pricePerPerson * numberOfPeople * 100) / 100;
-      const calculatedAmount = baseTourPrice + totalFees;
-      setPaymentLinkAmount(calculatedAmount);
-    }
-    setPaymentLinkDialogOpen(true);
-  };
-
-  // Send payment link
-  const handleSendPaymentLink = async () => {
-    if (!paymentLinkTarget || !booking || !tour) return;
-
-    setSendingPaymentLink(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const accessToken = session?.access_token;
-
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-
-      // Calculate fee costs for the payment link (admin can set any fee for any tour)
-      const feeTanguyCost = paymentLinkFees.requestTanguy ? TANGUY_COST : 0;
-      const feeExtraHourCost = paymentLinkFees.hasExtraHour ? EXTRA_HOUR_COST : 0;
-      const feeWeekendCost = paymentLinkFees.weekendFee ? WEEKEND_FEE_COST : 0;
-      const feeEveningCost = paymentLinkFees.eveningFee ? EVENING_FEE_COST : 0;
-
-      const response = await fetch('/api/admin/send-payment-link', {
-        method: 'POST',
-        headers,
-        credentials: 'include',
-        body: JSON.stringify({
-          bookingId: booking.id,
-          customerName: paymentLinkTarget.customerName,
-          customerEmail: paymentLinkTarget.customerEmail,
-          tourName: tour.title || 'Tour',
-          tourId: booking.tour_id,
-          numberOfPeople: paymentLinkTarget.numberOfPeople,
-          amount: paymentLinkAmount,
-          localBookingId: paymentLinkTarget.localBookingId,
-          isExtraInvitees: paymentLinkIsExtraInvitees, // Flag for extra people vs normal payment links
-          // Include fee data for proper webhook handling
-          city: booking.city,
-          tourDatetime: booking.tour_datetime,
-          fees: {
-            requestTanguy: paymentLinkFees.requestTanguy,
-            hasExtraHour: paymentLinkFees.hasExtraHour,
-            weekendFee: paymentLinkFees.weekendFee,
-            eveningFee: paymentLinkFees.eveningFee,
-            tanguyCost: feeTanguyCost,
-            extraHourCost: feeExtraHourCost,
-            weekendFeeCost: feeWeekendCost,
-            eveningFeeCost: feeEveningCost,
-          },
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to send payment link');
-      }
-
-      // For local_stories: clear pending payment from local_tours_bookings
-      if (paymentLinkTarget.localBookingId) {
-        await supabase
-          .from('local_tours_bookings')
-          .update({
-            pending_payment_people: null,
-            pending_payment_amount: null,
-          })
-          .eq('id', paymentLinkTarget.localBookingId);
-      }
-
-      // Log the payment link and clear pending payment fields from invitees
-      const updatedInvitees = (booking.invitees || []).map((inv) => {
-        if (inv.email === paymentLinkTarget.customerEmail) {
-          const { pendingPaymentPeople, pendingPaymentAmount, ...rest } = inv as Record<string, unknown>;
-
-          // Add to payment links sent log
-          const existingLog = (rest.paymentLinksSent as Array<Record<string, unknown>>) || [];
-          const newLogEntry = {
-            sentAt: nowBrussels(),
-            numberOfPeople: paymentLinkTarget.numberOfPeople,
-            amount: paymentLinkAmount,
-            type: paymentLinkIsExtraInvitees ? 'additional_people' : 'manual',
-          };
-
-          return {
-            ...rest,
-            paymentLinksSent: [...existingLog, newLogEntry],
-          };
-        }
-        return inv;
-      });
-
-      await supabase
-        .from('tourbooking')
-        .update({ invitees: updatedInvitees })
-        .eq('id', booking.id);
-
-      toast.success(`Payment link sent to ${paymentLinkTarget.customerEmail}`);
-      setPaymentLinkDialogOpen(false);
-      setPaymentLinkTarget(null);
-      void fetchBookingDetails(); // Refresh to show updated state
-    } catch (err) {
-      console.error('Error sending payment link:', err);
-      toast.error(err instanceof Error ? err.message : 'Failed to send payment link');
-    } finally {
-      setSendingPaymentLink(false);
-    }
-  };
 
   // Open add people dialog
   const openAddPeopleDialog = (
@@ -1008,7 +806,6 @@ export default function BookingDetailPage() {
       currentPeople,
     });
     setAdditionalPeople(1);
-    setSendPaymentForAdditional(true);
     // Initialize price - use tour price if available, otherwise default to 35 for Local Stories
     const basePrice = tour?.price || (tour?.local_stories ? 35 : 0);
     setAdditionalPeoplePrice(basePrice.toString());
@@ -1056,8 +853,8 @@ export default function BookingDetailPage() {
           amnt_of_people: addPeopleTarget.currentPeople + additionalPeople,
         };
 
-        // Track pending payment directly on local_tours_bookings if not sending payment link
-        if (!sendPaymentForAdditional && totalAmount > 0) {
+        // Track pending payment directly on local_tours_bookings
+        if (totalAmount > 0) {
           updateData.pending_payment_people = currentPendingPeople + additionalPeople;
           updateData.pending_payment_amount = currentPendingAmount + totalAmount;
         }
@@ -1079,8 +876,8 @@ export default function BookingDetailPage() {
             numberOfPeople: (existingInvitee.numberOfPeople || 0) + additionalPeople,
           };
 
-          // Track pending payment if not sending payment link (accumulate with existing)
-          if (!sendPaymentForAdditional && totalAmount > 0) {
+          // Track pending payment (accumulate with existing)
+          if (totalAmount > 0) {
             updateData.pendingPaymentPeople = ((existingInvitee.pendingPaymentPeople as number) || 0) + additionalPeople;
             updateData.pendingPaymentAmount = ((existingInvitee.pendingPaymentAmount as number) || 0) + totalAmount;
           }
@@ -1096,85 +893,7 @@ export default function BookingDetailPage() {
         if (updateError) throw new Error('Failed to update booking');
       }
 
-      // Send payment link if requested
-      if (sendPaymentForAdditional && totalAmount > 0) {
-        const { data: { session } } = await supabase.auth.getSession();
-        const accessToken = session?.access_token;
-
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-        };
-
-        if (accessToken) {
-          headers['Authorization'] = `Bearer ${accessToken}`;
-        }
-
-        await fetch('/api/admin/send-payment-link', {
-          method: 'POST',
-          headers,
-          credentials: 'include',
-          body: JSON.stringify({
-            bookingId: booking.id,
-            customerName: addPeopleTarget.customerName,
-            customerEmail: addPeopleTarget.customerEmail,
-            tourName: tour?.title || 'Tour',
-            tourId: booking.tour_id,
-            numberOfPeople: additionalPeople,
-            amount: totalAmount,
-            localBookingId: addPeopleTarget.localBookingId,
-            city: booking.city,
-            tourDatetime: booking.tour_datetime,
-            isExtraInvitees: true, // Flag for extra people payment links
-            fees: tour?.op_maat ? {
-              requestTanguy: addPeopleFees.requestTanguy,
-              hasExtraHour: addPeopleFees.hasExtraHour,
-              weekendFee: addPeopleFees.weekendFee,
-              eveningFee: addPeopleFees.eveningFee,
-              tanguyCost: feeCosts.tanguyCost,
-              extraHourCost: feeCosts.extraHourCost,
-              weekendFeeCost: feeCosts.weekendFeeCost,
-              eveningFeeCost: feeCosts.eveningFeeCost,
-            } : undefined,
-          }),
-        });
-
-        // Log the payment link sent
-        const { data: currentBooking } = await supabase
-          .from('tourbooking')
-          .select('invitees')
-          .eq('id', booking.id)
-          .single();
-
-        if (currentBooking?.invitees) {
-          const loggedInvitees = (currentBooking.invitees as Array<Record<string, unknown>>).map((inv) => {
-            if (inv.email === addPeopleTarget.customerEmail) {
-              const existingLog = (inv.paymentLinksSent as Array<Record<string, unknown>>) || [];
-              return {
-                ...inv,
-                paymentLinksSent: [
-                  ...existingLog,
-                  {
-                    sentAt: nowBrussels(),
-                    numberOfPeople: additionalPeople,
-                    amount: totalAmount,
-                    type: 'additional_people',
-                  },
-                ],
-              };
-            }
-            return inv;
-          });
-
-          await supabase
-            .from('tourbooking')
-            .update({ invitees: loggedInvitees })
-            .eq('id', booking.id);
-        }
-
-        toast.success(`Added ${additionalPeople} people and sent payment link to ${addPeopleTarget.customerEmail}`);
-      } else {
-        toast.success(`Added ${additionalPeople} people to the booking`);
-      }
+      toast.success(`Added ${additionalPeople} people to the booking`);
 
       setAddPeopleDialogOpen(false);
       setAddPeopleTarget(null);
@@ -2075,30 +1794,9 @@ export default function BookingDetailPage() {
                         {/* Check for pending payment directly on local_tours_bookings */}
                         {lb.pending_payment_people && lb.pending_payment_people > 0 && (
                           <div className="mt-2 p-2 rounded-lg bg-amber-50 border border-amber-200">
-                            <div className="flex items-center justify-between gap-2">
-                              <p className="text-xs text-amber-700">
-                                <span className="font-medium">{lb.pending_payment_people} {lb.pending_payment_people === 1 ? 'person was' : 'people were'} added</span>, but no payment link was sent (€{(lb.pending_payment_amount || 0).toFixed(2)})
-                              </p>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-6 gap-1 text-amber-700 border-amber-300 hover:bg-amber-100"
-                                onClick={() => openPaymentLinkDialog(
-                                  lb.customer_name || '',
-                                  lb.customer_email || '',
-                                  lb.pending_payment_people || 1,
-                                  lb.id,
-                                  lb.pending_payment_amount || undefined,
-                                  undefined, // inviteePricePerPerson
-                                  undefined, // inviteeIndex
-                                  undefined, // inviteeFees
-                                  true // isExtraInvitees - this is for additional people
-                                )}
-                              >
-                                <CreditCard className="h-3 w-3" />
-                                <span className="text-xs">Send Now</span>
-                              </Button>
-                            </div>
+                            <p className="text-xs text-amber-700">
+                              <span className="font-medium">{lb.pending_payment_people} {lb.pending_payment_people === 1 ? 'person was' : 'people were'} added</span> (€{(lb.pending_payment_amount || 0).toFixed(2)})
+                            </p>
                           </div>
                         )}
                         {/* Extra payments received log (for additional people) */}
@@ -2115,26 +1813,6 @@ export default function BookingDetailPage() {
                             </div>
                           </div>
                         )}
-                        {/* Payment links sent log (legacy - from invitees array) */}
-                        {(() => {
-                          const matchingInvitee = allInvitees.find(inv => inv.email === lb.customer_email);
-                          if (matchingInvitee?.paymentLinksSent && matchingInvitee.paymentLinksSent.length > 0) {
-                            return (
-                              <div className="mt-2 p-2 rounded-lg bg-blue-50 border border-blue-200">
-                                <p className="text-xs text-blue-700 font-medium mb-1">Payment links sent:</p>
-                                <div className="space-y-1">
-                                  {matchingInvitee.paymentLinksSent.map((log, logIndex) => (
-                                    <p key={logIndex} className="text-xs text-blue-600">
-                                      • {formatBrusselsDateTime(log.sentAt, 'dd/MM/yyyy HH:mm')} - {log.numberOfPeople} {log.numberOfPeople === 1 ? 'person' : 'people'} for €{log.amount.toFixed(2)}
-                                      {log.type === 'additional_people' && ' (additional)'}
-                                    </p>
-                                  ))}
-                                </div>
-                              </div>
-                            );
-                          }
-                          return null;
-                        })()}
                         {/* Price Breakdown for Local Stories */}
                         {(() => {
                           const matchingInvitee = allInvitees.find(inv => 
@@ -2251,36 +1929,6 @@ export default function BookingDetailPage() {
                                 <Badge variant="secondary" className="text-xs">
                                   Paid: €{totalPaidAmount.toFixed(2)}
                                 </Badge>
-                              );
-                            } else if (matchingInvitee?.paymentLinksSent && matchingInvitee.paymentLinksSent.length > 0) {
-                              // Payment link already sent - show awaiting payment badge
-                              return (
-                                <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
-                                  Awaiting Payment
-                                </Badge>
-                              );
-                            } else {
-                              // Not paid - show send payment link button
-                              return (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-7 gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50"
-                                  onClick={() => openPaymentLinkDialog(
-                                    lb.customer_name || '',
-                                    lb.customer_email || '',
-                                    lb.amnt_of_people || 1,
-                                    lb.id,
-                                    undefined, // no preset amount
-                                    matchingInvitee?.pricePerPerson, // use custom price if set
-                                    undefined, // inviteeIndex
-                                    undefined, // inviteeFees
-                                    false // isExtraInvitees - this is a normal payment link
-                                  )}
-                                >
-                                  <CreditCard className="h-3 w-3" />
-                                  <span className="text-xs">Send Payment Link</span>
-                                </Button>
                               );
                             }
                           })()}
@@ -2479,75 +2127,16 @@ export default function BookingDetailPage() {
                         {/* Pending payment alert */}
                         {inv.pendingPaymentPeople && (
                           <div className="mt-2 p-2 rounded-lg bg-amber-50 border border-amber-200">
-                            <div className="flex items-center justify-between gap-2">
-                              <p className="text-xs text-amber-700">
-                                <span className="font-medium">{inv.pendingPaymentPeople} {inv.pendingPaymentPeople === 1 ? 'person was' : 'people were'} added</span>, but no payment link was sent (€{(inv.pendingPaymentAmount || 0).toFixed(2)})
-                              </p>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-6 gap-1 text-amber-700 border-amber-300 hover:bg-amber-100"
-                                onClick={() => openPaymentLinkDialog(
-                                  inv.name || '',
-                                  inv.email || '',
-                                  inv.pendingPaymentPeople || 1,
-                                  undefined,
-                                  inv.pendingPaymentAmount,
-                                  inv.pricePerPerson,
-                                  index,
-                                  { requestTanguy: inv.requestTanguy, hasExtraHour: inv.hasExtraHour, weekendFee: inv.weekendFee, eveningFee: inv.eveningFee },
-                                  true // isExtraInvitees - this is for additional people
-                                )}
-                              >
-                                <CreditCard className="h-3 w-3" />
-                                <span className="text-xs">Send Now</span>
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                        {/* Payment links sent log */}
-                        {inv.paymentLinksSent && inv.paymentLinksSent.length > 0 && (
-                          <div className="mt-2 p-2 rounded-lg bg-green-50 border border-green-200">
-                            <p className="text-xs text-green-700 font-medium mb-1">Payment links sent:</p>
-                            <div className="space-y-1">
-                              {inv.paymentLinksSent.map((log, logIndex) => (
-                                <p key={logIndex} className="text-xs text-green-600">
-                                  • {formatBrusselsDateTime(log.sentAt, 'dd/MM/yyyy HH:mm')} - {log.numberOfPeople} {log.numberOfPeople === 1 ? 'person' : 'people'} for €{log.amount.toFixed(2)}
-                                  {log.type === 'additional_people' && ' (additional)'}
-                                </p>
-                              ))}
-                            </div>
+                            <p className="text-xs text-amber-700">
+                              <span className="font-medium">{inv.pendingPaymentPeople} {inv.pendingPaymentPeople === 1 ? 'person was' : 'people were'} added</span> (€{(inv.pendingPaymentAmount || 0).toFixed(2)})
+                            </p>
                           </div>
                         )}
                         <div className="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t">
-                          {inv.amount ? (
+                          {inv.amount && (
                             <Badge variant="secondary" className="text-xs">
                               Paid: €{inv.amount.toFixed(2)}
                             </Badge>
-                          ) : inv.paymentLinksSent && inv.paymentLinksSent.length > 0 ? (
-                            <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
-                              Awaiting Payment
-                            </Badge>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50"
-                              onClick={() => openPaymentLinkDialog(
-                                inv.name || '',
-                                inv.email || '',
-                                inv.numberOfPeople || 1,
-                                undefined, // no local booking id
-                                undefined, // no preset amount
-                                inv.pricePerPerson, // use custom price if set
-                                index,
-                                { requestTanguy: inv.requestTanguy, hasExtraHour: inv.hasExtraHour, weekendFee: inv.weekendFee, eveningFee: inv.eveningFee },
-                                false // isExtraInvitees - this is a normal payment link
-                              )}
-                            >
-                              <CreditCard className="h-3 w-3" />
-                              <span className="text-xs">Send Payment Link</span>
-                            </Button>
                           )}
                           {booking.invoice_link && (
                             <Button
@@ -3288,11 +2877,6 @@ export default function BookingDetailPage() {
                 Customer has already paid
               </Label>
             </div>
-            {!newInvitee.isPaid && (
-              <p className="text-xs text-muted-foreground">
-                You can send a payment link after adding the invitee.
-              </p>
-            )}
 
             {tour && (
               <div className="bg-muted/50 rounded-lg p-3">
@@ -3328,226 +2912,6 @@ export default function BookingDetailPage() {
                 <>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Invitee
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Send Payment Link Dialog */}
-      <Dialog open={paymentLinkDialogOpen} onOpenChange={(open) => {
-        setPaymentLinkDialogOpen(open);
-        if (!open) setPaymentLinkTarget(null);
-      }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5" />
-              Send Payment Link
-            </DialogTitle>
-            <DialogDescription>
-              Send a Stripe payment link to this customer
-            </DialogDescription>
-          </DialogHeader>
-
-          {paymentLinkTarget && (
-            <div className="space-y-4 py-4">
-              <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                <div>
-                  <p className="text-xs text-muted-foreground">Customer</p>
-                  <p className="font-medium">{paymentLinkTarget.customerName}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Email</p>
-                  <p className="text-sm">{paymentLinkTarget.customerEmail}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Tour</p>
-                  <p className="text-sm">{tour?.title || 'Tour'}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Number of People</p>
-                  <p className="text-sm">{paymentLinkTarget.numberOfPeople}</p>
-                </div>
-              </div>
-
-              {/* Extra Fees Section */}
-              <div className="space-y-3 border rounded-lg p-3">
-                <Label className="text-sm font-medium">Extra Options & Fees</Label>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="paymentTanguy"
-                        checked={paymentLinkFees.requestTanguy}
-                        onCheckedChange={(checked) => {
-                          const newFees = { ...paymentLinkFees, requestTanguy: checked === true };
-                          setPaymentLinkFees(newFees);
-                          // Recalculate amount using custom price
-                          const baseTourPrice = paymentLinkTarget.pricePerPerson * paymentLinkTarget.numberOfPeople;
-                          const totalFees = (newFees.requestTanguy ? TANGUY_COST : 0) +
-                            (newFees.hasExtraHour ? EXTRA_HOUR_COST : 0) +
-                            (newFees.weekendFee ? WEEKEND_FEE_COST : 0) +
-                            (newFees.eveningFee ? EVENING_FEE_COST : 0);
-                          setPaymentLinkAmount(baseTourPrice + totalFees);
-                        }}
-                      />
-                      <Label htmlFor="paymentTanguy" className="text-sm cursor-pointer">
-                        Request Tanguy (+€{TANGUY_COST})
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="paymentExtraHour"
-                        checked={paymentLinkFees.hasExtraHour}
-                        onCheckedChange={(checked) => {
-                          const newFees = { ...paymentLinkFees, hasExtraHour: checked === true };
-                          setPaymentLinkFees(newFees);
-                          const baseTourPrice = paymentLinkTarget.pricePerPerson * paymentLinkTarget.numberOfPeople;
-                          const totalFees = (newFees.requestTanguy ? TANGUY_COST : 0) +
-                            (newFees.hasExtraHour ? EXTRA_HOUR_COST : 0) +
-                            (newFees.weekendFee ? WEEKEND_FEE_COST : 0) +
-                            (newFees.eveningFee ? EVENING_FEE_COST : 0);
-                          setPaymentLinkAmount(baseTourPrice + totalFees);
-                        }}
-                      />
-                      <Label htmlFor="paymentExtraHour" className="text-sm cursor-pointer">
-                        Extra Hour (+€{EXTRA_HOUR_COST})
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="paymentWeekendFee"
-                        checked={paymentLinkFees.weekendFee}
-                        onCheckedChange={(checked) => {
-                          const newFees = { ...paymentLinkFees, weekendFee: checked === true };
-                          setPaymentLinkFees(newFees);
-                          const baseTourPrice = paymentLinkTarget.pricePerPerson * paymentLinkTarget.numberOfPeople;
-                          const totalFees = (newFees.requestTanguy ? TANGUY_COST : 0) +
-                            (newFees.hasExtraHour ? EXTRA_HOUR_COST : 0) +
-                            (newFees.weekendFee ? WEEKEND_FEE_COST : 0) +
-                            (newFees.eveningFee ? EVENING_FEE_COST : 0);
-                          setPaymentLinkAmount(baseTourPrice + totalFees);
-                        }}
-                      />
-                      <Label htmlFor="paymentWeekendFee" className="text-sm cursor-pointer">
-                        Weekend Fee (+€{WEEKEND_FEE_COST})
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="paymentEveningFee"
-                        checked={paymentLinkFees.eveningFee}
-                        onCheckedChange={(checked) => {
-                          const newFees = { ...paymentLinkFees, eveningFee: checked === true };
-                          setPaymentLinkFees(newFees);
-                          const baseTourPrice = paymentLinkTarget.pricePerPerson * paymentLinkTarget.numberOfPeople;
-                          const totalFees = (newFees.requestTanguy ? TANGUY_COST : 0) +
-                            (newFees.hasExtraHour ? EXTRA_HOUR_COST : 0) +
-                            (newFees.weekendFee ? WEEKEND_FEE_COST : 0) +
-                            (newFees.eveningFee ? EVENING_FEE_COST : 0);
-                          setPaymentLinkAmount(baseTourPrice + totalFees);
-                        }}
-                      />
-                      <Label htmlFor="paymentEveningFee" className="text-sm cursor-pointer">
-                        Evening Fee (+€{EVENING_FEE_COST})
-                      </Label>
-                    </div>
-                  </div>
-                </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="paymentAmount">Total Amount (EUR)</Label>
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">€</span>
-                  <Input
-                    id="paymentAmount"
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    value={paymentLinkAmount}
-                    onChange={(e) => setPaymentLinkAmount(parseFloat(e.target.value) || 0)}
-                    className="bg-white"
-                  />
-                </div>
-                {/* Price breakdown */}
-                <div className="bg-muted/50 rounded-lg p-2 space-y-1 text-xs">
-                  <div className="flex justify-between">
-                    <span>Base tour price (€{paymentLinkTarget.pricePerPerson.toFixed(2)} × {paymentLinkTarget.numberOfPeople})</span>
-                    <span>€{(paymentLinkTarget.pricePerPerson * paymentLinkTarget.numberOfPeople).toFixed(2)}</span>
-                  </div>
-                  {paymentLinkFees.requestTanguy && (
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Tanguy</span>
-                      <span>€{TANGUY_COST.toFixed(2)}</span>
-                    </div>
-                  )}
-                  {paymentLinkFees.hasExtraHour && (
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Extra Hour</span>
-                      <span>€{EXTRA_HOUR_COST.toFixed(2)}</span>
-                    </div>
-                  )}
-                  {paymentLinkFees.weekendFee && (
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Weekend Fee</span>
-                      <span>€{WEEKEND_FEE_COST.toFixed(2)}</span>
-                    </div>
-                  )}
-                  {paymentLinkFees.eveningFee && (
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Evening Fee</span>
-                      <span>€{EVENING_FEE_COST.toFixed(2)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between font-medium pt-1 border-t">
-                    <span>Calculated total</span>
-                    <span>€{(
-                      paymentLinkTarget.pricePerPerson * paymentLinkTarget.numberOfPeople +
-                      (paymentLinkFees.requestTanguy ? TANGUY_COST : 0) +
-                      (paymentLinkFees.hasExtraHour ? EXTRA_HOUR_COST : 0) +
-                      (paymentLinkFees.weekendFee ? WEEKEND_FEE_COST : 0) +
-                      (paymentLinkFees.eveningFee ? EVENING_FEE_COST : 0)
-                    ).toFixed(2)}</span>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  You can override the total amount manually if needed.
-                </p>
-              </div>
-
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-                <p className="text-sm text-amber-800">
-                  <strong>Are you sure?</strong> This will send a Stripe payment link to {paymentLinkTarget.customerEmail} for €{paymentLinkAmount.toFixed(2)}.
-                </p>
-              </div>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setPaymentLinkDialogOpen(false);
-                setPaymentLinkTarget(null);
-              }}
-              disabled={sendingPaymentLink}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSendPaymentLink}
-              disabled={sendingPaymentLink || !paymentLinkTarget || paymentLinkAmount <= 0}
-            >
-              {sendingPaymentLink ? (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Send Payment Link
                 </>
               )}
             </Button>
@@ -3702,16 +3066,6 @@ export default function BookingDetailPage() {
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="sendPaymentForAdditional"
-                  checked={sendPaymentForAdditional}
-                  onCheckedChange={(checked) => setSendPaymentForAdditional(checked === true)}
-                />
-                <Label htmlFor="sendPaymentForAdditional" className="text-sm cursor-pointer">
-                  Send payment link to {addPeopleTarget.customerEmail}
-                </Label>
-              </div>
             </div>
           )}
 

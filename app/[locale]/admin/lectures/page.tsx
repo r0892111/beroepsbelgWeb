@@ -41,11 +41,6 @@ export default function AdminLecturesPage() {
   const [bookingSearchQuery, setBookingSearchQuery] = useState('');
   const [bookingFilterStatus, setBookingFilterStatus] = useState<string>('all');
 
-  // Payment link state
-  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<LectureBooking | null>(null);
-  const [paymentAmount, setPaymentAmount] = useState('');
-  const [sendingPaymentLink, setSendingPaymentLink] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -609,73 +604,6 @@ export default function AdminLecturesPage() {
     );
   }, [lectures, searchQuery]);
 
-  // Payment link functions
-  const openPaymentDialog = (booking: LectureBooking) => {
-    setSelectedBookingForPayment(booking);
-    setPaymentAmount('');
-    setPaymentDialogOpen(true);
-  };
-
-  const handleSendPaymentLink = async () => {
-    if (!selectedBookingForPayment) return;
-
-    const amount = parseFloat(paymentAmount);
-    if (isNaN(amount) || amount <= 0) {
-      toast.error('Please enter a valid amount greater than 0');
-      return;
-    }
-
-    setSendingPaymentLink(true);
-
-    try {
-      // Get auth token for API request
-      const { data: { session } } = await supabase.auth.getSession();
-      const accessToken = session?.access_token;
-
-      if (!accessToken) {
-        toast.error('Authentication required. Please log in again.');
-        return;
-      }
-
-      // Find the lecture name for this booking
-      const lecture = lectures.find(l => l.id === selectedBookingForPayment.lecture_id);
-      const lectureName = lecture?.title || 'Lecture Booking';
-
-      const response = await fetch('/api/admin/send-lecture-payment-link', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          bookingId: selectedBookingForPayment.id,
-          customerName: selectedBookingForPayment.name,
-          customerEmail: selectedBookingForPayment.email,
-          lectureName,
-          numberOfPeople: selectedBookingForPayment.number_of_people || 1,
-          amount,
-          // Pass all booking data to webhook
-          bookingData: selectedBookingForPayment,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || `Request failed with status ${response.status}`);
-      }
-
-      toast.success('Payment link sent successfully');
-      setPaymentDialogOpen(false);
-      setSelectedBookingForPayment(null);
-      setPaymentAmount('');
-    } catch (err) {
-      console.error('Failed to send payment link:', err);
-      toast.error(err instanceof Error ? err.message : 'Failed to send payment link');
-    } finally {
-      setSendingPaymentLink(false);
-    }
-  };
 
   if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
     return null;
@@ -1322,19 +1250,6 @@ export default function AdminLecturesPage() {
                         {booking.created_at && format(new Date(booking.created_at), 'MMM d, yyyy')}
                       </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="ml-4 flex-shrink-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openPaymentDialog(booking);
-                      }}
-                      title="Send Payment Link"
-                    >
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Payment Link
-                    </Button>
                   </div>
                 ))}
               </div>
@@ -1476,19 +1391,6 @@ export default function AdminLecturesPage() {
                   </div>
                 )}
 
-                {/* Send Payment Link Button */}
-                <div className="pt-4 border-t">
-                  <Button
-                    onClick={() => {
-                      setBookingDetailOpen(false);
-                      openPaymentDialog(selectedBooking);
-                    }}
-                    className="w-full"
-                  >
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Send Payment Link
-                  </Button>
-                </div>
 
                 {/* Timestamps */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
@@ -1510,74 +1412,6 @@ export default function AdminLecturesPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Payment Link Dialog */}
-        <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Send Payment Link</DialogTitle>
-              <DialogDescription>
-                Send a payment link to {selectedBookingForPayment?.name}
-              </DialogDescription>
-            </DialogHeader>
-
-            {selectedBookingForPayment && (
-              <div className="space-y-4 py-4">
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Name:</span>
-                    <span className="font-medium">{selectedBookingForPayment.name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Email:</span>
-                    <span className="font-medium">{selectedBookingForPayment.email || '-'}</span>
-                  </div>
-                  {selectedBookingForPayment.number_of_people && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Number of People:</span>
-                      <span className="font-medium">{selectedBookingForPayment.number_of_people}</span>
-                    </div>
-                  )}
-                  {selectedBookingForPayment.lecture_language && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Language:</span>
-                      <span className="font-medium">{selectedBookingForPayment.lecture_language === 'nl' ? 'Nederlands' : 'English'}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="payment-amount">Payment Amount (EUR)</Label>
-                  <Input
-                    id="payment-amount"
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    placeholder="Enter amount"
-                    value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(e.target.value)}
-                  />
-                </div>
-              </div>
-            )}
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setPaymentDialogOpen(false)}
-                disabled={sendingPaymentLink}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSendPaymentLink}
-                disabled={sendingPaymentLink || !paymentAmount}
-              >
-                {sendingPaymentLink ? 'Sending...' : 'Send Payment Link'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );
