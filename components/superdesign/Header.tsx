@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { ShoppingCart, User, ChevronDown, Menu, X, Heart, Search, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { type Locale, locales } from '@/i18n';
@@ -26,6 +26,7 @@ export function Header({ locale }: HeaderProps) {
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user, profile } = useAuth();
   const { cartCount } = useCartContext();
   const { favoritesCount } = useFavoritesContext();
@@ -62,11 +63,16 @@ export function Header({ locale }: HeaderProps) {
     // If first segment is a locale, replace it
     if (segments.length > 0 && locales.includes(segments[0] as Locale)) {
       segments[0] = newLocale;
-      return `/${segments.join('/')}`;
+    } else {
+      // Otherwise, prepend the locale
+      segments.unshift(newLocale);
     }
     
-    // Otherwise, prepend the locale
-    return `/${newLocale}${pathname === '/' ? '' : pathname}`;
+    const newPath = `/${segments.join('/')}`;
+    
+    // Preserve query parameters
+    const queryString = searchParams.toString();
+    return queryString ? `${newPath}?${queryString}` : newPath;
   };
 
   const languageLabels: Record<Locale, string> = {

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { locales, type Locale } from '@/i18n';
 
 interface LangSwitcherProps {
@@ -10,6 +10,7 @@ interface LangSwitcherProps {
 
 export function LangSwitcher({ locale }: LangSwitcherProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const getLocalizedPath = (newLocale: Locale) => {
     if (!pathname) {
@@ -21,11 +22,16 @@ export function LangSwitcher({ locale }: LangSwitcherProps) {
     // If first segment is a locale, replace it
     if (segments.length > 0 && locales.includes(segments[0] as Locale)) {
       segments[0] = newLocale;
-      return `/${segments.join('/')}`;
+    } else {
+      // Otherwise, prepend the locale
+      segments.unshift(newLocale);
     }
     
-    // Otherwise, prepend the locale
-    return `/${newLocale}${pathname === '/' ? '' : pathname}`;
+    const newPath = `/${segments.join('/')}`;
+    
+    // Preserve query parameters
+    const queryString = searchParams.toString();
+    return queryString ? `${newPath}?${queryString}` : newPath;
   };
 
   return (
