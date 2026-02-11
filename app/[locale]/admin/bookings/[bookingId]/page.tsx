@@ -2358,6 +2358,23 @@ export default function BookingDetailPage() {
                 </div>
               )}
 
+              {/* Add Another Guide Button - shown when guide(s) already selected */}
+              {getGuideIds(booking).length > 0 && (
+                <div className="pt-3 border-t">
+                  <Button 
+                    onClick={() => {
+                      setSelectedNewGuideId(null);
+                      setGuideDialogOpen(true);
+                    }}
+                    variant="outline"
+                    className="w-full gap-2 mb-3"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    Add Another Guide
+                  </Button>
+                </div>
+              )}
+
               {/* Selected Guides Status */}
               {booking.selectedGuides && booking.selectedGuides.length > 0 && (
                 <div className="pt-3 border-t">
@@ -2550,7 +2567,9 @@ export default function BookingDetailPage() {
               Select New Guide
             </DialogTitle>
             <DialogDescription>
-              All previously offered guides have declined. Select a new guide from the list below.
+              {booking && getGuideIds(booking).length > 0 
+                ? 'Select an additional guide to add to this booking.'
+                : 'All previously offered guides have declined. Select a new guide from the list below.'}
             </DialogDescription>
           </DialogHeader>
           
