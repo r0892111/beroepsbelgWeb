@@ -82,6 +82,14 @@ const SelectContent = React.forwardRef<
       )}
       position={position}
       {...props}
+      onWheel={(e) => {
+        // Prevent wheel events from closing the dropdown when scrolling inside
+        const target = e.target as HTMLElement;
+        const viewport = target.closest('[data-radix-select-viewport]') as HTMLElement;
+        if (viewport) {
+          e.stopPropagation();
+        }
+      }}
     >
       <SelectScrollUpButton />
       <SelectPrimitive.Viewport
@@ -97,6 +105,11 @@ const SelectContent = React.forwardRef<
           scrollbarColor: '#d1d5db #f3f4f6',
           // Webkit scrollbar styles for better cross-browser support
           WebkitOverflowScrolling: 'touch',
+        }}
+        onWheel={(e) => {
+          // Prevent wheel events from bubbling up (which might close the dropdown)
+          // Let the browser handle native scrolling
+          e.stopPropagation();
         }}
       >
         {children}
