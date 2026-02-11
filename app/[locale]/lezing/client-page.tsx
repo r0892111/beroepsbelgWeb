@@ -214,7 +214,7 @@ export default function LezingClientPage({ lectures, locale }: LezingClientPageP
                             onClick={() => handleBookLecture(lecture)}
                             className="group/btn relative inline-flex items-center justify-center gap-2 px-8 py-5 bg-[#1BDD95] hover:bg-[#14BE82] rounded-full text-white font-oswald font-bold text-sm uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
                           >
-                            <span>{t('bookLecture')}</span>
+                            <span>{t('requestQuote')}</span>
                             <ArrowRight className="w-5 h-5 transition-transform group-hover/btn:translate-x-1" />
                           </button>
                         </div>

@@ -156,6 +156,9 @@ export default function B2BQuotePage() {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
 
   const selectedTour = tours.find((tour) => String(tour.id ?? tour.slug) === String(selectedTourId));
+  const selectedLecture = selectedTourId?.startsWith('lecture-') 
+    ? lectures.find((lecture) => lecture.id === selectedTourId.replace('lecture-', ''))
+    : null;
 
   // Format VAT number as user types (auto-format Belgian VAT: BE 0123.456.789)
   const formatVATInput = (value: string): string => {
@@ -521,10 +524,19 @@ export default function B2BQuotePage() {
     if (lectureId && lectures.length > 0) {
       const lecture = lectures.find(l => l.id === lectureId);
       if (lecture) {
+        // Set a default city if none is selected (lectures don't require a specific city)
+        if (!selectedCity && cities.length > 0) {
+          // Use Brussels as default or first available city
+          const defaultCity = cities.find(c => c.slug === 'brussel') || cities[0];
+          if (defaultCity) {
+            setValue('city', defaultCity.slug);
+          }
+        }
+        // Set the lecture in the tourId field
         setValue('tourId', `lecture-${lecture.id}`);
       }
     }
-  }, [searchParams, lectures, setValue]);
+  }, [searchParams, lectures, setValue, selectedCity, cities]);
 
   const availableTours = selectedCity
     ? tours.filter((tour) => {
@@ -1118,37 +1130,59 @@ export default function B2BQuotePage() {
                   </div>
                 )}
 
-                {selectedTour && (
+                {(selectedTour || selectedLecture) && (
                   <div className="p-4 rounded-lg border-2" style={{ borderColor: 'var(--brass)', backgroundColor: 'rgba(212, 175, 55, 0.05)' }}>
-                    <h3 className="font-semibold text-navy mb-2">{selectedTour.title}</h3>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        {formatDuration(selectedTour.durationMinutes)}
-                      </span>
-                      {selectedTour.languages.length > 0 && (
-                        <span className="flex items-center gap-1">
-                          <Languages className="h-4 w-4" />
-                          {selectedTour.languages.join(', ')}
-                        </span>
-                      )}
-                    </div>
-                    {selectedTour.themes && selectedTour.themes.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {selectedTour.themes.map((theme, index) => (
-                          <span
-                            key={index}
-                            className="text-xs px-2 py-1 rounded-full font-medium"
-                            style={{
-                              backgroundColor: '#1BDD95',
-                              color: 'white',
-                            }}
-                          >
-                            {getThemeText(theme)}
+                    {selectedTour ? (
+                      <>
+                        <h3 className="font-semibold text-navy mb-2">{selectedTour.title}</h3>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            {formatDuration(selectedTour.durationMinutes)}
                           </span>
-                        ))}
-                      </div>
-                    )}
+                          {selectedTour.languages.length > 0 && (
+                            <span className="flex items-center gap-1">
+                              <Languages className="h-4 w-4" />
+                              {selectedTour.languages.join(', ')}
+                            </span>
+                          )}
+                        </div>
+                        {selectedTour.themes && selectedTour.themes.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            {selectedTour.themes.map((theme, index) => (
+                              <span
+                                key={index}
+                                className="text-xs px-2 py-1 rounded-full font-medium"
+                                style={{
+                                  backgroundColor: '#1BDD95',
+                                  color: 'white',
+                                }}
+                              >
+                                {getThemeText(theme)}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    ) : selectedLecture ? (
+                      <>
+                        <h3 className="font-semibold text-navy mb-2">
+                          {locale === 'nl' ? selectedLecture.title : (selectedLecture.title_en || selectedLecture.title)}
+                        </h3>
+                        {selectedLecture.location && (
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
+                            <MapPin className="h-4 w-4" />
+                            {locale === 'nl' ? selectedLecture.location : (selectedLecture.location_en || selectedLecture.location)}
+                          </div>
+                        )}
+                        {selectedLecture.group_size && (
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
+                            <Users className="h-4 w-4" />
+                            {locale === 'nl' ? selectedLecture.group_size : (selectedLecture.group_size_en || selectedLecture.group_size)}
+                          </div>
+                        )}
+                      </>
+                    ) : null}
                   </div>
                 )}
 
