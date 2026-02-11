@@ -86,7 +86,7 @@ const SelectContent = React.forwardRef<
       <SelectScrollUpButton />
       <SelectPrimitive.Viewport
         className={cn(
-          'p-1 max-h-[280px] overflow-y-auto overflow-x-hidden',
+          'p-1 max-h-[280px] overflow-y-auto',
           position === 'popper' &&
             'w-full min-w-[var(--radix-select-trigger-width)]'
         )}
@@ -97,12 +97,6 @@ const SelectContent = React.forwardRef<
           scrollbarColor: '#d1d5db #f3f4f6',
           // Webkit scrollbar styles for better cross-browser support
           WebkitOverflowScrolling: 'touch',
-          // Ensure mouse wheel scrolling works
-          willChange: 'scroll-position',
-        }}
-        onWheel={(e) => {
-          // Ensure wheel events are properly handled
-          e.stopPropagation();
         }}
       >
         {children}

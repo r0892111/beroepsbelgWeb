@@ -67,6 +67,7 @@ interface CreateBookingForm {
   isPaid: boolean;
   customPrice: string; // Custom price per person (empty = use tour's default price)
   dealId: string; // TeamLeader deal ID (optional)
+  invoiceId: string; // TeamLeader invoice ID (optional)
   // Extra fees for op_maat tours
   requestTanguy: boolean;
   extraHour: boolean;
@@ -82,6 +83,18 @@ interface TeamLeaderDeal {
   status: string;
   value: number | null;
   currency: string;
+}
+
+interface TeamLeaderInvoice {
+  id: string;
+  invoice_number: string | null;
+  title: string;
+  status: string | null;
+  total: number | null;
+  currency: string;
+  customer: { type: string; id: string } | null;
+  createdAt: string | null;
+  dueDate: string | null;
 }
 
 interface Guide {
@@ -139,6 +152,7 @@ export default function AdminBookingsPage() {
     specialRequests: '',
     isPaid: false,
     dealId: '',
+    invoiceId: '',
     requestTanguy: false,
     extraHour: false,
     weekendFee: false,
@@ -150,6 +164,11 @@ export default function AdminBookingsPage() {
   const [teamleaderDeals, setTeamleaderDeals] = useState<TeamLeaderDeal[]>([]);
   const [loadingDeals, setLoadingDeals] = useState(false);
   const [dealsError, setDealsError] = useState<string | null>(null);
+
+  // TeamLeader invoices state
+  const [teamleaderInvoices, setTeamleaderInvoices] = useState<TeamLeaderInvoice[]>([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
+  const [invoicesError, setInvoicesError] = useState<string | null>(null);
 
   // IDs dialog state
   const [idsDialogOpen, setIdsDialogOpen] = useState(false);
@@ -542,6 +561,7 @@ export default function AdminBookingsPage() {
       specialRequests: '',
       isPaid: false,
       dealId: '',
+      invoiceId: '',
       requestTanguy: false,
       extraHour: false,
       weekendFee: false,
@@ -578,6 +598,38 @@ export default function AdminBookingsPage() {
       setDealsError(err instanceof Error ? err.message : 'Failed to load deals');
     } finally {
       setLoadingDeals(false);
+    }
+  };
+
+  // Fetch TeamLeader invoices
+  const fetchTeamleaderInvoices = async () => {
+    setLoadingInvoices(true);
+    setInvoicesError(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setInvoicesError('Not authenticated');
+        return;
+      }
+
+      const response = await fetch('/api/admin/teamleader-invoices', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch invoices');
+      }
+
+      const data = await response.json();
+      setTeamleaderInvoices(data.invoices || []);
+    } catch (err) {
+      console.error('Error fetching TeamLeader invoices:', err);
+      setInvoicesError(err instanceof Error ? err.message : 'Failed to load invoices');
+    } finally {
+      setLoadingInvoices(false);
     }
   };
 
@@ -723,6 +775,11 @@ export default function AdminBookingsPage() {
         tourbookingData.deal_id = createForm.dealId;
       }
 
+      // If admin manually selected an invoice, use it
+      if (createForm.invoiceId) {
+        tourbookingData.invoice_id = createForm.invoiceId;
+      }
+
       const { data: newBooking, error: bookingError } = await supabase
         .from('tourbooking')
         .insert(tourbookingData)
@@ -754,6 +811,11 @@ export default function AdminBookingsPage() {
         // If admin manually selected a deal, use it, otherwise leave it null (webhook will create one)
         if (createForm.dealId) {
           localBookingData.deal_id = createForm.dealId;
+        }
+
+        // If admin manually selected an invoice, use it
+        if (createForm.invoiceId) {
+          localBookingData.invoice_id = createForm.invoiceId;
         }
 
         const { error: localError } = await supabase
@@ -1493,8 +1555,9 @@ export default function AdminBookingsPage() {
       <Dialog open={createDialogOpen} onOpenChange={(open) => {
         setCreateDialogOpen(open);
         if (open) {
-          // Fetch TeamLeader deals when dialog opens
+          // Fetch TeamLeader deals and invoices when dialog opens
           void fetchTeamleaderDeals();
+          void fetchTeamleaderInvoices();
         } else {
           resetCreateForm();
         }
@@ -1634,6 +1697,67 @@ export default function AdminBookingsPage() {
                   {selectedTour.local_stories
                     ? 'Link this invitee to a TeamLeader CRM deal. Additional invitees can have different deals.'
                     : 'Link this booking to an existing TeamLeader CRM deal.'
+                  }
+                </p>
+              </div>
+            )}
+
+            {/* TeamLeader Invoice Selection */}
+            {selectedTour && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="invoiceId">
+                    Link to TeamLeader Invoice (optional)
+                    {selectedTour.local_stories && (
+                      <span className="text-xs text-muted-foreground ml-1">- for this invitee</span>
+                    )}
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void fetchTeamleaderInvoices()}
+                    disabled={loadingInvoices}
+                    className="h-6 text-xs gap-1"
+                  >
+                    <RefreshCw className={`h-3 w-3 ${loadingInvoices ? 'animate-spin' : ''}`} />
+                    {loadingInvoices ? 'Loading...' : 'Refresh'}
+                  </Button>
+                </div>
+                <Select
+                  value={createForm.invoiceId}
+                  onValueChange={(value) => setCreateForm({ ...createForm, invoiceId: value === 'none' ? '' : value })}
+                >
+                  <SelectTrigger className="bg-white">
+                    <SelectValue placeholder={loadingInvoices ? 'Loading invoices...' : teamleaderInvoices.length === 0 ? 'No invoices found - click Refresh' : 'Select an invoice (optional)'} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    <SelectItem value="none">No invoice linked</SelectItem>
+                    {teamleaderInvoices.map((invoice) => (
+                      <SelectItem key={invoice.id} value={invoice.id}>
+                        <div className="flex items-center gap-2">
+                          <span>{invoice.title}</span>
+                          {invoice.invoice_number && (
+                            <span className="text-xs text-muted-foreground">({invoice.invoice_number})</span>
+                          )}
+                          {invoice.total && (
+                            <span className="text-xs text-muted-foreground">€{invoice.total.toFixed(2)}</span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {invoicesError && (
+                  <p className="text-xs text-red-500">{invoicesError}</p>
+                )}
+                {teamleaderInvoices.length === 0 && !loadingInvoices && !invoicesError && (
+                  <p className="text-xs text-amber-600">No invoices loaded yet. Click Refresh to load invoices from TeamLeader.</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  {selectedTour.local_stories
+                    ? 'Link this invitee to a TeamLeader invoice. Additional invitees can have different invoices.'
+                    : 'Link this booking to an existing TeamLeader invoice.'
                   }
                 </p>
               </div>

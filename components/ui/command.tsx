@@ -63,17 +63,6 @@ const CommandList = React.forwardRef<
   <CommandPrimitive.List
     ref={ref}
     className={cn('max-h-[300px] overflow-y-auto overflow-x-hidden', className)}
-    style={{
-      overscrollBehavior: 'contain',
-      scrollbarWidth: 'thin',
-      scrollbarColor: '#d1d5db #f3f4f6',
-      WebkitOverflowScrolling: 'touch',
-      willChange: 'scroll-position',
-    }}
-    onWheel={(e) => {
-      // Ensure wheel events are properly handled
-      e.stopPropagation();
-    }}
     {...props}
   />
 ));
