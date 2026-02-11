@@ -10,6 +10,19 @@ interface TourData {
   title: string;
   start_location: string | null;
   google_maps_url: string | null;
+  description: string | null;
+  description_en: string | null;
+  description_fr: string | null;
+  description_de: string | null;
+}
+
+interface Invitee {
+  name?: string;
+  email?: string;
+  phone?: string;
+  numberOfPeople?: number;
+  language?: string;
+  specialRequests?: string;
 }
 
 interface BookingData {
@@ -19,6 +32,9 @@ interface BookingData {
   city: string | null;
   tour_datetime: string | null;
   tour_end: string | null;
+  invitees: Invitee[] | null;
+  start_location: string | null;
+  end_location: string | null;
   tours_table_prod: TourData | TourData[] | null;
 }
 
@@ -49,6 +65,7 @@ export default function AddToCalendarPage() {
   const params = useParams();
   const bookingId = params.bookingId as string;
   const tourId = params.tourId as string;
+  const locale = params.locale as string;
 
   const [booking, setBooking] = useState<BookingData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -66,10 +83,17 @@ export default function AddToCalendarPage() {
             city,
             tour_datetime,
             tour_end,
+            invitees,
+            start_location,
+            end_location,
             tours_table_prod (
               title,
               start_location,
-              google_maps_url
+              google_maps_url,
+              description,
+              description_en,
+              description_fr,
+              description_de
             )
           `)
           .eq('id', bookingId)
@@ -134,8 +158,57 @@ export default function AddToCalendarPage() {
   const tourData = booking.tours_table_prod;
   const tour: TourData | null = Array.isArray(tourData) ? tourData[0] : tourData;
   const tourTitle = tour?.title || 'Tour';
-  const location = tour?.start_location || booking.city || '';
-  const details = tour?.google_maps_url || '';
+  const location = tour?.start_location || booking.start_location || booking.city || '';
+  
+  // Get description based on locale, fallback to Dutch (description)
+  let tourDescription = tour?.description || '';
+  if (locale === 'en' && tour?.description_en) {
+    tourDescription = tour.description_en;
+  } else if (locale === 'fr' && tour?.description_fr) {
+    tourDescription = tour.description_fr;
+  } else if (locale === 'de' && tour?.description_de) {
+    tourDescription = tour.description_de;
+  }
+  
+  // Build details string with tour description and non-personal booking details
+  const detailsParts: string[] = [];
+  
+  // Add tour description
+  if (tourDescription) {
+    detailsParts.push(tourDescription);
+  }
+  
+  // Add booking details section (without personal information)
+  detailsParts.push('\n--- Booking Details ---');
+  
+  // Add booking ID
+  detailsParts.push(`Booking ID: #${booking.id}`);
+  
+  // Add non-personal invitee information only
+  if (booking.invitees && booking.invitees.length > 0) {
+    const mainInvitee = booking.invitees[0];
+    if (mainInvitee?.numberOfPeople) {
+      detailsParts.push(`Number of People: ${mainInvitee.numberOfPeople}`);
+    }
+    if (mainInvitee?.specialRequests) {
+      detailsParts.push(`Special Requests: ${mainInvitee.specialRequests}`);
+    }
+  }
+  
+  // Add locations
+  if (booking.start_location) {
+    detailsParts.push(`Start Location: ${booking.start_location}`);
+  }
+  if (booking.end_location) {
+    detailsParts.push(`End Location: ${booking.end_location}`);
+  }
+  
+  // Add Google Maps URL if available
+  if (tour?.google_maps_url) {
+    detailsParts.push(`\nLocation Map: ${tour.google_maps_url}`);
+  }
+  
+  const details = detailsParts.join('\n');
 
   const calendarUrl = buildGoogleCalendarUrl(
     tourTitle,
