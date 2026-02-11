@@ -589,6 +589,7 @@
     "cityLabel": "City*",
     "selectCity": "Select a city",
     "tourLabel": "Tour*",
+    "lectureLabel": "Lecture*",
     "viewAllTours": "View all tours",
     "languageLabel": "Tour language*",
     "selectLanguage": "Select a language",
