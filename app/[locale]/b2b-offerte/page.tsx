@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslations } from 'next-intl';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { toast } from 'sonner';
 import { Calendar, Users, MapPin, Languages, Building2, Sparkles, CheckCircle2, Home, ShoppingBag, ExternalLink, Clock, Gift, FileText, Loader2, Plus, Minus, AlertCircle } from 'lucide-react';
 // Removed direct imports - will fetch from API instead
-import type { City, Tour, Product } from '@/lib/data/types';
+import type { City, Tour, Product, Lecture } from '@/lib/data/types';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { useTranslations as useBookingTranslations } from 'next-intl';
@@ -87,6 +87,7 @@ export default function B2BQuotePage() {
   const tBooking = useBookingTranslations('booking');
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const locale = params.locale as string;
 
   // Helper to get theme text in the correct language
@@ -107,6 +108,7 @@ export default function B2BQuotePage() {
   const [step, setStep] = useState<'select' | 'contact' | 'upsell' | 'payment' | 'success'>('select');
   const [cities, setCities] = useState<City[]>([]);
   const [tours, setTours] = useState<Tour[]>([]);
+  const [lectures, setLectures] = useState<Lecture[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
@@ -480,9 +482,10 @@ export default function B2BQuotePage() {
     async function loadContent() {
       try {
         // Fetch from API routes instead of direct imports
-        const [citiesRes, toursRes, productsRes] = await Promise.all([
+        const [citiesRes, toursRes, lecturesRes, productsRes] = await Promise.all([
           fetch('/api/cities').then(r => r.ok ? r.json() : []).catch(() => []),
           fetch('/api/tours').then(r => r.ok ? r.json() : []).catch(() => []),
+          fetch('/api/lectures').then(r => r.ok ? r.json() : []).catch(() => []),
           fetch('/api/products').then(r => r.ok ? r.json() : []).catch(() => [])
         ]);
         
@@ -490,6 +493,7 @@ export default function B2BQuotePage() {
 
         setCities(citiesRes);
         setTours(toursRes);
+        setLectures(lecturesRes);
         setProducts(productsRes.slice(0, 6)); // Get 6 products for upsell
         setDataError(null);
       } catch (error) {
@@ -510,6 +514,17 @@ export default function B2BQuotePage() {
       isMounted = false;
     };
   }, []);
+
+  // Auto-select lecture if lectureId is in query params
+  useEffect(() => {
+    const lectureId = searchParams.get('lectureId');
+    if (lectureId && lectures.length > 0) {
+      const lecture = lectures.find(l => l.id === lectureId);
+      if (lecture) {
+        setValue('tourId', `lecture-${lecture.id}`);
+      }
+    }
+  }, [searchParams, lectures, setValue]);
 
   const availableTours = selectedCity
     ? tours.filter((tour) => {
@@ -1058,7 +1073,7 @@ export default function B2BQuotePage() {
                   </Select>
                 </div>
 
-                {selectedCity && availableTours.length > 0 && (
+                {selectedCity && (availableTours.length > 0 || lectures.length > 0) && (
                   <div>
                     <Label htmlFor="tour" className="flex items-center gap-2 text-base font-semibold text-navy">
                       <Building2 className="h-5 w-5" style={{ color: 'var(--brass)' }} />
@@ -1069,11 +1084,27 @@ export default function B2BQuotePage() {
                         <SelectValue placeholder={t('selectTour')} />
                       </SelectTrigger>
                       <SelectContent>
+                        {/* Tours */}
                         {availableTours.map((tour) => (
                           <SelectItem key={String(tour.id ?? tour.slug)} value={String(tour.id ?? tour.slug)}>
                             {tour.title}
                           </SelectItem>
                         ))}
+                        {/* Lectures */}
+                        {lectures.length > 0 && (
+                          <>
+                            {availableTours.length > 0 && (
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-t">
+                                Lectures
+                              </div>
+                            )}
+                            {lectures.map((lecture) => (
+                              <SelectItem key={`lecture-${lecture.id}`} value={`lecture-${lecture.id}`}>
+                                {locale === 'nl' ? lecture.title : (lecture.title_en || lecture.title)}
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                     <button

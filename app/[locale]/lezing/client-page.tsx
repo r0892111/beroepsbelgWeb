@@ -3,11 +3,10 @@
 import { useState, useEffect } from 'react';
 import { Calendar, MapPin, Users, ArrowRight, X, Info } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { LectureBookingForm } from '@/components/lectures/lecture-booking-form';
 import type { Lecture } from '@/lib/data/types';
 
 interface LezingClientPageProps {
@@ -17,10 +16,8 @@ interface LezingClientPageProps {
 
 export default function LezingClientPage({ lectures, locale }: LezingClientPageProps) {
   const t = useTranslations('lecture');
+  const router = useRouter();
   const [showDisclaimer, setShowDisclaimer] = useState(false);
-  const [bookingFormOpen, setBookingFormOpen] = useState(false);
-  const [selectedLectureId, setSelectedLectureId] = useState<string | undefined>();
-  const [selectedLectureTitle, setSelectedLectureTitle] = useState<string | undefined>();
 
   // Determine which language to display
   const getDisplayLocale = () => {
@@ -45,9 +42,8 @@ export default function LezingClientPage({ lectures, locale }: LezingClientPageP
   };
 
   const handleBookLecture = (lecture: Lecture) => {
-    setSelectedLectureId(lecture.id);
-    setSelectedLectureTitle(displayLocale === 'nl' ? lecture.title : (lecture.title_en || lecture.title));
-    setBookingFormOpen(true);
+    // Redirect to quote page with lecture ID as query parameter
+    router.push(`/${locale}/b2b-offerte?lectureId=${lecture.id}`);
   };
 
   // Helper function to get localized content
@@ -231,13 +227,6 @@ export default function LezingClientPage({ lectures, locale }: LezingClientPageP
           </div>
         )}
 
-          {/* Booking Form Popup */}
-          <LectureBookingForm
-            open={bookingFormOpen}
-            onOpenChange={setBookingFormOpen}
-            lectureId={selectedLectureId}
-            lectureTitle={selectedLectureTitle}
-          />
         </div>
       </div>
     </div>
