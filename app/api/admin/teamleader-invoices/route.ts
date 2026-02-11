@@ -89,7 +89,7 @@ export async function GET(request: Request) {
     }
 
     // Fetch invoices from TeamLeader API
-    // Filter for unpaid/open invoices
+    // Filter for invoices that can be linked to bookings (draft, outstanding, matched)
     const response = await fetch('https://api.focus.teamleader.eu/invoices.list', {
       method: 'POST',
       headers: {
@@ -99,8 +99,9 @@ export async function GET(request: Request) {
       },
       body: JSON.stringify({
         filter: {
-          // Get invoices that are not fully paid or cancelled
-          status: ['draft', 'sent', 'booked', 'paid_partially']
+          // Get invoices that are draft, outstanding (unpaid), or matched (payment matched)
+          // This includes invoices that are still relevant for booking tracking
+          status: ['draft', 'outstanding', 'matched']
         },
         page: {
           size: 100, // Get up to 100 invoices
@@ -108,10 +109,11 @@ export async function GET(request: Request) {
         },
         sort: [
           {
-            field: 'created_at',
+            field: 'invoice_number',
             order: 'desc'
           }
-        ]
+        ],
+        includes: 'late_fees' // Include late fees information if available
       })
     });
 
