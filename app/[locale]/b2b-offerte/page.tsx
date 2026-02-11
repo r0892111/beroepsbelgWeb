@@ -518,38 +518,56 @@ export default function B2BQuotePage() {
     };
   }, []);
 
+  // Auto-select city if lectureId is in query params and no city is selected
+  useEffect(() => {
+    const lectureId = searchParams.get('lectureId');
+    if (!lectureId || lectures.length === 0 || cities.length === 0 || selectedCity) return;
+    
+    const lecture = lectures.find(l => l.id === lectureId);
+    if (!lecture) return;
+
+    let cityToSelect = null;
+    
+    if (lecture.city_id) {
+      // Find city by city_id
+      cityToSelect = cities.find(c => c.id === lecture.city_id);
+    } else if (lecture.city) {
+      // Find city by slug
+      cityToSelect = cities.find(c => c.slug === lecture.city);
+    }
+    
+    // Fallback to Brussels or first available city if lecture has no city
+    if (!cityToSelect) {
+      cityToSelect = cities.find(c => c.slug === 'brussel') || cities[0];
+    }
+    
+    if (cityToSelect) {
+      setValue('city', cityToSelect.slug, { shouldValidate: false });
+    }
+  }, [searchParams, lectures, cities, selectedCity, setValue]);
+
   // Auto-select lecture if lectureId is in query params
   useEffect(() => {
     const lectureId = searchParams.get('lectureId');
-    if (lectureId && lectures.length > 0) {
-      const lecture = lectures.find(l => l.id === lectureId);
-      if (lecture) {
-        // Set the city based on the lecture's city_id or city slug
-        if (!selectedCity && cities.length > 0) {
-          let cityToSelect = null;
-          
-          if (lecture.city_id) {
-            // Find city by city_id
-            cityToSelect = cities.find(c => c.id === lecture.city_id);
-          } else if (lecture.city) {
-            // Find city by slug
-            cityToSelect = cities.find(c => c.slug === lecture.city);
-          }
-          
-          // Fallback to Brussels or first available city if lecture has no city
-          if (!cityToSelect) {
-            cityToSelect = cities.find(c => c.slug === 'brussel') || cities[0];
-          }
-          
-          if (cityToSelect) {
-            setValue('city', cityToSelect.slug);
-          }
-        }
-        // Set the lecture in the tourId field
-        setValue('tourId', `lecture-${lecture.id}`);
-      }
+    if (!lectureId || lectures.length === 0) return;
+    
+    const lecture = lectures.find(l => l.id === lectureId);
+    if (!lecture) return;
+
+    const expectedLectureValue = `lecture-${lecture.id}`;
+    const currentTourId = getValues('tourId');
+    
+    // Set the lecture if it's not already selected
+    // Wait a bit if city was just set to ensure it's available in the dropdown
+    if (currentTourId !== expectedLectureValue) {
+      // Use setTimeout to ensure city dropdown has updated
+      const timeoutId = setTimeout(() => {
+        setValue('tourId', expectedLectureValue, { shouldValidate: false });
+      }, selectedCity ? 0 : 100);
+      
+      return () => clearTimeout(timeoutId);
     }
-  }, [searchParams, lectures, setValue, selectedCity, cities]);
+  }, [searchParams, lectures, selectedCity, setValue, getValues]);
 
   const availableTours = selectedCity
     ? tours.filter((tour) => {
