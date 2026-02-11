@@ -25,10 +25,16 @@ interface Invitee {
   specialRequests?: string;
 }
 
+interface Guide {
+  id: number;
+  name: string | null;
+}
+
 interface BookingData {
   id: number;
   tour_id: string | null;
   guide_id: number | null;
+  guide_ids: number[] | null;
   city: string | null;
   tour_datetime: string | null;
   tour_end: string | null;
@@ -68,6 +74,7 @@ export default function AddToCalendarPage() {
   const locale = params.locale as string;
 
   const [booking, setBooking] = useState<BookingData | null>(null);
+  const [guides, setGuides] = useState<Guide[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,6 +87,7 @@ export default function AddToCalendarPage() {
             id,
             tour_id,
             guide_id,
+            guide_ids,
             city,
             tour_datetime,
             tour_end,
@@ -107,6 +115,24 @@ export default function AddToCalendarPage() {
 
         console.log('Booking data:', JSON.stringify(data, null, 2));
         setBooking(data);
+        
+        // Fetch guide information if guides are assigned
+        const guideIds = data.guide_ids && data.guide_ids.length > 0 
+          ? data.guide_ids 
+          : data.guide_id 
+            ? [data.guide_id] 
+            : [];
+        
+        if (guideIds.length > 0) {
+          const { data: guidesData, error: guidesError } = await supabase
+            .from('guides_temp')
+            .select('id, name')
+            .in('id', guideIds);
+          
+          if (!guidesError && guidesData) {
+            setGuides(guidesData as Guide[]);
+          }
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load booking');
       } finally {
@@ -184,11 +210,20 @@ export default function AddToCalendarPage() {
   // Add booking ID
   detailsParts.push(`Booking ID: #${booking.id}`);
   
+  // Add confirmed guides
+  if (guides.length > 0) {
+    const guideNames = guides.map(g => g.name || `Guide #${g.id}`).join(', ');
+    detailsParts.push(`Confirmed Guide${guides.length > 1 ? 's' : ''}: ${guideNames}`);
+  }
+  
   // Add non-personal invitee information only
   if (booking.invitees && booking.invitees.length > 0) {
     const mainInvitee = booking.invitees[0];
     if (mainInvitee?.numberOfPeople) {
       detailsParts.push(`Number of People: ${mainInvitee.numberOfPeople}`);
+    }
+    if (mainInvitee?.language) {
+      detailsParts.push(`Language: ${mainInvitee.language}`);
     }
     if (mainInvitee?.specialRequests) {
       detailsParts.push(`Special Requests: ${mainInvitee.specialRequests}`);
