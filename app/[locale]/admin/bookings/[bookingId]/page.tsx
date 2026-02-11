@@ -2362,10 +2362,7 @@ export default function BookingDetailPage() {
               {getGuideIds(booking).length > 0 && (
                 <div className="pt-3 border-t">
                   <Button 
-                    onClick={() => {
-                      setSelectedNewGuideId(null);
-                      setGuideDialogOpen(true);
-                    }}
+                    onClick={() => router.push(`/${locale}/choose-guide/${booking.id}`)}
                     variant="outline"
                     className="w-full gap-2 mb-3"
                   >
