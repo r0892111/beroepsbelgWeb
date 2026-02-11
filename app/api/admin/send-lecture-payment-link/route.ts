@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validate required fields
-    console.log('Lecture payment link request:', { bookingId, customerName, customerEmail, lectureName, numberOfPeople, amount });
+    console.log('Lecture payment request:', { bookingId, customerName, customerEmail, lectureName, numberOfPeople, amount });
 
     if (!customerName || !customerEmail || !bookingId) {
       return NextResponse.json(
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
       throw new Error('Failed to create checkout session URL');
     }
 
-    // Call n8n webhook to send the payment link email
+    // Call n8n webhook to send the payment email
     try {
       await fetch(N8N_LECTURE_PAYMENT_WEBHOOK, {
         method: 'POST',
@@ -183,9 +183,9 @@ export async function POST(request: NextRequest) {
           sent_at: nowBrussels(),
         }),
       });
-      console.log('Lecture payment link webhook sent successfully');
+      console.log('Lecture payment webhook sent successfully');
     } catch (webhookErr) {
-      console.error('Failed to send lecture payment link webhook:', webhookErr);
+      console.error('Failed to send lecture payment webhook:', webhookErr);
       // Don't fail the request - the session was created, just webhook failed
     }
 
@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
       success: true,
       sessionId: session.id,
       paymentUrl: session.url,
-      message: 'Payment link created and email sent',
+      message: 'Payment created and email sent',
     });
   } catch (error) {
     console.error('Error in send-lecture-payment-link API:', error);

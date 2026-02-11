@@ -103,11 +103,11 @@ export async function POST(request: NextRequest) {
       city,
       tourDatetime,
       fees, // Optional: fee data for op_maat tours
-      isExtraInvitees, // Optional: true for extra people payment links
+      isExtraInvitees, // Optional: true for extra people payments
     } = body;
 
     // Validate required fields
-    console.log('Payment link request:', { bookingId, customerName, customerEmail, tourName, numberOfPeople, amount, localBookingId });
+    console.log('Payment request:', { bookingId, customerName, customerEmail, tourName, numberOfPeople, amount, localBookingId });
 
     if (!customerName || !customerEmail || !tourName || !bookingId) {
       return NextResponse.json(
@@ -248,7 +248,7 @@ export async function POST(request: NextRequest) {
       throw new Error('Failed to create checkout session URL');
     }
 
-    // Call n8n webhook to send the payment link email
+    // Call n8n webhook to send the payment email
     try {
       await fetch(N8N_PAYMENT_LINK_WEBHOOK, {
         method: 'POST',
@@ -288,9 +288,9 @@ export async function POST(request: NextRequest) {
           baseTourPrice,
         }),
       });
-      console.log('Payment link webhook sent successfully');
+      console.log('Payment webhook sent successfully');
     } catch (webhookErr) {
-      console.error('Failed to send payment link webhook:', webhookErr);
+      console.error('Failed to send payment webhook:', webhookErr);
       // Don't fail the request - the session was created, just webhook failed
     }
 
@@ -298,7 +298,7 @@ export async function POST(request: NextRequest) {
       success: true,
       sessionId: session.id,
       paymentUrl: session.url,
-      message: 'Payment link created and email sent',
+      message: 'Payment created and email sent',
     });
   } catch (error) {
     console.error('Error in send-payment-link API:', error);

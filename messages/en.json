@@ -583,7 +583,7 @@
     "loading": "Loading data...",
     "tryAgain": "Try again",
     "requestSent": "Your request has been sent.",
-    "checkAvailability": "We are checking the guide's availability and will contact you within 24 hours with a confirmation and payment link.",
+    "checkAvailability": "We are checking the guide's availability and will contact you within 24 hours with a confirmation.",
     "redirectingIn": "You will be redirected in {countdown} seconds...",
     "step1": "Step 1: Select tour and date",
     "cityLabel": "City*",

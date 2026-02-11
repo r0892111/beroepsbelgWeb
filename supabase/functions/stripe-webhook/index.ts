@@ -769,9 +769,9 @@ async function handleEvent(event: Stripe.Event) {
         return;
       }
 
-      // Check if this is a manual payment link from admin panel
+      // Check if this is a manual payment from admin panel
       if (metadata?.isManualPaymentLink === 'true' && metadata?.bookingId) {
-        console.info(`Processing manual payment link for booking ${metadata.bookingId}, session ${sessionId}`);
+        console.info(`Processing manual payment for booking ${metadata.bookingId}, session ${sessionId}`);
 
         const bookingId = parseInt(metadata.bookingId, 10);
         const customerEmail = session.customer_email;
@@ -786,7 +786,7 @@ async function handleEvent(event: Stripe.Event) {
           .single();
 
         if (bookingError || !booking) {
-          console.error(`Manual payment link: Booking ${bookingId} not found`, bookingError);
+          console.error(`Manual payment: Booking ${bookingId} not found`, bookingError);
           return;
         }
 
@@ -830,9 +830,9 @@ async function handleEvent(event: Stripe.Event) {
           .eq('id', bookingId);
 
         if (updateError) {
-          console.error(`Manual payment link: Failed to update booking ${bookingId}`, updateError);
+          console.error(`Manual payment: Failed to update booking ${bookingId}`, updateError);
         } else {
-          console.info(`Manual payment link: Updated booking ${bookingId} with stripe_session_id ${sessionId} and payment status`);
+          console.info(`Manual payment: Updated booking ${bookingId} with stripe_session_id ${sessionId} and payment status`);
         }
 
         // If this is a Local Stories booking, also update the local_tours_bookings entry
@@ -871,9 +871,9 @@ async function handleEvent(event: Stripe.Event) {
             .eq('id', localBookingId);
 
           if (localUpdateError) {
-            console.error(`Manual payment link: Failed to update local_tours_bookings ${localBookingId}`, localUpdateError);
+            console.error(`Manual payment: Failed to update local_tours_bookings ${localBookingId}`, localUpdateError);
           } else {
-            console.info(`Manual payment link: Updated local_tours_bookings ${localBookingId} - cleared pending payment, logged payment of €${amountPaid}`);
+            console.info(`Manual payment: Updated local_tours_bookings ${localBookingId} - cleared pending payment, logged payment of €${amountPaid}`);
           }
         }
 
@@ -933,7 +933,7 @@ async function handleEvent(event: Stripe.Event) {
             eveningFeeCost: matchingInvitee?.eveningFeeCost || 0,
           },
 
-          // Mark this as a manual payment link for n8n to identify
+          // Mark this as a manual payment for n8n to identify
           isManualPaymentLink: true,
           isExtraInvitees: isExtraInvitees,
         };
@@ -960,7 +960,7 @@ async function handleEvent(event: Stripe.Event) {
         };
 
         try {
-          console.info('[N8N] Calling tour booking webhook for manual payment link', {
+          console.info('[N8N] Calling tour booking webhook for manual payment', {
             url: n8nWebhookUrl,
             sessionId,
             bookingId,
@@ -1001,7 +1001,7 @@ async function handleEvent(event: Stripe.Event) {
         return;
       }
 
-      // Check if this is a lecture payment link from admin panel
+      // Check if this is a lecture payment from admin panel
       if (metadata?.isLecturePayment === 'true' && metadata?.bookingId) {
         console.info(`Processing lecture payment for booking ${metadata.bookingId}, session ${sessionId}`);
 

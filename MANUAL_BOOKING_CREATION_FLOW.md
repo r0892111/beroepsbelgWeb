@@ -147,12 +147,11 @@ After successful creation:
 - **If `isPaid = false`**:
   - Status: `'pending'`
   - Invitee `amount` field is NOT set
-  - Admin can send payment link later
 
 ### Custom Price
 - If custom price is provided, it overrides the tour's default price
 - Used to calculate `pricePerPerson` for the invitee
-- Stored in `invitee.pricePerPerson` for payment link calculations
+- Stored in `invitee.pricePerPerson` for reference
 
 ### Fees
 - All fees are optional and can be manually set by admin
@@ -191,7 +190,7 @@ After successful creation:
 
 ## Next Steps After Creation
 
-1. **If not paid**: Admin can send payment link from booking detail page
+1. **If not paid**: Booking is created with status `'pending'`
 2. **If paid**: Booking is ready for guide assignment
 3. **Guide Assignment**: Admin can navigate to `/choose-guide/[bookingId]` to assign a guide
 4. **Deal ID**: Used when guide accepts/declines (via `/api/confirm-guide/[dealId]/confirm`)

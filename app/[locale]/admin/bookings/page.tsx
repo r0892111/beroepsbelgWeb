@@ -734,7 +734,7 @@ export default function AdminBookingsPage() {
         currency: 'eur',
         isContacted: false,
         isPaid: createForm.isPaid,
-        pricePerPerson: Math.round(pricePerPerson * 100) / 100, // Store the price per person (custom or default) for payment links
+        pricePerPerson: Math.round(pricePerPerson * 100) / 100, // Store the price per person (custom or default)
         // Store fee information
         requestTanguy: createForm.requestTanguy,
         hasExtraHour: createForm.extraHour,
@@ -755,7 +755,6 @@ export default function AdminBookingsPage() {
       if (createForm.isPaid) {
         invitee.amount = totalAmount; // Total includes all fees
       }
-      // If not paid, pricePerPerson is used to calculate the amount when sending payment link
 
       // Create tourbooking entry
       // For non-Local Stories tours, include deal_id directly in tourbooking
@@ -1954,7 +1953,7 @@ export default function AdminBookingsPage() {
               </div>
               {!createForm.isPaid && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Booking will be created with status &quot;pending&quot;. You can send a payment link later.
+                  Booking will be created with status &quot;pending&quot;.
                 </p>
               )}
             </div>

@@ -109,7 +109,7 @@ export async function GET(request: Request) {
         },
         sort: [
           {
-            field: 'invoice_number',
+            field: 'created_at',
             order: 'desc'
           }
         ],
