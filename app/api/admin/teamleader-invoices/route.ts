@@ -107,6 +107,12 @@ export async function GET(request: Request) {
           size: 100, // Get up to 100 invoices
           number: 1
         },
+        sort: [
+          {
+            field: 'invoice_date',
+            order: 'desc'
+          }
+        ],
         includes: 'late_fees' // Include late fees information if available
       })
     });
@@ -122,6 +128,12 @@ export async function GET(request: Request) {
           size: 100,
           number: 1
         },
+        sort: [
+          {
+            field: 'invoice_date',
+            order: 'desc'
+          }
+        ],
         includes: 'late_fees'
       }, null, 2));
 
@@ -154,13 +166,7 @@ export async function GET(request: Request) {
       dueDate: invoice.due_date || null
     }));
 
-    // Sort by created_at descending (newest first) in case API doesn't support order
-    invoices.sort((a, b) => {
-      if (!a.createdAt && !b.createdAt) return 0;
-      if (!a.createdAt) return 1;
-      if (!b.createdAt) return -1;
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
+    // Invoices are already sorted by invoice_date desc from the API
 
     return NextResponse.json({ invoices });
   } catch (error) {
