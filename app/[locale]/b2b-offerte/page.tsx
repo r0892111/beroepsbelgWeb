@@ -524,12 +524,25 @@ export default function B2BQuotePage() {
     if (lectureId && lectures.length > 0) {
       const lecture = lectures.find(l => l.id === lectureId);
       if (lecture) {
-        // Set a default city if none is selected (lectures don't require a specific city)
+        // Set the city based on the lecture's city_id or city slug
         if (!selectedCity && cities.length > 0) {
-          // Use Brussels as default or first available city
-          const defaultCity = cities.find(c => c.slug === 'brussel') || cities[0];
-          if (defaultCity) {
-            setValue('city', defaultCity.slug);
+          let cityToSelect = null;
+          
+          if (lecture.city_id) {
+            // Find city by city_id
+            cityToSelect = cities.find(c => c.id === lecture.city_id);
+          } else if (lecture.city) {
+            // Find city by slug
+            cityToSelect = cities.find(c => c.slug === lecture.city);
+          }
+          
+          // Fallback to Brussels or first available city if lecture has no city
+          if (!cityToSelect) {
+            cityToSelect = cities.find(c => c.slug === 'brussel') || cities[0];
+          }
+          
+          if (cityToSelect) {
+            setValue('city', cityToSelect.slug);
           }
         }
         // Set the lecture in the tourId field
@@ -562,6 +575,29 @@ export default function B2BQuotePage() {
           tour.local_stories !== true &&
           (tour.local_stories as any) !== 'true' &&
           (tour.local_stories as any) !== 1;
+      })
+    : [];
+
+  const availableLectures = selectedCity
+    ? lectures.filter((lecture) => {
+        // Match by cityId (primary method) or city slug (fallback)
+        const selectedCityData = cities.find(c => c.slug === selectedCity);
+        let matchesCity = false;
+        
+        if (selectedCityData) {
+          // Primary: match by cityId
+          if (lecture.city_id && lecture.city_id === selectedCityData.id) {
+            matchesCity = true;
+          } else if (lecture.city) {
+            // Fallback: match by city slug
+            matchesCity = lecture.city === selectedCityData.slug;
+          }
+        } else if (lecture.city) {
+          // Fallback: match by city slug directly
+          matchesCity = lecture.city === selectedCity;
+        }
+        
+        return matchesCity;
       })
     : [];
 
@@ -1085,7 +1121,7 @@ export default function B2BQuotePage() {
                   </Select>
                 </div>
 
-                {selectedCity && (availableTours.length > 0 || lectures.length > 0) && (
+                {selectedCity && (availableTours.length > 0 || availableLectures.length > 0) && (
                   <div>
                     <Label htmlFor="tour" className="flex items-center gap-2 text-base font-semibold text-navy">
                       <Building2 className="h-5 w-5" style={{ color: 'var(--brass)' }} />
@@ -1103,14 +1139,14 @@ export default function B2BQuotePage() {
                           </SelectItem>
                         ))}
                         {/* Lectures */}
-                        {lectures.length > 0 && (
+                        {availableLectures.length > 0 && (
                           <>
                             {availableTours.length > 0 && (
                               <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-t">
                                 Lectures
                               </div>
                             )}
-                            {lectures.map((lecture) => (
+                            {availableLectures.map((lecture) => (
                               <SelectItem key={`lecture-${lecture.id}`} value={`lecture-${lecture.id}`}>
                                 {locale === 'nl' ? lecture.title : (lecture.title_en || lecture.title)}
                               </SelectItem>

@@ -201,6 +201,8 @@ export type Lecture = {
   image?: string; // Primary image URL from image_url column
   lectureImages?: LectureImage[]; // Array of lecture images
   display_order?: number; // For ordering lectures
+  city_id?: string; // Foreign key to cities table
+  city?: string; // City slug (for backward compatibility)
   created_at?: string;
   updated_at?: string;
 };

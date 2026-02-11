@@ -806,6 +806,8 @@ export async function getLectures(): Promise<Lecture[]> {
         image: row.image_url || undefined, // Primary image URL from image_url column
         lectureImages: lectureImages.length > 0 ? lectureImages : undefined,
         display_order: row.display_order !== null && row.display_order !== undefined ? Number(row.display_order) : undefined,
+        city_id: row.city_id || undefined,
+        city: row.city || undefined,
         created_at: row.created_at,
         updated_at: row.updated_at,
       };
