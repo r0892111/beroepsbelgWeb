@@ -774,9 +774,9 @@ export default function AdminBookingsPage() {
         tourbookingData.deal_id = createForm.dealId;
       }
 
-      // If admin manually selected an invoice, use it
+      // If admin manually selected an invoice, use it (store in invoice_link)
       if (createForm.invoiceId) {
-        tourbookingData.invoice_id = createForm.invoiceId;
+        tourbookingData.invoice_link = createForm.invoiceId;
       }
 
       const { data: newBooking, error: bookingError } = await supabase
@@ -812,10 +812,7 @@ export default function AdminBookingsPage() {
           localBookingData.deal_id = createForm.dealId;
         }
 
-        // If admin manually selected an invoice, use it
-        if (createForm.invoiceId) {
-          localBookingData.invoice_id = createForm.invoiceId;
-        }
+        // Note: invoice_id is stored in the main tourbooking record, not in local_tours_bookings
 
         const { error: localError } = await supabase
           .from('local_tours_bookings')
