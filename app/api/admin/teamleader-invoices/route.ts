@@ -107,12 +107,6 @@ export async function GET(request: Request) {
           size: 100, // Get up to 100 invoices
           number: 1
         },
-        sort: [
-          {
-            field: 'created_at',
-            order: 'desc'
-          }
-        ],
         includes: 'late_fees' // Include late fees information if available
       })
     });
@@ -120,6 +114,16 @@ export async function GET(request: Request) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('TeamLeader API error:', response.status, errorText);
+      console.error('Request body sent:', JSON.stringify({
+        filter: {
+          status: ['draft', 'outstanding', 'matched']
+        },
+        page: {
+          size: 100,
+          number: 1
+        },
+        includes: 'late_fees'
+      }, null, 2));
 
       // If unauthorized, the token might be expired
       if (response.status === 401) {
@@ -149,6 +153,14 @@ export async function GET(request: Request) {
       createdAt: invoice.created_at || null,
       dueDate: invoice.due_date || null
     }));
+
+    // Sort by created_at descending (newest first) in case API doesn't support order
+    invoices.sort((a, b) => {
+      if (!a.createdAt && !b.createdAt) return 0;
+      if (!a.createdAt) return 1;
+      if (!b.createdAt) return -1;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
 
     return NextResponse.json({ invoices });
   } catch (error) {
