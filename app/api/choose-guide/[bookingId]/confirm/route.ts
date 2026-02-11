@@ -115,20 +115,24 @@ async function checkAdminAccess(request: NextRequest): Promise<{ isAdmin: boolea
   }
 }
 
-async function triggerWebhook(bookingId: string, selectedGuideId: number) {
+async function triggerWebhook(bookingId: string, selectedGuideIds: number[]) {
   try {
-    const response = await fetch('https://alexfinit.app.n8n.cloud/webhook/d83af522-aa75-431d-bbf8-6b9f4faa1a9f', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ 
-        booking_id: bookingId,
-        guide_id: selectedGuideId,
-      }),
-    });
-
-    return response.ok;
+    // Trigger webhook for each guide
+    const results = await Promise.all(
+      selectedGuideIds.map(guideId =>
+        fetch('https://alexfinit.app.n8n.cloud/webhook/d83af522-aa75-431d-bbf8-6b9f4faa1a9f', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            booking_id: bookingId,
+            guide_id: guideId,
+          }),
+        }).then(res => res.ok)
+      )
+    );
+    return results.every(result => result === true);
   } catch (error) {
     return false;
   }
@@ -159,19 +163,25 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { guideId } = body;
+    // Support both single guideId (backward compatibility) and guideIds array
+    const { guideId, guideIds } = body;
 
-    if (!guideId) {
-      return NextResponse.json(
-        { error: 'Guide ID is required' },
-        { status: 400 }
-      );
+    let selectedGuideIds: number[] = [];
+    
+    if (guideIds && Array.isArray(guideIds)) {
+      // New format: array of guide IDs
+      selectedGuideIds = guideIds.map((id: any) => parseInt(String(id), 10)).filter((id: number) => !isNaN(id));
+    } else if (guideId) {
+      // Backward compatibility: single guide ID
+      const guideIdNum = parseInt(String(guideId), 10);
+      if (!isNaN(guideIdNum)) {
+        selectedGuideIds = [guideIdNum];
+      }
     }
 
-    const guideIdNum = parseInt(String(guideId), 10);
-    if (isNaN(guideIdNum)) {
+    if (selectedGuideIds.length === 0) {
       return NextResponse.json(
-        { error: 'Invalid guide ID' },
+        { error: 'At least one guide ID is required' },
         { status: 400 }
       );
     }
@@ -180,7 +190,7 @@ export async function POST(
     const supabase = getSupabaseServer();
     const { data: booking, error: bookingError } = await supabase
       .from('tourbooking')
-      .select('id, selectedGuides')
+      .select('id, selectedGuides, guide_id, guide_ids')
       .eq('id', bookingIdNum)
       .single();
 
@@ -191,29 +201,29 @@ export async function POST(
       );
     }
 
-    // Update selectedGuides: mark the offered guide with status 'offered'
+    // Update selectedGuides: mark all offered guides with status 'offered'
     // selectedGuides format: [{id, status?, offeredAt?, respondedAt?}, ...]
     // status: undefined = available, 'offered' = waiting for response, 'declined', 'accepted'
     let updatedSelectedGuides = booking.selectedGuides || [];
-    let guideFoundInList = false;
+    const foundGuideIds = new Set<number>();
     
     if (Array.isArray(updatedSelectedGuides)) {
       updatedSelectedGuides = updatedSelectedGuides.map((item: any) => {
         // Extract guide ID from different formats
         let itemId: number | null = null;
         if (typeof item === 'object' && item !== null && 'id' in item) {
-          itemId = parseInt(item.id, 10);
+          itemId = typeof item.id === 'number' ? item.id : parseInt(String(item.id), 10);
         } else if (typeof item === 'number') {
           itemId = item;
         } else if (typeof item === 'string') {
           itemId = parseInt(item, 10);
         }
         
-        // If this is the guide being offered, update their status
-        if (itemId === guideIdNum) {
-          guideFoundInList = true;
+        // If this guide is being offered, update their status
+        if (itemId !== null && selectedGuideIds.includes(itemId)) {
+          foundGuideIds.add(itemId);
           return {
-            id: guideIdNum,
+            id: itemId,
             status: 'offered',
             offeredAt: nowBrussels(),
           };
@@ -227,17 +237,19 @@ export async function POST(
       });
     }
     
-    // If guide wasn't in selectedGuides (e.g., manually selecting a new guide), add them
-    if (!guideFoundInList) {
-      updatedSelectedGuides.push({
-        id: guideIdNum,
-        status: 'offered',
-        offeredAt: new Date().toISOString(),
-      });
-    }
+    // Add any guides that weren't in selectedGuides
+    selectedGuideIds.forEach(guideIdNum => {
+      if (!foundGuideIds.has(guideIdNum)) {
+        updatedSelectedGuides.push({
+          id: guideIdNum,
+          status: 'offered',
+          offeredAt: nowBrussels(),
+        });
+      }
+    });
 
-    // Trigger webhook
-    const webhookSuccess = await triggerWebhook(bookingId, guideIdNum);
+    // Trigger webhook for all selected guides
+    const webhookSuccess = await triggerWebhook(bookingId, selectedGuideIds);
 
     if (!webhookSuccess) {
       return NextResponse.json(
@@ -246,14 +258,36 @@ export async function POST(
       );
     }
 
-    // Update booking with updated selectedGuides
-    // NOTE: guide_id is NOT set here - it will be set when the guide actually accepts
-    // via the /api/confirm-guide/[dealId]/confirm endpoint
+    // Get existing guide_ids or fall back to guide_id
+    const existingGuideIds = booking.guide_ids && booking.guide_ids.length > 0 
+      ? booking.guide_ids 
+      : booking.guide_id 
+        ? [booking.guide_id] 
+        : [];
+    
+    // Add new guides to existing ones (avoid duplicates)
+    const combinedIds = [...existingGuideIds, ...selectedGuideIds];
+    const allGuideIds = Array.from(new Set(combinedIds));
+    
+    // Update booking: if only one guide total, set guide_id; otherwise set guide_ids array
+    const updateData: any = {
+      selectedGuides: updatedSelectedGuides,
+    };
+
+    if (allGuideIds.length === 1) {
+      // Single guide: update guide_id
+      updateData.guide_id = allGuideIds[0];
+      updateData.guide_ids = null; // Clear array if only one guide
+    } else {
+      // Multiple guides: update guide_ids array
+      updateData.guide_ids = allGuideIds;
+      // Keep guide_id as first guide for backward compatibility
+      updateData.guide_id = allGuideIds[0];
+    }
+
     const { error: updateError } = await supabase
       .from('tourbooking')
-      .update({ 
-        selectedGuides: updatedSelectedGuides,
-      })
+      .update(updateData)
       .eq('id', bookingIdNum);
 
     if (updateError) {

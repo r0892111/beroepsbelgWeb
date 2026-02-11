@@ -97,6 +97,7 @@ interface Invitee {
 interface TourBooking {
   id: number;
   guide_id: number | null;
+  guide_ids: number[] | null; // Array of guide IDs for multiple guides
   deal_id: string | null;
   status: string;
   invitees: Invitee[] | null;
@@ -423,12 +424,19 @@ export default function BookingDetailPage() {
         setLocalStoriesBookings([]);
       }
 
-      // Fetch guide if guide_id exists, otherwise clear guide state
-      if (bookingData.guide_id) {
+      // Fetch guides from guide_ids array or fall back to guide_id
+      const guideIds = bookingData.guide_ids && bookingData.guide_ids.length > 0 
+        ? bookingData.guide_ids 
+        : bookingData.guide_id 
+          ? [bookingData.guide_id] 
+          : [];
+      
+      if (guideIds.length > 0) {
+        // Fetch first guide (for backward compatibility with single guide display)
         const { data: guideData } = await supabase
           .from('guides_temp')
           .select('id, name, Email, phonenumber, cities, languages, tours_done')
-          .eq('id', bookingData.guide_id)
+          .eq('id', guideIds[0])
           .single();
 
         if (guideData) {
@@ -1290,14 +1298,24 @@ export default function BookingDetailPage() {
     }
   };
 
+  // Helper function to get guide IDs from booking (guide_ids array or fall back to guide_id)
+  const getGuideIds = (booking: TourBooking): number[] => {
+    return booking.guide_ids && booking.guide_ids.length > 0 
+      ? booking.guide_ids 
+      : booking.guide_id 
+        ? [booking.guide_id] 
+        : [];
+  };
+
   // Send extra info to guide
   const handleSendInfoToGuide = async () => {
     if (!booking || !infoMessage.trim()) return;
 
     setSendingInfo(true);
     try {
-      // Get guide info
-      const guideInfo = booking.guide_id ? allGuides.get(booking.guide_id) : null;
+      // Get guide info - use first guide from guide_ids array or fall back to guide_id
+      const guideIds = getGuideIds(booking);
+      const guideInfo = guideIds.length > 0 ? allGuides.get(guideIds[0]) : null;
 
       // Collect all client phones for the guide
       let clientPhones: string[] = [];
@@ -1328,7 +1346,7 @@ export default function BookingDetailPage() {
           tourName: tour?.title || 'Tour',
           tourDate: booking.tour_datetime,
           message: infoMessage.trim(),
-          guideId: booking.guide_id,
+          guideId: guideIds.length > 0 ? guideIds[0] : null,
           guideName: guideInfo?.name || null,
           guideEmail: guideInfo?.Email || null,
           clientPhones,
@@ -1373,10 +1391,18 @@ export default function BookingDetailPage() {
       const newGuide = allGuides.get(selectedReassignGuide);
       if (!newGuide) throw new Error('Guide not found');
 
-      // Update the booking with the new guide
+      // Update the booking with the new guide - add to guide_ids array
+      const currentGuideIds = getGuideIds(booking);
+      const updatedGuideIds = currentGuideIds.includes(selectedReassignGuide)
+        ? currentGuideIds
+        : [...currentGuideIds, selectedReassignGuide];
+      
       const { error: updateError } = await supabase
         .from('tourbooking')
-        .update({ guide_id: selectedReassignGuide })
+        .update({ 
+          guide_ids: updatedGuideIds,
+          guide_id: selectedReassignGuide // Keep guide_id for backward compatibility
+        })
         .eq('id', booking.id);
 
       if (updateError) throw new Error('Failed to update booking');
@@ -1562,7 +1588,7 @@ export default function BookingDetailPage() {
           <CardContent className="py-4">
             <div className="flex flex-wrap items-center gap-3">
               {/* Send to Guide Assignment - redirects to guide choosing page */}
-              {!booking.guide_id && (
+              {getGuideIds(booking).length === 0 && (
                 <Button
                   onClick={() => router.push(`/${locale}/choose-guide/${booking.id}`)}
                   size="sm"
@@ -1629,8 +1655,8 @@ export default function BookingDetailPage() {
                   setInfoMessage('');
                   setSendInfoToGuideOpen(true);
                 }}
-                disabled={!booking.guide_id}
-                title={!booking.guide_id ? 'No guide assigned yet' : undefined}
+                disabled={getGuideIds(booking).length === 0}
+                title={getGuideIds(booking).length === 0 ? 'No guide assigned yet' : undefined}
               >
                 <User className="h-4 w-4" />
                 Send Info to Guide
@@ -2363,7 +2389,7 @@ export default function BookingDetailPage() {
               )}
 
               {/* Select New Guide Button - shown when all guides declined */}
-              {!booking.guide_id && allGuidesDeclined() && (
+              {getGuideIds(booking).length === 0 && allGuidesDeclined() && (
                 <div className="pt-3 border-t">
                   <div className="rounded-lg border border-red-200 bg-red-50 p-3 mb-3">
                     <p className="text-sm text-red-800">
@@ -3705,18 +3731,32 @@ export default function BookingDetailPage() {
 
             <div className="bg-muted/50 rounded-lg p-3 text-sm">
               <p className="text-xs text-muted-foreground mb-2">Will be sent via email to:</p>
-              {booking.guide_id && allGuides.get(booking.guide_id) ? (
-                <p className="text-sm font-medium">
-                  {allGuides.get(booking.guide_id)!.name}
-                  {allGuides.get(booking.guide_id)!.Email && (
-                    <span className="text-xs text-muted-foreground ml-2">
-                      ({allGuides.get(booking.guide_id)!.Email})
-                    </span>
-                  )}
-                </p>
-              ) : (
-                <p className="text-xs text-muted-foreground">No guide assigned</p>
-              )}
+              {(() => {
+                const guideIds = getGuideIds(booking);
+                if (guideIds.length > 0) {
+                  const firstGuide = allGuides.get(guideIds[0]);
+                  if (firstGuide) {
+                    return (
+                      <div className="space-y-1">
+                        {guideIds.map((guideId) => {
+                          const guide = allGuides.get(guideId);
+                          return guide ? (
+                            <p key={guideId} className="text-sm font-medium">
+                              {guide.name}
+                              {guide.Email && (
+                                <span className="text-xs text-muted-foreground ml-2">
+                                  ({guide.Email})
+                                </span>
+                              )}
+                            </p>
+                          ) : null;
+                        })}
+                      </div>
+                    );
+                  }
+                }
+                return <p className="text-xs text-muted-foreground">No guide assigned</p>;
+              })()}
             </div>
           </div>
 
@@ -3734,7 +3774,7 @@ export default function BookingDetailPage() {
             </Button>
             <Button
               onClick={handleSendInfoToGuide}
-              disabled={sendingInfo || !infoMessage.trim() || !booking.guide_id}
+              disabled={sendingInfo || !infoMessage.trim() || getGuideIds(booking).length === 0}
               className="bg-amber-600 hover:bg-amber-700"
             >
               {sendingInfo ? (

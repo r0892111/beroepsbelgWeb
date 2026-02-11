@@ -220,10 +220,10 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseServer();
     
-    // Get the booking with google_drive_link, status, and guide_id
+    // Get the booking with google_drive_link, status, and guide_ids
     const { data: booking, error: bookingError } = await supabase
       .from('tourbooking')
-      .select('id, google_drive_link, status, guide_id, pictureCount')
+      .select('id, google_drive_link, status, guide_id, guide_ids, pictureCount')
       .eq('id', parseInt(bookingId, 10))
       .single();
 
@@ -301,9 +301,15 @@ export async function POST(request: NextRequest) {
       .eq('id', parseInt(bookingId, 10));
 
     if (!updateError) {
-      // Update guide metrics when photos are uploaded
-      if (booking.guide_id) {
-        await updateGuideMetrics(booking.guide_id);
+      // Update guide metrics when photos are uploaded for all assigned guides
+      const guideIds = booking.guide_ids && booking.guide_ids.length > 0 
+        ? booking.guide_ids 
+        : booking.guide_id 
+          ? [booking.guide_id] 
+          : [];
+      
+      for (const guideId of guideIds) {
+        await updateGuideMetrics(guideId);
       }
     }
 

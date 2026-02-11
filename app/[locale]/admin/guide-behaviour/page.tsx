@@ -102,11 +102,10 @@ export default function AdminGuideBehaviourPage() {
         return;
       }
 
-      // Fetch all bookings with guide_id to calculate metrics
+      // Fetch all bookings with guide_ids or guide_id to calculate metrics
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('tourbooking')
-        .select('guide_id, picturesUploaded, pictureCount, isCustomerDetailsRequested, status, tour_datetime')
-        .not('guide_id', 'is', null);
+        .select('guide_id, guide_ids, picturesUploaded, pictureCount, isCustomerDetailsRequested, status, tour_datetime');
 
       if (bookingsError) {
         console.error('Failed to fetch bookings:', bookingsError);
@@ -134,33 +133,42 @@ export default function AdminGuideBehaviourPage() {
 
       // Calculate metrics from bookings
       bookingsData?.forEach(booking => {
-        if (!booking.guide_id) return;
+        // Get guide IDs from guide_ids array or fall back to guide_id
+        const guideIds = booking.guide_ids && booking.guide_ids.length > 0 
+          ? booking.guide_ids 
+          : booking.guide_id 
+            ? [booking.guide_id] 
+            : [];
         
-        const guideId = booking.guide_id;
-        const metrics = guideMetrics.get(guideId);
+        if (guideIds.length === 0) return;
         
-        if (!metrics) {
-          // Guide not found in our map, skip (shouldn't happen but safety check)
-          console.warn(`Guide ${guideId} not found in guides list`);
-          return;
-        }
-
-        // Count tours done (any booking with this guide_id counts as a tour)
-        metrics.tours_done += 1;
-
-        // Count photos taken (when picturesUploaded is true)
-        if (booking.picturesUploaded === true) {
-          metrics.photos_taken_frequency += 1;
-          // Add picture count if available
-          if (booking.pictureCount && typeof booking.pictureCount === 'number') {
-            metrics.photos_taken_amount += booking.pictureCount;
+        // Process each guide assigned to this booking
+        guideIds.forEach((guideId: number) => {
+          const metrics = guideMetrics.get(guideId);
+          
+          if (!metrics) {
+            // Guide not found in our map, skip (shouldn't happen but safety check)
+            console.warn(`Guide ${guideId} not found in guides list`);
+            return;
           }
-        }
 
-        // Count client info requests
-        if (booking.isCustomerDetailsRequested === true) {
-          metrics.requested_client_info += 1;
-        }
+          // Count tours done (any booking with this guide_id counts as a tour)
+          metrics.tours_done += 1;
+
+          // Count photos taken (when picturesUploaded is true)
+          if (booking.picturesUploaded === true) {
+            metrics.photos_taken_frequency += 1;
+            // Add picture count if available
+            if (booking.pictureCount && typeof booking.pictureCount === 'number') {
+              metrics.photos_taken_amount += booking.pictureCount;
+            }
+          }
+
+          // Count client info requests
+          if (booking.isCustomerDetailsRequested === true) {
+            metrics.requested_client_info += 1;
+          }
+        });
       });
 
       // Combine guide data with calculated metrics

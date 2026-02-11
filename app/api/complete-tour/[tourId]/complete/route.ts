@@ -50,10 +50,10 @@ export async function POST(
 
     const supabase = getSupabaseServer();
 
-    // Check if booking exists and get current status, picturesUploaded flag, and guide_id
+    // Check if booking exists and get current status, picturesUploaded flag, and guide_ids
     const { data: booking, error: bookingError } = await supabase
       .from('tourbooking')
-      .select('id, status, picturesUploaded, guide_id')
+      .select('id, status, picturesUploaded, guide_id, guide_ids')
       .eq('id', bookingIdNum)
       .single();
 
@@ -101,9 +101,15 @@ export async function POST(
       .eq('id', bookingIdNum);
 
     if (!updateError) {
-      // Update guide metrics when tour is completed
-      if (booking.guide_id) {
-        await updateGuideMetrics(booking.guide_id);
+      // Update guide metrics when tour is completed for all assigned guides
+      const guideIds = booking.guide_ids && booking.guide_ids.length > 0 
+        ? booking.guide_ids 
+        : booking.guide_id 
+          ? [booking.guide_id] 
+          : [];
+      
+      for (const guideId of guideIds) {
+        await updateGuideMetrics(guideId);
       }
     }
 

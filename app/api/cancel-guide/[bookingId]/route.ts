@@ -122,7 +122,7 @@ export async function POST(
     // Fetch current booking
     const { data: booking, error: bookingError } = await supabase
       .from('tourbooking')
-      .select('id, guide_id, selectedGuides, status')
+      .select('id, guide_id, guide_ids, selectedGuides, status')
       .eq('id', bookingIdNum)
       .single();
 
@@ -134,8 +134,15 @@ export async function POST(
       );
     }
 
+    // Get guide IDs from guide_ids array or fall back to guide_id for backward compatibility
+    const currentGuideIds = booking.guide_ids && booking.guide_ids.length > 0 
+      ? booking.guide_ids 
+      : booking.guide_id 
+        ? [booking.guide_id] 
+        : [];
+
     // Check if this guide is actually assigned to the booking
-    if (booking.guide_id !== guideId) {
+    if (!currentGuideIds.includes(guideId)) {
       return NextResponse.json(
         { error: 'This guide is not assigned to this booking' },
         { status: 400 }
@@ -182,23 +189,29 @@ export async function POST(
       console.log('Added new guide entry for id:', guideId);
     }
 
+    // Remove guide from guide_ids array
+    const updatedGuideIds = currentGuideIds.filter((id: number) => id !== guideId);
+    const newGuideId = updatedGuideIds.length > 0 ? updatedGuideIds[0] : null;
+
     console.log('Updating booking with:', {
       bookingIdNum,
-      guide_id: null,
+      guide_ids: updatedGuideIds,
+      guide_id: newGuideId,
       status: 'pending_guide_confirmation',
       selectedGuides: updatedSelectedGuides,
     });
 
-    // Update the booking - set guide_id to null
+    // Update the booking - remove guide from guide_ids array
     const { data: updateData, error: updateError } = await supabase
       .from('tourbooking')
       .update({
-        guide_id: null,
+        guide_ids: updatedGuideIds.length > 0 ? updatedGuideIds : null,
+        guide_id: newGuideId, // Keep guide_id for backward compatibility
         status: 'pending_guide_confirmation',
         selectedGuides: updatedSelectedGuides,
       })
       .eq('id', bookingIdNum)
-      .select('id, guide_id, status, selectedGuides')
+      .select('id, guide_id, guide_ids, status, selectedGuides')
       .single();
 
     if (updateError) {

@@ -51,7 +51,6 @@ export default function ChooseGuideClientPage() {
   const [loading, setLoading] = useState(true);
   const [selectedGuideId, setSelectedGuideId] = useState<number | null>(null);
   const [confirming, setConfirming] = useState(false);
-  const [confirmSuccess, setConfirmSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Note: We don't redirect anymore - we show sign-in prompt instead
@@ -190,7 +189,50 @@ export default function ChooseGuideClientPage() {
         throw new Error(data.error || 'Failed to confirm guide selection');
       }
 
-      setConfirmSuccess(true);
+      // Success - reset selection and reload guides to show updated status
+      setSelectedGuideId(null);
+      setError(null);
+      
+      // Reload guides to reflect the new selection status
+      const reloadResponse = await fetch(`/api/choose-guide/${bookingId}`, {
+        credentials: 'include',
+        headers: accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {},
+      });
+      
+      if (reloadResponse.ok) {
+        const reloadData = await reloadResponse.json();
+        const formattedGuides: Guide[] = (reloadData.guides || []).map((g: any) => ({
+          id: g.id,
+          name: g.name,
+          cities: g.cities,
+          languages: g.languages,
+          tour_types: g.tour_types,
+          content: g.content,
+          phonenumber: g.phonenumber,
+          Email: g.Email,
+          tours_done: g.tours_done,
+          relevance_score: g.relevance_score,
+          availability: g.availability,
+          profile_picture: g.profile_picture,
+          is_favourite: g.is_favourite,
+          selectionStatus: g.status || g.selectionStatus || null,
+          offeredAt: g.offeredAt || null,
+          respondedAt: g.respondedAt || null,
+        }));
+        
+        formattedGuides.sort((a, b) => {
+          const scoreA = a.relevance_score ?? 0;
+          const scoreB = b.relevance_score ?? 0;
+          if (scoreA !== scoreB) {
+            return scoreB - scoreA;
+          }
+          const nameA = a.name || '';
+          const nameB = b.name || '';
+          return nameA.localeCompare(nameB);
+        });
+        
+        setGuides(formattedGuides);
+      }
     } catch (err) {
       console.error('Error confirming guide:', err);
       setError(err instanceof Error ? err.message : 'Failed to confirm guide selection');
@@ -273,19 +315,6 @@ export default function ChooseGuideClientPage() {
   const declinedGuides = guides.filter(g => g.selectionStatus === 'declined');
   const offeredGuides = guides.filter(g => g.selectionStatus === 'offered');
 
-  if (confirmSuccess) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-        <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg text-center">
-          <CheckCircle2 className="mx-auto h-16 w-16 text-green-500" />
-          <h1 className="mt-4 text-2xl font-bold text-gray-900">Guide Selected Successfully</h1>
-          <p className="mt-2 text-gray-600">
-            The guide has been confirmed and the webhook has been triggered.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-8">
@@ -315,7 +344,7 @@ export default function ChooseGuideClientPage() {
         {guides.length > 0 ? (
           <div className="mb-8">
             <h2 className="mb-4 text-xl font-semibold text-gray-900">Available Guides</h2>
-            <p className="mb-4 text-sm text-gray-600">Select a guide for this booking (sorted by relevance)</p>
+            <p className="mb-4 text-sm text-gray-600">Select a guide for this booking (sorted by relevance). You can select multiple guides one at a time.</p>
             <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
               {guides.map((guide) => {
                 const isOffered = guide.selectionStatus === 'offered';

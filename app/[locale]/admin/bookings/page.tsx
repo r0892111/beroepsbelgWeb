@@ -31,6 +31,7 @@ interface SelectedGuide {
 interface TourBooking {
   id: number;
   guide_id: number | null;
+  guide_ids: number[] | null; // Array of guide IDs for multiple guides
   deal_id: string | null;
   status: string;
   invitees: Record<string, unknown>[] | null;
@@ -68,6 +69,7 @@ interface CreateBookingForm {
   customPrice: string; // Custom price per person (empty = use tour's default price)
   dealId: string; // TeamLeader deal ID (optional)
   invoiceId: string; // TeamLeader invoice ID (optional)
+  guideIds: number[]; // Array of guide IDs (optional)
   // Extra fees for op_maat tours
   requestTanguy: boolean;
   extraHour: boolean;
@@ -153,6 +155,7 @@ export default function AdminBookingsPage() {
     isPaid: false,
     dealId: '',
     invoiceId: '',
+    guideIds: [],
     requestTanguy: false,
     extraHour: false,
     weekendFee: false,
@@ -421,8 +424,11 @@ export default function AdminBookingsPage() {
           bValue = b.tour_datetime ? new Date(b.tour_datetime).getTime() : 0;
           break;
         case 'guide':
-          aValue = a.guide_id ? guides.get(a.guide_id)?.name || '' : '';
-          bValue = b.guide_id ? guides.get(b.guide_id)?.name || '' : '';
+          // Use first guide from guide_ids if available, otherwise use guide_id
+          const aGuideIds = a.guide_ids && a.guide_ids.length > 0 ? a.guide_ids : (a.guide_id ? [a.guide_id] : []);
+          const bGuideIds = b.guide_ids && b.guide_ids.length > 0 ? b.guide_ids : (b.guide_id ? [b.guide_id] : []);
+          aValue = aGuideIds.length > 0 ? guides.get(aGuideIds[0])?.name || '' : '';
+          bValue = bGuideIds.length > 0 ? guides.get(bGuideIds[0])?.name || '' : '';
           break;
         case 'status':
           aValue = a.status || '';
@@ -562,6 +568,7 @@ export default function AdminBookingsPage() {
       isPaid: false,
       dealId: '',
       invoiceId: '',
+      guideIds: [],
       requestTanguy: false,
       extraHour: false,
       weekendFee: false,
@@ -777,6 +784,13 @@ export default function AdminBookingsPage() {
       // If admin manually selected an invoice, use it (store in invoice_link)
       if (createForm.invoiceId) {
         tourbookingData.invoice_link = createForm.invoiceId;
+      }
+
+      // If admin manually selected guides, use them
+      if (createForm.guideIds && createForm.guideIds.length > 0) {
+        tourbookingData.guide_ids = createForm.guideIds;
+        // Also initialize selectedGuides with these guides
+        tourbookingData.selectedGuides = createForm.guideIds.map(id => ({ id }));
       }
 
       const { data: newBooking, error: bookingError } = await supabase
@@ -1303,44 +1317,62 @@ export default function AdminBookingsPage() {
                           {formatDateTime(booking.tour_datetime)}
                         </TableCell>
                         <TableCell>
-                          {booking.guide_id && guides.get(booking.guide_id) ? (
-                            <div className="text-sm font-medium">
-                              {guides.get(booking.guide_id)!.name}
-                            </div>
-                          ) : booking.guide_id ? (
-                            <span className="text-sm text-muted-foreground">Assigned</span>
-                          ) : needsNewGuide(booking) ? (
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-1 text-amber-600 text-xs">
-                                <AlertCircle className="h-3 w-3" />
-                                All guides declined
-                              </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleOpenGuideDialog(booking);
-                                }}
-                                className="h-7 text-xs"
-                              >
-                                <UserPlus className="h-3 w-3 mr-1" />
-                                Select New Guide
-                              </Button>
-                            </div>
-                          ) : (() => {
-                            const selectedGuides = (booking.selectedGuides || []).map(normalizeGuide);
-                            const pendingCount = selectedGuides.filter(g => g.status === 'offered').length;
-                            if (pendingCount > 0) {
+                          {(() => {
+                            // Show multiple guides if guide_ids exists, otherwise fall back to guide_id
+                            const guideIdsToShow = booking.guide_ids && booking.guide_ids.length > 0 
+                              ? booking.guide_ids 
+                              : booking.guide_id 
+                                ? [booking.guide_id] 
+                                : [];
+                            
+                            if (guideIdsToShow.length > 0) {
                               return (
-                                <div className="space-y-1">
-                                  <div className="text-xs text-muted-foreground">
-                                    Waiting for {pendingCount} guide(s)
-                                  </div>
+                                <div className="flex flex-wrap gap-1">
+                                  {guideIdsToShow.map((guideId) => {
+                                    const guide = guides.get(guideId);
+                                    return (
+                                      <Badge key={guideId} variant="outline" className="text-xs">
+                                        {guide?.name || `Guide #${guideId}`}
+                                      </Badge>
+                                    );
+                                  })}
                                 </div>
                               );
                             }
-                            return <span className="text-sm text-muted-foreground">-</span>;
+                            
+                            return needsNewGuide(booking) ? (
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-1 text-amber-600 text-xs">
+                                  <AlertCircle className="h-3 w-3" />
+                                  All guides declined
+                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenGuideDialog(booking);
+                                  }}
+                                  className="h-7 text-xs"
+                                >
+                                  <UserPlus className="h-3 w-3 mr-1" />
+                                  Select New Guide
+                                </Button>
+                              </div>
+                            ) : (() => {
+                              const selectedGuides = (booking.selectedGuides || []).map(normalizeGuide);
+                              const pendingCount = selectedGuides.filter(g => g.status === 'offered').length;
+                              if (pendingCount > 0) {
+                                return (
+                                  <div className="space-y-1">
+                                    <div className="text-xs text-muted-foreground">
+                                      Waiting for {pendingCount} guide(s)
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return <span className="text-sm text-muted-foreground">-</span>;
+                            })();
                           })()}
                         </TableCell>
                         <TableCell>
@@ -1755,6 +1787,68 @@ export default function AdminBookingsPage() {
                     ? 'Link this invitee to a TeamLeader invoice. Additional invitees can have different invoices.'
                     : 'Link this booking to an existing TeamLeader invoice.'
                   }
+                </p>
+              </div>
+            )}
+
+            {/* Guide Selection (Multiple) */}
+            {selectedTour && (
+              <div className="space-y-2">
+                <Label htmlFor="guideIds">Select Guides (optional)</Label>
+                <Select
+                  value=""
+                  onValueChange={(value) => {
+                    const guideId = parseInt(value, 10);
+                    if (!isNaN(guideId) && !createForm.guideIds.includes(guideId)) {
+                      setCreateForm({
+                        ...createForm,
+                        guideIds: [...createForm.guideIds, guideId]
+                      });
+                    }
+                  }}
+                >
+                  <SelectTrigger className="bg-white">
+                    <SelectValue placeholder="Add a guide..." />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {allGuides
+                      .filter(guide => !createForm.guideIds.includes(guide.id))
+                      .map((guide) => (
+                        <SelectItem key={guide.id} value={guide.id.toString()}>
+                          {guide.name || `Guide #${guide.id}`}
+                        </SelectItem>
+                      ))}
+                    {allGuides.filter(guide => !createForm.guideIds.includes(guide.id)).length === 0 && (
+                      <SelectItem value="" disabled>All guides selected</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                {createForm.guideIds.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {createForm.guideIds.map((guideId) => {
+                      const guide = allGuides.find(g => g.id === guideId);
+                      return (
+                        <Badge key={guideId} variant="secondary" className="flex items-center gap-1">
+                          {guide?.name || `Guide #${guideId}`}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCreateForm({
+                                ...createForm,
+                                guideIds: createForm.guideIds.filter(id => id !== guideId)
+                              });
+                            }}
+                            className="ml-1 hover:text-destructive"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Select one or more guides to assign to this booking. You can add multiple guides.
                 </p>
               </div>
             )}

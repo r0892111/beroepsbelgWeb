@@ -96,7 +96,7 @@ export async function POST(
     const supabase = getSupabaseServer();
     const { data: booking, error: bookingError } = await supabase
       .from('tourbooking')
-      .select('id, deal_id, guide_id, selectedGuides, status')
+      .select('id, deal_id, guide_id, guide_ids, selectedGuides, status')
       .eq('id', bookingId)
       .single();
 
@@ -107,16 +107,23 @@ export async function POST(
       );
     }
 
-    // Check if booking is already confirmed - confirmed means status is 'confirmed' AND guide_id is not null
-    if (booking.status === 'confirmed' && booking.guide_id !== null) {
+    // Get guide IDs from guide_ids array or fall back to guide_id for backward compatibility
+    const currentGuideIds = booking.guide_ids && booking.guide_ids.length > 0 
+      ? booking.guide_ids 
+      : booking.guide_id 
+        ? [booking.guide_id] 
+        : [];
+
+    // Check if booking is already confirmed - confirmed means status is 'confirmed' AND has guides assigned
+    if (booking.status === 'confirmed' && currentGuideIds.length > 0) {
       return NextResponse.json(
         { error: 'This assignment has already been confirmed and can no longer be modified.' },
         { status: 403 }
       );
     }
 
-    // Use guide_id from URL if provided, otherwise use booking's guide_id, otherwise find from selectedGuides
-    let finalGuideId = urlGuideId || booking.guide_id;
+    // Use guide_id from URL if provided, otherwise use first guide from guide_ids or guide_id, otherwise find from selectedGuides
+    let finalGuideId = urlGuideId || (currentGuideIds.length > 0 ? currentGuideIds[0] : null);
     
     // If guide_id is still null but we're accepting, try to find guide from selectedGuides
     // Look for a guide with status 'offered' (the one being accepted)
@@ -163,11 +170,17 @@ export async function POST(
       }
 
       // Only set status to 'confirmed' if guide_id is not null
+      // Update guide_ids array - add the accepted guide if not already present
+      const updatedGuideIds = currentGuideIds.includes(finalGuideId) 
+        ? currentGuideIds 
+        : [...currentGuideIds, finalGuideId];
+
       const { error: updateError } = await supabase
         .from('tourbooking')
         .update({ 
           status: 'confirmed', 
-          guide_id: finalGuideId, // This ensures guide_id is set
+          guide_ids: updatedGuideIds, // Use guide_ids array
+          guide_id: finalGuideId, // Keep guide_id for backward compatibility
           selectedGuides: updatedSelectedGuides,
         })
         .eq('id', booking.id);

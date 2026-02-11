@@ -65,7 +65,7 @@ export async function GET(
     // Fetch the booking by booking id (numeric ID)
     const { data: booking, error: bookingError } = await supabase
       .from('tourbooking')
-      .select('id, deal_id, guide_id, tour_id, city, tour_datetime, tour_end, status')
+      .select('id, deal_id, guide_id, guide_ids, tour_id, city, tour_datetime, tour_end, status')
       .eq('id', bookingId)
       .single();
 
@@ -76,9 +76,16 @@ export async function GET(
       );
     }
 
-    // Fetch guide details - use guide_id from URL if provided, otherwise use booking's guide_id
+    // Get guide IDs from guide_ids array or fall back to guide_id for backward compatibility
+    const currentGuideIds = booking.guide_ids && booking.guide_ids.length > 0 
+      ? booking.guide_ids 
+      : booking.guide_id 
+        ? [booking.guide_id] 
+        : [];
+
+    // Fetch guide details - use guide_id from URL if provided, otherwise use first guide from guide_ids or guide_id
     let guide = null;
-    const guideIdToFetch = urlGuideId || booking.guide_id;
+    const guideIdToFetch = urlGuideId || (currentGuideIds.length > 0 ? currentGuideIds[0] : null);
     if (guideIdToFetch) {
       const { data: guideData } = await supabase
         .from('guides_temp')
@@ -99,8 +106,8 @@ export async function GET(
       tour = tourData;
     }
 
-    // Check if booking is already confirmed - confirmed means status is 'confirmed' AND guide_id is not null
-    if (booking.status === 'confirmed' && booking.guide_id !== null) {
+    // Check if booking is already confirmed - confirmed means status is 'confirmed' AND has guides assigned
+    if (booking.status === 'confirmed' && currentGuideIds.length > 0) {
       return NextResponse.json(
         { error: 'This assignment has already been confirmed and is no longer accessible.' },
         { status: 403 }
@@ -111,7 +118,7 @@ export async function GET(
       booking: {
         id: booking.id,
         deal_id: booking.deal_id,
-        guide_id: urlGuideId || booking.guide_id, // Use guide_id from URL if provided
+        guide_id: urlGuideId || (currentGuideIds.length > 0 ? currentGuideIds[0] : null), // Use guide_id from URL if provided
         tour_id: booking.tour_id,
         city: booking.city,
         tour_datetime: booking.tour_datetime,
