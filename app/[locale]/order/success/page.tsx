@@ -169,12 +169,13 @@ export default function OrderSuccessPage() {
       }
 
       // Retry logic - sometimes the order takes a moment to be created/updated by webhook
-      let retries = 3;
-      let delay = 1000;
+      // Increased retries and delays to ensure database order is found
+      let retries = 10; // Increased from 3 to 10 retries
+      let delay = 2000; // Increased from 1000ms to 2000ms (2 seconds)
 
       const attemptFetch = async (): Promise<void> => {
         try {
-          console.log('Fetching order for session:', sessionId, `(attempt ${4 - retries}/3)`);
+          console.log('Fetching order for session:', sessionId, `(attempt ${11 - retries}/10)`);
 
           // Use Supabase client which handles RLS properly
           const { data, error } = await supabase
@@ -189,10 +190,15 @@ export default function OrderSuccessPage() {
           }
 
           if (data) {
-            console.log('Order found:', data);
+            console.log('✅ Order found in database:', {
+              order_id: data.id,
+              checkout_session_id: data.checkout_session_id,
+              customer_email: data.customer_email,
+              total_amount: data.total_amount,
+              item_count: data.items?.length || 0,
+            });
             console.log('Order items:', data.items);
             console.log('Order metadata:', data.metadata);
-            console.log('Items with productId:', data.items?.filter((i: any) => i.productId));
             setOrder(data);
             // Fetch product images after order is loaded
             await fetchProductImages(data);
@@ -210,12 +216,16 @@ export default function OrderSuccessPage() {
           }
 
           // No order found after all retries - try fetching from Stripe API as fallback
-          console.warn('Order not found in database after retries, attempting to fetch from Stripe API...');
+          // This should rarely happen - database order should be created by webhook
+          console.warn('⚠️ Order not found in database after all retries. This may indicate a webhook issue. Attempting Stripe API fallback...');
           try {
             const stripeResponse = await fetch(`/api/checkout-session/${sessionId}`);
             if (stripeResponse.ok) {
               const stripeData = await stripeResponse.json();
-              console.log('Fetched order data from Stripe API:', stripeData);
+              console.warn('⚠️ Using Stripe API fallback - database order not found. This should be investigated.', {
+                session_id: sessionId,
+                stripe_data: stripeData,
+              });
               // Transform Stripe data to match order format
               const transformedItems = (stripeData.allLineItems || []).map((item: any) => ({
                 title: item.name || 'Product',
