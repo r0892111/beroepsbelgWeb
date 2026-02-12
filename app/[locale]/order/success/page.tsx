@@ -209,8 +209,37 @@ export default function OrderSuccessPage() {
             return attemptFetch();
           }
 
-          // No order found after all retries
-          console.warn('Order not found after retries');
+          // No order found after all retries - try fetching from Stripe API as fallback
+          console.warn('Order not found in database after retries, attempting to fetch from Stripe API...');
+          try {
+            const stripeResponse = await fetch(`/api/checkout-session/${sessionId}`);
+            if (stripeResponse.ok) {
+              const stripeData = await stripeResponse.json();
+              console.log('Fetched order data from Stripe API:', stripeData);
+              // Transform Stripe data to match order format
+              const fallbackOrder = {
+                checkout_session_id: sessionId,
+                payment_status: stripeData.paymentStatus || 'paid',
+                customer_email: stripeData.customerEmail,
+                customer_name: stripeData.customerName,
+                amount_total: stripeData.amountTotal * 100, // Convert back to cents for display
+                total_amount: stripeData.amountTotal,
+                items: stripeData.allLineItems || [],
+                metadata: {
+                  promoCode: stripeData.promoCode,
+                  promoDiscountPercent: stripeData.promoDiscountPercent,
+                },
+                // Mark as fallback so user knows it's from Stripe, not DB
+                _isFallback: true,
+              };
+              setOrder(fallbackOrder);
+              await fetchProductImages(fallbackOrder);
+              setLoading(false);
+              return;
+            }
+          } catch (stripeError) {
+            console.error('Failed to fetch from Stripe API fallback:', stripeError);
+          }
           setLoading(false);
         } catch (error) {
           console.error('Error fetching order:', error);

@@ -1163,12 +1163,25 @@ async function handleEvent(event: Stripe.Event) {
             } else {
               // Calculate unit price (amount_total is already the line total, so divide by quantity)
               const quantity = item.quantity ?? 1;
-              const unitPrice = ((item.amount_subtotal ?? item.amount_total ?? 0) / 100) / quantity; 
+              const unitPrice = ((item.amount_subtotal ?? item.amount_total ?? 0) / 100) / quantity;
+              
+              // Extract Stripe product ID from line item
+              let stripeProductId: string | null = null;
+              if (item.price && typeof item.price === 'object' && 'product' in item.price) {
+                const product = item.price.product;
+                if (typeof product === 'string') {
+                  stripeProductId = product;
+                } else if (typeof product === 'object' && product && 'id' in product) {
+                  stripeProductId = product.id as string;
+                }
+              }
+              
               productItems.push({
                 title: itemNameStr || 'Product',
                 quantity: quantity,
                 price: unitPrice,
-                productId: productIds[productIndex] || null, // Include product ID if available
+                productId: productIds[productIndex] || stripeProductId || null, // Prefer metadata productId, fallback to Stripe product ID
+                stripeProductId: stripeProductId, // Also store Stripe product ID separately
               });
               productIndex++;
             }
@@ -1236,17 +1249,278 @@ async function handleEvent(event: Stripe.Event) {
 
         console.info('Inserting webshop order:', JSON.stringify(orderInsert, null, 2));
 
-        // Insert the order (checkout no longer creates it due to NOT NULL constraints)
-        const { data: order, error: orderError } = await supabase
-          .from('stripe_orders')
-          .insert(orderInsert)
-          .select()
-          .single();
+        // Insert the order with retry logic (checkout no longer creates it due to NOT NULL constraints)
+        let order: any = null;
+        let orderError: any = null;
+        const maxRetries = 3;
+        let retryCount = 0;
+
+        while (retryCount < maxRetries) {
+          const { data, error } = await supabase
+            .from('stripe_orders')
+            .insert(orderInsert)
+            .select()
+            .single();
+
+          if (error) {
+            orderError = error;
+            // Check if it's a duplicate key error (order already exists)
+            if (error.code === '23505' || error.message?.includes('duplicate') || error.message?.includes('unique')) {
+              console.warn(`Order already exists for session ${sessionId}, fetching existing order...`);
+              // Try to fetch the existing order
+              const { data: existingOrder } = await supabase
+                .from('stripe_orders')
+                .select('*')
+                .eq('checkout_session_id', sessionId)
+                .single();
+              if (existingOrder) {
+                order = existingOrder;
+                orderError = null;
+                console.info(`Found existing order: ${existingOrder.id}`);
+                break;
+              }
+            }
+            
+            retryCount++;
+            if (retryCount < maxRetries) {
+              const delay = 1000 * retryCount; // 1s, 2s, 3s
+              console.warn(`Order insert failed, retrying in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})...`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+              continue;
+            }
+          } else {
+            order = data;
+            orderError = null;
+            break;
+          }
+        }
 
         if (orderError) {
-          console.error('Error creating webshop order:', orderError);
+          console.error('❌ CRITICAL: Error creating webshop order after retries:', {
+            error: orderError,
+            error_message: orderError.message,
+            error_code: orderError.code,
+            error_details: orderError.details,
+            session_id: sessionId,
+            order_data: orderInsert,
+            retries: retryCount,
+          });
+          // Don't continue if order creation failed - this is critical
+          // The order must exist in database for the success page to work
+          return;
         } else {
-          console.info(`Successfully created webshop order for session: ${sessionId}, order ID: ${order.id}`);
+          console.info(`✅ Successfully created/found webshop order for session: ${sessionId}, order ID: ${order.id}`);
+
+          // Create order in Stoqflow
+          try {
+            const stoqflowClientId = Deno.env.get('STOQFLOW_CLIENT_ID');
+            const stoqflowClientSecret = Deno.env.get('STOQFLOW_CLIENT_SECRET');
+            const stoqflowShopId = Deno.env.get('STOQFLOW_SHOP_ID');
+            const stoqflowBaseUrl = Deno.env.get('STOQFLOW_BASE_URL');
+
+            if (stoqflowClientId && stoqflowClientSecret && stoqflowShopId && stoqflowBaseUrl) {
+              console.info('[Stoqflow] Creating order in Stoqflow for webshop order');
+              
+              // Create Basic Auth header
+              const credentials = `${stoqflowClientId}:${stoqflowClientSecret}`;
+              const basicAuth = btoa(credentials);
+              const apiBaseUrl = `${stoqflowBaseUrl}/api/v2`;
+
+              // Look up Stoqflow product IDs from Stripe product IDs
+              // We generate SKU from Stripe product ID in a consistent way, so we can search by SKU
+              const stoqflowOrderItems: any[] = [];
+              
+              // Helper function to generate SKU from Stripe product ID (same as in sync function)
+              const generateSKU = (stripeProductId: string): string => {
+                const productId = stripeProductId || '';
+                if (!productId) {
+                  return `STR${Date.now().toString().slice(-10)}`;
+                }
+                let sku = productId.replace(/[^a-zA-Z0-9]/g, '').substring(0, 50);
+                if (sku.length < 3) {
+                  sku = `STR${sku}`.substring(0, 50);
+                }
+                sku = sku.replace(/::/g, '-').replace(/\|\|/g, '-');
+                return sku;
+              };
+              
+              for (const item of productItems) {
+                // Prefer stripeProductId for lookup, fallback to productId
+                const productIdToUse = (item as any).stripeProductId || item.productId;
+                
+                if (productIdToUse) {
+                  // Try to find Stoqflow product by SKU (generated from Stripe product ID)
+                  try {
+                    // Check if productId looks like a Stoqflow ID (base58 format, ~17 chars)
+                    const looksLikeStoqflowId = /^[23456789ABCDEFGHJKLMNPQRSTWXYZabcdefghijkmnopqrstuvwxyz]{15,20}$/.test(productIdToUse);
+                    
+                    if (looksLikeStoqflowId) {
+                      // Assume it's already a Stoqflow product ID
+                      stoqflowOrderItems.push({
+                        product_id: productIdToUse,
+                        quantity: item.quantity || 1,
+                      });
+                      console.info(`[Stoqflow] Using product_id directly (looks like Stoqflow ID): ${productIdToUse}`);
+                    } else {
+                      // It's a Stripe product ID - generate SKU and search for product
+                      const sku = generateSKU(productIdToUse);
+                      console.info(`[Stoqflow] Looking up product by SKU: ${sku} (from Stripe product: ${productIdToUse})`);
+                      
+                      // Search for product by SKU
+                      const productSearchRes = await fetch(`${apiBaseUrl}/products?sku=${encodeURIComponent(sku)}&fields=*`, {
+                        method: 'GET',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Basic ${basicAuth}`,
+                        },
+                      });
+                      
+                      if (productSearchRes.ok) {
+                        const productData = await productSearchRes.json();
+                        if (Array.isArray(productData) && productData.length > 0) {
+                          const stoqflowProduct = productData[0];
+                          stoqflowOrderItems.push({
+                            product_id: stoqflowProduct._id,
+                            quantity: item.quantity || 1,
+                          });
+                          console.info(`[Stoqflow] Found product: ${stoqflowProduct._id} (SKU: ${sku})`);
+                        } else {
+                          // Product not found - create order item without product_id
+                          console.warn(`[Stoqflow] Product not found for SKU ${sku}, creating order item without product_id`);
+                          stoqflowOrderItems.push({
+                            quantity: item.quantity || 1,
+                          });
+                        }
+                      } else {
+                        console.warn(`[Stoqflow] Failed to search for product by SKU ${sku}: ${productSearchRes.status}`);
+                        stoqflowOrderItems.push({
+                          quantity: item.quantity || 1,
+                        });
+                      }
+                    }
+                  } catch (lookupErr: any) {
+                    console.warn(`[Stoqflow] Failed to lookup product for ${productIdToUse}:`, lookupErr.message);
+                    // Add item without product_id
+                    stoqflowOrderItems.push({
+                      quantity: item.quantity || 1,
+                    });
+                  }
+                } else {
+                  // No product ID - add item without product_id
+                  stoqflowOrderItems.push({
+                    quantity: item.quantity || 1,
+                  });
+                }
+              }
+
+              if (stoqflowOrderItems.length === 0) {
+                console.warn('[Stoqflow] No order items to sync, skipping Stoqflow order creation');
+              } else {
+                // Prepare client_info from shipping address
+                const clientInfo: any = {};
+                if (shippingAddress) {
+                  clientInfo.name = shippingAddress.name || orderInsert.customer_name || 'Guest';
+                  clientInfo.address_1 = shippingAddress.street || '';
+                  clientInfo.address_2 = shippingAddress.street2 || '';
+                  clientInfo.city = shippingAddress.city || '';
+                  clientInfo.postal_code = shippingAddress.postalCode || '';
+                  clientInfo.country = shippingAddress.country || 'BE';
+                } else {
+                  clientInfo.name = orderInsert.customer_name || 'Guest';
+                  clientInfo.country = 'BE';
+                }
+                clientInfo.email = orderInsert.customer_email || '';
+
+                // Create order payload according to Stoqflow API v2
+                const stoqflowPayload: any = {
+                  shop_id: stoqflowShopId,
+                  status: 'ready-to-pick',
+                  type_of_goods: 'commercial-goods', // Changed from 'gift' to 'commercial-goods' for webshop orders
+                  order_items: stoqflowOrderItems,
+                  client_info: clientInfo,
+                  // Store Stripe order reference in origin
+                  origin: {
+                    id: sessionId,
+                    number: order.id?.toString() || sessionId,
+                  },
+                  // Add notes with order reference
+                  notes: `Stripe Order: ${sessionId} | Customer: ${orderInsert.customer_email}`,
+                };
+
+                // If we have a client_id from environment, use it (otherwise Stoqflow will create/find client from client_info)
+                const stoqflowOrderClientId = Deno.env.get('STOQFLOW_ORDER_CLIENT_ID');
+                if (stoqflowOrderClientId) {
+                  stoqflowPayload.client_id = stoqflowOrderClientId;
+                }
+
+                console.info('[Stoqflow] Creating order:', {
+                  shop_id: stoqflowShopId,
+                  item_count: stoqflowOrderItems.length,
+                  session_id: sessionId,
+                  has_client_id: !!stoqflowOrderClientId,
+                });
+
+                const stoqflowRes = await fetch(`${apiBaseUrl}/orders`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Basic ${basicAuth}`,
+                  },
+                  body: JSON.stringify(stoqflowPayload),
+                });
+
+                if (stoqflowRes.ok) {
+                  const stoqflowData = await stoqflowRes.json();
+                  console.info('[Stoqflow] Order created successfully:', {
+                    stoqflow_order_id: stoqflowData._id,
+                    session_id: sessionId,
+                  });
+                  
+                  // Optionally update the stripe_orders record with Stoqflow order ID
+                  if (stoqflowData._id && order?.id) {
+                    await supabase
+                      .from('stripe_orders')
+                      .update({ 
+                        metadata: {
+                          ...orderInsert.metadata,
+                          stoqflow_order_id: stoqflowData._id,
+                        }
+                      })
+                      .eq('id', order.id);
+                  }
+                } else {
+                  const errorText = await stoqflowRes.text();
+                  let errorMessage = errorText;
+                  try {
+                    const errorJson = JSON.parse(errorText);
+                    errorMessage = errorJson.message || errorJson.error || errorText;
+                  } catch {
+                    // Keep original error text
+                  }
+                  console.error('[Stoqflow] Failed to create order:', {
+                    status: stoqflowRes.status,
+                    statusText: stoqflowRes.statusText,
+                    error: errorMessage,
+                    session_id: sessionId,
+                  });
+                }
+              }
+            } else {
+              console.warn('[Stoqflow] Missing environment variables, skipping Stoqflow order creation', {
+                hasClientId: !!stoqflowClientId,
+                hasClientSecret: !!stoqflowClientSecret,
+                hasShopId: !!stoqflowShopId,
+                hasBaseUrl: !!stoqflowBaseUrl,
+              });
+            }
+          } catch (err: any) {
+            console.error('[Stoqflow] Error creating order:', {
+              error: err.message,
+              error_type: err?.constructor?.name,
+              session_id: sessionId,
+            });
+            // Don't fail the webhook if Stoqflow fails - order is already created in database
+          }
         }
 
         // Call N8N webhook for order confirmation
