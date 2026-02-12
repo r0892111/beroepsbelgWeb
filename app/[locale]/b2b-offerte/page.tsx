@@ -1143,7 +1143,7 @@ export default function B2BQuotePage() {
                   <div>
                     <Label htmlFor="tour" className="flex items-center gap-2 text-base font-semibold text-navy">
                       <Building2 className="h-5 w-5" style={{ color: 'var(--brass)' }} />
-                      {selectedLecture ? t('lectureLabel') : t('tourLabel')}
+                      {selectedLecture ? t('lectureLabel') : selectedTour ? t('tourLabel') : t('lectureTourLabel')}
                     </Label>
                     <Select value={selectedTourId} onValueChange={(value) => setValue('tourId', value)}>
                       <SelectTrigger className="mt-2">

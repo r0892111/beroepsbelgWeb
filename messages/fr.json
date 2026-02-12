@@ -590,6 +590,7 @@
     "selectCity": "Sélectionnez une ville",
     "tourLabel": "Visite*",
     "lectureLabel": "Conférence*",
+    "lectureTourLabel": "Conférence / Visite*",
     "viewAllTours": "Voir toutes les visites",
     "languageLabel": "Langue de la visite*",
     "selectLanguage": "Sélectionnez une langue",
