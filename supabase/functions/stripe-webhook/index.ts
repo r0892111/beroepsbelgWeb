@@ -1295,6 +1295,9 @@ async function handleEvent(event: Stripe.Event) {
           }
         }
 
+        // Variable to store Stoqflow order ID for N8N webhook
+        let stoqflowOrderId: string | null = null;
+
         if (orderError) {
           console.error('❌ CRITICAL: Error creating webshop order after retries:', {
             error: orderError,
@@ -1413,10 +1416,12 @@ async function handleEvent(event: Stripe.Event) {
                 }
               }
 
+              // Ensure we have at least one order item (required by API)
               if (stoqflowOrderItems.length === 0) {
                 console.warn('[Stoqflow] No order items to sync, skipping Stoqflow order creation');
               } else {
                 // Prepare client_info from shipping address
+                // According to API: if only client_info is provided, Stoqflow will try to find/create client
                 const clientInfo: any = {};
                 if (shippingAddress) {
                   clientInfo.name = shippingAddress.name || orderInsert.customer_name || 'Guest';
@@ -1431,33 +1436,62 @@ async function handleEvent(event: Stripe.Event) {
                 }
                 clientInfo.email = orderInsert.customer_email || '';
 
-                // Create order payload according to Stoqflow API v2
+                // Prepare notes (max 500 characters according to API)
+                const notesText = `Stripe Order: ${sessionId} | Customer: ${orderInsert.customer_email}`;
+                const notes = notesText.length > 500 ? notesText.substring(0, 497) + '...' : notesText;
+
+                // Create order payload according to Stoqflow API v2 documentation
+                // Required fields: shop_id, order_items (non-empty array)
                 const stoqflowPayload: any = {
-                  shop_id: stoqflowShopId,
-                  status: 'ready-to-pick',
-                  type_of_goods: 'commercial-goods', // Changed from 'gift' to 'commercial-goods' for webshop orders
-                  order_items: stoqflowOrderItems,
-                  client_info: clientInfo,
-                  // Store Stripe order reference in origin
-                  origin: {
-                    id: sessionId,
-                    number: order.id?.toString() || sessionId,
-                  },
-                  // Add notes with order reference
-                  notes: `Stripe Order: ${sessionId} | Customer: ${orderInsert.customer_email}`,
+                  shop_id: stoqflowShopId, // Required
+                  order_items: stoqflowOrderItems, // Required, non-empty array
                 };
 
-                // If we have a client_id from environment, use it (otherwise Stoqflow will create/find client from client_info)
+                // Optional fields
+                // Status: "concept", "awaiting-payment", "ready-to-pick", "on-hold" (default: "concept")
+                // Use "ready-to-pick" since payment is already completed
+                stoqflowPayload.status = 'ready-to-pick';
+
+                // Type of goods: "gift", "documents", "commercial-goods", "commercial-sample", "returned-goods"
+                stoqflowPayload.type_of_goods = 'commercial-goods';
+
+                // Client handling: if client_id provided, use it; otherwise use client_info
                 const stoqflowOrderClientId = Deno.env.get('STOQFLOW_ORDER_CLIENT_ID');
                 if (stoqflowOrderClientId) {
+                  // If client_id is provided, Stoqflow will use existing client and overwrite client_info
                   stoqflowPayload.client_id = stoqflowOrderClientId;
+                } else {
+                  // If only client_info provided, Stoqflow will find/create client based on email/vat
+                  stoqflowPayload.client_info = clientInfo;
                 }
 
-                console.info('[Stoqflow] Creating order:', {
+                // Origin: identifiers for connected platforms (Stripe in this case)
+                stoqflowPayload.origin = {
+                  id: sessionId, // Stripe checkout session ID
+                  number: order.id?.toString() || sessionId, // Order number reference
+                };
+
+                // Notes: max 500 characters
+                stoqflowPayload.notes = notes;
+
+                // Validate payload before sending
+                if (!stoqflowShopId) {
+                  throw new Error('STOQFLOW_SHOP_ID is required but not set');
+                }
+                if (!Array.isArray(stoqflowOrderItems) || stoqflowOrderItems.length === 0) {
+                  throw new Error('order_items must be a non-empty array');
+                }
+
+                console.info('[Stoqflow] Creating order with payload:', {
                   shop_id: stoqflowShopId,
                   item_count: stoqflowOrderItems.length,
-                  session_id: sessionId,
+                  items_with_product_id: stoqflowOrderItems.filter((item: any) => item.product_id).length,
+                  items_without_product_id: stoqflowOrderItems.filter((item: any) => !item.product_id).length,
+                  status: stoqflowPayload.status,
+                  type_of_goods: stoqflowPayload.type_of_goods,
                   has_client_id: !!stoqflowOrderClientId,
+                  has_client_info: !!stoqflowPayload.client_info,
+                  session_id: sessionId,
                 });
 
                 const stoqflowRes = await fetch(`${apiBaseUrl}/orders`, {
@@ -1471,19 +1505,20 @@ async function handleEvent(event: Stripe.Event) {
 
                 if (stoqflowRes.ok) {
                   const stoqflowData = await stoqflowRes.json();
+                  stoqflowOrderId = stoqflowData._id;
                   console.info('[Stoqflow] Order created successfully:', {
-                    stoqflow_order_id: stoqflowData._id,
+                    stoqflow_order_id: stoqflowOrderId,
                     session_id: sessionId,
                   });
                   
-                  // Optionally update the stripe_orders record with Stoqflow order ID
-                  if (stoqflowData._id && order?.id) {
+                  // Update the stripe_orders record with Stoqflow order ID
+                  if (stoqflowOrderId && order?.id) {
                     await supabase
                       .from('stripe_orders')
                       .update({ 
                         metadata: {
                           ...orderInsert.metadata,
-                          stoqflow_order_id: stoqflowData._id,
+                          stoqflow_order_id: stoqflowOrderId,
                         }
                       })
                       .eq('id', order.id);
@@ -1491,17 +1526,29 @@ async function handleEvent(event: Stripe.Event) {
                 } else {
                   const errorText = await stoqflowRes.text();
                   let errorMessage = errorText;
+                  let errorDetails: any = null;
+                  
                   try {
                     const errorJson = JSON.parse(errorText);
                     errorMessage = errorJson.message || errorJson.error || errorText;
+                    errorDetails = errorJson;
                   } catch {
-                    // Keep original error text
+                    // Keep original error text if not JSON
                   }
-                  console.error('[Stoqflow] Failed to create order:', {
+                  
+                  console.error('[Stoqflow] ❌ Failed to create order:', {
                     status: stoqflowRes.status,
                     statusText: stoqflowRes.statusText,
                     error: errorMessage,
+                    error_details: errorDetails,
                     session_id: sessionId,
+                    payload_summary: {
+                      shop_id: stoqflowPayload.shop_id,
+                      item_count: stoqflowOrderItems.length,
+                      status: stoqflowPayload.status,
+                      has_client_id: !!stoqflowPayload.client_id,
+                      has_client_info: !!stoqflowPayload.client_info,
+                    },
                   });
                 }
               }
@@ -1550,6 +1597,8 @@ async function handleEvent(event: Stripe.Event) {
             // Promo code info for invoice creation
             promoCode: webshopPromoCode,
             promoDiscountPercent: webshopPromoDiscountPercent,
+            // Stoqflow integration
+            stoqflow_order_id: stoqflowOrderId || null, // Stoqflow order ID if created successfully
           },
         };
 

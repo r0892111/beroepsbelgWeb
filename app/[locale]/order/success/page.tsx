@@ -217,17 +217,29 @@ export default function OrderSuccessPage() {
               const stripeData = await stripeResponse.json();
               console.log('Fetched order data from Stripe API:', stripeData);
               // Transform Stripe data to match order format
+              const transformedItems = (stripeData.allLineItems || []).map((item: any) => ({
+                title: item.name || 'Product',
+                quantity: item.quantity || 1,
+                price: item.unitPrice || item.totalPrice || 0, // Use unitPrice, fallback to totalPrice
+                total: item.totalPrice || (item.unitPrice || 0) * (item.quantity || 1),
+                isShipping: item.isShipping || false,
+              }));
+
               const fallbackOrder = {
                 checkout_session_id: sessionId,
                 payment_status: stripeData.paymentStatus || 'paid',
+                status: 'completed',
                 customer_email: stripeData.customerEmail,
                 customer_name: stripeData.customerName,
-                amount_total: stripeData.amountTotal * 100, // Convert back to cents for display
-                total_amount: stripeData.amountTotal,
-                items: stripeData.allLineItems || [],
+                amount_total: stripeData.amountTotal ? stripeData.amountTotal * 100 : 0, // Convert to cents
+                total_amount: stripeData.amountTotal || 0, // In euros
+                items: transformedItems,
                 metadata: {
                   promoCode: stripeData.promoCode,
                   promoDiscountPercent: stripeData.promoDiscountPercent,
+                  product_subtotal: stripeData.productSubtotal || 0,
+                  discount_amount: stripeData.discountAmount || 0,
+                  shipping_cost: stripeData.shippingItems?.reduce((sum: number, item: any) => sum + (item.totalPrice || 0), 0) || 0,
                 },
                 // Mark as fallback so user knows it's from Stripe, not DB
                 _isFallback: true,
@@ -432,7 +444,9 @@ export default function OrderSuccessPage() {
                   </div>
                   <div>
                     <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('orderId')}</p>
-                    <p className="font-mono font-semibold" style={{ color: 'var(--text-primary)' }}>{String(order.id).slice(0, 8)}</p>
+                    <p className="font-mono font-semibold" style={{ color: 'var(--text-primary)' }}>
+                      {order.id ? String(order.id).slice(0, 8) : order.checkout_session_id?.slice(0, 8) || 'N/A'}
+                    </p>
                   </div>
                 </div>
                 <span
@@ -517,11 +531,15 @@ export default function OrderSuccessPage() {
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate" style={{ color: 'var(--text-primary)' }}>{item.title}</p>
-                          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('quantity')}: {item.quantity}</p>
+                          <p className="font-medium text-sm truncate" style={{ color: 'var(--text-primary)' }}>
+                            {item.title || item.name || 'Product'}
+                          </p>
+                          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                            {t('quantity')}: {item.quantity || 1}
+                          </p>
                         </div>
                         <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-                          €{(item.price * item.quantity).toFixed(2)}
+                          €{((item.price || 0) * (item.quantity || 0)).toFixed(2)}
                         </p>
                       </div>
                     );
@@ -539,13 +557,13 @@ export default function OrderSuccessPage() {
 
                 // Calculate product subtotal (use stored value or calculate from items excluding shipping)
                 const productSubtotal = order.metadata?.product_subtotal ??
-                  order.items?.filter((item: any) => !isShippingItem(item))
-                    .reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0) ?? 0;
+                  (order.items?.filter((item: any) => !isShippingItem(item))
+                    .reduce((sum: number, item: any) => sum + ((item.price || 0) * (item.quantity || 0)), 0) ?? 0);
 
                 const discountAmount = order.metadata?.discount_amount ?? 0;
                 const shippingCost = order.metadata?.shipping_cost ??
-                  order.items?.filter((item: any) => isShippingItem(item))
-                    .reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0) ?? 0;
+                  (order.items?.filter((item: any) => isShippingItem(item))
+                    .reduce((sum: number, item: any) => sum + ((item.price || 0) * (item.quantity || 0)), 0) ?? 0);
 
                 return (
                   <div className="pt-4 border-t space-y-2" style={{ borderColor: 'var(--border-light)' }}>
@@ -575,7 +593,15 @@ export default function OrderSuccessPage() {
                     >
                       <span className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{t('total')}</span>
                       <span className="text-xl font-bold" style={{ color: 'var(--primary-base)' }}>
-                        €{order.total_amount.toFixed(2)}
+                        €{(() => {
+                          if (order.total_amount != null) {
+                            return order.total_amount.toFixed(2);
+                          }
+                          if (order.amount_total != null) {
+                            return (order.amount_total / 100).toFixed(2);
+                          }
+                          return (productSubtotal - discountAmount + shippingCost).toFixed(2);
+                        })()}
                       </span>
                     </div>
                   </div>
