@@ -121,6 +121,7 @@ interface TourBooking {
   invoice_link: string | null;
   start_location: string | null;
   end_location: string | null;
+  ai_desc: string | null;
 }
 
 interface TeamLeaderInvoice {
