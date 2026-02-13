@@ -28,11 +28,9 @@ export default function AdminDashboardPage() {
   const [googleConnected, setGoogleConnected] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleConnectInFlight, setGoogleConnectInFlight] = useState(false);
-  const [goedgepicktConnected, setGoedgepicktConnected] = useState(false);
-  const [goedgepicktLoading, setGoedgepicktLoading] = useState(false);
-  const [goedgepicktDialogOpen, setGoedgepicktDialogOpen] = useState(false);
-  const [goedgepicktApiKey, setGoedgepicktApiKey] = useState('');
-  const [goedgepicktTesting, setGoedgepicktTesting] = useState(false);
+  const [stoqflowConnected, setStoqflowConnected] = useState(false);
+  const [stoqflowLoading, setStoqflowLoading] = useState(false);
+  const [stoqflowError, setStoqflowError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
@@ -103,21 +101,22 @@ export default function AdminDashboardPage() {
     }
   }, [user?.id]);
 
-  const fetchGoedgepicktConnection = useCallback(async () => {
+  const fetchStoqflowConnection = useCallback(async () => {
     if (!user?.id) {
-      setGoedgepicktConnected(false);
+      setStoqflowConnected(false);
       return;
     }
 
-    setGoedgepicktLoading(true);
+    setStoqflowLoading(true);
+    setStoqflowError(null);
     try {
       const accessToken = (await supabase.auth.getSession()).data.session?.access_token;
       if (!accessToken) {
-        setGoedgepicktConnected(false);
+        setStoqflowConnected(false);
         return;
       }
 
-      const response = await fetch('/api/goedgepickt', {
+      const response = await fetch('/api/stoqflow', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -125,16 +124,21 @@ export default function AdminDashboardPage() {
       });
 
       if (!response.ok) {
-        setGoedgepicktConnected(false);
+        setStoqflowConnected(false);
+        setStoqflowError('Failed to check connection status');
         return;
       }
 
       const data = await response.json();
-      setGoedgepicktConnected(data.connected || false);
+      setStoqflowConnected(data.connected || false);
+      if (data.error) {
+        setStoqflowError(data.error);
+      }
     } catch (error) {
-      setGoedgepicktConnected(false);
+      setStoqflowConnected(false);
+      setStoqflowError('Failed to check connection status');
     } finally {
-      setGoedgepicktLoading(false);
+      setStoqflowLoading(false);
     }
   }, [user?.id]);
 
@@ -142,8 +146,8 @@ export default function AdminDashboardPage() {
     if (!user) return;
     void fetchTeamleaderIntegration();
     void fetchGoogleConnection();
-    void fetchGoedgepicktConnection();
-  }, [user, fetchTeamleaderIntegration, fetchGoogleConnection, fetchGoedgepicktConnection]);
+    void fetchStoqflowConnection();
+  }, [user, fetchTeamleaderIntegration, fetchGoogleConnection, fetchStoqflowConnection]);
 
   useEffect(() => {
     if (!user) return;
@@ -348,132 +352,9 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleGoedgepicktConnect = () => {
-    setGoedgepicktApiKey('');
-    setGoedgepicktDialogOpen(true);
-  };
-
-  const handleGoedgepicktTest = async () => {
-    if (!goedgepicktApiKey.trim()) {
-      setFeedbackMessage('Please enter an API key');
-      return;
-    }
-
-    setGoedgepicktTesting(true);
-    try {
-      const accessToken = (await supabase.auth.getSession()).data.session?.access_token;
-      if (!accessToken) {
-        setFeedbackMessage('Authentication required');
-        return;
-      }
-
-      const response = await fetch('/api/goedgepickt', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          action: 'test',
-          apiKey: goedgepicktApiKey.trim(),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setFeedbackMessage('API key is valid!');
-      } else {
-        setFeedbackMessage(data.error || 'Invalid API key');
-      }
-    } catch (error) {
-      setFeedbackMessage('Failed to test API key');
-    } finally {
-      setGoedgepicktTesting(false);
-    }
-  };
-
-  const handleGoedgepicktSave = async () => {
-    if (!goedgepicktApiKey.trim()) {
-      setFeedbackMessage('Please enter an API key');
-      return;
-    }
-
-    setGoedgepicktTesting(true);
-    try {
-      const accessToken = (await supabase.auth.getSession()).data.session?.access_token;
-      if (!accessToken) {
-        setFeedbackMessage('Authentication required');
-        return;
-      }
-
-      const response = await fetch('/api/goedgepickt', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          action: 'save',
-          apiKey: goedgepicktApiKey.trim(),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setFeedbackMessage(t('goedgepicktSuccess') || 'GoedGepickt API key saved successfully!');
-        setGoedgepicktDialogOpen(false);
-        setGoedgepicktApiKey('');
-        void fetchGoedgepicktConnection();
-      } else {
-        setFeedbackMessage(data.error || t('goedgepicktInvalidKey') || 'Invalid API key');
-      }
-    } catch (error) {
-      setFeedbackMessage('Failed to save API key');
-    } finally {
-      setGoedgepicktTesting(false);
-    }
-  };
-
-  const handleGoedgepicktDisconnect = async () => {
-    if (!confirm('Are you sure you want to disconnect GoedGepickt?')) {
-      return;
-    }
-
-    setFeedbackMessage(null);
-    setGoedgepicktLoading(true);
-    try {
-      const accessToken = (await supabase.auth.getSession()).data.session?.access_token;
-      if (!accessToken) {
-        setFeedbackMessage('Authentication required');
-        return;
-      }
-
-      const response = await fetch('/api/goedgepickt', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          action: 'delete',
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setFeedbackMessage(t('goedgepicktDisconnectSuccess') || 'GoedGepickt disconnected successfully.');
-        setGoedgepicktConnected(false);
-      } else {
-        setFeedbackMessage(data.error || t('goedgepicktDisconnectError') || 'Failed to disconnect GoedGepickt.');
-      }
-    } catch (error) {
-      setFeedbackMessage('Failed to disconnect GoedGepickt.');
-    } finally {
-      setGoedgepicktLoading(false);
-    }
+  const handleStoqflowRefresh = async () => {
+    await fetchStoqflowConnection();
+    setFeedbackMessage(stoqflowConnected ? (t('stoqflowConnected') || 'Stoqflow connected') : (t('stoqflowDisconnected') || 'Stoqflow disconnected'));
   };
 
   const integrationStatus = useMemo(() => {
@@ -711,104 +592,37 @@ export default function AdminDashboardPage() {
             <div className="grid flex-1 gap-4 rounded-lg border p-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <h3 className="font-semibold text-navy">GoedGepickt Fulfilment</h3>
-                  <p className="text-sm text-muted-foreground">{t('goedgepicktDescription')}</p>
+                  <h3 className="font-semibold text-navy">Stoqflow Integration</h3>
+                  <p className="text-sm text-muted-foreground">{t('stoqflowDescription') || 'Connect to Stoqflow for order fulfilment and inventory management'}</p>
                 </div>
-                <Button
-                  onClick={handleGoedgepicktConnect}
-                  className="btn-primary w-full sm:w-auto"
-                  disabled={goedgepicktLoading}
-                >
-                  <Warehouse className="h-4 w-4 mr-2" />
-                  {goedgepicktConnected ? (t('goedgepicktUpdateApiKey') || 'Update API Key') : (t('goedgepicktConnect') || t('connect'))}
-                </Button>
               </div>
               <div className="space-y-2 text-sm">
                 <p className="font-medium text-navy">
-                  {goedgepicktConnected ? (t('goedgepicktConnected') || 'Connected') : (t('goedgepicktDisconnected') || 'Disconnected')}
+                  {stoqflowConnected ? (t('stoqflowConnected') || 'Connected') : (t('stoqflowDisconnected') || 'Disconnected')}
                 </p>
+                {stoqflowError && (
+                  <p className="text-sm text-destructive">{stoqflowError}</p>
+                )}
+                {!stoqflowConnected && !stoqflowError && (
+                  <p className="text-sm text-muted-foreground">
+                    {t('stoqflowConfigNote') || 'Configure Stoqflow credentials in Supabase project settings (Environment Variables)'}
+                  </p>
+                )}
               </div>
               <div className="mt-auto flex flex-wrap gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => void fetchGoedgepicktConnection()}
-                  disabled={goedgepicktLoading}
+                  onClick={handleStoqflowRefresh}
+                  disabled={stoqflowLoading}
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
-                  {t('goedgepicktRefresh') || 'Refresh Status'}
+                  {t('stoqflowRefresh') || 'Refresh Status'}
                 </Button>
-                {goedgepicktConnected && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleGoedgepicktDisconnect}
-                    disabled={goedgepicktLoading}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Unlink className="h-4 w-4 mr-2" />
-                    Disconnect
-                  </Button>
-                )}
               </div>
             </div>
           </CardContent>
         </Card>
-
-        <Dialog open={goedgepicktDialogOpen} onOpenChange={setGoedgepicktDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t('goedgepicktConnect') || 'Connect GoedGepickt'}</DialogTitle>
-              <DialogDescription>
-                {t('goedgepicktApiKeyHelp') || 'Enter your GoedGepickt API key. You can generate one in GoedGepickt > Settings > GoedGepickt API.'}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="api-key">API Key</Label>
-                <Input
-                  id="api-key"
-                  type="password"
-                  placeholder={t('goedgepicktApiKeyPlaceholder') || 'Enter your GoedGepickt API key'}
-                  value={goedgepicktApiKey}
-                  onChange={(e) => setGoedgepicktApiKey(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      void handleGoedgepicktSave();
-                    }
-                  }}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setGoedgepicktDialogOpen(false);
-                  setGoedgepicktApiKey('');
-                }}
-                disabled={goedgepicktTesting}
-              >
-                {t('goedgepicktCancel') || 'Cancel'}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleGoedgepicktTest}
-                disabled={goedgepicktTesting || !goedgepicktApiKey.trim()}
-              >
-                {goedgepicktTesting ? (t('goedgepicktTesting') || 'Testing...') : (t('goedgepicktTestConnection') || 'Test Connection')}
-              </Button>
-              <Button
-                onClick={handleGoedgepicktSave}
-                disabled={goedgepicktTesting || !goedgepicktApiKey.trim()}
-                className="btn-primary"
-              >
-                {goedgepicktTesting ? (t('goedgepicktSaving') || 'Saving...') : (t('goedgepicktSave') || 'Save')}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );

@@ -1,7 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import Stripe from 'npm:stripe@17.7.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
-import { toBrusselsLocalISO, parseBrusselsDateTime } from '../_shared/timezone.ts';
 import { nowBrussels, parseBrusselsDateTime, toBrusselsLocalISO, addMinutesBrussels } from '../_shared/timezone.ts';
 
 const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
@@ -112,11 +111,30 @@ async function handleEvent(event: Stripe.Event) {
   // Handle checkout session completed events (for tour bookings and webshop orders)
   if (event.type === 'checkout.session.completed') {
     const session = stripeData as Stripe.Checkout.Session;
-    const { id: sessionId, mode, payment_status, metadata } = session;
+    const { id: sessionId, mode, payment_status } = session;
+    
+    // Retrieve full session early to ensure we have metadata and all data
+    // Metadata might not be fully populated in webhook event data
+    // This is critical for determining if this is a webshop order
+    let fullSession: Stripe.Checkout.Session;
+    try {
+      fullSession = await stripe.checkout.sessions.retrieve(sessionId, {
+        expand: ['total_details.breakdown', 'discounts.promotion_code', 'discounts.promotion_code.coupon'],
+      });
+      console.info(`✅ Retrieved full session with metadata`);
+    } catch (retrieveErr: any) {
+      console.error(`❌ Failed to retrieve full session:`, retrieveErr.message);
+      // Can't proceed without full session data
+      return;
+    }
+    
+    // Use metadata from full session (more reliable than event data)
+    const metadata = fullSession.metadata || session.metadata;
 
     console.info(`Processing checkout.session.completed: ${sessionId}, mode: ${mode}, status: ${payment_status}`);
+    console.info(`Session metadata:`, JSON.stringify(metadata || {}));
 
-    // Retrieve the session with discounts expanded to get promo code info
+    // Extract promo code info from fullSession (already retrieved above)
     let promoCodeInfo: { code: string | null; discountAmount: number; discountPercent: number | null } = {
       code: null,
       discountAmount: 0,
@@ -124,11 +142,6 @@ async function handleEvent(event: Stripe.Event) {
     };
 
     try {
-      // Retrieve the full session with discounts expanded (promotion_code for code name, coupon for percent)
-      const fullSession = await stripe.checkout.sessions.retrieve(sessionId, {
-        expand: ['total_details.breakdown', 'discounts.promotion_code', 'discounts.promotion_code.coupon'],
-      });
-
       // Get discount amount from total_details
       const discountAmountCents = fullSession.total_details?.amount_discount || 0;
       promoCodeInfo.discountAmount = discountAmountCents / 100; // Convert to euros
@@ -1080,7 +1093,8 @@ async function handleEvent(event: Stripe.Event) {
 
       // If no tour booking found (no pending and no legacy), check if this is a webshop order (via metadata)
       // IMPORTANT: Only process as webshop if order_type is explicitly 'webshop' AND it's not a tour booking
-      console.info(`Checking for webshop order. Metadata:`, JSON.stringify(metadata || {}));
+      console.info(`[Webshop Check] Checking for webshop order. Metadata:`, JSON.stringify(metadata || {}));
+      console.info(`[Webshop Check] Session mode: ${mode}, Payment status: ${payment_status}`);
 
       // If this has tourId in metadata, it's a tour booking - don't process as webshop
       if (metadata?.tourId) {
@@ -1088,8 +1102,14 @@ async function handleEvent(event: Stripe.Event) {
         return;
       }
 
-      if (metadata?.order_type === 'webshop') {
-        console.info(`Processing webshop order for session: ${sessionId}`);
+      // Process webshop or giftcard orders (both should create orders in database)
+      const orderType = metadata?.order_type;
+      const isWebshopOrder = orderType === 'webshop' || orderType === 'giftcard';
+      
+      console.info(`[Webshop Check] order_type: ${orderType}, isWebshopOrder: ${isWebshopOrder}`);
+      
+      if (isWebshopOrder) {
+        console.info(`✅ Processing ${orderType} order for session: ${sessionId}`);
 
         // Retrieve full session with line items, shipping details, and discounts
         const fullSession = await stripe.checkout.sessions.retrieve(sessionId, {
@@ -1217,19 +1237,34 @@ async function handleEvent(event: Stripe.Event) {
           ? fullSession.customer
           : fullSession.customer?.id || `guest_${sessionId}`;
 
+        // Ensure shipping_address is never null (required by database)
+        // Use empty object if no shipping address provided (e.g., gift cards)
+        const shippingAddressForDb = shippingAddress || {
+          name: metadata?.customerName || 'Guest',
+          street: '',
+          street2: '',
+          city: '',
+          postalCode: '',
+          country: 'BE',
+        };
+
+        // Prepare order data according to actual database schema
+        // Required fields: payment_intent_id, customer_id, amount_subtotal, amount_total (all NOT NULL)
         const orderInsert = {
           checkout_session_id: sessionId,
-          payment_intent_id: paymentIntentId,
-          customer_id: customerId,
-          currency: fullSession.currency || 'eur',
-          payment_status: fullSession.payment_status || 'paid',
+          payment_intent_id: paymentIntentId, // Required NOT NULL
+          stripe_payment_intent_id: paymentIntentId, // Also set this (optional field)
+          customer_id: customerId, // Required NOT NULL
+          amount_subtotal: fullSession.amount_subtotal || 0, // Required NOT NULL (in cents)
+          amount_total: fullSession.amount_total || 0, // Required NOT NULL (in cents)
+          currency: fullSession.currency || 'eur', // Required NOT NULL
+          payment_status: fullSession.payment_status || 'paid', // Required NOT NULL
           status: 'completed',
-          amount_subtotal: fullSession.amount_subtotal || 0,
-          amount_total: fullSession.amount_total || 0,
+          total_amount: (fullSession.amount_total || 0) / 100, // In euros (optional field)
           customer_name: metadata?.customerName || 'Guest',
           customer_email: fullSession.customer_email || metadata?.customerEmail || 'unknown@guest.com',
-          shipping_address: shippingAddress,
-          billing_address: shippingAddress, // Use shipping as billing
+          shipping_address: shippingAddressForDb, // Required NOT NULL - use fallback if null
+          billing_address: shippingAddressForDb, // Use shipping as billing
           items: [...productItems, ...shippingItems],
           metadata: {
             customerName: metadata?.customerName || 'Guest',
@@ -1243,11 +1278,56 @@ async function handleEvent(event: Stripe.Event) {
             promoCode: webshopPromoCode,
             promoDiscountPercent: webshopPromoDiscountPercent,
           },
-          total_amount: (fullSession.amount_total || 0) / 100, // In euros
           user_id: metadata?.userId && metadata.userId.trim() !== '' ? metadata.userId : null,
         };
 
-        console.info('Inserting webshop order:', JSON.stringify(orderInsert, null, 2));
+        // Validate required fields before inserting (according to database schema)
+        if (!orderInsert.checkout_session_id) {
+          console.error('❌ CRITICAL: checkout_session_id is missing!');
+          return;
+        }
+        if (!orderInsert.payment_intent_id) {
+          console.error('❌ CRITICAL: payment_intent_id is missing!');
+          return;
+        }
+        if (!orderInsert.customer_id) {
+          console.error('❌ CRITICAL: customer_id is missing!');
+          return;
+        }
+        if (orderInsert.amount_subtotal === null || orderInsert.amount_subtotal === undefined) {
+          console.error('❌ CRITICAL: amount_subtotal is missing!', { amount_subtotal: orderInsert.amount_subtotal });
+          return;
+        }
+        if (orderInsert.amount_total === null || orderInsert.amount_total === undefined) {
+          console.error('❌ CRITICAL: amount_total is missing!', { amount_total: orderInsert.amount_total });
+          return;
+        }
+        if (!orderInsert.currency) {
+          console.error('❌ CRITICAL: currency is missing!');
+          return;
+        }
+        if (!orderInsert.payment_status) {
+          console.error('❌ CRITICAL: payment_status is missing!');
+          return;
+        }
+        if (!orderInsert.shipping_address) {
+          console.error('❌ CRITICAL: shipping_address is missing!');
+          return;
+        }
+
+        console.info('Inserting webshop order:', {
+          checkout_session_id: orderInsert.checkout_session_id,
+          payment_intent_id: orderInsert.payment_intent_id,
+          customer_id: orderInsert.customer_id,
+          amount_subtotal: orderInsert.amount_subtotal,
+          amount_total: orderInsert.amount_total,
+          currency: orderInsert.currency,
+          payment_status: orderInsert.payment_status,
+          total_amount: orderInsert.total_amount,
+          customer_email: orderInsert.customer_email,
+          item_count: orderInsert.items?.length || 0,
+          has_shipping_address: !!orderInsert.shipping_address,
+        });
 
         // Insert the order with retry logic (checkout no longer creates it due to NOT NULL constraints)
         let order: any = null;
@@ -1264,11 +1344,18 @@ async function handleEvent(event: Stripe.Event) {
 
           if (error) {
             orderError = error;
+            console.error(`[Attempt ${retryCount + 1}/${maxRetries}] Order insert error:`, {
+              code: error.code,
+              message: error.message,
+              details: error.details,
+              hint: error.hint,
+            });
+            
             // Check if it's a duplicate key error (order already exists)
             if (error.code === '23505' || error.message?.includes('duplicate') || error.message?.includes('unique')) {
               console.warn(`Order already exists for session ${sessionId}, fetching existing order...`);
               // Try to fetch the existing order
-              const { data: existingOrder } = await supabase
+              const { data: existingOrder, error: fetchError } = await supabase
                 .from('stripe_orders')
                 .select('*')
                 .eq('checkout_session_id', sessionId)
@@ -1276,8 +1363,10 @@ async function handleEvent(event: Stripe.Event) {
               if (existingOrder) {
                 order = existingOrder;
                 orderError = null;
-                console.info(`Found existing order: ${existingOrder.id}`);
+                console.info(`✅ Found existing order: ${existingOrder.id}`);
                 break;
+              } else if (fetchError) {
+                console.error('Failed to fetch existing order:', fetchError);
               }
             }
             
@@ -1291,6 +1380,7 @@ async function handleEvent(event: Stripe.Event) {
           } else {
             order = data;
             orderError = null;
+            console.info(`✅ Order inserted successfully: ${order.id}`);
             break;
           }
         }
@@ -1628,6 +1718,16 @@ async function handleEvent(event: Stripe.Event) {
         }
 
         return;
+      } else {
+        // Log why webshop order wasn't processed
+        console.warn(`⚠️ Session ${sessionId} was not processed as webshop order. Reasons:`, {
+          has_metadata: !!metadata,
+          order_type: metadata?.order_type,
+          has_tourId: !!metadata?.tourId,
+          mode: mode,
+          payment_status: payment_status,
+        });
+        console.warn(`⚠️ This order will NOT be saved to database. Check that checkout session includes order_type: 'webshop' or 'giftcard' in metadata.`);
       }
 
     }

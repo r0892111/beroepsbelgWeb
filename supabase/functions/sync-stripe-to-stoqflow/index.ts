@@ -71,6 +71,65 @@ Deno.serve(async (req: Request) => {
       console.warn('[Sync] Expected format: https://yourcompany.stoqflow.com');
     }
 
+    // Handle test_connection request (for connection status check from admin dashboard)
+    // Parse request body once - check if it's a test request
+    let requestBody: any = {};
+    try {
+      const bodyText = await req.text();
+      if (bodyText) {
+        requestBody = JSON.parse(bodyText);
+      }
+    } catch {
+      // Body might be empty or invalid JSON, that's okay
+    }
+
+    if (requestBody.test_connection === true) {
+      // Test connection by fetching company structure
+      const apiBaseUrl = `${stoqflowBaseUrl}/api/v2`;
+      const credentials = `${stoqflowClientId}:${stoqflowClientSecret}`;
+      const basicAuth = btoa(credentials);
+
+      try {
+        const testResponse = await fetch(`${apiBaseUrl}/company`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Basic ${basicAuth}`,
+          },
+        });
+
+        if (testResponse.ok) {
+          return new Response(
+            JSON.stringify({ 
+              success: true,
+              connected: true,
+              message: 'Stoqflow connection successful'
+            }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        } else {
+          const errorText = await testResponse.text().catch(() => 'Unknown error');
+          return new Response(
+            JSON.stringify({ 
+              success: false,
+              connected: false,
+              error: `Stoqflow API returned ${testResponse.status}: ${errorText.substring(0, 200)}`
+            }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      } catch (testError: any) {
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            connected: false,
+            error: `Connection test failed: ${testError.message}`
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     // Fetch brand_id from Stoqflow API using /company endpoint
     console.info('[Sync] ========================================');
     console.info('[Sync] Step 1: Fetching company structure from Stoqflow API');
