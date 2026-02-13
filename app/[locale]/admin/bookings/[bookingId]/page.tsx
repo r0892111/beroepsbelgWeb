@@ -118,6 +118,18 @@ interface TourBooking {
   created_at?: string;
   invoice_id: string | null;
   invoice_link: string | null;
+}
+
+interface TeamLeaderInvoice {
+  id: string;
+  invoice_number: string | null;
+  title: string;
+  status: string | null;
+  total: number | null;
+  currency: string;
+  customer: { type: string; id: string } | null;
+  createdAt: string | null;
+  dueDate: string | null;
   ai_desc: string | null;
   start_location: string | null;
   end_location: string | null;
@@ -208,7 +220,13 @@ export default function BookingDetailPage() {
     status: '',
     start_location: '',
     end_location: '',
+    invoiceId: '',
   });
+
+  // TeamLeader invoices state
+  const [teamleaderInvoices, setTeamleaderInvoices] = useState<TeamLeaderInvoice[]>([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
+  const [invoicesError, setInvoicesError] = useState<string | null>(null);
 
   // Add invitee state (for Local Stories)
   const [addInviteeDialogOpen, setAddInviteeDialogOpen] = useState(false);
@@ -636,6 +654,7 @@ export default function BookingDetailPage() {
         status: booking.status,
         start_location: booking.start_location || '',
         end_location: booking.end_location || '',
+        invoiceId: booking.invoice_link || '',
       });
     } else {
       // Use current Brussels time
@@ -647,9 +666,44 @@ export default function BookingDetailPage() {
         status: booking.status,
         start_location: booking.start_location || '',
         end_location: booking.end_location || '',
+        invoiceId: booking.invoice_link || '',
       });
     }
+    // Fetch TeamLeader invoices when dialog opens
+    void fetchTeamleaderInvoices();
     setEditDialogOpen(true);
+  };
+
+  // Fetch TeamLeader invoices
+  const fetchTeamleaderInvoices = async () => {
+    setLoadingInvoices(true);
+    setInvoicesError(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setInvoicesError('Not authenticated');
+        return;
+      }
+
+      const response = await fetch('/api/admin/teamleader-invoices', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch invoices');
+      }
+
+      const data = await response.json();
+      setTeamleaderInvoices(data.invoices || []);
+    } catch (err) {
+      console.error('Error fetching TeamLeader invoices:', err);
+      setInvoicesError(err instanceof Error ? err.message : 'Failed to load invoices');
+    } finally {
+      setLoadingInvoices(false);
+    }
   };
 
   // Save booking edits
@@ -685,6 +739,7 @@ export default function BookingDetailPage() {
           status: editForm.status,
           start_location: editForm.start_location || null,
           end_location: editForm.end_location || null,
+          invoice_link: editForm.invoiceId || null,
           invitees: updatedInvitees, // Update invitees with matching tourStartDatetime
         })
         .eq('id', booking.id);
@@ -2707,7 +2762,13 @@ export default function BookingDetailPage() {
       </Dialog>
 
       {/* Edit Booking Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+      <Dialog open={editDialogOpen} onOpenChange={(open) => {
+        setEditDialogOpen(open);
+        if (open) {
+          // Fetch TeamLeader invoices when dialog opens
+          void fetchTeamleaderInvoices();
+        }
+      }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -2760,6 +2821,59 @@ export default function BookingDetailPage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* TeamLeader Invoice Selection */}
+            <div className="space-y-2 pt-2 border-t">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="editInvoiceId">
+                  Link to TeamLeader Invoice (optional)
+                </Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void fetchTeamleaderInvoices()}
+                  disabled={loadingInvoices}
+                  className="h-6 text-xs gap-1"
+                >
+                  <RefreshCw className={`h-3 w-3 ${loadingInvoices ? 'animate-spin' : ''}`} />
+                  {loadingInvoices ? 'Loading...' : 'Refresh'}
+                </Button>
+              </div>
+              <Select
+                value={editForm.invoiceId || 'none'}
+                onValueChange={(value) => setEditForm({ ...editForm, invoiceId: value === 'none' ? '' : value })}
+              >
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder={loadingInvoices ? 'Loading invoices...' : teamleaderInvoices.length === 0 ? 'No invoices found - click Refresh' : 'Select an invoice (optional)'} />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  <SelectItem value="none">No invoice linked</SelectItem>
+                  {teamleaderInvoices.map((invoice) => (
+                    <SelectItem key={invoice.id} value={invoice.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{invoice.title}</span>
+                        {invoice.invoice_number && (
+                          <span className="text-xs text-muted-foreground">({invoice.invoice_number})</span>
+                        )}
+                        {invoice.total && (
+                          <span className="text-xs text-muted-foreground">€{invoice.total.toFixed(2)}</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {invoicesError && (
+                <p className="text-xs text-red-500">{invoicesError}</p>
+              )}
+              {teamleaderInvoices.length === 0 && !loadingInvoices && !invoicesError && (
+                <p className="text-xs text-amber-600">No invoices loaded yet. Click Refresh to load invoices from TeamLeader.</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Link this booking to an existing TeamLeader invoice.
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4 pt-2 border-t">

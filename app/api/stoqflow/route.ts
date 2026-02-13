@@ -71,33 +71,39 @@ async function checkAdminAccess(request: NextRequest): Promise<{ isAdmin: boolea
 async function testStoqflowConnection(): Promise<{ success: boolean; error?: string }> {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    if (!supabaseUrl) {
-      return { success: false, error: 'Supabase URL not configured' };
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return { success: false, error: 'Supabase configuration missing' };
     }
 
-    // Call a test endpoint on the sync function (it checks env vars and API connectivity)
-    // We'll send a test flag to trigger a connection check
-    const response = await fetch(`${supabaseUrl}/functions/v1/sync-stripe-to-stoqflow`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || ''}`,
+    // Use Supabase client with service role key to invoke the edge function
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        persistSession: false,
       },
-      body: JSON.stringify({ 
-        test_connection: true,
-        // Don't actually sync, just test connection
-      }),
     });
 
-    const data = await response.json().catch(() => ({}));
-    
-    // Check for authentication errors
-    if (response.status === 401 || response.status === 403) {
-      return { success: false, error: 'Unauthorized - check Supabase function permissions' };
+    const { data, error } = await supabase.functions.invoke<{
+      success?: boolean;
+      connected?: boolean;
+      error?: string;
+    }>('sync-stripe-to-stoqflow', {
+      body: {
+        test_connection: true,
+      },
+    });
+
+    if (error) {
+      // Check if it's an authentication error
+      if (error.message?.includes('401') || error.message?.includes('403') || error.message?.includes('Unauthorized')) {
+        return { success: false, error: 'Unauthorized - check Supabase function permissions' };
+      }
+      return { success: false, error: error.message || 'Failed to invoke edge function' };
     }
 
     // The edge function returns { success, connected, error } for test_connection
-    if (data.success !== undefined) {
+    if (data?.success !== undefined) {
       return {
         success: data.success,
         error: data.error,
@@ -105,7 +111,7 @@ async function testStoqflowConnection(): Promise<{ success: boolean; error?: str
     }
 
     // Fallback: check if error indicates missing env vars or connection issues
-    if (data.error) {
+    if (data?.error) {
       const errorMsg = data.error.toLowerCase();
       if (errorMsg.includes('stoqflow') && (errorMsg.includes('env') || errorMsg.includes('missing') || errorMsg.includes('not set'))) {
         return { success: false, error: 'Stoqflow credentials not configured in Supabase secrets' };
