@@ -3511,6 +3511,31 @@ export default function BookingDetailPage() {
                   {loadingDeals ? <RefreshCw className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
                 </Button>
               </div>
+              {/* Display current deal if present */}
+              {editInviteeForm.dealId && teamleaderDeals.length > 0 && (
+                <div className="bg-muted/50 rounded-lg p-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <span className="font-medium">Current deal:</span>
+                    {(() => {
+                      const currentDeal = teamleaderDeals.find(d => d.id === editInviteeForm.dealId);
+                      return currentDeal ? (
+                        <span>
+                          {currentDeal.title}
+                          {currentDeal.reference && (
+                            <span className="text-xs text-muted-foreground ml-1">({currentDeal.reference})</span>
+                          )}
+                          {currentDeal.value && (
+                            <span className="text-xs text-muted-foreground ml-1">€{currentDeal.value.toFixed(2)}</span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">Deal ID: {editInviteeForm.dealId}</span>
+                      );
+                    })()}
+                  </div>
+                </div>
+              )}
               <Select
                 value={editInviteeForm.dealId || 'none'}
                 onValueChange={(value) => setEditInviteeForm({ ...editInviteeForm, dealId: value === 'none' ? '' : value })}
@@ -3567,6 +3592,31 @@ export default function BookingDetailPage() {
                   {loadingEditInviteeInvoices ? 'Loading...' : 'Refresh'}
                 </Button>
               </div>
+              {/* Display current invoice if present */}
+              {editInviteeForm.invoiceId && editInviteeInvoices.length > 0 && (
+                <div className="bg-muted/50 rounded-lg p-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <span className="font-medium">Current invoice:</span>
+                    {(() => {
+                      const currentInvoice = editInviteeInvoices.find(i => i.id === editInviteeForm.invoiceId);
+                      return currentInvoice ? (
+                        <span>
+                          {currentInvoice.title}
+                          {currentInvoice.invoice_number && (
+                            <span className="text-xs text-muted-foreground ml-1">({currentInvoice.invoice_number})</span>
+                          )}
+                          {currentInvoice.total && (
+                            <span className="text-xs text-muted-foreground ml-1">€{currentInvoice.total.toFixed(2)}</span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">Invoice ID: {editInviteeForm.invoiceId}</span>
+                      );
+                    })()}
+                  </div>
+                </div>
+              )}
               <Select
                 value={editInviteeForm.invoiceId || 'none'}
                 onValueChange={(value) => setEditInviteeForm({ ...editInviteeForm, invoiceId: value === 'none' ? '' : value })}
