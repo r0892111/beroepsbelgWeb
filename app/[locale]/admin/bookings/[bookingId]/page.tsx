@@ -119,6 +119,8 @@ interface TourBooking {
   created_at?: string;
   invoice_id: string | null;
   invoice_link: string | null;
+  start_location: string | null;
+  end_location: string | null;
 }
 
 interface TeamLeaderInvoice {
