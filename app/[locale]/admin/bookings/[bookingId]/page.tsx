@@ -92,6 +92,7 @@ interface Invitee {
   promoCode?: string | null; // Promo code used
   promoDiscountAmount?: number; // Discount amount from promo code
   promoDiscountPercent?: number | null; // Discount percentage from promo code
+  invoice_link?: string | null; // TeamLeader invoice ID for this invitee (Local Stories)
 }
 
 interface TourBooking {
@@ -291,6 +292,7 @@ export default function BookingDetailPage() {
     contactLanguage: 'nl', // Language for email communications
     specialRequests: '',
     dealId: '',
+    invoiceId: '',
     // Fee toggles for op_maat tours
     requestTanguy: false,
     hasExtraHour: false,
@@ -303,6 +305,11 @@ export default function BookingDetailPage() {
   const [teamleaderDeals, setTeamleaderDeals] = useState<TeamLeaderDeal[]>([]);
   const [loadingDeals, setLoadingDeals] = useState(false);
   const [dealsError, setDealsError] = useState<string | null>(null);
+
+  // TeamLeader invoices state (for edit invitee)
+  const [editInviteeInvoices, setEditInviteeInvoices] = useState<TeamLeaderInvoice[]>([]);
+  const [loadingEditInviteeInvoices, setLoadingEditInviteeInvoices] = useState(false);
+  const [editInviteeInvoicesError, setEditInviteeInvoicesError] = useState<string | null>(null);
 
   // Delete invitee state
   const [deleteInviteeDialogOpen, setDeleteInviteeDialogOpen] = useState(false);
@@ -994,6 +1001,7 @@ export default function BookingDetailPage() {
       contactLanguage: (inv as any).contactLanguage || 'nl', // Language for email communications
       specialRequests: inv.specialRequests || '',
       dealId: inv.deal_id || (isLocalStories ? '' : booking?.deal_id || ''),
+      invoiceId: (inv as any).invoice_link || '',
       // Load existing fee values from invitee
       requestTanguy: inv.requestTanguy || false,
       hasExtraHour: inv.hasExtraHour || false,
@@ -1001,9 +1009,42 @@ export default function BookingDetailPage() {
       eveningFee: inv.eveningFee || false,
     });
     setEditCustomLanguage(isKnownLanguage ? '' : invLanguage);
-    // Fetch deals when opening the dialog
+    // Fetch deals and invoices when opening the dialog
     void fetchTeamleaderDeals();
+    void fetchEditInviteeInvoices();
     setEditInviteeDialogOpen(true);
+  };
+
+  // Fetch TeamLeader invoices for edit invitee
+  const fetchEditInviteeInvoices = async () => {
+    setLoadingEditInviteeInvoices(true);
+    setEditInviteeInvoicesError(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setEditInviteeInvoicesError('Not authenticated');
+        return;
+      }
+
+      const response = await fetch('/api/admin/teamleader-invoices', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch invoices');
+      }
+
+      const data = await response.json();
+      setEditInviteeInvoices(data.invoices || []);
+    } catch (err) {
+      console.error('Error fetching TeamLeader invoices:', err);
+      setEditInviteeInvoicesError(err instanceof Error ? err.message : 'Failed to load invoices');
+    } finally {
+      setLoadingEditInviteeInvoices(false);
+    }
   };
 
   // Handle edit invitee
@@ -1048,6 +1089,7 @@ export default function BookingDetailPage() {
                 language: finalLanguage,
                 contactLanguage: editInviteeForm.contactLanguage, // Language for email communications
                 specialRequests: editInviteeForm.specialRequests,
+                invoice_link: editInviteeForm.invoiceId || null,
               };
             }
             return inv;
@@ -1078,6 +1120,7 @@ export default function BookingDetailPage() {
             language: finalLanguage,
             contactLanguage: editInviteeForm.contactLanguage, // Language for email communications
             specialRequests: editInviteeForm.specialRequests,
+            invoice_link: editInviteeForm.invoiceId || null,
             // Store fee toggles and calculated costs
             requestTanguy: editInviteeForm.requestTanguy,
             hasExtraHour: editInviteeForm.hasExtraHour,
@@ -3259,6 +3302,10 @@ export default function BookingDetailPage() {
       {/* Edit Invitee Dialog */}
       <Dialog open={editInviteeDialogOpen} onOpenChange={(open) => {
         setEditInviteeDialogOpen(open);
+        if (open) {
+          // Fetch TeamLeader invoices when dialog opens
+          void fetchEditInviteeInvoices();
+        }
         if (!open) setEditInviteeTarget(null);
       }}>
         <DialogContent className="max-w-lg">
@@ -3492,6 +3539,65 @@ export default function BookingDetailPage() {
                 {editInviteeTarget?.isLocalStories
                   ? 'Link this invitee to a TeamLeader CRM deal.'
                   : 'Link this booking to a TeamLeader CRM deal.'
+                }
+              </p>
+            </div>
+
+            {/* TeamLeader Invoice Selection */}
+            <div className="space-y-2 pt-2 border-t">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="editInviteeInvoiceId">
+                  Link to TeamLeader Invoice (optional)
+                  {editInviteeTarget?.isLocalStories && (
+                    <span className="text-xs text-muted-foreground ml-1">- for this invitee</span>
+                  )}
+                </Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void fetchEditInviteeInvoices()}
+                  disabled={loadingEditInviteeInvoices}
+                  className="h-6 text-xs gap-1"
+                >
+                  <RefreshCw className={`h-3 w-3 ${loadingEditInviteeInvoices ? 'animate-spin' : ''}`} />
+                  {loadingEditInviteeInvoices ? 'Loading...' : 'Refresh'}
+                </Button>
+              </div>
+              <Select
+                value={editInviteeForm.invoiceId || 'none'}
+                onValueChange={(value) => setEditInviteeForm({ ...editInviteeForm, invoiceId: value === 'none' ? '' : value })}
+              >
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder={loadingEditInviteeInvoices ? 'Loading invoices...' : editInviteeInvoices.length === 0 ? 'No invoices found - click Refresh' : 'Select an invoice (optional)'} />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  <SelectItem value="none">No invoice linked</SelectItem>
+                  {editInviteeInvoices.map((invoice) => (
+                    <SelectItem key={invoice.id} value={invoice.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{invoice.title}</span>
+                        {invoice.invoice_number && (
+                          <span className="text-xs text-muted-foreground">({invoice.invoice_number})</span>
+                        )}
+                        {invoice.total && (
+                          <span className="text-xs text-muted-foreground">€{invoice.total.toFixed(2)}</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {editInviteeInvoicesError && (
+                <p className="text-xs text-red-500">{editInviteeInvoicesError}</p>
+              )}
+              {editInviteeInvoices.length === 0 && !loadingEditInviteeInvoices && !editInviteeInvoicesError && (
+                <p className="text-xs text-amber-600">No invoices loaded yet. Click Refresh to load invoices from TeamLeader.</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {editInviteeTarget?.isLocalStories
+                  ? 'Link this invitee to a TeamLeader invoice. Additional invitees can have different invoices.'
+                  : 'Link this invitee to a TeamLeader invoice.'
                 }
               </p>
             </div>
