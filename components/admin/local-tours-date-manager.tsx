@@ -248,10 +248,8 @@ export function LocalToursDateManager({ open, onOpenChange, tourId, tourTitle }:
                     const isUpdating = updating === dateStr;
                     
                     // Check if there are subscriptions (bookings) for this date
-                    // Check number_of_people, amnt_of_people, pending_payment_people, or booking_id
-                    const totalPeople = (booking?.number_of_people || 0) + 
-                                      (booking?.amnt_of_people || 0) + 
-                                      (booking?.pending_payment_people || 0);
+                    // number_of_people already contains the count from tourbooking invitees (source of truth)
+                    const totalPeople = booking?.number_of_people || 0;
                     const hasSubscriptions = totalPeople > 0 || !!booking?.booking_id;
 
                     return (
