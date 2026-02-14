@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CalendarIcon, Clock, Loader2, ShoppingBag, Gift, Plus, Minus, FileText, CheckCircle2 } from 'lucide-react';
+import { CalendarIcon, Clock, Loader2, ShoppingBag, Gift, Plus, Minus, FileText, CheckCircle2, X, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
@@ -81,6 +81,16 @@ export function TourBookingDialog({
   const [showUpsellDialog, setShowUpsellDialog] = useState(false);
   const [showAddressDialog, setShowAddressDialog] = useState(false);
   const [showAllProducts, setShowAllProducts] = useState(false);
+  
+  // Gift card redemption state
+  const [giftCardCode, setGiftCardCode] = useState('');
+  const [appliedGiftCard, setAppliedGiftCard] = useState<{
+    code: string;
+    currentBalance: number;
+    amountApplied: number;
+  } | null>(null);
+  const [giftCardLoading, setGiftCardLoading] = useState(false);
+  const [giftCardError, setGiftCardError] = useState<string | null>(null);
 
   const [addressData, setAddressData] = useState({
     fullName: '',
@@ -452,6 +462,9 @@ export function TourBookingDialog({
           // Weekend and evening fees
           weekendFee: weekendFeeCost > 0,
           eveningFee: eveningFeeCost > 0,
+          // Gift card code for redemption
+          giftCardCode: appliedGiftCard?.code || null,
+          giftCardDiscount: appliedGiftCard ? giftCardDiscount : 0, // Include discount amount to apply in Stripe
         }),
       });
 
@@ -505,7 +518,52 @@ export function TourBookingDialog({
   const hasUpsellProducts = upsellTotal > 0;
   const shippingCost = hasUpsellProducts ? FREIGHT_COST_FREE : 0;
 
-  const totalPrice = tourTotal + upsellTotal + tanguyCost + extraHourCost + eveningFeeCost + weekendFeeCost + shippingCost;
+  // Calculate gift card discount
+  const giftCardDiscount = appliedGiftCard ? Math.min(appliedGiftCard.amountApplied, tourTotal + upsellTotal + tanguyCost + extraHourCost + eveningFeeCost + weekendFeeCost + shippingCost) : 0;
+  
+  const totalPrice = Math.max(0, tourTotal + upsellTotal + tanguyCost + extraHourCost + eveningFeeCost + weekendFeeCost + shippingCost - giftCardDiscount);
+
+  // Handle gift card application
+  const handleApplyGiftCard = async () => {
+    if (!giftCardCode.trim()) return;
+    
+    setGiftCardLoading(true);
+    setGiftCardError(null);
+    
+    try {
+      const response = await fetch('/api/gift-cards/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: giftCardCode.trim().toUpperCase() }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        setGiftCardError(data.error || 'Invalid gift card code');
+        return;
+      }
+      
+      const orderTotal = tourTotal + upsellTotal + tanguyCost + extraHourCost + eveningFeeCost + weekendFeeCost + shippingCost;
+      const amountToApply = Math.min(data.giftCard.currentBalance, orderTotal);
+      
+      setAppliedGiftCard({
+        code: data.giftCard.code,
+        currentBalance: data.giftCard.currentBalance,
+        amountApplied: amountToApply,
+      });
+      setGiftCardCode('');
+    } catch (err) {
+      setGiftCardError('Failed to validate gift card');
+    } finally {
+      setGiftCardLoading(false);
+    }
+  };
+
+  const handleRemoveGiftCard = () => {
+    setAppliedGiftCard(null);
+    setGiftCardError(null);
+  };
   
   // Debug logging
   if (process.env.NODE_ENV === 'development') {
@@ -1331,6 +1389,94 @@ export function TourBookingDialog({
                         </span>
                       </div>
                     </>
+                  )}
+                  {/* Gift Card Redemption */}
+                  <div className="space-y-2 pt-2 border-t">
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      <Gift className="h-4 w-4" />
+                      {t('haveGiftCard') || 'Have a gift card?'}
+                    </Label>
+                    
+                    {appliedGiftCard ? (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-green-600" />
+                          <div>
+                            <p className="text-xs font-medium text-green-900">
+                              {t('giftCardApplied') || 'Gift Card Applied'}
+                            </p>
+                            <p className="text-xs text-green-700 font-mono">{appliedGiftCard.code}</p>
+                            <p className="text-xs text-green-700">
+                              -€{appliedGiftCard.amountApplied.toFixed(2)}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRemoveGiftCard}
+                          className="h-6 w-6 p-0"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Input
+                          type="text"
+                          placeholder="XXXX-XXXX-XXXX-XXXX"
+                          value={giftCardCode}
+                          onChange={(e) => {
+                            let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                            if (value.length > 4) value = value.slice(0, 4) + '-' + value.slice(4);
+                            if (value.length > 9) value = value.slice(0, 9) + '-' + value.slice(9);
+                            if (value.length > 14) value = value.slice(0, 14) + '-' + value.slice(14);
+                            if (value.length > 19) value = value.slice(0, 19);
+                            setGiftCardCode(value);
+                          }}
+                          maxLength={19}
+                          className="font-mono text-xs h-8 flex-1"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && giftCardCode.trim()) {
+                              e.preventDefault();
+                              void handleApplyGiftCard();
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleApplyGiftCard}
+                          disabled={giftCardLoading || !giftCardCode.trim()}
+                          className="h-8"
+                        >
+                          {giftCardLoading ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            t('apply') || 'Apply'
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {giftCardError && (
+                      <p className="text-xs text-red-600 flex items-center gap-1">
+                        <XCircle className="h-3 w-3" />
+                        {giftCardError}
+                      </p>
+                    )}
+                  </div>
+                  {/* Gift Card Discount */}
+                  {appliedGiftCard && (
+                    <div className="flex items-center justify-between text-sm text-green-600">
+                      <span className="flex items-center gap-1">
+                        <Gift className="h-3 w-3" />
+                        {t('giftCardDiscount') || 'Gift Card Discount'}
+                      </span>
+                      <span>-€{giftCardDiscount.toFixed(2)}</span>
+                    </div>
                   )}
                   {/* Total */}
                   <div className="flex items-center justify-between pt-2 border-t">

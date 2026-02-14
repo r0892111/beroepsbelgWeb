@@ -35,6 +35,8 @@ serve(async (req: Request) => {
       userId,
       locale = 'nl',
       isGiftCardOnly = false,
+      giftCardCode = null,
+      giftCardDiscount = 0, // Discount amount to apply from gift card
     } = await req.json()
 
     // Validate required fields
@@ -179,12 +181,100 @@ serve(async (req: Request) => {
       })
     }
 
-    const totalAmount = subtotal + shippingCost
+    // Apply gift card discount if provided
+    const giftCardDiscountAmount = giftCardCode && giftCardDiscount > 0 ? parseFloat(giftCardDiscount.toString()) : 0;
+    const totalBeforeDiscount = subtotal + shippingCost;
+    const finalTotal = Math.max(0, totalBeforeDiscount - giftCardDiscountAmount);
+
+    // Add gift card discount as an informational line item (so it appears in the item list)
+    if (giftCardDiscountAmount > 0 && giftCardCode) {
+      lineItems.push({
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: `Gift Card Discount (${giftCardCode})`,
+            description: `Applied gift card discount`,
+          },
+          unit_amount: 0, // Zero cost - actual discount applied via coupon below
+        },
+        quantity: 1,
+      });
+      console.log('Added gift card discount line item (informational):', {
+        code: giftCardCode,
+        discountAmount: giftCardDiscountAmount,
+      });
+    }
+
+    // Create and apply gift card discount as a Stripe coupon (so it appears on invoice)
+    let giftCardCouponId: string | null = null;
+    if (giftCardDiscountAmount > 0 && giftCardCode) {
+      try {
+        // Calculate discount percentage based on total before discount
+        // We'll use a fixed amount coupon instead of percentage for accuracy
+        const discountAmountCents = Math.round(giftCardDiscountAmount * 100);
+        
+        // Create a coupon with the exact discount amount
+        // Use a unique name based on gift card code to avoid conflicts
+        const couponName = `giftcard_${giftCardCode}_${Date.now()}`;
+        
+        const coupon = await stripe.coupons.create({
+          name: `Gift Card ${giftCardCode}`,
+          amount_off: discountAmountCents,
+          currency: 'eur',
+          duration: 'once',
+          metadata: {
+            gift_card_code: giftCardCode,
+            type: 'gift_card_discount',
+          },
+        });
+        
+        giftCardCouponId = coupon.id;
+        
+        console.log('Created gift card discount coupon:', {
+          couponId: giftCardCouponId,
+          code: giftCardCode,
+          discountAmount: giftCardDiscountAmount,
+          discountAmountCents,
+        });
+      } catch (couponError) {
+        console.error('Failed to create gift card discount coupon:', couponError);
+        // Fall back to proportional discount if coupon creation fails
+        console.warn('Falling back to proportional discount method');
+        
+        // Calculate total from all line items (including those with Stripe price IDs)
+        let totalPriceDataItems = 0;
+        const priceDataItems: any[] = [];
+        
+        for (const item of lineItems) {
+          if (item.price_data && item.price_data.unit_amount !== undefined) {
+            const itemTotal = item.price_data.unit_amount * item.quantity;
+            totalPriceDataItems += itemTotal;
+            priceDataItems.push(item);
+          }
+        }
+        
+        // If we have price_data items, apply discount proportionally
+        if (totalPriceDataItems > 0 && totalPriceDataItems >= Math.round(giftCardDiscountAmount * 100)) {
+          const discountAmountCents = Math.round(giftCardDiscountAmount * 100);
+          const totalAfterDiscount = Math.max(0, totalPriceDataItems - discountAmountCents);
+          const discountRatio = totalAfterDiscount / totalPriceDataItems;
+          
+          // Apply discount proportionally to each price_data item
+          for (const item of priceDataItems) {
+            const originalAmount = item.price_data.unit_amount;
+            const discountedAmount = Math.round(originalAmount * discountRatio);
+            item.price_data.unit_amount = Math.max(0, discountedAmount);
+          }
+        }
+      }
+    }
 
     console.log('Checkout summary:', {
       subtotal,
       shippingCost,
-      totalAmount,
+      giftCardDiscount: giftCardDiscountAmount,
+      totalBeforeDiscount,
+      finalTotal,
       lineItemCount: lineItems.length,
     })
 
@@ -194,7 +284,6 @@ serve(async (req: Request) => {
       payment_method_types: ['card', 'bancontact', 'ideal'],
       line_items: lineItems,
       mode: 'payment',
-      allow_promotion_codes: true,
       customer_creation: 'always', // Always create customer (required for invoice)
       invoice_creation: { enabled: true }, // Enable invoice creation for all sessions
       payment_intent_data: {
@@ -211,7 +300,27 @@ serve(async (req: Request) => {
         locale,
         itemCount: orderItems.length.toString(),
         isGiftCardOnly: isGiftCardOnly.toString(),
+        // Include gift card information for webhook processing
+        giftCardItems: isGiftCardOnly ? JSON.stringify(orderItems.filter(item => item.isGiftCard).map(item => ({
+          amount: item.total,
+          quantity: item.quantity,
+        }))) : '',
+        // Include gift card code for redemption (if applied at checkout)
+        giftCardCode: giftCardCode || '',
+        giftCardDiscount: giftCardDiscountAmount > 0 ? giftCardDiscountAmount.toString() : '',
+        giftCardCouponId: giftCardCouponId || '',
       },
+    }
+
+    // Apply gift card discount coupon OR allow promotion codes (Stripe only allows one)
+    if (giftCardCouponId) {
+      sessionConfig.discounts = [{
+        coupon: giftCardCouponId,
+      }];
+      console.log('Applied gift card discount coupon to session:', giftCardCouponId);
+    } else {
+      // Only allow promotion codes if no gift card discount is applied
+      sessionConfig.allow_promotion_codes = true;
     }
 
     // Only collect shipping address for physical products

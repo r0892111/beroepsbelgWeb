@@ -12,7 +12,7 @@ import { TourUpsellCard } from '@/components/upsells/tour-upsell-card';
 import { Compass, Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
-type CategoryFilter = 'All' | 'Book' | 'Merchandise' | 'Game';
+type CategoryFilter = 'All' | 'Book' | 'Merchandise' | 'Game' | 'GiftCard';
 
 export default function WebshopPage() {
   const t = useTranslations('webshop');
@@ -120,7 +120,7 @@ export default function WebshopPage() {
     return filtered;
   }, [products, selectedCategory, searchQuery, locale]);
 
-  const categories: CategoryFilter[] = ['All', 'Book', 'Merchandise', 'Game'];
+  const categories: CategoryFilter[] = ['All', 'Book', 'Merchandise', 'Game', 'GiftCard'];
 
   const getCategoryLabel = (category: CategoryFilter) => {
     switch (category) {
@@ -128,6 +128,7 @@ export default function WebshopPage() {
       case 'Book': return t('books');
       case 'Merchandise': return t('merchandise');
       case 'Game': return t('games');
+      case 'GiftCard': return t('giftCards');
     }
   };
 

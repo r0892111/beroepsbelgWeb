@@ -52,6 +52,8 @@ const {
     weekendFee = false, // Weekend fee (25 EUR) - applies to all tour types
     eveningFee = false, // Evening fee (25 EUR) - only for op_maat tours when time >= 17:00
     locale = 'nl', // Locale for redirect URLs (default to Dutch)
+    giftCardCode = null, // Gift card code for redemption
+    giftCardDiscount = 0, // Discount amount to apply from gift card
     } = await req.json()
 
     // Freight costs constants
@@ -88,10 +90,18 @@ const {
     // Calculate actual duration: use tour's duration_minutes, add 60 if extra hour is selected
     const baseDuration = tour.duration_minutes || 120; // Default to 120 if not specified
     const hasExtraHour = opMaatAnswers?.extraHour === true || extraHour === true;
-    const actualDuration = hasExtraHour ? baseDuration + 60 : baseDuration;
+    const isLocalStoriesTour = tour.local_stories === true;
+    
+    // Local stories tours are always exactly 2 hours (120 minutes), regardless of extra hour selection
+    const actualDuration = isLocalStoriesTour 
+      ? 120 
+      : (hasExtraHour ? baseDuration + 60 : baseDuration);
     
     // Use provided durationMinutes if available (from frontend), otherwise use calculated duration
-    const finalDurationMinutes = durationMinutes || actualDuration;
+    // But always enforce 120 minutes for local stories tours
+    const finalDurationMinutes = isLocalStoriesTour 
+      ? 120 
+      : (durationMinutes || actualDuration);
     
     console.log('Tour duration calculation:', {
       baseDuration,
@@ -271,6 +281,80 @@ const {
       console.log('Added free shipping to line items (tour booking)');
     }
 
+    // Apply gift card discount if provided
+    const giftCardDiscountAmount = giftCardCode && giftCardDiscount > 0 ? parseFloat(giftCardDiscount.toString()) : 0;
+    
+    // Add gift card discount as an informational line item (so it appears in the item list)
+    if (giftCardDiscountAmount > 0 && giftCardCode) {
+      lineItems.push({
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: `Gift Card Discount (${giftCardCode})`,
+            description: `Applied gift card discount`,
+          },
+          unit_amount: 0, // Zero cost - actual discount applied via coupon below
+        },
+        quantity: 1,
+      });
+      console.log('Added gift card discount line item (informational):', {
+        code: giftCardCode,
+        discountAmount: giftCardDiscountAmount,
+      });
+    }
+    
+    // Create and apply gift card discount as a Stripe coupon (so it appears on invoice)
+    let giftCardCouponId: string | null = null;
+    if (giftCardDiscountAmount > 0 && giftCardCode) {
+      try {
+        // Calculate discount amount in cents
+        const discountAmountCents = Math.round(giftCardDiscountAmount * 100);
+        
+        // Create a coupon with the exact discount amount
+        const coupon = await stripe.coupons.create({
+          name: `Gift Card ${giftCardCode}`,
+          amount_off: discountAmountCents,
+          currency: 'eur',
+          duration: 'once',
+          metadata: {
+            gift_card_code: giftCardCode,
+            type: 'gift_card_discount',
+          },
+        });
+        
+        giftCardCouponId = coupon.id;
+        
+        console.log('Created gift card discount coupon:', {
+          couponId: giftCardCouponId,
+          code: giftCardCode,
+          discountAmount: giftCardDiscountAmount,
+          discountAmountCents,
+        });
+      } catch (couponError) {
+        console.error('Failed to create gift card discount coupon:', couponError);
+        // Fall back to proportional discount if coupon creation fails
+        console.warn('Falling back to proportional discount method');
+        
+        // Calculate total before discount
+        const totalBeforeDiscount = lineItems.reduce((sum, item) => {
+          return sum + (item.price_data.unit_amount * item.quantity);
+        }, 0);
+        
+        const discountAmountCents = Math.round(giftCardDiscountAmount * 100);
+        const totalAfterDiscount = Math.max(0, totalBeforeDiscount - discountAmountCents);
+        
+        // Calculate discount ratio
+        const discountRatio = totalBeforeDiscount > 0 ? totalAfterDiscount / totalBeforeDiscount : 1;
+        
+        // Apply discount proportionally to each line item
+        for (const item of lineItems) {
+          const originalAmount = item.price_data.unit_amount;
+          const discountedAmount = Math.round(originalAmount * discountRatio);
+          item.price_data.unit_amount = Math.max(0, discountedAmount);
+        }
+      }
+    }
+
     console.log('=== CHECKOUT SESSION LINE ITEMS SUMMARY ===');
     console.log('Total line items:', lineItems.length);
     console.log('Line items breakdown:', lineItems.map((item: any, index: number) => ({
@@ -290,6 +374,7 @@ const {
       tourAmount: amount,
       tourAmountEuros: (amount / 100).toFixed(2),
       discountAmount: discountAmount.toFixed(2),
+      giftCardDiscount: giftCardDiscountAmount.toFixed(2),
       expected_amount: amount + (upsellProducts.reduce((sum: number, p: any) => {
         const qty = p.quantity || 1;
         const price = p.price || 0;
@@ -298,11 +383,10 @@ const {
     });
     console.log('===========================================');
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionConfig: any = {
       payment_method_types: ['card', 'bancontact', 'ideal'],
       line_items: lineItems,
       mode: 'payment',
-      allow_promotion_codes: true, // Allow customers to enter promo codes
       customer_creation: 'always', // Always create customer (required for invoice)
       invoice_creation: { enabled: true }, // Enable invoice creation for all sessions
       payment_intent_data: {
@@ -315,8 +399,24 @@ const {
         tourId,
         customerName,
         customerEmail,
+        giftCardCode: giftCardCode || '', // Include gift card code for redemption
+        giftCardDiscount: giftCardDiscountAmount > 0 ? giftCardDiscountAmount.toString() : '',
+        giftCardCouponId: giftCardCouponId || '',
       },
-    })
+    };
+
+    // Apply gift card discount coupon OR allow promotion codes (Stripe only allows one)
+    if (giftCardCouponId) {
+      sessionConfig.discounts = [{
+        coupon: giftCardCouponId,
+      }];
+      console.log('Applied gift card discount coupon to session:', giftCardCouponId);
+    } else {
+      // Only allow promotion codes if no gift card discount is applied
+      sessionConfig.allow_promotion_codes = true;
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
     // Process tour datetime for the booking data
     let tourDatetime: string | null = null;
@@ -366,7 +466,6 @@ const {
     }
 
     // Determine tour type
-    const isLocalStoriesTour = tour.local_stories === true;
     let tourType = 'standard';
     if (isLocalStoriesTour) {
       tourType = 'local_stories';

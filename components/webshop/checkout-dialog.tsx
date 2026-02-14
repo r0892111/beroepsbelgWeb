@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Gift, Truck } from 'lucide-react';
+import { Loader2, Gift, Truck, X, CheckCircle2, XCircle } from 'lucide-react';
 import { useCartContext } from '@/lib/contexts/cart-context';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useTranslations } from 'next-intl';
@@ -31,6 +31,16 @@ export function CheckoutDialog({ open, onOpenChange, totalAmount }: CheckoutDial
   const { cartItems, clearCart } = useCartContext();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Gift card redemption state
+  const [giftCardCode, setGiftCardCode] = useState('');
+  const [appliedGiftCard, setAppliedGiftCard] = useState<{
+    code: string;
+    currentBalance: number;
+    amountApplied: number;
+  } | null>(null);
+  const [giftCardLoading, setGiftCardLoading] = useState(false);
+  const [giftCardError, setGiftCardError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     customerName: '',
@@ -63,8 +73,53 @@ export function CheckoutDialog({ open, onOpenChange, totalAmount }: CheckoutDial
     return isBelgium ? SHIPPING_COST_BELGIUM : SHIPPING_COST_INTERNATIONAL;
   }, [isGiftCardOnly, totalAmount, formData.country]);
 
-  // Total including shipping
-  const grandTotal = totalAmount + shippingCost;
+  // Calculate gift card discount
+  const giftCardDiscount = appliedGiftCard ? Math.min(appliedGiftCard.amountApplied, totalAmount + shippingCost) : 0;
+  
+  // Total including shipping and gift card discount
+  const grandTotal = Math.max(0, totalAmount + shippingCost - giftCardDiscount);
+
+  // Handle gift card application
+  const handleApplyGiftCard = async () => {
+    if (!giftCardCode.trim()) return;
+    
+    setGiftCardLoading(true);
+    setGiftCardError(null);
+    
+    try {
+      const response = await fetch('/api/gift-cards/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: giftCardCode.trim().toUpperCase() }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        setGiftCardError(data.error || 'Invalid gift card code');
+        return;
+      }
+      
+      const orderTotal = totalAmount + shippingCost;
+      const amountToApply = Math.min(data.giftCard.currentBalance, orderTotal);
+      
+      setAppliedGiftCard({
+        code: data.giftCard.code,
+        currentBalance: data.giftCard.currentBalance,
+        amountApplied: amountToApply,
+      });
+      setGiftCardCode('');
+    } catch (err) {
+      setGiftCardError('Failed to validate gift card');
+    } finally {
+      setGiftCardLoading(false);
+    }
+  };
+
+  const handleRemoveGiftCard = () => {
+    setAppliedGiftCard(null);
+    setGiftCardError(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,6 +176,8 @@ export function CheckoutDialog({ open, onOpenChange, totalAmount }: CheckoutDial
           userId: user?.id || null,
           locale: locale || 'nl',
           isGiftCardOnly,
+          giftCardCode: appliedGiftCard?.code || null, // Include gift card code for redemption
+          giftCardDiscount: appliedGiftCard ? giftCardDiscount : 0, // Include discount amount to apply in Stripe
         }),
       });
 
@@ -262,6 +319,85 @@ export function CheckoutDialog({ open, onOpenChange, totalAmount }: CheckoutDial
             </>
           )}
 
+          {/* Gift Card Redemption */}
+          {!isGiftCardOnly && (
+            <div className="space-y-3 border-t pt-4">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Gift className="h-4 w-4" />
+                {t('haveGiftCard') || 'Have a gift card?'}
+              </Label>
+              
+              {appliedGiftCard ? (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <div>
+                      <p className="text-sm font-medium text-green-900">
+                        {t('giftCardApplied') || 'Gift Card Applied'}
+                      </p>
+                      <p className="text-xs text-green-700 font-mono">{appliedGiftCard.code}</p>
+                      <p className="text-xs text-green-700">
+                        -€{appliedGiftCard.amountApplied.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveGiftCard}
+                    className="h-8 w-8 p-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    placeholder="XXXX-XXXX-XXXX-XXXX"
+                    value={giftCardCode}
+                    onChange={(e) => {
+                      let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                      if (value.length > 4) value = value.slice(0, 4) + '-' + value.slice(4);
+                      if (value.length > 9) value = value.slice(0, 9) + '-' + value.slice(9);
+                      if (value.length > 14) value = value.slice(0, 14) + '-' + value.slice(14);
+                      if (value.length > 19) value = value.slice(0, 19);
+                      setGiftCardCode(value);
+                    }}
+                    maxLength={19}
+                    className="font-mono flex-1"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && giftCardCode.trim()) {
+                        e.preventDefault();
+                        void handleApplyGiftCard();
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleApplyGiftCard}
+                    disabled={giftCardLoading || !giftCardCode.trim()}
+                  >
+                    {giftCardLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      t('apply') || 'Apply'
+                    )}
+                  </Button>
+                </div>
+              )}
+              
+              {giftCardError && (
+                <p className="text-xs text-red-600 flex items-center gap-1">
+                  <XCircle className="h-3 w-3" />
+                  {giftCardError}
+                </p>
+              )}
+            </div>
+          )}
+
           {error && (
             <div className="rounded-md bg-red-50 p-3 text-sm text-red-800">
               {error}
@@ -287,6 +423,15 @@ export function CheckoutDialog({ open, onOpenChange, totalAmount }: CheckoutDial
                   <span className={shippingCost === 0 ? 'text-green-600' : ''}>
                     {shippingCost === 0 ? t('free') || 'Gratis' : `€${shippingCost.toFixed(2)}`}
                   </span>
+                </div>
+              )}
+              {appliedGiftCard && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <span className="flex items-center gap-1">
+                    <Gift className="h-3 w-3" />
+                    {t('giftCardDiscount') || 'Gift Card Discount'}
+                  </span>
+                  <span>-€{giftCardDiscount.toFixed(2)}</span>
                 </div>
               )}
               <div className="flex justify-between text-lg font-bold border-t pt-2">

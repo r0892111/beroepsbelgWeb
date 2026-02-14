@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="x-apple-disable-message-reformatting" />
+  <title>Je Cadeaubon van BeroepsBelg</title>
+  <style>
+    html,
+    body {
+      margin: 0 !important;
+      padding: 0 !important;
+      height: 100% !important;
+      width: 100% !important;
+    }
+
+    * {
+      -ms-text-size-adjust: 100%;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    table,
+    td {
+      mso-table-lspace: 0pt;
+      mso-table-rspace: 0pt;
+      border-collapse: collapse;
+    }
+
+    img {
+      -ms-interpolation-mode: bicubic;
+      border: 0;
+      outline: none;
+      text-decoration: none;
+      display: block;
+    }
+
+    a {
+      text-decoration: none;
+    }
+
+    a,
+    a:link,
+    a:visited,
+    a:hover,
+    a:active {
+      color: inherit !important;
+      text-decoration: none !important;
+    }
+
+    u+#body a {
+      color: inherit !important;
+      text-decoration: none !important;
+    }
+
+    body {
+      background: #f2f2f2;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #1a1a1a;
+      line-height: 1.6;
+    }
+
+    .wrapper {
+      padding: 32px 12px;
+      background: #f2f2f2;
+    }
+
+    /* Responsive container: fills available width, caps at 600px */
+    .container {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.10);
+    }
+
+    .header-image {
+      background-color: #4a4a4a;
+      background-image: url('https://i.imgur.com/UGYL36o.jpeg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      padding: 0;
+      text-align: center;
+    }
+
+    .header-title {
+      background: linear-gradient(135deg, #4a4a4a 0%, #5a5a5a 100%);
+      padding: 30px 32px 28px;
+      text-align: center;
+    }
+
+    .badge {
+      width: 64px;
+      height: 64px;
+      background: #69d3a1;
+      border-radius: 999px;
+      margin: 0 auto 18px;
+      text-align: center;
+      line-height: 64px;
+      box-shadow: 0 6px 18px rgba(128, 214, 194, 0.30);
+      font-size: 34px;
+      font-weight: 800;
+      color: #4a4a4a;
+    }
+
+    .h1 {
+      margin: 0;
+      font-size: 32px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.4px;
+    }
+
+    .sub {
+      margin: 10px 0 0;
+      font-size: 16px;
+      color: #e3e3e3;
+      font-weight: 400;
+    }
+
+    .banner {
+      background: #f5f5f5;
+      padding: 18px 32px;
+      text-align: center;
+      border-bottom: 3px solid #4a4a4a;
+    }
+
+    .banner p {
+      margin: 0 0 6px;
+      font-size: 12px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 700;
+    }
+
+    .banner h2 {
+      margin: 0;
+      font-size: 22px;
+      color: #4a4a4a;
+      font-weight: 800;
+    }
+
+    .content {
+      padding: 28px 26px 10px;
+    }
+
+    .greeting {
+      margin: 0 0 16px;
+      font-size: 16px;
+      color: #4a4a4a;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 2px solid #4a4a4a;
+      border-radius: 12px;
+      padding: 22px;
+      margin: 18px 0;
+    }
+
+    .section-title {
+      margin: 0 0 14px;
+      font-size: 16px;
+      font-weight: 900;
+      color: #4a4a4a;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .section-title .bar {
+      display: block;
+      width: 56px;
+      height: 4px;
+      background: #69d3a1;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+
+    .gift-card-box {
+      background: #f5f5f5;
+      border: 3px dashed #69d3a1;
+      border-radius: 12px;
+      padding: 32px 24px;
+      margin: 24px 0;
+      text-align: center;
+    }
+
+    .gift-card-label {
+      font-size: 12px;
+      color: #6a6a6a;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 0 0 12px;
+    }
+
+    .gift-card-code {
+      font-size: 36px;
+      font-weight: 900;
+      color: #4a4a4a;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 6px;
+      margin: 0 0 16px;
+      word-break: break-all;
+    }
+
+    .gift-card-amount {
+      font-size: 48px;
+      font-weight: 900;
+      color: #69d3a1;
+      margin: 0;
+    }
+
+    .detail-row {
+      width: 100%;
+      border-bottom: 1px solid #e9e9e9;
+      padding: 10px 0;
+    }
+
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+
+    .label {
+      font-size: 14px;
+      color: #6a6a6a;
+      font-weight: 700;
+    }
+
+    .value {
+      font-size: 14px;
+      color: #4a4a4a;
+      font-weight: 900;
+      text-align: right;
+    }
+
+    .callout {
+      background: #ffffff;
+      border: 2px solid #4a4a4a;
+      border-radius: 12px;
+      padding: 18px;
+      margin: 18px 0;
+    }
+
+    .callout h3 {
+      margin: 0 0 10px;
+      font-size: 14px;
+      color: #4a4a4a;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .callout p {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: #4a4a4a;
+    }
+
+    .callout ul {
+      margin: 10px 0 0 18px;
+      padding: 0;
+    }
+
+    .callout li {
+      margin: 0 0 6px;
+      font-size: 14px;
+      color: #4a4a4a;
+    }
+
+    .button-wrap {
+      text-align: center;
+      padding: 6px 0 0;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 14px 22px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      border: 2px solid #4a4a4a;
+      color: #4a4a4a !important;
+      background: #69d3a1;
+      mso-padding-alt: 0;
+    }
+
+    .btn-outline {
+      background: #ffffff;
+      color: #4a4a4a !important;
+    }
+
+    .personal-message {
+      background: #FEF3C7;
+      border-left: 4px solid #F59E0B;
+      padding: 18px;
+      margin: 24px 0;
+      border-radius: 4px;
+    }
+
+    .personal-message-label {
+      font-size: 12px;
+      color: #92400E;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 0 0 8px;
+    }
+
+    .personal-message-text {
+      font-size: 15px;
+      color: #78350F;
+      font-style: italic;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .social {
+      background: #f5f5f5;
+      padding: 22px 26px;
+      border-top: 1px solid #e0e0e0;
+      text-align: center;
+    }
+
+    .social h3 {
+      margin: 0 0 6px;
+      font-size: 16px;
+      font-weight: 900;
+      color: #4a4a4a;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .social p {
+      margin: 0 0 14px;
+      font-size: 14px;
+      color: #6a6a6a;
+      font-weight: 700;
+    }
+
+    .footer {
+      background: #69d3a1;
+      color: #4a4a4a;
+      padding: 26px;
+      text-align: center;
+    }
+
+    .footer p {
+      margin: 0 0 8px;
+      font-size: 13px;
+      color: #4a4a4a;
+    }
+
+    .divider {
+      height: 1px;
+      background: #4a4a4a;
+      margin: 16px 0;
+      opacity: 0.35;
+    }
+
+    .footer a {
+      color: #4a4a4a !important;
+      font-weight: 900;
+      text-decoration: none !important;
+    }
+
+    @media only screen and (max-width:600px) {
+      .wrapper { padding: 18px 8px !important; }
+      .content { padding: 22px 16px 6px !important; }
+      .gift-card-code { font-size: 28px !important; letter-spacing: 4px !important; }
+      .gift-card-amount { font-size: 36px !important; }
+    }
+  </style>
+</head>
+
+<body id="body">
+  <center class="wrapper">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="min-width:100%;">
+      <tr>
+        <td align="center">
+          <table role="presentation" class="container" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;">
+
+            <!-- TOP: Banner image -->
+            <tr>
+              <td align="center" valign="top" background="https://i.imgur.com/UGYL36o.jpeg" style="
+                background-color:#ffffff;
+                background-image:url('https://i.imgur.com/UGYL36o.jpeg');
+                background-size:cover;
+                background-position:center;
+                background-repeat:no-repeat;
+              ">
+                <!--[if gte mso 9]>
+                <v:rect xmlns:v='urn:schemas-microsoft-com:vml' fill='true' stroke='false' style='width:600px;height:260px;'>
+                  <v:fill type='frame' src='https://i.imgur.com/UGYL36o.jpeg' color='#ffffff' />
+                  <v:textbox inset='0,0,0,0'>
+                <![endif]-->
+
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td height="260" style="height:260px; line-height:260px; font-size:0;">&nbsp;</td>
+                  </tr>
+                </table>
+
+                <!--[if gte mso 9]>
+                  </v:textbox>
+                </v:rect>
+                <![endif]-->
+              </td>
+            </tr>
+
+            <!-- TOP: Title section -->
+            <tr>
+              <td align="center" style="background:#ffffff; padding:26px 26px 18px; text-align:center;">
+                <div style="height:4px; width:70px; background:#69d3a1; border-radius:999px; margin:0 auto 18px;"></div>
+
+                <div style="
+                  width:58px;height:58px;border-radius:999px;background:#69d3a1;margin:0 auto 16px;
+                  text-align:center;line-height:58px;font-size:30px;font-weight:900;color:#4a4a4a;
+                  box-shadow:0 8px 22px rgba(128,214,194,0.25);
+                ">🎁</div>
+
+                <div style="margin:0;font-size:30px;font-weight:900;color:#4a4a4a;letter-spacing:-0.4px;line-height:1.15;">
+                  Je Cadeaubon
+                </div>
+
+                <div style="margin-top:10px;font-size:16px;font-weight:600;color:#6a6a6a;line-height:1.4;">
+                  Je cadeaubon is klaar voor gebruik
+                </div>
+
+                <div style="height:1px; background:#e9e9e9; margin:22px 0 0;"></div>
+              </td>
+            </tr>
+
+            <!-- Content -->
+            <tr>
+              <td class="content">
+
+                <p class="greeting">
+                  Beste <strong>{{recipientName}}</strong>,<br /><br />
+                  Bedankt voor je aankoop! Je hebt een cadeaubon gekocht die je kunt gebruiken voor elke tour of product in onze webshop.
+                </p>
+
+                <!-- Gift Card Code Box -->
+                <div class="gift-card-box">
+                  <p class="gift-card-label">Je Cadeauboncode</p>
+                  <p class="gift-card-code">{{giftCardCode}}</p>
+                  <p class="gift-card-amount">€{{amount}}</p>
+                </div>
+
+                <!-- Personal Message (if provided) -->
+                {{#if personalMessage}}
+                <div class="personal-message">
+                  <p class="personal-message-label">Persoonlijk bericht</p>
+                  <p class="personal-message-text">"{{personalMessage}}"</p>
+                </div>
+                {{/if}}
+
+                <!-- How to Use Section -->
+                <div class="card">
+                  <div class="section-title">Hoe gebruik je je cadeaubon?<span class="bar"></span></div>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr class="detail-row">
+                      <td class="label">Stap 1</td>
+                      <td class="value" align="right">Bezoek onze webshop of bekijk onze tours</td>
+                    </tr>
+                    <tr class="detail-row">
+                      <td class="label">Stap 2</td>
+                      <td class="value" align="right">Voeg producten of een tour toe aan je winkelwagen</td>
+                    </tr>
+                    <tr class="detail-row">
+                      <td class="label">Stap 3</td>
+                      <td class="value" align="right">Ga naar checkout en voer je cadeauboncode in</td>
+                    </tr>
+                    <tr class="detail-row">
+                      <td class="label">Stap 4</td>
+                      <td class="value" align="right">Je korting wordt automatisch toegepast</td>
+                    </tr>
+                  </table>
+                </div>
+
+                <!-- Important Info -->
+                <div class="callout">
+                  <h3>Belangrijke informatie</h3>
+                  <ul>
+                    <li>Je cadeaubon is geldig voor alle tours en producten in onze webshop</li>
+                    <li>Je kunt de cadeaubon gebruiken tot het volledige bedrag is opgebruikt</li>
+                    <li>Als je bestelling minder kost dan je cadeaubonwaarde, blijft het resterende bedrag beschikbaar voor toekomstige aankopen</li>
+                    {{#if expiresAt}}
+                    <li>Je cadeaubon is geldig tot: <strong>{{expiresAt}}</strong></li>
+                    {{/if}}
+                  </ul>
+                </div>
+
+                <!-- CTA Buttons -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:18px 0;">
+                  <tr>
+                    <td align="center" style="padding:0;">
+                      <a href="https://beroepsbelg.be/{{locale}}/webshop" class="btn" style="margin:0 6px 10px 0;" target="_blank" rel="noopener">
+                        Bekijk Webshop
+                      </a>
+                      <a href="https://beroepsbelg.be/{{locale}}/tours" class="btn btn-outline" style="margin:0 0 10px 6px;" target="_blank" rel="noopener">
+                        Bekijk Tours
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Check Balance Link -->
+                <p style="margin:24px 0 0; text-align:center; color:#6a6a6a; font-size:14px;">
+                  Wil je je cadeaubonsaldo controleren? 
+                  <a href="https://beroepsbelg.be/{{locale}}/gift-cards/balance" style="color:#69d3a1; text-decoration:none; font-weight:700;" target="_blank" rel="noopener">
+                    Klik hier
+                  </a>
+                </p>
+
+              </td>
+            </tr>
+
+            <!-- Social -->
+            <tr>
+              <td class="social">
+                <h3>Deel je passie voor België</h3>
+                <p>Volg ons op sociale media en ontdek meer verborgen verhalen</p>
+
+                <table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="padding:0 6px;">
+                      <a href="https://www.facebook.com/tanguy.ottomer/" target="_blank" rel="noopener">
+                        <table role="presentation" width="44" height="44" cellpadding="0" cellspacing="0" border="0" style="border-radius:999px;background:#4a4a4a;">
+                          <tr><td align="center" valign="middle">
+                            <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" width="18" height="18" alt="Facebook" style="display:block;">
+                          </td></tr>
+                        </table>
+                      </a>
+                    </td>
+                    <td style="padding:0 6px;">
+                      <a href="https://www.instagram.com/tanguyottomer/" target="_blank" rel="noopener">
+                        <table role="presentation" width="44" height="44" cellpadding="0" cellspacing="0" border="0" style="border-radius:999px;background:#4a4a4a;">
+                          <tr><td align="center" valign="middle">
+                            <img src="https://cdn-icons-png.flaticon.com/512/733/733558.png" width="18" height="18" alt="Instagram" style="display:block;">
+                          </td></tr>
+                        </table>
+                      </a>
+                    </td>
+                    <td style="padding:0 6px;">
+                      <a href="https://www.tiktok.com/@tanguyottomer" target="_blank" rel="noopener">
+                        <table role="presentation" width="44" height="44" cellpadding="0" cellspacing="0" border="0" style="border-radius:999px;background:#4a4a4a;">
+                          <tr><td align="center" valign="middle">
+                            <img src="https://cdn-icons-png.flaticon.com/512/3046/3046121.png" width="18" height="18" alt="TikTok" style="display:block;">
+                          </td></tr>
+                        </table>
+                      </a>
+                    </td>
+                    <td style="padding:0 6px;">
+                      <a href="https://www.linkedin.com/in/tanguy-ottomer-1649a6a/" target="_blank" rel="noopener">
+                        <table role="presentation" width="44" height="44" cellpadding="0" cellspacing="0" border="0" style="border-radius:999px;background:#4a4a4a;">
+                          <tr><td align="center" valign="middle">
+                            <img src="https://cdn-icons-png.flaticon.com/512/733/733561.png" width="18" height="18" alt="LinkedIn" style="display:block;">
+                          </td></tr>
+                        </table>
+                      </a>
+                    </td>
+                    <td style="padding:0 6px;">
+                      <a href="https://api.whatsapp.com/send?phone=32494254159" target="_blank" rel="noopener">
+                        <table role="presentation" width="44" height="44" cellpadding="0" cellspacing="0" border="0" style="border-radius:999px;background:#4a4a4a;">
+                          <tr><td align="center" valign="middle">
+                            <img src="https://cdn-icons-png.flaticon.com/512/733/733585.png" width="18" height="18" alt="WhatsApp" style="display:block;">
+                          </td></tr>
+                        </table>
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td class="footer">
+                <img src="https://rwrfobawfbfsggczofao.supabase.co/storage/v1/object/public/Tour%20Photos/Logo/Beroepsbelg%20Logo.png" alt="BeroepsBelg" style="margin:0 auto 12px; width:140px; height:auto;" />
+                <p><strong style="color:#4a4a4a;">BeroepsBelg</strong> — Je gids in België</p>
+                <p>Curated culturele wandeltochten die de verborgen verhalen van Belgische steden onthullen</p>
+
+                <div class="divider"></div>
+
+                <p>Vrijdagmarkt 12, 2000 Antwerpen, België</p>
+                <p><a href="mailto:info@beroepsbelg.be">info@beroepsbelg.be</a></p>
+                <p><a href="https://wa.me/32470123456">+32 470 12 34 56</a></p>
+                <p><a href="https://beroepsbelg.be">beroepsbelg.be</a></p>
+
+                <div class="divider"></div>
+
+                <p>BTW: BE0599930251</p>
+
+                <p style="margin-top:14px; font-size:12px; color:#4a4a4a;">
+                  <a href="https://beroepsbelg.be/nl/privacy">Privacy</a>
+                  &nbsp;|&nbsp;
+                  <a href="https://beroepsbelg.be/nl/disclaimer">Algemene voorwaarden</a>
+                </p>
+
+                <p style="margin-top:14px; font-size:12px; color:#4a4a4a;">
+                  © {{currentYear}} BeroepsBelg. Alle rechten voorbehouden.
+                </p>
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </center>
+</body>
+</html>

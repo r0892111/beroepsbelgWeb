@@ -2,6 +2,7 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import Stripe from 'npm:stripe@17.7.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
 import { nowBrussels, parseBrusselsDateTime, toBrusselsLocalISO, addMinutesBrussels } from '../_shared/timezone.ts';
+import { generateUniqueGiftCardCode } from '../_shared/gift-card-generator.ts';
 
 const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
 const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')!;
@@ -584,6 +585,69 @@ async function handleEvent(event: Stripe.Event) {
           console.info(`Deleted pending booking entry for session ${sessionId}`);
         }
 
+        // Redeem gift card if one was applied at checkout
+        const giftCardCodeToRedeem = metadata?.giftCardCode;
+        const giftCardDiscountAmount = metadata?.giftCardDiscount ? parseFloat(metadata.giftCardDiscount) : 0;
+        if (giftCardCodeToRedeem && giftCardCodeToRedeem.trim() && giftCardDiscountAmount > 0 && createdBookingId) {
+          try {
+            console.info(`[Gift Card Redemption] Processing redemption for tour booking, code: ${giftCardCodeToRedeem}, discount amount: ${giftCardDiscountAmount} EUR`);
+            
+            // Redeem gift card directly (we're already in a service role context)
+            const normalizedCode = giftCardCodeToRedeem.trim().toUpperCase().replace(/\s+/g, '');
+            
+            // Get the gift card
+            const { data: giftCard, error: fetchError } = await supabase
+              .from('gift_cards')
+              .select('id, code, current_balance, status, expires_at')
+              .eq('code', normalizedCode)
+              .eq('status', 'active')
+              .single();
+
+            if (!fetchError && giftCard) {
+              const currentBalance = parseFloat(giftCard.current_balance.toString());
+              // Use the actual discount amount that was applied (not the order total)
+              const amountToUse = Math.min(currentBalance, giftCardDiscountAmount);
+              const newBalance = currentBalance - amountToUse;
+
+              // Update gift card balance
+              const { error: updateError } = await supabase
+                .from('gift_cards')
+                .update({
+                  current_balance: newBalance,
+                  last_used_at: new Date().toISOString(),
+                  status: newBalance <= 0 ? 'redeemed' : 'active',
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('id', giftCard.id)
+                .eq('current_balance', currentBalance); // Optimistic locking
+
+              if (!updateError) {
+                // Record transaction
+                await supabase
+                  .from('gift_card_transactions')
+                  .insert({
+                    gift_card_id: giftCard.id,
+                    order_id: sessionId,
+                    stripe_order_id: null, // Tour bookings don't have stripe_orders
+                    amount_used: amountToUse,
+                    balance_before: currentBalance,
+                    balance_after: newBalance,
+                    transaction_type: 'redemption',
+                  });
+
+                console.info(`[Gift Card Redemption] Successfully redeemed for tour booking: ${amountToUse} EUR, remaining balance: ${newBalance} EUR`);
+              } else {
+                console.error(`[Gift Card Redemption] Failed to update gift card balance:`, updateError);
+              }
+            } else {
+              console.error(`[Gift Card Redemption] Gift card not found or inactive:`, fetchError);
+            }
+          } catch (redeemError: any) {
+            console.error('[Gift Card Redemption] Error redeeming gift card for tour booking:', redeemError);
+            // Don't fail the booking - gift card redemption failure shouldn't block booking completion
+          }
+        }
+
         // Call N8N webhook for tour booking confirmation
         const n8nWebhookUrl = 'https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc';
 
@@ -1113,15 +1177,19 @@ async function handleEvent(event: Stripe.Event) {
 
         // Retrieve full session with line items, shipping details, and discounts
         const fullSession = await stripe.checkout.sessions.retrieve(sessionId, {
-          expand: ['line_items', 'line_items.data.price.product', 'discounts.promotion_code', 'discounts.promotion_code.coupon'],
+          expand: ['line_items', 'line_items.data.price.product', 'discounts.promotion_code', 'discounts.promotion_code.coupon', 'discounts.coupon'],
         });
 
-        // Extract promo code info for webshop orders
+        // Extract promo code and gift card discount info for webshop orders
         let webshopPromoCode: string | null = null;
         let webshopPromoDiscountPercent: number | null = null;
+        let giftCardDiscountFromCoupon: number | null = null;
+        let giftCardCodeFromCoupon: string | null = null;
 
         if (fullSession.discounts && fullSession.discounts.length > 0) {
           const discount = fullSession.discounts[0] as any;
+          
+          // Check if it's a promotion code (promo code discount)
           if (discount.promotion_code && typeof discount.promotion_code === 'object') {
             webshopPromoCode = discount.promotion_code.code || null;
             // Get discount percent from coupon inside promotion_code
@@ -1129,8 +1197,36 @@ async function handleEvent(event: Stripe.Event) {
               webshopPromoDiscountPercent = discount.promotion_code.coupon.percent_off || null;
             }
           }
+          
+          // Check if it's a gift card discount (coupon with gift card metadata)
+          if (discount.coupon && typeof discount.coupon === 'object') {
+            const coupon = discount.coupon;
+            // Check metadata to see if this is a gift card discount
+            if (coupon.metadata && coupon.metadata.type === 'gift_card_discount') {
+              giftCardCodeFromCoupon = coupon.metadata.gift_card_code || null;
+              // Get discount amount (could be amount_off or percent_off)
+              if (coupon.amount_off) {
+                giftCardDiscountFromCoupon = coupon.amount_off / 100; // Convert cents to euros
+              } else if (coupon.percent_off) {
+                // For percentage discounts, we'd need to calculate from the total
+                // But gift cards use fixed amounts, so this shouldn't happen
+                console.warn('Gift card discount uses percentage instead of fixed amount');
+              }
+            }
+          }
         }
-        console.info('Webshop promo code info:', { webshopPromoCode, webshopPromoDiscountPercent });
+        
+        // Use gift card discount from coupon if available, otherwise fall back to metadata
+        const giftCardDiscountAmount = giftCardDiscountFromCoupon ?? 
+          (metadata?.giftCardDiscount ? parseFloat(metadata.giftCardDiscount) : 0);
+        const giftCardCodeUsed = giftCardCodeFromCoupon || metadata?.giftCardCode || null;
+        
+        console.info('Webshop discount info:', { 
+          webshopPromoCode, 
+          webshopPromoDiscountPercent,
+          giftCardCode: giftCardCodeUsed,
+          giftCardDiscount: giftCardDiscountAmount,
+        });
 
         // Extract items from line items
         let shippingCost = 0;
@@ -1403,6 +1499,176 @@ async function handleEvent(event: Stripe.Event) {
           return;
         } else {
           console.info(`✅ Successfully created/found webshop order for session: ${sessionId}, order ID: ${order.id}`);
+
+          // Redeem gift card if one was applied at checkout
+          const giftCardCodeToRedeem = giftCardCodeUsed;
+          if (giftCardCodeToRedeem && giftCardCodeToRedeem.trim() && giftCardDiscountAmount > 0 && orderType === 'webshop') {
+            try {
+              console.info(`[Gift Card Redemption] Processing redemption for code: ${giftCardCodeToRedeem}, discount amount: ${giftCardDiscountAmount} EUR`);
+              
+              // Redeem gift card directly (we're already in a service role context)
+              const normalizedCode = giftCardCodeToRedeem.trim().toUpperCase().replace(/\s+/g, '');
+              
+              // Get the gift card
+              const { data: giftCard, error: fetchError } = await supabase
+                .from('gift_cards')
+                .select('id, code, current_balance, status, expires_at')
+                .eq('code', normalizedCode)
+                .eq('status', 'active')
+                .single();
+
+              if (!fetchError && giftCard) {
+                const currentBalance = parseFloat(giftCard.current_balance.toString());
+                // Use the actual discount amount that was applied (not the order total)
+                const amountToUse = Math.min(currentBalance, giftCardDiscountAmount);
+                const newBalance = currentBalance - amountToUse;
+
+                // Update gift card balance
+                const { error: updateError } = await supabase
+                  .from('gift_cards')
+                  .update({
+                    current_balance: newBalance,
+                    last_used_at: new Date().toISOString(),
+                    status: newBalance <= 0 ? 'redeemed' : 'active',
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq('id', giftCard.id)
+                  .eq('current_balance', currentBalance); // Optimistic locking
+
+                if (!updateError) {
+                  // Record transaction
+                  await supabase
+                    .from('gift_card_transactions')
+                    .insert({
+                      gift_card_id: giftCard.id,
+                      order_id: sessionId,
+                      stripe_order_id: order.id,
+                      amount_used: amountToUse,
+                      balance_before: currentBalance,
+                      balance_after: newBalance,
+                      transaction_type: 'redemption',
+                    });
+
+                  console.info(`[Gift Card Redemption] Successfully redeemed: ${amountToUse} EUR, remaining balance: ${newBalance} EUR`);
+                } else {
+                  console.error(`[Gift Card Redemption] Failed to update gift card balance:`, updateError);
+                }
+              } else {
+                console.error(`[Gift Card Redemption] Gift card not found or inactive:`, fetchError);
+              }
+            } catch (redeemError: any) {
+              console.error('[Gift Card Redemption] Error redeeming gift card:', redeemError);
+              // Don't fail the order - gift card redemption failure shouldn't block order completion
+            }
+          }
+
+          // Create gift cards if this is a gift card order
+          if (orderType === 'giftcard' && productItems.length > 0) {
+            try {
+              console.info('[Gift Card] Processing gift card creation for order');
+              
+              // Extract gift card items from productItems (items with isGiftCard flag or gift card category)
+              const giftCardItems = productItems.filter((item: any) => {
+                // Check if item is a gift card by checking productId against webshop_data
+                // For now, we'll create gift cards for all items in a giftcard order
+                return true; // All items in giftcard order are gift cards
+              });
+
+              if (giftCardItems.length > 0) {
+                const purchaserEmail = fullSession.customer_email || metadata?.customerEmail || 'unknown@guest.com';
+                const purchaserName = metadata?.customerName || 'Guest';
+
+                for (const giftCardItem of giftCardItems) {
+                  const amount = giftCardItem.price * giftCardItem.quantity;
+                  
+                  // Generate unique gift card code
+                  const code = await generateUniqueGiftCardCode(supabase);
+                  
+                  // Create gift card in database
+                  const { data: giftCard, error: giftCardError } = await supabase
+                    .from('gift_cards')
+                    .insert({
+                      code,
+                      initial_amount: amount,
+                      current_balance: amount,
+                      currency: 'EUR',
+                      status: 'active',
+                      purchaser_email: purchaserEmail,
+                      recipient_email: purchaserEmail, // For now, send to purchaser (can add recipient fields later)
+                      recipient_name: purchaserName,
+                      stripe_payment_intent_id: paymentIntentId,
+                      stripe_checkout_session_id: sessionId,
+                      purchased_at: new Date().toISOString(),
+                    })
+                    .select()
+                    .single();
+
+                  if (giftCardError) {
+                    console.error('[Gift Card] Failed to create gift card:', giftCardError);
+                    continue;
+                  }
+
+                  console.info(`[Gift Card] Created gift card: ${code} for ${amount} EUR`);
+
+                  // Send gift card email via n8n webhook
+                  try {
+                    // Use environment variable or fallback to hardcoded webhook URL
+                    const n8nGiftCardWebhook = Deno.env.get('N8N_GIFT_CARD_WEBHOOK') || 'https://alexfinit.app.n8n.cloud/webhook/7818ae01-ba24-4071-95b2-fa3cd0c3fcf9';
+                    
+                    // Get recipient info from gift card (may differ from purchaser if gift was sent to someone else)
+                    const recipientEmail = giftCard?.recipient_email || purchaserEmail;
+                    const recipientName = giftCard?.recipient_name || purchaserName;
+                    const personalMessage = giftCard?.personal_message || '';
+                    const expiresAt = giftCard?.expires_at ? new Date(giftCard.expires_at).toLocaleDateString('nl-NL', { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    }) : null;
+                    
+                    // Get locale from metadata or default to 'nl'
+                    const locale = metadata?.locale || 'nl';
+                    
+                    // Format amount to 2 decimal places
+                    const formattedAmount = amount.toFixed(2);
+                    
+                    // Current year
+                    const currentYear = new Date().getFullYear().toString();
+
+                    await fetch(n8nGiftCardWebhook, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        // Email template variables
+                        recipientName: recipientName,
+                        purchaserName: purchaserName,
+                        giftCardCode: code,
+                        amount: formattedAmount,
+                        locale: locale,
+                        personalMessage: personalMessage,
+                        expiresAt: expiresAt,
+                        currentYear: currentYear,
+                        
+                        // Additional data for reference
+                        recipientEmail: recipientEmail,
+                        purchaserEmail: purchaserEmail,
+                        currency: 'EUR',
+                        orderId: order.id,
+                        checkoutSessionId: sessionId,
+                        giftCardId: giftCard?.id,
+                      }),
+                    });
+                    console.info(`[Gift Card] Email webhook sent for gift card ${code} to ${recipientEmail}`);
+                  } catch (emailError: any) {
+                    console.error('[Gift Card] Failed to send email webhook:', emailError);
+                    // Don't fail - gift card is created, email can be sent manually if needed
+                  }
+                }
+              }
+            } catch (giftCardError: any) {
+              console.error('[Gift Card] Error processing gift cards:', giftCardError);
+              // Don't fail the order if gift card creation fails - log and continue
+            }
+          }
 
           // Create order in Stoqflow
           try {
@@ -1687,6 +1953,9 @@ async function handleEvent(event: Stripe.Event) {
             // Promo code info for invoice creation
             promoCode: webshopPromoCode,
             promoDiscountPercent: webshopPromoDiscountPercent,
+            // Gift card discount info for invoice creation
+            giftCardCode: giftCardCodeUsed,
+            giftCardDiscount: giftCardDiscountAmount > 0 ? giftCardDiscountAmount : null,
             // Stoqflow integration
             stoqflow_order_id: stoqflowOrderId || null, // Stoqflow order ID if created successfully
           },

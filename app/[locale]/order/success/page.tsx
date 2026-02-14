@@ -334,6 +334,15 @@ export default function OrderSuccessPage() {
   console.log('productImages:', productImages);
   console.log('productMediaTypes:', productMediaTypes);
 
+  // Check if this is a gift card order
+  const isGiftCardOrder = order?.metadata?.order_type === 'giftcard' || 
+                          order?.metadata?.isGiftCardOnly === 'true' ||
+                          (order?.items?.every((item: any) => 
+                            item.isGiftCard === true || 
+                            item.title?.toLowerCase().includes('cadeaubon') ||
+                            item.title?.toLowerCase().includes('gift card')
+                          ));
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-16">
@@ -487,8 +496,8 @@ export default function OrderSuccessPage() {
                 </div>
               </div>
 
-              {/* Shipping Address */}
-              {order.shipping_address && (
+              {/* Shipping Address - Hide for gift card orders */}
+              {order.shipping_address && !isGiftCardOrder && (
                 <div className="rounded-lg p-4" style={{ backgroundColor: 'var(--bg-light)' }}>
                   <div className="flex items-center gap-2 mb-2">
                     <MapPin className="h-4 w-4" style={{ color: 'var(--primary-base)' }} />
@@ -591,12 +600,15 @@ export default function OrderSuccessPage() {
                         </span>
                       </div>
                     )}
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('shippingCost')}</span>
-                      <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
-                        €{shippingCost.toFixed(2)}
-                      </span>
-                    </div>
+                    {/* Hide shipping cost for gift card orders */}
+                    {!isGiftCardOrder && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('shippingCost')}</span>
+                        <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
+                          €{shippingCost.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
                     <div
                       className="flex justify-between items-center pt-3 mt-2 border-t"
                       style={{ borderColor: 'var(--border-light)' }}
@@ -628,7 +640,12 @@ export default function OrderSuccessPage() {
                 <p className="text-sm" style={{ color: 'var(--text-primary)' }}>
                   <strong style={{ color: 'var(--primary-dark)' }}>{t('whatsNext')}</strong>
                   <br />
-                  <span style={{ color: 'var(--text-secondary)' }}>{t('nextSteps')}</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>
+                    {isGiftCardOrder 
+                      ? (t('giftCardNextSteps') || 'Je cadeaubon wordt direct per e-mail verzonden. Je ontvangt binnen enkele minuten een e-mail met je cadeauboncode en instructies.')
+                      : t('nextSteps')
+                    }
+                  </span>
                 </p>
               </div>
             </div>
