@@ -668,7 +668,11 @@
     "free": "Kostenlos",
     "enterDetails": "Geben Sie Ihre Daten ein, um Ihre Bestellung abzuschließen.",
     "digitalDelivery": "Digitale Lieferung",
-    "giftCardNoShipping": "Geschenkkarten werden per E-Mail geliefert - keine Lieferadresse erforderlich!"
+    "giftCardNoShipping": "Geschenkkarten werden per E-Mail geliefert - keine Lieferadresse erforderlich!",
+    "haveGiftCard": "Haben Sie eine Geschenkkarte?",
+    "giftCardApplied": "Geschenkkarte Angewendet",
+    "giftCardDiscount": "Geschenkkarten-Rabatt",
+    "apply": "Anwenden"
   },
   "booking": {
     "title": "Tour Buchen",

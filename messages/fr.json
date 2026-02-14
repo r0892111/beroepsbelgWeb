@@ -656,7 +656,11 @@
     "free": "Gratuit",
     "enterDetails": "Entrez vos coordonnées pour finaliser votre commande.",
     "digitalDelivery": "Livraison numérique",
-    "giftCardNoShipping": "Les cartes cadeaux sont livrées par e-mail - pas d'adresse de livraison requise!"
+    "giftCardNoShipping": "Les cartes cadeaux sont livrées par e-mail - pas d'adresse de livraison requise!",
+    "haveGiftCard": "Avez-vous une carte cadeau?",
+    "giftCardApplied": "Carte Cadeau Appliquée",
+    "giftCardDiscount": "Réduction Carte Cadeau",
+    "apply": "Appliquer"
   },
   "booking": {
     "title": "Réserver une visite",

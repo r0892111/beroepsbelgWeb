@@ -657,7 +657,11 @@
     "free": "Free",
     "enterDetails": "Enter your details to complete your order.",
     "digitalDelivery": "Digital Delivery",
-    "giftCardNoShipping": "Gift cards are delivered via email - no shipping address needed!"
+    "giftCardNoShipping": "Gift cards are delivered via email - no shipping address needed!",
+    "haveGiftCard": "Have a gift card?",
+    "giftCardApplied": "Gift Card Applied",
+    "giftCardDiscount": "Gift Card Discount",
+    "apply": "Apply"
   },
   "booking": {
     "title": "Book Tour",

@@ -725,7 +725,11 @@
     "free": "Gratis",
     "enterDetails": "Vul je gegevens in om je bestelling af te ronden.",
     "digitalDelivery": "Digitale Levering",
-    "giftCardNoShipping": "Cadeaubonnen worden per e-mail geleverd - geen verzendadres nodig!"
+    "giftCardNoShipping": "Cadeaubonnen worden per e-mail geleverd - geen verzendadres nodig!",
+    "haveGiftCard": "Heb je een cadeaubon?",
+    "giftCardApplied": "Cadeaubon Toegepast",
+    "giftCardDiscount": "Cadeaubon Korting",
+    "apply": "Toepassen"
   },
   "booking": {
     "onlineDiscount": "10% korting bij online boeken",
