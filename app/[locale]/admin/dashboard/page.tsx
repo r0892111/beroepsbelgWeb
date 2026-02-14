@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from 'next-intl';
-import { ExternalLink, LogOut, Link as LinkIcon, Home, RefreshCw, CheckCircle2, Unlink, Calendar, Users as UsersIcon, HelpCircle, MapPin, Image, Package, FileText, Building2, BookOpen, BarChart3, Newspaper, Mail, FileEdit, Warehouse } from 'lucide-react';
+import { ExternalLink, LogOut, Link as LinkIcon, Home, RefreshCw, CheckCircle2, Unlink, Calendar, Users as UsersIcon, HelpCircle, MapPin, Image, Package, FileText, Building2, BookOpen, BarChart3, Newspaper, Mail, FileEdit, Warehouse, Gift } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -432,6 +432,12 @@ export default function AdminDashboardPage() {
                 <Button className="w-full justify-start btn-primary" size="lg">
                   <Package className="h-5 w-5 mr-2" />
                   Orders
+                </Button>
+              </Link>
+              <Link href={`/${locale}/admin/gift-cards`}>
+                <Button className="w-full justify-start btn-primary" size="lg">
+                  <Gift className="h-5 w-5 mr-2" />
+                  Gift Cards
                 </Button>
               </Link>
               <Link href={`/${locale}/admin/guides`}>
