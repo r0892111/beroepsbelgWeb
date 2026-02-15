@@ -208,7 +208,7 @@ export type Lecture = {
 };
 
 export type LectureBooking = {
-  id?: string;
+  id?: number; // Integer ID, shared sequence with tourbooking
   lecture_id?: string;
   name: string;
   phone?: string;

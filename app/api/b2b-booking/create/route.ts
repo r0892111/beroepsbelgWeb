@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { toBrusselsLocalISO, addMinutesBrussels, parseBrusselsDateTime } from '@/lib/utils/timezone';
+import { createLectureBooking } from '@/lib/api/content';
 
 function getSupabaseServer() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -59,6 +60,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if this is a lecture booking
+    const isLecture = tourId.startsWith('lecture-');
+    
+    if (isLecture) {
+      // Handle lecture booking
+      const lectureId = tourId.replace('lecture-', '');
+      
+      // Extract date from dateTime if provided
+      let preferredDate: string | undefined = undefined;
+      if (dateTime) {
+        const [datePart] = dateTime.split('T');
+        if (datePart) {
+          preferredDate = datePart;
+        }
+      }
+      
+      // Create lecture booking
+      try {
+        const lectureBookingData = {
+          lecture_id: lectureId,
+          name: `${contactFirstName || ''} ${contactLastName || ''}`.trim() || contactEmail,
+          phone: contactPhone || undefined,
+          email: contactEmail,
+          preferred_date: preferredDate,
+          number_of_people: parseInt(numberOfPeople, 10) || undefined,
+          location_description: additionalInfo || undefined,
+          needs_room_provided: false,
+          lecture_language: (language && language.trim()) ? (language.trim() as 'nl' | 'en') : undefined,
+        };
+        
+        const lectureBooking = await createLectureBooking(lectureBookingData);
+        
+        return NextResponse.json({
+          success: true,
+          bookingId: lectureBooking.id,
+          status: 'pending',
+          isLecture: true,
+        });
+      } catch (error: any) {
+        console.error('Error creating lecture booking:', error);
+        return NextResponse.json(
+          { error: error.message || 'Failed to create lecture booking' },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Continue with tour booking logic
     // Fetch tour data to get actual duration
     const { data: tour, error: tourError } = await supabase
       .from('tours_table_prod')

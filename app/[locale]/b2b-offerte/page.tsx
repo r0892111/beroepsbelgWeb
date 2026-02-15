@@ -24,10 +24,10 @@ import { isValidVATFormat, isValidBelgianVAT, normalizeVATNumber } from '@/lib/u
 import { isWeekendBrussels } from '@/lib/utils/timezone';
 
 const quoteSchema = z.object({
-  dateTime: z.string().min(1),
+  dateTime: z.string().optional(), // Optional - required for tours, optional for lectures
   city: z.string().min(1),
   tourId: z.string().min(1),
-  language: z.string().min(1),
+  language: z.string().optional(), // Optional - required for tours, optional for lectures
   contactLanguage: z.string().min(1), // Language for email communications
   numberOfPeople: z.string().min(1),
   companyName: z.string().optional(),
@@ -658,27 +658,68 @@ export default function B2BQuotePage() {
 
   // Combine date + timeslot
   useEffect(() => {
-    if (selectedDate && selectedTimeSlot) {
-      // Validate that the selected date is at least 1 week from today
-      const selectedDateObj = new Date(selectedDate);
-      const oneWeekFromToday = new Date();
-      oneWeekFromToday.setDate(oneWeekFromToday.getDate() + 7);
-      oneWeekFromToday.setHours(0, 0, 0, 0);
-      selectedDateObj.setHours(0, 0, 0, 0);
-      
-      if (selectedDateObj < oneWeekFromToday) {
-        // Clear the date if it's less than 1 week away
-        setSelectedDate('');
+    const isLecture = selectedTourId?.startsWith('lecture-');
+    
+    // For lectures, date is optional - if provided, validate it
+    // For tours, both date and time are required
+    if (isLecture) {
+      // For lectures: if date is provided, validate it; if not, clear dateTime
+      if (selectedDate) {
+        // Validate that the selected date is at least 1 week from today
+        const selectedDateObj = new Date(selectedDate);
+        const oneWeekFromToday = new Date();
+        oneWeekFromToday.setDate(oneWeekFromToday.getDate() + 7);
+        oneWeekFromToday.setHours(0, 0, 0, 0);
+        selectedDateObj.setHours(0, 0, 0, 0);
+        
+        if (selectedDateObj < oneWeekFromToday) {
+          // Clear the date if it's less than 1 week away
+          setSelectedDate('');
+          setValue('dateTime', '');
+          toast.error(t('dateMustBeOneWeekAway') || 'De datum moet minimaal 1 week vanaf vandaag zijn');
+          return;
+        }
+        
+        // If time slot is also provided, combine them
+        if (selectedTimeSlot) {
+          const [startHour] = selectedTimeSlot.split(' to ');
+          const dateTimeString = `${selectedDate}T${startHour}`;
+          setValue('dateTime', dateTimeString);
+        } else {
+          // Just set the date part
+          setValue('dateTime', selectedDate);
+        }
+      } else {
+        // No date selected for lecture - clear dateTime
         setValue('dateTime', '');
-        toast.error(t('dateMustBeOneWeekAway') || 'De datum moet minimaal 1 week vanaf vandaag zijn');
-        return;
       }
-      
-      const [startHour] = selectedTimeSlot.split(' to ');
-      const dateTimeString = `${selectedDate}T${startHour}`;
-      setValue('dateTime', dateTimeString);
+    } else {
+      // For tours: both date and time are required
+      if (selectedDate && selectedTimeSlot) {
+        // Validate that the selected date is at least 1 week from today
+        const selectedDateObj = new Date(selectedDate);
+        const oneWeekFromToday = new Date();
+        oneWeekFromToday.setDate(oneWeekFromToday.getDate() + 7);
+        oneWeekFromToday.setHours(0, 0, 0, 0);
+        selectedDateObj.setHours(0, 0, 0, 0);
+        
+        if (selectedDateObj < oneWeekFromToday) {
+          // Clear the date if it's less than 1 week away
+          setSelectedDate('');
+          setValue('dateTime', '');
+          toast.error(t('dateMustBeOneWeekAway') || 'De datum moet minimaal 1 week vanaf vandaag zijn');
+          return;
+        }
+        
+        const [startHour] = selectedTimeSlot.split(' to ');
+        const dateTimeString = `${selectedDate}T${startHour}`;
+        setValue('dateTime', dateTimeString);
+      } else {
+        // Clear dateTime if either is missing for tours
+        setValue('dateTime', '');
+      }
     }
-  }, [selectedDate, selectedTimeSlot, setValue, t]);
+  }, [selectedDate, selectedTimeSlot, selectedTourId, setValue, t]);
 
   // Reset countdown when entering success step
   useEffect(() => {
@@ -700,23 +741,41 @@ export default function B2BQuotePage() {
   }, [step, countdown, router, locale]);
 
   const goToContact = () => {
-    if (!selectedTour) {
+    // Check if it's a lecture
+    const isLecture = selectedTourId?.startsWith('lecture-');
+    
+    if (!selectedTour && !selectedLecture) {
       toast.error(t('selectTour'));
       return;
     }
-    if (!selectedDate || !selectedTimeSlot) {
+    
+    // For tours, date and time are required; for lectures, they're optional
+    if (!isLecture && (!selectedDate || !selectedTimeSlot)) {
       toast.error(t('selectDateAndTime'));
       return;
     }
+    
+    // For tours, language is required; for lectures, it's optional
+    if (!isLecture && !watch('language')) {
+      toast.error(t('selectLanguage') || 'Selecteer een taal');
+      return;
+    }
+    
     if (!numberOfPeople || parseInt(numberOfPeople) < 15) {
       toast.error(t('fillNumberOfPeople') || 'Minimum aantal personen is 15');
       return;
     }
-    // Set op maat state when moving to contact step
-    const tourIsOpMaat = selectedTour?.op_maat === true || 
-                        (typeof selectedTour?.op_maat === 'string' && selectedTour.op_maat === 'true') || 
-                        (typeof selectedTour?.op_maat === 'number' && selectedTour.op_maat === 1);
-    setIsOpMaat(tourIsOpMaat);
+    
+    // Set op maat state when moving to contact step (only for tours)
+    if (selectedTour) {
+      const tourIsOpMaat = selectedTour?.op_maat === true || 
+                          (typeof selectedTour?.op_maat === 'string' && selectedTour.op_maat === 'true') || 
+                          (typeof selectedTour?.op_maat === 'number' && selectedTour.op_maat === 1);
+      setIsOpMaat(tourIsOpMaat);
+    } else {
+      setIsOpMaat(false);
+    }
+    
     setStep('contact');
   };
 
@@ -1287,9 +1346,9 @@ export default function B2BQuotePage() {
                     <Label htmlFor="timeSlot" className="text-base font-semibold text-navy">
                       {t('timeSlotLabel')}
                     </Label>
-                    <Select value={selectedTimeSlot} onValueChange={setSelectedTimeSlot} disabled={!selectedTour}>
+                    <Select value={selectedTimeSlot} onValueChange={setSelectedTimeSlot} disabled={!selectedTour && !selectedLecture}>
                       <SelectTrigger className="mt-2">
-                        <SelectValue placeholder={selectedTour ? t('selectTime') : t('selectTourFirst')} />
+                        <SelectValue placeholder={(selectedTour || selectedLecture) ? t('selectTime') : t('selectTourFirst')} />
                       </SelectTrigger>
                       <SelectContent>
                         {timeSlots.map((slot) => (
@@ -1432,7 +1491,16 @@ export default function B2BQuotePage() {
                   </div>
                 )}
 
-                <Button type="button" onClick={goToContact} className="w-full btn-primary" disabled={!selectedTour || !selectedDate || !selectedTimeSlot || numPeople < 15}>
+                <Button 
+                  type="button" 
+                  onClick={goToContact} 
+                  className="w-full btn-primary" 
+                  disabled={
+                    (!selectedTour && !selectedLecture) || 
+                    (selectedTour && (!selectedDate || !selectedTimeSlot)) || 
+                    numPeople < 15
+                  }
+                >
                   {t('continueButton')}
                 </Button>
               </div>
@@ -1828,133 +1896,150 @@ export default function B2BQuotePage() {
                   </div>
                 )}
 
-                {/* Order summary with pricing */}
+                {/* Order summary */}
                 <div className="p-6 rounded-lg" style={{ backgroundColor: 'white', border: '2px solid var(--brass)' }}>
                   <h3 className="font-semibold text-navy mb-4">{t('summaryTitle')}</h3>
                   <div className="space-y-3 text-sm">
-                    {/* Tour info */}
-                    <div className="font-medium text-navy text-base">{selectedTour?.title}</div>
-                    <div className="text-muted-foreground">
-                      {t('participants', { count: numPeople, plural: numPeople > 1 ? 's' : '' })} • {selectedDate} om {selectedTimeSlot}
-                    </div>
+                    {/* Tour/Lecture info */}
+                    {selectedLecture ? (
+                      <>
+                        <div className="font-medium text-navy text-base">
+                          {locale === 'nl' ? selectedLecture.title : (selectedLecture.title_en || selectedLecture.title)}
+                        </div>
+                        <div className="text-muted-foreground">
+                          {t('participants', { count: numPeople, plural: numPeople > 1 ? 's' : '' })}
+                          {selectedDate && ` • ${selectedDate}`}
+                          {selectedTimeSlot && ` om ${selectedTimeSlot}`}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="font-medium text-navy text-base">{selectedTour?.title}</div>
+                        <div className="text-muted-foreground">
+                          {t('participants', { count: numPeople, plural: numPeople > 1 ? 's' : '' })} • {selectedDate} om {selectedTimeSlot}
+                        </div>
+                      </>
+                    )}
                     
-                    {/* Pricing breakdown */}
-                    <div className="pt-3 space-y-2" style={{ borderTop: '1px solid #e5e7eb' }}>
-                      <div className="font-semibold text-navy">Geschatte prijsopgave:</div>
-                      
-                      {/* Tour price */}
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          Tour ({numPeople} {numPeople === 1 ? 'persoon' : 'personen'})
-                        </span>
-                        <span className="font-medium">
-                          €{((selectedTour?.price || 0) * numPeople).toFixed(2)}
-                        </span>
-                      </div>
-                      
-                      {/* Tanguy option */}
-                      {requestTanguy && (
+                    {/* Pricing breakdown - Only show for tours, not lectures */}
+                    {!selectedLecture && (
+                      <div className="pt-3 space-y-2" style={{ borderTop: '1px solid #e5e7eb' }}>
+                        <div className="font-semibold text-navy">Geschatte prijsopgave:</div>
+                        
+                        {/* Tour price */}
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Tanguy Ottomer als gids</span>
-                          <span className="font-medium">€125.00</span>
+                          <span className="text-muted-foreground">
+                            Tour ({numPeople} {numPeople === 1 ? 'persoon' : 'personen'})
+                          </span>
+                          <span className="font-medium">
+                            €{((selectedTour?.price || 0) * numPeople).toFixed(2)}
+                          </span>
                         </div>
-                      )}
-                      
-                      {/* Extra hour */}
-                      {extraHour && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Extra uur (+1 uur)</span>
-                          <span className="font-medium">€150.00</span>
-                        </div>
-                      )}
-                      
-                      {/* Upsell products */}
-                      {Object.keys(selectedUpsell).length > 0 && (
-                        <div className="pt-2 space-y-1" style={{ borderTop: '1px solid #e5e7eb' }}>
-                          <div className="font-medium text-navy">Extra producten:</div>
-                          {Object.entries(selectedUpsell).map(([productId, quantity]) => {
-                            const product = products.find(p => p.uuid === productId);
-                            if (!product || quantity === 0) return null;
-                            const itemTotal = (product.price || 0) * quantity;
-                            return (
-                              <div key={productId} className="flex justify-between">
-                                <span className="text-muted-foreground">
-                                  {product.title.nl} × {quantity}
-                                </span>
-                                <span className="font-medium">€{itemTotal.toFixed(2)}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                      
-                      {/* Weekend and Evening Fees */}
-                      {(() => {
-                        // Calculate weekend fee: €25 if date is Saturday or Sunday in Brussels timezone, except for local_stories
-                        const isWeekend = selectedDate ? isWeekendBrussels(selectedDate) : false;
-                        const weekendFeeCost = isWeekend && selectedTour?.local_stories !== true ? 25 : 0;
-
-                        // Calculate evening fee: €25 for op_maat tours if time >= 17:00
-                        const tourIsOpMaat = selectedTour?.op_maat === true || 
-                                            (typeof selectedTour?.op_maat === 'string' && selectedTour.op_maat === 'true') || 
-                                            (typeof selectedTour?.op_maat === 'number' && selectedTour.op_maat === 1);
-                        const isEveningSlot = selectedTimeSlot && parseInt(selectedTimeSlot.split(':')[0], 10) >= 17;
-                        const eveningFeeCost = tourIsOpMaat && isEveningSlot ? 25 : 0;
-
-                        return (weekendFeeCost > 0 || eveningFeeCost > 0) ? (
-                          <div className="pt-2 space-y-1" style={{ borderTop: '1px solid #e5e7eb' }}>
-                            {weekendFeeCost > 0 && (
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">
-                                  Weekend toeslag
-                                </span>
-                                <span className="font-medium">€{weekendFeeCost.toFixed(2)}</span>
-                              </div>
-                            )}
-                            {eveningFeeCost > 0 && (
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">
-                                  Avond toeslag
-                                </span>
-                                <span className="font-medium">€{eveningFeeCost.toFixed(2)}</span>
-                              </div>
-                            )}
+                        
+                        {/* Tanguy option */}
+                        {requestTanguy && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Tanguy Ottomer als gids</span>
+                            <span className="font-medium">€125.00</span>
                           </div>
-                        ) : null;
-                      })()}
-                      
-                      {/* Total */}
-                      <div className="pt-3 flex justify-between" style={{ borderTop: '2px solid var(--brass)' }}>
-                        <span className="font-bold text-navy text-base">Geschat Totaal</span>
-                        <span className="font-bold text-lg" style={{ color: 'var(--brass)' }}>
-                          €{(() => {
-                            const tourTotal = (selectedTour?.price || 0) * numPeople;
-                            const tanguyCost = requestTanguy ? 125 : 0;
-                            const extraHourCost = extraHour ? 150 : 0;
-                            const upsellTotal = Object.entries(selectedUpsell).reduce((sum, [productId, quantity]) => {
+                        )}
+                        
+                        {/* Extra hour */}
+                        {extraHour && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Extra uur (+1 uur)</span>
+                            <span className="font-medium">€150.00</span>
+                          </div>
+                        )}
+                        
+                        {/* Upsell products */}
+                        {Object.keys(selectedUpsell).length > 0 && (
+                          <div className="pt-2 space-y-1" style={{ borderTop: '1px solid #e5e7eb' }}>
+                            <div className="font-medium text-navy">Extra producten:</div>
+                            {Object.entries(selectedUpsell).map(([productId, quantity]) => {
                               const product = products.find(p => p.uuid === productId);
-                              return sum + ((product?.price || 0) * quantity);
-                            }, 0);
-                            
-                            // Calculate weekend and evening fees
-                            const isWeekend = selectedDate ? isWeekendBrussels(selectedDate) : false;
-                            const weekendFeeCost = isWeekend && selectedTour?.local_stories !== true ? 25 : 0;
-                            
-                            const tourIsOpMaat = selectedTour?.op_maat === true || 
-                                                (typeof selectedTour?.op_maat === 'string' && selectedTour.op_maat === 'true') || 
-                                                (typeof selectedTour?.op_maat === 'number' && selectedTour.op_maat === 1);
-                            const isEveningSlot = selectedTimeSlot && parseInt(selectedTimeSlot.split(':')[0], 10) >= 17;
-                            const eveningFeeCost = tourIsOpMaat && isEveningSlot ? 25 : 0;
-                            
-                            return (tourTotal + tanguyCost + extraHourCost + upsellTotal + weekendFeeCost + eveningFeeCost).toFixed(2);
-                          })()}
-                        </span>
+                              if (!product || quantity === 0) return null;
+                              const itemTotal = (product.price || 0) * quantity;
+                              return (
+                                <div key={productId} className="flex justify-between">
+                                  <span className="text-muted-foreground">
+                                    {product.title.nl} × {quantity}
+                                  </span>
+                                  <span className="font-medium">€{itemTotal.toFixed(2)}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                        
+                        {/* Weekend and Evening Fees */}
+                        {(() => {
+                          // Calculate weekend fee: €25 if date is Saturday or Sunday in Brussels timezone, except for local_stories
+                          const isWeekend = selectedDate ? isWeekendBrussels(selectedDate) : false;
+                          const weekendFeeCost = isWeekend && selectedTour?.local_stories !== true ? 25 : 0;
+
+                          // Calculate evening fee: €25 for op_maat tours if time >= 17:00
+                          const tourIsOpMaat = selectedTour?.op_maat === true || 
+                                              (typeof selectedTour?.op_maat === 'string' && selectedTour.op_maat === 'true') || 
+                                              (typeof selectedTour?.op_maat === 'number' && selectedTour.op_maat === 1);
+                          const isEveningSlot = selectedTimeSlot && parseInt(selectedTimeSlot.split(':')[0], 10) >= 17;
+                          const eveningFeeCost = tourIsOpMaat && isEveningSlot ? 25 : 0;
+
+                          return (weekendFeeCost > 0 || eveningFeeCost > 0) ? (
+                            <div className="pt-2 space-y-1" style={{ borderTop: '1px solid #e5e7eb' }}>
+                              {weekendFeeCost > 0 && (
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">
+                                    Weekend toeslag
+                                  </span>
+                                  <span className="font-medium">€{weekendFeeCost.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {eveningFeeCost > 0 && (
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">
+                                    Avond toeslag
+                                  </span>
+                                  <span className="font-medium">€{eveningFeeCost.toFixed(2)}</span>
+                                </div>
+                              )}
+                            </div>
+                          ) : null;
+                        })()}
+                        
+                        {/* Total */}
+                        <div className="pt-3 flex justify-between" style={{ borderTop: '2px solid var(--brass)' }}>
+                          <span className="font-bold text-navy text-base">Geschat Totaal</span>
+                          <span className="font-bold text-lg" style={{ color: 'var(--brass)' }}>
+                            €{(() => {
+                              const tourTotal = (selectedTour?.price || 0) * numPeople;
+                              const tanguyCost = requestTanguy ? 125 : 0;
+                              const extraHourCost = extraHour ? 150 : 0;
+                              const upsellTotal = Object.entries(selectedUpsell).reduce((sum, [productId, quantity]) => {
+                                const product = products.find(p => p.uuid === productId);
+                                return sum + ((product?.price || 0) * quantity);
+                              }, 0);
+                              
+                              // Calculate weekend and evening fees
+                              const isWeekend = selectedDate ? isWeekendBrussels(selectedDate) : false;
+                              const weekendFeeCost = isWeekend && selectedTour?.local_stories !== true ? 25 : 0;
+                              
+                              const tourIsOpMaat = selectedTour?.op_maat === true || 
+                                                  (typeof selectedTour?.op_maat === 'string' && selectedTour.op_maat === 'true') || 
+                                                  (typeof selectedTour?.op_maat === 'number' && selectedTour.op_maat === 1);
+                              const isEveningSlot = selectedTimeSlot && parseInt(selectedTimeSlot.split(':')[0], 10) >= 17;
+                              const eveningFeeCost = tourIsOpMaat && isEveningSlot ? 25 : 0;
+                              
+                              return (tourTotal + tanguyCost + extraHourCost + upsellTotal + weekendFeeCost + eveningFeeCost).toFixed(2);
+                            })()}
+                          </span>
+                        </div>
+                        
+                        <p className="text-xs text-muted-foreground italic pt-2">
+                          * Dit is een geschatte prijs. De definitieve offerte kan afwijken op basis van specifieke wensen.
+                        </p>
                       </div>
-                      
-                      <p className="text-xs text-muted-foreground italic pt-2">
-                        * Dit is een geschatte prijs. De definitieve offerte kan afwijken op basis van specifieke wensen.
-                      </p>
-                    </div>
+                    )}
                   </div>
                 </div>
 

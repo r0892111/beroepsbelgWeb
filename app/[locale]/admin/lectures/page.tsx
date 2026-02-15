@@ -170,7 +170,7 @@ export default function AdminLecturesPage() {
     }
   };
 
-  const handleUpdateBookingStatus = async (bookingId: string, newStatus: 'pending' | 'confirmed' | 'cancelled') => {
+  const handleUpdateBookingStatus = async (bookingId: number, newStatus: 'pending' | 'confirmed' | 'cancelled') => {
     try {
       const { error } = await supabase
         .from('lecture_bookings')

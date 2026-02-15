@@ -955,7 +955,7 @@ export async function createLectureBooking(booking: Omit<LectureBooking, 'id' | 
     }
 
     return {
-      id: data.id,
+      id: data.id as number, // ID is now integer
       lecture_id: data.lecture_id || undefined,
       name: data.name,
       phone: data.phone || undefined,
