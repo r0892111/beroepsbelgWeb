@@ -2,7 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY!;
+
+// Warn if using test key in production
+if (stripeSecretKey?.startsWith('sk_test_')) {
+  console.warn('[WARNING] Using Stripe TEST key. Payment links will be in test mode.');
+  console.warn('To use live payments, update STRIPE_SECRET_KEY to a live key (starts with sk_live_)');
+}
+
+const stripe = new Stripe(stripeSecretKey, {
   apiVersion: '2025-11-17.clover',
 });
 
@@ -207,6 +215,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Detect if using test mode
+    const isTestMode = stripeSecretKey?.startsWith('sk_test_');
+
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card', 'bancontact', 'ideal'],
@@ -231,6 +242,7 @@ export async function POST(request: NextRequest) {
         localBookingId: localBookingId || '',
         city: city || '',
         tourDatetime: tourDatetime || '',
+        stripeMode: isTestMode ? 'test' : 'live', // Track Stripe mode
         // Fee data for webhook processing
         requestTanguy: fees?.requestTanguy ? 'true' : 'false',
         hasExtraHour: fees?.hasExtraHour ? 'true' : 'false',

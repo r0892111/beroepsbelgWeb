@@ -1345,48 +1345,216 @@ export default function BookingDetailPage() {
 
     setSendingInfo(true);
     try {
-      // Collect all client emails and phones
-      let clientEmails: string[] = [];
-      let clientPhones: string[] = [];
-      let clientNames: string[] = [];
+      // Get auth token for API calls
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Not authenticated');
+      }
+
+      // Collect all client data with payment information
+      let clientData: Array<{
+        name: string;
+        email: string;
+        phone?: string;
+        numberOfPeople: number;
+        amount: number;
+        paymentUrl?: string;
+        isPaid: boolean;
+        localBookingId?: string;
+        fees?: {
+          requestTanguy: boolean;
+          hasExtraHour: boolean;
+          weekendFee: boolean;
+          eveningFee: boolean;
+          tanguyCost: number;
+          extraHourCost: number;
+          weekendFeeCost: number;
+          eveningFeeCost: number;
+        };
+      }> = [];
 
       if (tour?.local_stories && localStoriesBookings.length > 0) {
-        // For Local Stories: get all invitee emails and phones
-        clientEmails = localStoriesBookings
-          .map(lb => lb.customer_email)
-          .filter((email): email is string => !!email);
-        clientPhones = localStoriesBookings
-          .map(lb => lb.customer_phone)
-          .filter((phone): phone is string => !!phone);
-        clientNames = localStoriesBookings
-          .map(lb => lb.customer_name)
-          .filter((name): name is string => !!name);
+        // For Local Stories: get all bookings with payment info
+        for (const lb of localStoriesBookings) {
+          if (!lb.customer_email || !lb.customer_name) continue;
+
+          const matchingInvitee = (booking.invitees || []).find(
+            (inv: Invitee) => inv.email === lb.customer_email
+          );
+
+          const numberOfPeople = lb.amnt_of_people || 1;
+          const baseAmount = matchingInvitee?.amount || (tour.price || 0) * numberOfPeople;
+          const isPaid = !!(lb.deal_id || lb.stripe_session_id || matchingInvitee?.isPaid);
+
+          // Calculate fees if present
+          const fees = matchingInvitee ? {
+            requestTanguy: matchingInvitee.requestTanguy || false,
+            hasExtraHour: matchingInvitee.hasExtraHour || false,
+            weekendFee: matchingInvitee.weekendFee || false,
+            eveningFee: matchingInvitee.eveningFee || false,
+            tanguyCost: matchingInvitee.tanguyCost || 0,
+            extraHourCost: matchingInvitee.extraHourCost || 0,
+            weekendFeeCost: matchingInvitee.weekendFeeCost || 0,
+            eveningFeeCost: matchingInvitee.eveningFeeCost || 0,
+          } : undefined;
+
+          let paymentUrl: string | undefined;
+          
+          // Create payment link if not paid
+          if (!isPaid && baseAmount > 0) {
+            try {
+              const paymentResponse = await fetch('/api/admin/send-payment-link', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${session.access_token}`,
+                },
+                body: JSON.stringify({
+                  bookingId: booking.id,
+                  customerName: lb.customer_name,
+                  customerEmail: lb.customer_email,
+                  tourName: tour.title || 'Tour',
+                  tourId: tour.id,
+                  numberOfPeople,
+                  amount: baseAmount,
+                  localBookingId: lb.id,
+                  city: booking.city || tour.city,
+                  tourDatetime: booking.tour_datetime,
+                  fees: fees ? {
+                    requestTanguy: fees.requestTanguy,
+                    hasExtraHour: fees.hasExtraHour,
+                    weekendFee: fees.weekendFee,
+                    eveningFee: fees.eveningFee,
+                    tanguyCost: fees.tanguyCost,
+                    extraHourCost: fees.extraHourCost,
+                    weekendFeeCost: fees.weekendFeeCost,
+                    eveningFeeCost: fees.eveningFeeCost,
+                  } : undefined,
+                }),
+              });
+
+              if (paymentResponse.ok) {
+                const paymentData = await paymentResponse.json();
+                paymentUrl = paymentData.paymentUrl;
+              }
+            } catch (paymentErr) {
+              // Continue even if payment link creation fails
+            }
+          }
+
+          clientData.push({
+            name: lb.customer_name,
+            email: lb.customer_email,
+            phone: lb.customer_phone || undefined,
+            numberOfPeople,
+            amount: baseAmount,
+            paymentUrl,
+            isPaid,
+            localBookingId: lb.id,
+            fees,
+          });
+        }
       } else {
         // For Normal/Custom: get from invitees
         const invitees = booking.invitees || [];
-        clientEmails = invitees
-          .map((inv) => inv.email)
-          .filter((email): email is string => !!email);
-        clientPhones = invitees
-          .map((inv) => inv.phone)
-          .filter((phone): phone is string => !!phone);
-        clientNames = invitees
-          .map((inv) => inv.name)
-          .filter((name): name is string => !!name);
+        for (const inv of invitees) {
+          if (!inv.email || !inv.name) continue;
+
+          const numberOfPeople = inv.numberOfPeople || 1;
+          const baseAmount = inv.amount || (tour?.price || 0) * numberOfPeople;
+          const isPaid = inv.isPaid || false;
+
+          // Calculate fees if present
+          const fees = {
+            requestTanguy: inv.requestTanguy || false,
+            hasExtraHour: inv.hasExtraHour || false,
+            weekendFee: inv.weekendFee || false,
+            eveningFee: inv.eveningFee || false,
+            tanguyCost: inv.tanguyCost || 0,
+            extraHourCost: inv.extraHourCost || 0,
+            weekendFeeCost: inv.weekendFeeCost || 0,
+            eveningFeeCost: inv.eveningFeeCost || 0,
+          };
+
+          let paymentUrl: string | undefined;
+          
+          // Create payment link if not paid
+          if (!isPaid && baseAmount > 0) {
+            try {
+              const paymentResponse = await fetch('/api/admin/send-payment-link', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${session.access_token}`,
+                },
+                body: JSON.stringify({
+                  bookingId: booking.id,
+                  customerName: inv.name,
+                  customerEmail: inv.email,
+                  tourName: tour?.title || 'Tour',
+                  tourId: tour?.id,
+                  numberOfPeople,
+                  amount: baseAmount,
+                  city: booking.city || tour?.city,
+                  tourDatetime: booking.tour_datetime,
+                  fees: {
+                    requestTanguy: fees.requestTanguy,
+                    hasExtraHour: fees.hasExtraHour,
+                    weekendFee: fees.weekendFee,
+                    eveningFee: fees.eveningFee,
+                    tanguyCost: fees.tanguyCost,
+                    extraHourCost: fees.extraHourCost,
+                    weekendFeeCost: fees.weekendFeeCost,
+                    eveningFeeCost: fees.eveningFeeCost,
+                  },
+                }),
+              });
+
+              if (paymentResponse.ok) {
+                const paymentData = await paymentResponse.json();
+                paymentUrl = paymentData.paymentUrl;
+              }
+            } catch (paymentErr) {
+              // Continue even if payment link creation fails
+            }
+          }
+
+          clientData.push({
+            name: inv.name,
+            email: inv.email,
+            phone: inv.phone || undefined,
+            numberOfPeople,
+            amount: baseAmount,
+            paymentUrl,
+            isPaid,
+            fees,
+          });
+        }
       }
+
+      // Prepare tour information
+      const tourInfo = {
+        tourId: tour?.id || null,
+        tourName: tour?.title || 'Tour',
+        tourCity: booking.city || tour?.city || null,
+        tourDuration: tour?.duration_minutes || null,
+        tourPrice: tour?.price || null,
+        tourStartLocation: booking.start_location || tour?.start_location || null,
+        tourEndLocation: booking.end_location || tour?.end_location || null,
+        tourDate: booking.tour_datetime || null,
+        tourEndDate: booking.tour_end || null,
+        isOpMaat: tour?.op_maat || false,
+        isLocalStories: tour?.local_stories || false,
+      };
 
       const response = await fetch('https://alexfinit.app.n8n.cloud/webhook/44bd866d-a0f7-4ed0-935f-415f74ed14ac', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           bookingId: booking.id,
-          tourName: tour?.title || 'Tour',
-          tourDate: booking.tour_datetime,
           message: infoMessage.trim(),
-          clientEmails,
-          clientPhones,
-          clientNames,
-          isLocalStories: tour?.local_stories || false,
+          tourInfo,
+          clients: clientData,
           deliveryMethod: deliveryMethod,
         }),
       });
