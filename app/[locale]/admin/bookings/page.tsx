@@ -70,6 +70,7 @@ interface CreateBookingForm {
   dealId: string; // TeamLeader deal ID (optional)
   invoiceId: string; // TeamLeader invoice ID (optional)
   guideIds: number[]; // Array of guide IDs (optional)
+  giftCardCode: string; // Gift card code (optional)
   // Extra fees for op_maat tours
   requestTanguy: boolean;
   extraHour: boolean;
@@ -156,12 +157,23 @@ export default function AdminBookingsPage() {
     dealId: '',
     invoiceId: '',
     guideIds: [],
+    giftCardCode: '',
     requestTanguy: false,
     extraHour: false,
     weekendFee: false,
     eveningFee: false,
   });
   const [customLanguage, setCustomLanguage] = useState('');
+  
+  // Gift card state
+  const [appliedGiftCard, setAppliedGiftCard] = useState<{
+    code: string;
+    currentBalance: number;
+    amountApplied: number;
+    giftCardId: string;
+  } | null>(null);
+  const [giftCardLoading, setGiftCardLoading] = useState(false);
+  const [giftCardError, setGiftCardError] = useState<string | null>(null);
 
   // TeamLeader deals state
   const [teamleaderDeals, setTeamleaderDeals] = useState<TeamLeaderDeal[]>([]);
@@ -553,6 +565,77 @@ export default function AdminBookingsPage() {
   };
 
   // Reset create form
+  // Gift card validation handler (only validates, doesn't redeem yet)
+  const handleApplyGiftCard = async () => {
+    if (!createForm.giftCardCode.trim()) {
+      setGiftCardError('Please enter a gift card code');
+      return;
+    }
+
+    setGiftCardLoading(true);
+    setGiftCardError(null);
+
+    try {
+      // Calculate current total to show potential discount
+      const tour = tours.get(createForm.tourId);
+      if (!tour) {
+        setGiftCardError('Please select a tour first');
+        setGiftCardLoading(false);
+        return;
+      }
+
+      const pricePerPerson = createForm.customPrice ? parseFloat(createForm.customPrice) : (tour.price || 0);
+      const baseTourPrice = Math.round(pricePerPerson * createForm.numberOfPeople * 100) / 100;
+      const feeTanguyCost = createForm.requestTanguy ? TANGUY_COST : 0;
+      const feeExtraHourCost = createForm.extraHour ? EXTRA_HOUR_COST : 0;
+      const feeWeekendCost = createForm.weekendFee ? WEEKEND_FEE_COST : 0;
+      const feeEveningCost = createForm.eveningFee ? EVENING_FEE_COST : 0;
+      const currentTotal = baseTourPrice + feeTanguyCost + feeExtraHourCost + feeWeekendCost + feeEveningCost;
+
+      // Validate gift card (don't redeem yet - will redeem when booking is created)
+      const response = await fetch('/api/gift-cards/validate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code: createForm.giftCardCode.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setGiftCardError(data.error || 'Invalid gift card code');
+        setAppliedGiftCard(null);
+        return;
+      }
+
+      // Calculate how much can be applied (min of balance and total)
+      const giftCardBalance = parseFloat(data.giftCard.currentBalance.toString());
+      const amountToApply = Math.min(giftCardBalance, currentTotal);
+
+      setAppliedGiftCard({
+        code: createForm.giftCardCode.trim().toUpperCase(),
+        currentBalance: giftCardBalance,
+        amountApplied: amountToApply,
+        giftCardId: data.giftCard.id || '',
+      });
+
+      toast.success(`Gift card validated! Available discount: €${amountToApply.toFixed(2)}`);
+    } catch (error) {
+      console.error('Error validating gift card:', error);
+      setGiftCardError('Failed to validate gift card. Please try again.');
+      setAppliedGiftCard(null);
+    } finally {
+      setGiftCardLoading(false);
+    }
+  };
+
+  const handleRemoveGiftCard = () => {
+    setAppliedGiftCard(null);
+    setCreateForm({ ...createForm, giftCardCode: '' });
+    setGiftCardError(null);
+  };
+
   const resetCreateForm = () => {
     setCreateForm({
       tourId: '',
@@ -569,11 +652,15 @@ export default function AdminBookingsPage() {
       dealId: '',
       invoiceId: '',
       guideIds: [],
+      giftCardCode: '',
       requestTanguy: false,
       extraHour: false,
       weekendFee: false,
       eveningFee: false,
     });
+    setAppliedGiftCard(null);
+    setGiftCardError(null);
+    setCustomLanguage('');
   };
 
   // Fetch TeamLeader deals
@@ -727,7 +814,14 @@ export default function AdminBookingsPage() {
       const feeEveningCost = createForm.eveningFee ? EVENING_FEE_COST : 0;
 
       // Total amount includes base price + all fees
-      const totalAmount = baseTourPrice + feeTanguyCost + feeExtraHourCost + feeWeekendCost + feeEveningCost;
+      let totalAmount = baseTourPrice + feeTanguyCost + feeExtraHourCost + feeWeekendCost + feeEveningCost;
+      
+      // Apply gift card discount if one is applied
+      let giftCardDiscount = 0;
+      if (appliedGiftCard) {
+        giftCardDiscount = Math.min(appliedGiftCard.currentBalance, totalAmount);
+        totalAmount = Math.max(0, totalAmount - giftCardDiscount);
+      }
 
       // Use custom language if "other" is selected
       const finalLanguage = createForm.language === 'other' ? customLanguage : createForm.language;
@@ -751,6 +845,9 @@ export default function AdminBookingsPage() {
         extraHourCost: feeExtraHourCost,
         weekendFeeCost: feeWeekendCost,
         eveningFeeCost: feeEveningCost,
+        // Gift card information
+        giftCardCode: appliedGiftCard?.code || null,
+        giftCardDiscount: giftCardDiscount > 0 ? Math.round(giftCardDiscount * 100) / 100 : null,
         // Tour timing information - ensure tourStartDatetime matches tour_datetime exactly
         tourStartDatetime: tourDatetime,
         tourEndDatetime: tourEndDatetime,
@@ -803,6 +900,40 @@ export default function AdminBookingsPage() {
         console.error('Error creating booking:', bookingError);
         toast.error('Failed to create booking');
         return;
+      }
+
+      // Redeem gift card if one was applied
+      if (appliedGiftCard && giftCardDiscount > 0 && newBooking) {
+        try {
+          const originalTotal = baseTourPrice + feeTanguyCost + feeExtraHourCost + feeWeekendCost + feeEveningCost;
+          const redeemResponse = await fetch('/api/gift-cards/redeem', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              code: appliedGiftCard.code,
+              orderTotal: originalTotal,
+              orderId: newBooking.id.toString(),
+              stripeOrderId: null,
+            }),
+          });
+
+          if (!redeemResponse.ok) {
+            const redeemData = await redeemResponse.json();
+            console.error('Failed to redeem gift card:', redeemData.error);
+            toast.error(`Booking created but gift card redemption failed: ${redeemData.error || 'Unknown error'}`);
+            // Don't fail the booking creation, just warn the admin
+          } else {
+            const redeemData = await redeemResponse.json();
+            console.info('Gift card redeemed successfully:', redeemData);
+            toast.success(`Gift card applied: €${redeemData.amountApplied.toFixed(2)} discount`);
+          }
+        } catch (giftCardError) {
+          console.error('Error redeeming gift card:', giftCardError);
+          toast.error('Booking created but gift card redemption failed. Please redeem manually.');
+          // Don't fail the booking creation
+        }
       }
 
       // If Local Stories tour, also create local_tours_bookings entry
@@ -2030,6 +2161,75 @@ export default function AdminBookingsPage() {
               </div>
             </div>
 
+            {/* Gift Card */}
+            {selectedTour && (
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-medium mb-3">Gift Card (Optional)</h4>
+                <div className="space-y-2">
+                  {!appliedGiftCard ? (
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Enter gift card code..."
+                        value={createForm.giftCardCode}
+                        onChange={(e) => {
+                          const formatted = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+                          setCreateForm({ ...createForm, giftCardCode: formatted });
+                          setGiftCardError(null);
+                        }}
+                        className="bg-white flex-1"
+                        maxLength={19}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleApplyGiftCard}
+                        disabled={giftCardLoading || !createForm.giftCardCode.trim()}
+                      >
+                        {giftCardLoading ? (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                            Validating...
+                          </>
+                        ) : (
+                          'Apply'
+                        )}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-green-800">
+                            Gift Card Applied: {appliedGiftCard.code}
+                          </p>
+                          <p className="text-xs text-green-600 mt-1">
+                            Discount: €{appliedGiftCard.amountApplied.toFixed(2)} • Remaining balance: €{appliedGiftCard.currentBalance.toFixed(2)}
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRemoveGiftCard}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {giftCardError && (
+                    <p className="text-xs text-red-500">{giftCardError}</p>
+                  )}
+                  {!appliedGiftCard && (
+                    <p className="text-xs text-muted-foreground">
+                      Enter a gift card code to apply a discount to this booking.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Payment Status */}
             <div className="border-t pt-4">
               <div className="flex items-center space-x-2">
@@ -2055,7 +2255,9 @@ export default function AdminBookingsPage() {
               const baseTourPrice = Math.round(pricePerPerson * createForm.numberOfPeople * 100) / 100;
               const isCustomPrice = !!createForm.customPrice;
               const totalFees = tanguyCost + extraHourCost + weekendFeeCost + eveningFeeCost;
-              const grandTotal = baseTourPrice + totalFees;
+              const subtotal = baseTourPrice + totalFees;
+              const giftCardDiscount = appliedGiftCard ? Math.min(appliedGiftCard.currentBalance, subtotal) : 0;
+              const grandTotal = Math.max(0, subtotal - giftCardDiscount);
               return (
                 <div className="border-t pt-4">
                   <h4 className="text-sm font-medium mb-2">Price Summary</h4>
@@ -2088,6 +2290,12 @@ export default function AdminBookingsPage() {
                       <div className="flex justify-between text-sm text-muted-foreground">
                         <span>Evening Fee</span>
                         <span>€{eveningFeeCost.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {giftCardDiscount > 0 && (
+                      <div className="flex justify-between text-sm text-green-600 font-medium">
+                        <span>Gift Card Discount ({appliedGiftCard?.code})</span>
+                        <span>-€{giftCardDiscount.toFixed(2)}</span>
                       </div>
                     )}
                     <div className="flex justify-between font-medium pt-1 border-t">
