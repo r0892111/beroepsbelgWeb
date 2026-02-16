@@ -1015,22 +1015,142 @@ async function handleEvent(event: Stripe.Event) {
           isExtraInvitees: isExtraInvitees,
         };
 
-        // Use different webhook URL based on whether this is extra invitees or normal payment
-        // Extra invitees don't need confirmation email (they're being added to existing booking)
-        const n8nWebhookUrl = isExtraInvitees
-          ? 'https://alexfinit.app.n8n.cloud/webhook/manual-payment-extra-invitees-completed'
-          : 'https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc';
+        // Use the unified webhook URL for all payment link payments
+        const n8nWebhookUrl = 'https://alexfinit.app.n8n.cloud/webhook/86e54c79-f11d-4f1e-90f2-08a8f4665b40';
 
+        // Fetch full payment intent details for additional data
+        let paymentIntentData: any = null;
+        if (fullSession.payment_intent) {
+          try {
+            const paymentIntent = await stripe.paymentIntents.retrieve(
+              typeof fullSession.payment_intent === 'string' 
+                ? fullSession.payment_intent 
+                : fullSession.payment_intent.id,
+              { expand: ['charges.data.balance_transaction'] }
+            );
+            paymentIntentData = paymentIntent;
+          } catch (err) {
+            console.warn('Failed to retrieve payment intent:', err);
+          }
+        }
+
+        // Fetch local booking data if applicable (fetch full record, not just payment fields)
+        let localBookingData: any = null;
+        if (localBookingId) {
+          const { data: localBooking } = await supabase
+            .from('local_tours_bookings')
+            .select('*')
+            .eq('id', localBookingId)
+            .single();
+          if (localBooking) {
+            localBookingData = localBooking;
+          }
+        }
+
+        // Build comprehensive payload with all available data
         const payload = {
-          ...session,
+          // Stripe session data
+          stripeSession: {
+            id: sessionId,
+            mode: fullSession.mode,
+            payment_status: fullSession.payment_status,
+            status: fullSession.status,
+            amount_total: fullSession.amount_total,
+            amount_subtotal: fullSession.amount_subtotal,
+            currency: fullSession.currency,
+            customer_email: fullSession.customer_email,
+            customer: fullSession.customer,
+            payment_intent: fullSession.payment_intent,
+            created: fullSession.created,
+            expires_at: fullSession.expires_at,
+            success_url: fullSession.success_url,
+            cancel_url: fullSession.cancel_url,
+            url: fullSession.url,
+            line_items: fullSession.line_items,
+            total_details: fullSession.total_details,
+            discounts: fullSession.discounts,
+          },
+          
+          // Payment intent details (if available)
+          paymentIntent: paymentIntentData,
+          
+          // Metadata
           metadata: {
             ...metadata,
             stripe_session_id: sessionId,
             booking_id: bookingId,
             extra_invitees: isExtraInvitees,
+            local_booking_id: localBookingId || null,
           },
-          bookingData, // Include full booking data matching normal booking format
-          // Include promo code info for invoice creation
+          
+          // Booking data (formatted for consistency)
+          bookingData,
+          
+          // Full booking object from database
+          booking: {
+            id: booking.id,
+            tour_id: booking.tour_id,
+            tour_datetime: booking.tour_datetime,
+            tour_end: booking.tour_end,
+            city: booking.city,
+            request_tanguy: booking.request_tanguy,
+            user_id: booking.user_id,
+            status: booking.status,
+            invitees: booking.invitees,
+          },
+          
+          // Full tour object
+          tour: tour ? {
+            id: tour.id,
+            title_nl: tour.title_nl,
+            title_en: tour.title_en,
+            price: tour.price,
+            duration_minutes: tour.duration_minutes,
+            local_stories: tour.local_stories,
+            city: tour.city,
+          } : null,
+          
+          // Matching invitee data
+          invitee: matchingInvitee ? {
+            name: matchingInvitee.name,
+            email: matchingInvitee.email,
+            phone: matchingInvitee.phone,
+            numberOfPeople: matchingInvitee.numberOfPeople,
+            language: matchingInvitee.language,
+            contactLanguage: matchingInvitee.contactLanguage,
+            specialRequests: matchingInvitee.specialRequests,
+            amount: matchingInvitee.amount,
+            currency: matchingInvitee.currency,
+            requestTanguy: matchingInvitee.requestTanguy,
+            hasExtraHour: matchingInvitee.hasExtraHour,
+            weekendFee: matchingInvitee.weekendFee,
+            eveningFee: matchingInvitee.eveningFee,
+            tanguyCost: matchingInvitee.tanguyCost,
+            extraHourCost: matchingInvitee.extraHourCost,
+            weekendFeeCost: matchingInvitee.weekendFeeCost,
+            eveningFeeCost: matchingInvitee.eveningFeeCost,
+            originalAmount: matchingInvitee.originalAmount,
+            discountApplied: matchingInvitee.discountApplied,
+            promoCode: matchingInvitee.promoCode,
+            promoDiscountAmount: matchingInvitee.promoDiscountAmount,
+            promoDiscountPercent: matchingInvitee.promoDiscountPercent,
+            opMaatAnswers: matchingInvitee.opMaatAnswers,
+            upsellProducts: matchingInvitee.upsellProducts,
+          } : null,
+          
+          // Local booking data (if applicable)
+          localBooking: localBookingData,
+          
+          // Payment details
+          paymentDetails: {
+            amountPaid: amountPaid,
+            numberOfPeople: numberOfPeople,
+            isExtraInvitees: isExtraInvitees,
+            isManualPaymentLink: true,
+            paymentDate: new Date().toISOString(),
+          },
+          
+          // Promo code info
           promoCode: promoCodeInfo.code,
           promoDiscountAmount: promoCodeInfo.discountAmount,
           promoDiscountPercent: promoCodeInfo.discountPercent,
