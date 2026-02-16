@@ -1589,7 +1589,15 @@ export default function BookingDetailPage() {
 
     const numberOfPeople = invitee.numberOfPeople || 1;
     const baseAmount = invitee.amount || (tour.price || 0) * numberOfPeople;
-    const isPaid = invitee.isPaid || false;
+    
+    // Check payment status - for Local Stories, also check local booking
+    let isPaid = invitee.isPaid || false;
+    if (localBookingId) {
+      const localBooking = localStoriesBookings.find(lb => lb.id === localBookingId);
+      if (localBooking) {
+        isPaid = !!(localBooking.deal_id || localBooking.stripe_session_id || invitee.isPaid);
+      }
+    }
 
     if (isPaid) {
       toast.info('This invitee has already paid');
@@ -2386,15 +2394,28 @@ export default function BookingDetailPage() {
                             const matchingInvitee = allInvitees.find(inv =>
                               (inv.email || '').toLowerCase().trim() === (lb.customer_email || '').toLowerCase().trim()
                             );
-                            const isPaid = !!(lb.deal_id || lb.stripe_session_id || matchingInvitee?.isPaid);
+                            
+                            // Calculate amount - use invitee amount or calculate from tour price
                             const amount = matchingInvitee?.amount || (tour?.price || 0) * (lb.amnt_of_people || 1);
-                            if (!isPaid && amount > 0 && matchingInvitee) {
+                            
+                            // Create synthetic invitee if no matching invitee exists
+                            const inviteeToUse = matchingInvitee || {
+                              name: lb.customer_name || '',
+                              email: lb.customer_email || '',
+                              phone: lb.customer_phone || undefined,
+                              numberOfPeople: lb.amnt_of_people || 1,
+                              amount: amount,
+                            };
+                            
+                            // Show button if we have email, name, and amount > 0
+                            // The function will check payment status and show appropriate message
+                            if (lb.customer_email && lb.customer_name && amount > 0) {
                               return (
                                 <Button
                                   variant="outline"
                                   size="sm"
                                   className="h-7 gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50"
-                                  onClick={() => handleSendPaymentLinkToInvitee(matchingInvitee, undefined, lb.id)}
+                                  onClick={() => handleSendPaymentLinkToInvitee(inviteeToUse, undefined, lb.id)}
                                 >
                                   <CreditCard className="h-3 w-3" />
                                   <span className="text-xs">Send Payment Link</span>
@@ -2650,17 +2671,37 @@ export default function BookingDetailPage() {
                             <Trash2 className="h-3 w-3" />
                             <span className="text-xs">Delete</span>
                           </Button>
-                          {!inv.isPaid && inv.amount !== undefined && inv.amount > 0 && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50"
-                              onClick={() => handleSendPaymentLinkToInvitee(inv, index)}
-                            >
-                              <CreditCard className="h-3 w-3" />
-                              <span className="text-xs">Send Payment Link</span>
-                            </Button>
-                          )}
+                          {(() => {
+                            // Calculate amount if not directly set
+                            const calculatedAmount = inv.amount !== undefined && inv.amount !== null 
+                              ? inv.amount 
+                              : (inv.pricePerPerson !== undefined && inv.numberOfPeople !== undefined
+                                  ? (inv.pricePerPerson * inv.numberOfPeople) +
+                                    (inv.tanguyCost || 0) +
+                                    (inv.extraHourCost || 0) +
+                                    (inv.weekendFeeCost || 0) +
+                                    (inv.eveningFeeCost || 0) -
+                                    (inv.discountApplied || 0) -
+                                    (inv.promoDiscountAmount || 0)
+                                  : (tour?.price || 0) * (inv.numberOfPeople || 1));
+                            
+                            // Show button if we have email, name, and amount > 0
+                            // The function will check payment status and show appropriate message
+                            if (inv.email && inv.name && calculatedAmount > 0) {
+                              return (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50"
+                                  onClick={() => handleSendPaymentLinkToInvitee(inv, index)}
+                                >
+                                  <CreditCard className="h-3 w-3" />
+                                  <span className="text-xs">Send Payment Link</span>
+                                </Button>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
                         {/* Upsell products for this invitee */}
                         {inv.upsellProducts && inv.upsellProducts.length > 0 && (
