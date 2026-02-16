@@ -27,19 +27,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Normalize code
-    const normalizedCode = code.trim().toUpperCase().replace(/\s+/g, '');
+    // Normalize code (remove spaces and dashes, convert to uppercase)
+    const normalizedCode = code.trim().toUpperCase().replace(/[-\s]/g, '');
 
     const supabase = getSupabaseServer();
 
     // Start transaction by locking the gift card row
-    // First, get the gift card with a lock
-    const { data: giftCard, error: fetchError } = await supabase
+    // First, try exact match (in case code is stored without dashes)
+    let { data: giftCard, error: fetchError } = await supabase
       .from('gift_cards')
       .select('id, code, current_balance, status, expires_at')
       .eq('code', normalizedCode)
       .eq('status', 'active')
-      .single();
+      .maybeSingle();
+    
+    // If not found, try normalized comparison (codes stored with dashes)
+    if (!giftCard && !fetchError) {
+      const { data: allGiftCards, error: fetchAllError } = await supabase
+        .from('gift_cards')
+        .select('id, code, current_balance, status, expires_at')
+        .eq('status', 'active');
+      
+      if (!fetchAllError && allGiftCards) {
+        const matchedCard = allGiftCards.find(gc => {
+          const storedNormalized = gc.code.replace(/[-\s]/g, '').toUpperCase();
+          return storedNormalized === normalizedCode;
+        });
+        
+        if (matchedCard) {
+          // Fetch the specific card by ID to get proper locking
+          const { data: lockedCard, error: lockError } = await supabase
+            .from('gift_cards')
+            .select('id, code, current_balance, status, expires_at')
+            .eq('id', matchedCard.id)
+            .eq('status', 'active')
+            .single();
+          
+          giftCard = lockedCard;
+          fetchError = lockError;
+        }
+      }
+    }
 
     if (fetchError || !giftCard) {
       return NextResponse.json(

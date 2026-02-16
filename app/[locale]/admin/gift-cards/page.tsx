@@ -141,10 +141,20 @@ export default function AdminGiftCardsPage() {
     router.push(`/${locale}`);
   };
 
-  const openAddDialog = () => {
+  const openAddDialog = async () => {
     setEditingGiftCard(null);
+    // Generate a unique code automatically when creating a new gift card
+    let generatedCode = '';
+    try {
+      generatedCode = await generateUniqueCode();
+    } catch (err) {
+      console.error('Failed to generate code:', err);
+      // If generation fails, use a temporary code that will be regenerated on submit
+      generatedCode = '';
+    }
+    
     setFormData({
-      code: '',
+      code: generatedCode,
       initial_amount: '0',
       current_balance: '0',
       currency: 'EUR',
@@ -180,7 +190,7 @@ export default function AdminGiftCardsPage() {
     setEditingGiftCard(null);
   };
 
-  // Generate gift card code
+  // Generate gift card code (returns code with dashes: XXXX-XXXX-XXXX-XXXX)
   const generateGiftCardCode = (): string => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Exclude confusing chars (0, O, I, 1)
     let code = '';
@@ -199,9 +209,9 @@ export default function AdminGiftCardsPage() {
     const maxAttempts = 10;
 
     while (attempts < maxAttempts) {
-      const code = generateGiftCardCode();
+      const code = generateGiftCardCode(); // Code with dashes: XXXX-XXXX-XXXX-XXXX
       
-      // Check if code exists
+      // Check if code exists (codes are stored with dashes)
       const { data } = await supabase
         .from('gift_cards')
         .select('id')
@@ -209,7 +219,7 @@ export default function AdminGiftCardsPage() {
         .maybeSingle();
       
       if (!data) {
-        return code;
+        return code; // Return code with dashes
       }
       
       attempts++;
@@ -245,7 +255,11 @@ export default function AdminGiftCardsPage() {
       }
 
       // Generate code if not provided (for new gift cards)
-      let finalCode = formData.code.trim().toUpperCase().replace(/\s+/g, '');
+      // Normalize code: ensure proper format with dashes
+      let finalCode = formData.code.trim().toUpperCase();
+      // Remove any invalid characters, keep dashes
+      finalCode = finalCode.replace(/[^A-Z0-9-]/g, '');
+      
       if (!editingGiftCard && !finalCode) {
         try {
           finalCode = await generateUniqueCode();
@@ -259,6 +273,24 @@ export default function AdminGiftCardsPage() {
 
       if (!finalCode) {
         toast.error('Gift card code is required');
+        setSubmitting(false);
+        return;
+      }
+
+      // Normalize code format: ensure it's in XXXX-XXXX-XXXX-XXXX format
+      const cleanCode = finalCode.replace(/-/g, '');
+      if (cleanCode.length !== 16) {
+        toast.error('Gift card code must be exactly 16 alphanumeric characters (format: XXXX-XXXX-XXXX-XXXX)');
+        setSubmitting(false);
+        return;
+      }
+      
+      // Reformat to ensure proper dash placement
+      finalCode = cleanCode.match(/.{1,4}/g)?.join('-') || finalCode;
+      
+      // Validate characters: only allow A-Z and 2-9 (exclude 0, O, I, 1)
+      if (!/^[A-Z2-9-]{19}$/.test(finalCode) || !/^[A-Z2-9]{16}$/.test(cleanCode)) {
+        toast.error('Gift card code contains invalid characters. Use only A-Z and 2-9 (exclude 0, O, I, 1)');
         setSubmitting(false);
         return;
       }
@@ -769,13 +801,26 @@ export default function AdminGiftCardsPage() {
                     <Input
                       id="code"
                       value={formData.code}
-                      onChange={(e) =>
-                        setFormData({ ...formData, code: e.target.value.toUpperCase() })
-                      }
+                      onChange={(e) => {
+                        // Only allow editing when editing an existing gift card
+                        if (editingGiftCard) {
+                          // Allow user to type with dashes, but auto-format
+                          let value = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+                          // Auto-format as user types: add dashes every 4 characters
+                          const cleanValue = value.replace(/-/g, '');
+                          if (cleanValue.length > 0) {
+                            const formatted = cleanValue.match(/.{1,4}/g)?.join('-') || cleanValue;
+                            value = formatted.length > 19 ? formatted.slice(0, 19) : formatted;
+                          }
+                          setFormData({ ...formData, code: value });
+                        }
+                      }}
                       placeholder="XXXX-XXXX-XXXX-XXXX"
+                      maxLength={19}
                       required
-                      disabled={!!editingGiftCard}
-                      className="flex-1"
+                      readOnly={!editingGiftCard} // Readonly when creating (auto-generated, can't manually edit)
+                      disabled={!!editingGiftCard} // Disabled when editing (code shouldn't change)
+                      className="flex-1 font-mono"
                     />
                     {!editingGiftCard && (
                       <Button
@@ -785,16 +830,22 @@ export default function AdminGiftCardsPage() {
                           try {
                             const code = await generateUniqueCode();
                             setFormData({ ...formData, code });
-                            toast.success('Code generated');
+                            toast.success(`New code generated: ${code}`);
                           } catch (err) {
                             toast.error('Failed to generate code');
                           }
                         }}
+                        title="Generate a new code"
                       >
-                        Generate
+                        Regenerate
                       </Button>
                     )}
                   </div>
+                  {!editingGiftCard && (
+                    <p className="text-xs text-gray-500">
+                      Code is automatically generated. Click "Regenerate" to create a new one.
+                    </p>
+                  )}
                   {!editingGiftCard && (
                     <p className="text-xs text-gray-500">
                       Leave empty or click Generate to auto-generate

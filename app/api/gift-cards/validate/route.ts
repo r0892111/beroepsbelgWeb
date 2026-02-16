@@ -27,17 +27,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Normalize code (remove spaces, convert to uppercase)
-    const normalizedCode = code.trim().toUpperCase().replace(/\s+/g, '');
+    // Normalize code (remove spaces and dashes, convert to uppercase)
+    const normalizedCode = code.trim().toUpperCase().replace(/[-\s]/g, '');
 
     const supabase = getSupabaseServer();
 
     // Check if gift card exists and is active
-    const { data: giftCard, error } = await supabase
+    // Try exact match first (in case code is stored without dashes)
+    const { data: exactMatch, error: exactError } = await supabase
       .from('gift_cards')
       .select('code, initial_amount, current_balance, currency, status, expires_at')
       .eq('code', normalizedCode)
       .maybeSingle();
+    
+    // If not found with exact match, try with normalized comparison
+    // (codes are stored with dashes, so we need to normalize for comparison)
+    let giftCard = exactMatch;
+    let error = exactError;
+    if (!giftCard && !error) {
+      // Fetch all gift cards and compare normalized codes
+      const { data: allGiftCards, error: fetchError } = await supabase
+        .from('gift_cards')
+        .select('code, initial_amount, current_balance, currency, status, expires_at');
+      
+      if (!fetchError && allGiftCards) {
+        const found = allGiftCards.find(gc => {
+          const storedNormalized = gc.code.replace(/[-\s]/g, '').toUpperCase();
+          return storedNormalized === normalizedCode;
+        });
+        giftCard = found || null;
+      } else if (fetchError) {
+        error = fetchError;
+      }
+    }
 
     if (error) {
       console.error('Error validating gift card:', error);
