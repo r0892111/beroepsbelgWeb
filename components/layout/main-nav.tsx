@@ -47,11 +47,15 @@ export function MainNav({ locale }: MainNavProps) {
   ];
 
   return (
-    <div className={`border-b transition-all duration-500 sticky top-0 z-50 backdrop-blur-lg ${isScrolled ? 'shadow-lg' : 'shadow-sm'}`} style={{
-      borderColor: isScrolled ? 'var(--green-accent)' : 'var(--border-light)',
-      backgroundColor: isScrolled ? 'rgba(255, 255, 255, 0.98)' : 'rgba(255, 255, 255, 0.95)',
-      borderBottomWidth: isScrolled ? '2px' : '1px'
-    }}>
+    <header
+      role="banner"
+      className={`border-b transition-all duration-500 sticky top-0 z-50 backdrop-blur-lg ${isScrolled ? 'shadow-lg' : 'shadow-sm'}`}
+      style={{
+        borderColor: isScrolled ? 'var(--green-accent)' : 'var(--border-light)',
+        backgroundColor: isScrolled ? 'rgba(255, 255, 255, 0.98)' : 'rgba(255, 255, 255, 0.95)',
+        borderBottomWidth: isScrolled ? '2px' : '1px'
+      }}
+    >
       {/* Turquoise accent line on scroll */}
       <div
         className="absolute top-0 left-0 right-0 h-0.5 transition-all duration-500"
@@ -60,20 +64,26 @@ export function MainNav({ locale }: MainNavProps) {
           opacity: isScrolled ? 1 : 0,
           boxShadow: isScrolled ? '0 0 10px rgba(61, 213, 152, 0.5)' : 'none'
         }}
+        aria-hidden="true"
       />
 
       <div className="container mx-auto px-6 md:px-12">
         <div className={`flex items-center justify-between transition-all duration-500 ${isScrolled ? 'h-16' : 'h-20'}`}>
-          <Link href="https://beroepsbelg.be" className="flex items-center group relative">
+          <Link 
+            href="https://beroepsbelg.be" 
+            className="flex items-center group relative"
+            aria-label="BeroepsBelg - Home"
+          >
             <div className="relative">
               {/* Turquoise glow on hover */}
               <div
                 className="absolute -inset-2 rounded-lg opacity-0 group-hover:opacity-20 transition-all duration-300 blur-md"
                 style={{ backgroundColor: 'var(--green-accent)' }}
+                aria-hidden="true"
               />
               <Image
                 src="/Beroepsbelg Logo.png"
-                alt="BuroBeroepsBelg"
+                alt="BeroepsBelg - Professional City Guide Belgium"
                 width={160}
                 height={50}
                 priority
@@ -82,7 +92,12 @@ export function MainNav({ locale }: MainNavProps) {
             </div>
           </Link>
 
-          <nav className="hidden items-center gap-8 lg:flex">
+          <nav 
+            id="main-navigation"
+            role="navigation"
+            aria-label="Main navigation"
+            className="hidden items-center gap-8 lg:flex"
+          >
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -131,23 +146,35 @@ export function MainNav({ locale }: MainNavProps) {
             )}
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" role="toolbar" aria-label="User actions">
             <Link href={`/${locale}/account`} className="relative hidden sm:inline-flex group">
-              <Button variant="ghost" size="icon" className="hover:bg-transparent relative">
-                <User className="h-5 w-5 transition-all duration-300 group-hover:text-[var(--green-accent)] group-hover:scale-110" />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="hover:bg-transparent relative"
+                aria-label={t('account') || 'Account'}
+              >
+                <User className="h-5 w-5 transition-all duration-300 group-hover:text-[var(--green-accent)] group-hover:scale-110" aria-hidden="true" />
                 <div
                   className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{ backgroundColor: 'rgba(61, 213, 152, 0.1)' }}
+                  aria-hidden="true"
                 />
               </Button>
             </Link>
 
             <Link href={`/${locale}/account?tab=favorites`} className="relative hidden sm:inline-flex group">
-              <Button variant="ghost" size="icon" className="hover:bg-transparent relative">
-                <Heart className="h-5 w-5 transition-all duration-300 group-hover:text-[var(--green-accent)] group-hover:scale-110 group-hover:fill-[var(--green-accent)]" />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="hover:bg-transparent relative"
+                aria-label={`${t('favorites') || 'Favorites'}${totalFavoritesCount > 0 ? `, ${totalFavoritesCount} items` : ''}`}
+              >
+                <Heart className="h-5 w-5 transition-all duration-300 group-hover:text-[var(--green-accent)] group-hover:scale-110 group-hover:fill-[var(--green-accent)]" aria-hidden="true" />
                 <div
                   className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{ backgroundColor: 'rgba(61, 213, 152, 0.1)' }}
+                  aria-hidden="true"
                 />
               </Button>
               {totalFavoritesCount > 0 && (
@@ -158,18 +185,26 @@ export function MainNav({ locale }: MainNavProps) {
                     boxShadow: '0 0 10px rgba(61, 213, 152, 0.5)'
                   }}
                   suppressHydrationWarning
+                  aria-label={`${totalFavoritesCount} favorites`}
                 >
-                  {totalFavoritesCount}
+                  <span className="sr-only">{totalFavoritesCount} favorites</span>
+                  <span aria-hidden="true">{totalFavoritesCount}</span>
                 </span>
               )}
             </Link>
 
             <Link href={`/${locale}/webshop`} className="hidden sm:inline-flex group">
-              <Button variant="ghost" size="icon" className="hover:bg-transparent relative">
-                <Search className="h-5 w-5 transition-all duration-300 group-hover:text-[var(--green-accent)] group-hover:scale-110" />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="hover:bg-transparent relative"
+                aria-label={t('webshop') || 'Search webshop'}
+              >
+                <Search className="h-5 w-5 transition-all duration-300 group-hover:text-[var(--green-accent)] group-hover:scale-110" aria-hidden="true" />
                 <div
                   className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{ backgroundColor: 'rgba(61, 213, 152, 0.1)' }}
+                  aria-hidden="true"
                 />
               </Button>
             </Link>
@@ -180,16 +215,27 @@ export function MainNav({ locale }: MainNavProps) {
 
             <Sheet>
               <SheetTrigger asChild className="lg:hidden">
-                <Button variant="ghost" size="icon" className="hover:bg-transparent relative group">
-                  <Menu className="h-5 w-5 transition-all duration-300 group-hover:text-[var(--green-accent)] group-hover:scale-110" />
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="hover:bg-transparent relative group"
+                  aria-label="Open mobile menu"
+                  aria-expanded="false"
+                >
+                  <Menu className="h-5 w-5 transition-all duration-300 group-hover:text-[var(--green-accent)] group-hover:scale-110" aria-hidden="true" />
                   <div
                     className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                     style={{ backgroundColor: 'rgba(61, 213, 152, 0.1)' }}
+                    aria-hidden="true"
                   />
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-72 overflow-y-auto">
-                <nav className="flex flex-col gap-4 pt-8 pb-8">
+                <nav 
+                  role="navigation"
+                  aria-label="Mobile navigation"
+                  className="flex flex-col gap-4 pt-8 pb-8"
+                >
                   <div className="flex flex-col gap-3 border-b pb-4" style={{ borderColor: 'var(--green-accent)' }}>
                     <Link
                       href={`/${locale}/account`}
@@ -271,6 +317,6 @@ export function MainNav({ locale }: MainNavProps) {
           </div>
         </div>
       </div>
-    </div>
+    </header>
   );
 }

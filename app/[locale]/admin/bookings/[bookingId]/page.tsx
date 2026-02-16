@@ -221,6 +221,7 @@ export default function BookingDetailPage() {
   const [editForm, setEditForm] = useState({
     date: '',
     time: '',
+    endTime: '',
     status: '',
     start_location: '',
     end_location: '',
@@ -395,7 +396,7 @@ export default function BookingDetailPage() {
       const data = await response.json();
       setTeamleaderDeals(data.deals || []);
     } catch (err) {
-      console.error('Error fetching TeamLeader deals:', err);
+      // Error fetching TeamLeader deals
       setDealsError(err instanceof Error ? err.message : 'Failed to load deals');
     } finally {
       setLoadingDeals(false);
@@ -444,7 +445,7 @@ export default function BookingDetailPage() {
           .order('created_at', { ascending: true });
 
         if (localBookingsError) {
-          console.error('Error fetching local tours bookings:', localBookingsError);
+          // Error fetching local tours bookings
         } else if (localBookingsData) {
           setLocalStoriesBookings(localBookingsData as LocalStoriesBooking[]);
         }
@@ -488,7 +489,7 @@ export default function BookingDetailPage() {
         setAllGuides(guidesMap);
       }
     } catch (err) {
-      console.error('Error fetching booking details:', err);
+      // Error fetching booking details
       setError('Failed to load booking details');
     } finally {
       setLoading(false);
@@ -574,7 +575,7 @@ export default function BookingDetailPage() {
       setSelectedNewGuideId(null);
       void fetchBookingDetails();
     } catch (err) {
-      console.error('Error selecting new guide:', err);
+      // Error selecting new guide
       toast.error('Failed to select new guide');
     } finally {
       setSubmittingNewGuide(false);
@@ -613,7 +614,7 @@ export default function BookingDetailPage() {
         throw new Error(data.error || 'Failed to cancel guide');
       }
 
-      console.log('Guide cancellation response:', data);
+      // Guide cancellation response
 
       toast.success('Guide removed. A new guide will be assigned.');
       setCancelDialogOpen(false);
@@ -621,7 +622,7 @@ export default function BookingDetailPage() {
       await new Promise(resolve => setTimeout(resolve, 500));
       void fetchBookingDetails();
     } catch (err) {
-      console.error('Error cancelling guide:', err);
+      // Error cancelling guide
       toast.error('Failed to cancel guide assignment');
     } finally {
       setCancellingGuide(false);
@@ -657,10 +658,25 @@ export default function BookingDetailPage() {
           timeStr = `${timeParts[0]}:${timeParts[1]}`;
         }
       }
+
+      // Extract end time from tour_end
+      let endTimeStr = '';
+      if (booking.tour_end) {
+        const endTimePart = booking.tour_end.split('T')[1];
+        if (endTimePart) {
+          let endTimeWithoutOffset = endTimePart.split(/[+-]/)[0].split('Z')[0];
+          endTimeWithoutOffset = endTimeWithoutOffset.split('.')[0];
+          const endTimeParts = endTimeWithoutOffset.split(':');
+          if (endTimeParts.length >= 2) {
+            endTimeStr = `${endTimeParts[0]}:${endTimeParts[1]}`;
+          }
+        }
+      }
       
       setEditForm({
         date: dateStr,
         time: timeStr,
+        endTime: endTimeStr,
         status: booking.status,
         start_location: booking.start_location || '',
         end_location: booking.end_location || '',
@@ -673,6 +689,7 @@ export default function BookingDetailPage() {
       setEditForm({
         date: brusselsDate.toISOString().split('T')[0],
         time: brusselsDate.toTimeString().slice(0, 5),
+        endTime: '',
         status: booking.status,
         start_location: booking.start_location || '',
         end_location: booking.end_location || '',
@@ -709,7 +726,7 @@ export default function BookingDetailPage() {
       const data = await response.json();
       setTeamleaderInvoices(data.invoices || []);
     } catch (err) {
-      console.error('Error fetching TeamLeader invoices:', err);
+      // Error fetching TeamLeader invoices
       setInvoicesError(err instanceof Error ? err.message : 'Failed to load invoices');
     } finally {
       setLoadingInvoices(false);
@@ -725,20 +742,35 @@ export default function BookingDetailPage() {
       const parsedDate = parseBrusselsDateTime(editForm.date, editForm.time);
       const tourDatetime = toBrusselsLocalISO(parsedDate);
       
-      // Calculate tour_end based on tour duration
-      // Get duration from tour or use existing booking's duration, default to 120 minutes
-      const firstInvitee = booking.invitees?.[0] as any;
-      const tourDuration = tour?.duration_minutes || 
-                          firstInvitee?.durationMinutes || 
-                          120;
-      const tourEndDatetime = addMinutesBrussels(tourDatetime, tourDuration);
+      // Use manually entered end time if provided, otherwise calculate based on tour duration
+      let tourEndDatetime: string;
+      let durationMinutes: number;
+      
+      if (editForm.endTime && editForm.endTime.trim()) {
+        // Parse the end date/time as Brussels time
+        const parsedEndDate = parseBrusselsDateTime(editForm.date, editForm.endTime);
+        tourEndDatetime = toBrusselsLocalISO(parsedEndDate);
+        
+        // Calculate duration in minutes from start and end times
+        const startDate = parseBrusselsDateTime(editForm.date, editForm.time);
+        const durationMs = parsedEndDate.getTime() - startDate.getTime();
+        durationMinutes = Math.round(durationMs / (1000 * 60));
+      } else {
+        // Calculate tour_end based on tour duration (fallback)
+        // Get duration from tour or use existing booking's duration, default to 120 minutes
+        const firstInvitee = booking.invitees?.[0] as any;
+        durationMinutes = tour?.duration_minutes || 
+                         firstInvitee?.durationMinutes || 
+                         120;
+        tourEndDatetime = addMinutesBrussels(parsedDate, durationMinutes);
+      }
       
       // Update invitees array to ensure tourStartDatetime matches tour_datetime exactly
       const updatedInvitees = booking.invitees?.map((invitee: any) => ({
         ...invitee,
         tourStartDatetime: tourDatetime, // Match tour_datetime exactly
         tourEndDatetime: tourEndDatetime, // Match tour_end exactly
-        durationMinutes: tourDuration,
+        durationMinutes: durationMinutes,
       })) || [];
 
       const { error: updateError } = await supabase
@@ -762,7 +794,7 @@ export default function BookingDetailPage() {
       setEditDialogOpen(false);
       void fetchBookingDetails();
     } catch (err) {
-      console.error('Error updating booking:', err);
+      // Error updating booking
       toast.error('Failed to update booking');
     } finally {
       setSavingBooking(false);
@@ -846,7 +878,7 @@ export default function BookingDetailPage() {
         });
 
       if (localError) {
-        console.error('Error creating local tours booking:', localError);
+        // Error creating local tours booking
         // Don't fail - main booking was updated
       }
 
@@ -855,7 +887,7 @@ export default function BookingDetailPage() {
       resetNewInvitee();
       void fetchBookingDetails();
     } catch (err) {
-      console.error('Error adding invitee:', err);
+      // Error adding invitee
       toast.error('Failed to add invitee');
     } finally {
       setAddingInvitee(false);
@@ -972,7 +1004,7 @@ export default function BookingDetailPage() {
       setAddPeopleTarget(null);
       void fetchBookingDetails();
     } catch (err) {
-      console.error('Error adding people:', err);
+      // Error adding people
       toast.error(err instanceof Error ? err.message : 'Failed to add people');
     } finally {
       setAddingPeople(false);
@@ -1043,7 +1075,7 @@ export default function BookingDetailPage() {
       const data = await response.json();
       setEditInviteeInvoices(data.invoices || []);
     } catch (err) {
-      console.error('Error fetching TeamLeader invoices:', err);
+      // Error fetching TeamLeader invoices
       setEditInviteeInvoicesError(err instanceof Error ? err.message : 'Failed to load invoices');
     } finally {
       setLoadingEditInviteeInvoices(false);
@@ -1157,7 +1189,7 @@ export default function BookingDetailPage() {
       setEditInviteeTarget(null);
       void fetchBookingDetails();
     } catch (err) {
-      console.error('Error updating invitee:', err);
+      // Error updating invitee
       toast.error(err instanceof Error ? err.message : 'Failed to update invitee');
     } finally {
       setEditingInvitee(false);
@@ -1227,7 +1259,7 @@ export default function BookingDetailPage() {
       setDeleteInviteeTarget(null);
       void fetchBookingDetails();
     } catch (err) {
-      console.error('Error deleting invitee:', err);
+      // Error deleting invitee
       toast.error(err instanceof Error ? err.message : 'Failed to delete invitee');
     } finally {
       setDeletingInvitee(false);
@@ -1264,7 +1296,7 @@ export default function BookingDetailPage() {
       // Refresh booking data
       fetchBookingDetails();
     } catch (error: any) {
-      console.error('Error reprocessing booking:', error);
+      // Error reprocessing booking
       toast.error(error.message || 'Failed to reprocess booking');
     }
   };
@@ -1282,7 +1314,7 @@ export default function BookingDetailPage() {
           .eq('booking_id', booking.id);
 
         if (localError) {
-          console.error('Error deleting local tours bookings:', localError);
+          // Error deleting local tours bookings
           // Continue anyway - we still want to delete the main booking
         }
       }
@@ -1299,7 +1331,7 @@ export default function BookingDetailPage() {
       // Navigate back to bookings list
       router.push(`/${locale}/admin/bookings`);
     } catch (err) {
-      console.error('Error deleting booking:', err);
+      // Error deleting booking
       toast.error(err instanceof Error ? err.message : 'Failed to delete booking');
     } finally {
       setDeletingBooking(false);
@@ -1367,7 +1399,7 @@ export default function BookingDetailPage() {
       setSendInfoToClientOpen(false);
       setInfoMessage('');
     } catch (err) {
-      console.error('Error sending info to client:', err);
+      // Error sending info to client
       toast.error('Failed to send info to client');
     } finally {
       setSendingInfo(false);
@@ -1394,7 +1426,7 @@ export default function BookingDetailPage() {
 
       toast.success('Webhook called successfully');
     } catch (err) {
-      console.error('Error calling invoice webhook:', err);
+      // Error calling invoice webhook
       toast.error('Failed to call webhook');
     }
   };
@@ -1465,7 +1497,7 @@ export default function BookingDetailPage() {
       setSendInfoToGuideOpen(false);
       setInfoMessage('');
     } catch (err) {
-      console.error('Error sending info to guide:', err);
+      // Error sending info to guide
       toast.error('Failed to send info to guide');
     } finally {
       setSendingInfo(false);
@@ -1531,7 +1563,7 @@ export default function BookingDetailPage() {
       setReassignMessage('');
       void fetchBookingDetails();
     } catch (err) {
-      console.error('Error reassigning guide:', err);
+      // Error reassigning guide
       toast.error(err instanceof Error ? err.message : 'Failed to reassign guide');
     } finally {
       setReassigningGuide(false);
@@ -1813,7 +1845,17 @@ export default function BookingDetailPage() {
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground uppercase tracking-wide">Duration</p>
-                      <p className="font-medium">{tour.duration_minutes ? `${tour.duration_minutes} min` : 'N/A'}</p>
+                      <p className="font-medium">
+                        {(() => {
+                          // Always use durationMinutes from invitee first (this is the source of truth)
+                          const firstInvitee = booking.invitees?.[0] as any;
+                          if (firstInvitee?.durationMinutes) {
+                            return `${firstInvitee.durationMinutes} min`;
+                          }
+                          // Fall back to tour's base duration
+                          return tour.duration_minutes ? `${tour.duration_minutes} min` : 'N/A';
+                        })()}
+                      </p>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4 pt-2 border-t">
@@ -2827,19 +2869,19 @@ export default function BookingDetailPage() {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="editDate" className="text-xs text-muted-foreground uppercase tracking-wide">Date</Label>
+              <Input
+                id="editDate"
+                type="date"
+                value={editForm.date}
+                onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                className="bg-white"
+              />
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="editDate" className="text-xs text-muted-foreground uppercase tracking-wide">Date</Label>
-                <Input
-                  id="editDate"
-                  type="date"
-                  value={editForm.date}
-                  onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
-                  className="bg-white"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="editTime" className="text-xs text-muted-foreground uppercase tracking-wide">Time</Label>
+                <Label htmlFor="editTime" className="text-xs text-muted-foreground uppercase tracking-wide">Start Time</Label>
                 <Input
                   id="editTime"
                   type="time"
@@ -2847,6 +2889,20 @@ export default function BookingDetailPage() {
                   onChange={(e) => setEditForm({ ...editForm, time: e.target.value })}
                   className="bg-white"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editEndTime" className="text-xs text-muted-foreground uppercase tracking-wide">End Time</Label>
+                <Input
+                  id="editEndTime"
+                  type="time"
+                  value={editForm.endTime}
+                  onChange={(e) => setEditForm({ ...editForm, endTime: e.target.value })}
+                  className="bg-white"
+                  placeholder="Auto-calculated"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Leave empty to auto-calculate from tour duration
+                </p>
               </div>
             </div>
 

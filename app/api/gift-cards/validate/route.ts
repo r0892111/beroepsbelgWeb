@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (error) {
-      console.error('Error validating gift card:', error);
+      // Error validating gift card
       return NextResponse.json(
         { error: 'Failed to validate gift card' },
         { status: 500 }

@@ -49,7 +49,6 @@ export function NewsletterForm({ locale }: NewsletterFormProps) {
   const onSubmit = async (data: NewsletterFormData) => {
     setIsSubmitting(true);
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    console.log('Newsletter signup:', data);
     toast.success(t('success'));
     reset();
     setIsSubmitting(false);

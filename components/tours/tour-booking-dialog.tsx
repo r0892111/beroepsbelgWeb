@@ -212,7 +212,7 @@ export function TourBookingDialog({
             setFormData(prev => ({ ...prev, requestTanguy: false }));
           }
         } else {
-          console.error('Failed to check Tanguy availability');
+          // Failed to check Tanguy availability
           setTanguyAvailable(false);
           // Reset requestTanguy on error
           if (formData.requestTanguy) {
@@ -220,7 +220,7 @@ export function TourBookingDialog({
           }
         }
       } catch (error) {
-        console.error('Error checking Tanguy availability:', error);
+        // Error checking Tanguy availability
         setTanguyAvailable(false);
         // Reset requestTanguy on error
         if (formData.requestTanguy) {
@@ -242,7 +242,7 @@ export function TourBookingDialog({
   // Load products for upsell when upsell dialog opens
   useEffect(() => {
     if (showUpsellDialog && products.length === 0) {
-      console.log('Loading products for upsell dialog');
+      // Loading products for upsell dialog
       setProductsLoading(true);
       fetch('/api/products')
         .then(res => res.json())
@@ -253,11 +253,11 @@ export function TourBookingDialog({
             p.category === 'Merchandise' ||
             p.category === 'Game'
           );
-          console.log('Loaded products for upsell:', webshopItems.length);
+          // Loaded products for upsell
           setProducts(webshopItems); // Store all products, UI will handle highlighting first 6
         })
         .catch((err) => {
-          console.error('Failed to load products for upsell:', err);
+          // Failed to load products for upsell
         })
         .finally(() => {
           setProductsLoading(false);

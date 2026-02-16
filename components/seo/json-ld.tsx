@@ -32,20 +32,27 @@ export function LocalBusinessJsonLd() {
       '@type': 'PostalAddress',
       addressCountry: 'BE',
       addressLocality: 'Antwerpen',
+      addressRegion: 'Antwerpen',
+    },
+    geo: {
+      '@type': 'GeoCoordinates',
+      latitude: 51.2194,
+      longitude: 4.4025,
     },
     areaServed: [
-      { '@type': 'City', name: 'Antwerpen' },
-      { '@type': 'City', name: 'Brussel' },
-      { '@type': 'City', name: 'Brugge' },
-      { '@type': 'City', name: 'Gent' },
-      { '@type': 'City', name: 'Mechelen' },
-      { '@type': 'City', name: 'Leuven' },
+      { '@type': 'City', name: 'Antwerpen', sameAs: 'https://www.wikidata.org/wiki/Q1286' },
+      { '@type': 'City', name: 'Brussel', sameAs: 'https://www.wikidata.org/wiki/Q239' },
+      { '@type': 'City', name: 'Brugge', sameAs: 'https://www.wikidata.org/wiki/Q12994' },
+      { '@type': 'City', name: 'Gent', sameAs: 'https://www.wikidata.org/wiki/Q12968' },
+      { '@type': 'City', name: 'Mechelen', sameAs: 'https://www.wikidata.org/wiki/Q162022' },
+      { '@type': 'City', name: 'Leuven', sameAs: 'https://www.wikidata.org/wiki/Q118958' },
     ],
     sameAs: [
       'https://www.instagram.com/tanguyottomer/',
       'https://www.facebook.com/tanguy.ottomer/',
       'https://www.tiktok.com/@tanguyottomer',
     ],
+    keywords: 'stadsgids antwerpen, guide in antwerp, stadswandelingen antwerpen, city tours antwerp, rondleidingen antwerpen',
     hasOfferCatalog: {
       '@type': 'OfferCatalog',
       name: 'Stadsgids Diensten',
@@ -54,8 +61,12 @@ export function LocalBusinessJsonLd() {
           '@type': 'Offer',
           itemOffered: {
             '@type': 'Service',
-            name: 'Stadswandelingen',
-            description: 'Professionele stadswandelingen met ervaren stadsgids',
+            name: 'Stadswandelingen Antwerpen',
+            description: 'Professionele stadswandelingen met ervaren stadsgids in Antwerpen',
+            areaServed: {
+              '@type': 'City',
+              name: 'Antwerpen',
+            },
           },
         },
         {
@@ -63,7 +74,7 @@ export function LocalBusinessJsonLd() {
           itemOffered: {
             '@type': 'Service',
             name: 'Teambuilding',
-            description: 'Teambuilding activiteiten en bedrijfsuitjes in Belgische steden',
+            description: 'Teambuilding activiteiten en bedrijfsuitjes in Belgische steden, met focus op Antwerpen',
           },
         },
         {
@@ -71,7 +82,7 @@ export function LocalBusinessJsonLd() {
           itemOffered: {
             '@type': 'Service',
             name: 'Zakelijke Rondleidingen',
-            description: 'Op maat gemaakte rondleidingen voor bedrijven en organisaties',
+            description: 'Op maat gemaakte rondleidingen voor bedrijven en organisaties in Antwerpen en andere Belgische steden',
           },
         },
       ],
@@ -258,6 +269,32 @@ export function FaqPageJsonLd({ faqs }: FaqPageJsonLdProps) {
   return <JsonLd data={data} />;
 }
 
+// AggregateRating schema for reviews
+interface AggregateRatingJsonLdProps {
+  ratingValue: number;
+  reviewCount: number;
+  bestRating?: number;
+  worstRating?: number;
+}
+
+export function AggregateRatingJsonLd({
+  ratingValue,
+  reviewCount,
+  bestRating = 5,
+  worstRating = 1,
+}: AggregateRatingJsonLdProps) {
+  const data = {
+    '@context': 'https://schema.org',
+    '@type': 'AggregateRating',
+    ratingValue: ratingValue.toString(),
+    reviewCount: reviewCount.toString(),
+    bestRating: bestRating.toString(),
+    worstRating: worstRating.toString(),
+  };
+
+  return <JsonLd data={data} />;
+}
+
 // Article schema for blog posts
 interface ArticleJsonLdProps {
   title: string;
@@ -337,6 +374,78 @@ export function BreadcrumbJsonLd({ items }: BreadcrumbJsonLdProps) {
       item: item.url,
     })),
   };
+
+  return <JsonLd data={data} />;
+}
+
+// City/Place schema for city pages
+interface CityJsonLdProps {
+  name: string;
+  nameEn?: string;
+  nameFr?: string;
+  nameDe?: string;
+  description: string;
+  descriptionEn?: string;
+  descriptionFr?: string;
+  descriptionDe?: string;
+  url: string;
+  image?: string;
+  country?: string;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+}
+
+export function CityJsonLd({
+  name,
+  nameEn,
+  nameFr,
+  nameDe,
+  description,
+  descriptionEn,
+  descriptionFr,
+  descriptionDe,
+  url,
+  image,
+  country = 'BE',
+  coordinates,
+}: CityJsonLdProps) {
+  const data: Record<string, any> = {
+    '@context': 'https://schema.org',
+    '@type': 'City',
+    name,
+    description,
+    url,
+    address: {
+      '@type': 'PostalAddress',
+      addressCountry: country,
+      addressLocality: name,
+    },
+  };
+
+  if (nameEn || nameFr || nameDe) {
+    data.alternateName = [nameEn, nameFr, nameDe].filter(Boolean);
+  }
+
+  if (descriptionEn || descriptionFr || descriptionDe) {
+    const descriptions = [descriptionEn, descriptionFr, descriptionDe].filter(Boolean);
+    if (descriptions.length > 0) {
+      data.description = [description, ...descriptions];
+    }
+  }
+
+  if (image) {
+    data.image = image;
+  }
+
+  if (coordinates) {
+    data.geo = {
+      '@type': 'GeoCoordinates',
+      latitude: coordinates.latitude,
+      longitude: coordinates.longitude,
+    };
+  }
 
   return <JsonLd data={data} />;
 }

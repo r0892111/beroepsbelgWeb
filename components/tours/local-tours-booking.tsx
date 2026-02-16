@@ -27,24 +27,24 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
 
   useEffect(() => {
     async function fetchBookings() {
-      console.log('LocalToursBooking: Fetching bookings for tourId:', tourId);
+      // LocalToursBooking: Fetching bookings
       try {
         const response = await fetch(`/api/local-tours-bookings?tourId=${tourId}`);
-        console.log('LocalToursBooking: API response status:', response.status);
+        // LocalToursBooking: API response status
         if (response.ok) {
           const data = await response.json();
-          console.log('LocalToursBooking: Received', Array.isArray(data) ? data.length : 0, 'bookings from API');
+          // LocalToursBooking: Received bookings from API
           const unavailableInResponse = Array.isArray(data) ? data.filter((b: any) => b.status === 'unavailable').length : 0;
-          console.log('LocalToursBooking: Unavailable dates in API response:', unavailableInResponse);
+          // LocalToursBooking: Unavailable dates in API response
           setBookings(Array.isArray(data) ? data : []);
           setCurrentMonthIndex(0); // Reset to first month when bookings change
         } else {
-          console.error('LocalToursBooking: API error - status:', response.status);
+          // LocalToursBooking: API error
           // Still set empty array so component can render
           setBookings([]);
         }
       } catch (error) {
-        console.error('LocalToursBooking: Error fetching local tours bookings:', error);
+        // LocalToursBooking: Error fetching local tours bookings
         // Still set empty array so component can render
         setBookings([]);
       } finally {
@@ -156,7 +156,7 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
     const result = filteredBookings.filter((booking) => {
       if (!booking.booking_date) return false;
       if (booking.status === 'unavailable') {
-        console.log('LocalToursBooking: WARNING - Found unavailable booking in filteredBookings:', booking.booking_date);
+        // LocalToursBooking: WARNING - Found unavailable booking in filteredBookings
         return false;
       }
       const dateMatch = booking.booking_date.match(/^(\d{4}-\d{2}-\d{2})/);
@@ -166,7 +166,7 @@ export function LocalToursBooking({ tourId, tourTitle, tourPrice, tourDuration =
       return bookingDate >= now && bookingDate <= nineMonthsFromNow;
     });
     
-    console.log('LocalToursBooking: futureBookings count after filtering:', result.length);
+    // LocalToursBooking: futureBookings count after filtering
     return result;
   }, [filteredBookings, nineMonthsFromNow]);
 

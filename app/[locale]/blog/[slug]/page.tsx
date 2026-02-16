@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { type Locale, locales } from '@/i18n';
-import { getBlogBySlug } from '@/lib/api/content';
+import { getBlogBySlug, getTours } from '@/lib/api/content';
 import { notFound } from 'next/navigation';
 import BlogDetailClientPage from './client-page';
 import type { Metadata } from 'next';
@@ -73,7 +73,10 @@ export async function generateMetadata({ params }: BlogDetailPageProps): Promise
 
 export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
   const { locale, slug } = params;
-  const blog = await getBlogBySlug(slug, locale);
+  const [blog, tours] = await Promise.all([
+    getBlogBySlug(slug, locale),
+    getTours(), // Fetch all tours for related tours section
+  ]);
 
   if (!blog) {
     notFound();
@@ -92,6 +95,11 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
 
   const url = `${BASE_URL}/${locale}/blog/${slug}`;
 
+  // Try to extract city from blog content or metadata for related tours
+  // This is a simple implementation - you could enhance it with better city detection
+  // For now, we'll pass undefined and show general tours
+  const citySlug = undefined;
+
   return (
     <>
       <ArticleJsonLd
@@ -103,7 +111,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
         author={blog.author}
         url={url}
       />
-      <BlogDetailClientPage blog={blog} locale={locale} />
+      <BlogDetailClientPage blog={blog} locale={locale} tours={tours} citySlug={citySlug} />
     </>
   );
 }

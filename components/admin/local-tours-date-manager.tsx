@@ -53,7 +53,7 @@ export function LocalToursDateManager({ open, onOpenChange, tourId, tourTitle }:
         setBookings([]);
       }
     } catch (error) {
-      console.error('Error fetching bookings:', error);
+      // Error fetching bookings
       toast.error('Failed to load bookings');
       setBookings([]);
     } finally {
@@ -155,7 +155,7 @@ export function LocalToursDateManager({ open, onOpenChange, tourId, tourTitle }:
         toast.error(error.error || 'Failed to update availability');
       }
     } catch (error) {
-      console.error('Error updating availability:', error);
+      // Error updating availability
       toast.error('Failed to update availability');
     } finally {
       setUpdating(null);

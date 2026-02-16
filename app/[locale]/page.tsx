@@ -21,12 +21,12 @@ const BASE_URL = getBaseUrl();
 
 const metadata: Record<Locale, { title: string; description: string }> = {
   nl: {
-    title: 'BeroepsBelg | Stadsgids België - Rondleidingen & Teambuilding',
-    description: 'Professionele stadsgids in Antwerpen, Brussel, Brugge, Gent en meer. Boek stadswandelingen, teambuilding of bedrijfsuitjes. "One of the 7 savviest guides in the world" — CNN.',
+    title: 'Stadsgids Antwerpen | BeroepsBelg - Professionele Stadswandelingen',
+    description: 'Zoek je een stadsgids in Antwerpen? BeroepsBelg biedt professionele stadswandelingen en rondleidingen in Antwerpen. Boek nu je stadsgids Antwerpen! "One of the 7 savviest guides in the world" — CNN.',
   },
   en: {
-    title: 'BeroepsBelg | City Guide Belgium - Tours & Team Building',
-    description: 'Professional city guide in Antwerp, Brussels, Bruges, Ghent and more. Book city tours, team building or corporate outings. "One of the 7 savviest guides in the world" — CNN.',
+    title: 'Guide in Antwerp | BeroepsBelg - Professional City Tours',
+    description: 'Looking for a guide in Antwerp? BeroepsBelg offers professional city tours and walking tours in Antwerp. Book your Antwerp guide today! "One of the 7 savviest guides in the world" — CNN.',
   },
   fr: {
     title: 'BeroepsBelg | Guide de Ville Belgique - Visites & Team Building',

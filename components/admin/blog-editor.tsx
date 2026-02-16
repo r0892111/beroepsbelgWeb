@@ -225,7 +225,7 @@ export default function BlogEditor({ content, onChange, blogId }: BlogEditorProp
               });
 
             if (uploadError) {
-              console.error('Error uploading media:', uploadError);
+              // Error uploading media
               toast.error('Failed to upload media');
               setUploadingMedia(false);
               return;
@@ -245,7 +245,7 @@ export default function BlogEditor({ content, onChange, blogId }: BlogEditorProp
               block.videoUrl = undefined;
             }
           } catch (err) {
-            console.error('Exception uploading media:', err);
+            // Exception uploading media
             toast.error('Failed to upload media');
             setUploadingMedia(false);
             return;

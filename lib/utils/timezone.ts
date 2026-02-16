@@ -138,13 +138,33 @@ export function nowBrussels(): string {
 
 /**
  * Add duration to a date and return Brussels ISO string WITHOUT timezone offset
- * @param date - Start date (Date object or ISO string)
+ * @param date - Start date (Date object or ISO string without timezone offset, e.g., "2026-05-28T16:00:00")
  * @param minutes - Minutes to add
  * @returns ISO string without timezone offset (Brussels local time)
  */
 export function addMinutesBrussels(date: Date | string, minutes: number): string {
-  // Parse the date string to a Date object
-  const d = typeof date === 'string' ? new Date(date) : date;
+  let d: Date;
+  
+  if (typeof date === 'string') {
+    // If it's a string without timezone (e.g., "2026-05-28T16:00:00"), parse it as Brussels local time
+    // Check if it has timezone info (ends with Z or +/-)
+    if (date.includes('Z') || /[+-]\d{2}:\d{2}$/.test(date)) {
+      // Has timezone info, parse normally
+      d = new Date(date);
+    } else {
+      // No timezone info - interpret as Brussels local time
+      // Extract date and time parts
+      const [datePart, timePart] = date.split('T');
+      if (datePart && timePart) {
+        const normalizedTime = timePart.split(':').length === 2 ? `${timePart}:00` : timePart;
+        d = parseBrusselsDateTime(datePart, normalizedTime);
+      } else {
+        throw new Error(`Invalid date format: ${date}`);
+      }
+    }
+  } else {
+    d = date;
+  }
   
   // Validate the date
   if (isNaN(d.getTime())) {
@@ -251,7 +271,7 @@ export function formatBrusselsDateTime(dateStr: string | null, formatStr: string
     const brusselsDate = toZonedTime(date, BRUSSELS_TIMEZONE);
     return formatDateFns(brusselsDate, formatStr);
   } catch (error) {
-    console.error('Error formatting Brussels datetime:', error);
+    // Error formatting Brussels datetime
     return dateStr;
   }
 }

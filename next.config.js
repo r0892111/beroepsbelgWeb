@@ -8,7 +8,8 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    unoptimized: true,
+    unoptimized: false, // Enable Next.js image optimization for better performance
+    formats: ['image/avif', 'image/webp'], // Use modern formats
     remotePatterns: [
       {
         protocol: 'https',
@@ -20,10 +21,18 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'vgbujcuwptvheqijyjbe.supabase.co',
+      },
+      {
+        protocol: 'https',
         hostname: 'placehold.co',
       },
     ],
   },
+  // Enable compression
+  compress: true,
+  // Optimize production builds
+  swcMinify: true,
 };
 
 module.exports = withNextIntl(nextConfig);

@@ -34,11 +34,24 @@ export function LangSwitcher({ locale }: LangSwitcherProps) {
     return queryString ? `${newPath}?${queryString}` : newPath;
   };
 
+  const localeNames: Record<Locale, string> = {
+    nl: 'Nederlands',
+    en: 'English',
+    fr: 'Français',
+    de: 'Deutsch',
+  };
+
   return (
-    <div className="flex items-center gap-1 text-sm">
+    <div 
+      className="flex items-center gap-1 text-sm"
+      role="group"
+      aria-label="Language selector"
+    >
       {locales.map((loc, index) => (
         <span key={loc} className="flex items-center">
-          {index > 0 && <span className="mx-1.5 text-muted-foreground">|</span>}
+          {index > 0 && (
+            <span className="mx-1.5 text-muted-foreground" aria-hidden="true">|</span>
+          )}
           <Link
             href={getLocalizedPath(loc)}
             className={
@@ -46,6 +59,9 @@ export function LangSwitcher({ locale }: LangSwitcherProps) {
                 ? 'font-semibold text-foreground'
                 : 'text-muted-foreground transition-colors hover:text-foreground'
             }
+            aria-label={`Switch to ${localeNames[loc] || loc} language`}
+            aria-current={loc === locale ? 'page' : undefined}
+            lang={loc}
           >
             {loc.toUpperCase()}
           </Link>

@@ -23,11 +23,6 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseServer();
     const body = await request.json();
     
-    // Debug: Log what we received
-    console.log('=== API RECEIVED DATA ===');
-    console.log('durationMinutes:', body.durationMinutes, 'type:', typeof body.durationMinutes);
-    console.log('opMaatAnswers:', body.opMaatAnswers);
-    console.log('========================');
 
     const {
       tourId,
@@ -99,7 +94,6 @@ export async function POST(request: NextRequest) {
           isLecture: true,
         });
       } catch (error: any) {
-        console.error('Error creating lecture booking:', error);
         return NextResponse.json(
           { error: error.message || 'Failed to create lecture booking' },
           { status: 500 }
@@ -147,41 +141,20 @@ export async function POST(request: NextRequest) {
             tourDatetime = toBrusselsLocalISO(dateObj);
           }
         }
-      } catch (e) {
-        console.error('Error parsing dateTime:', e);
+      } catch {
+        // Error parsing dateTime
       }
     }
 
     // Calculate tour end datetime based on start time and duration
-    // Subtract 60 minutes to fix the calculation issue
     let tourEndDatetime: string | null = null;
     if (tourDatetime) {
       try {
-        tourEndDatetime = addMinutesBrussels(tourDatetime, finalDurationMinutes - 60);
-      } catch (e) {
-        console.error('Error calculating tour end:', e);
+        tourEndDatetime = addMinutesBrussels(tourDatetime, finalDurationMinutes);
+      } catch {
+        // Error calculating tour end
       }
     }
-
-    console.log('=== TOUR TIMING CALCULATION DEBUG ===');
-    console.log('Input values:', {
-      durationMinutes: durationMinutes,
-      durationMinutesType: typeof durationMinutes,
-      opMaatAnswers: opMaatAnswers,
-      extraHour: extraHour,
-      baseDuration: baseDuration,
-    });
-    console.log('Calculated values:', {
-      finalDurationMinutes: finalDurationMinutes,
-      tourDatetime: tourDatetime,
-      tourEndDatetime: tourEndDatetime,
-    });
-    console.log('Expected:', {
-      withoutExtraHour: baseDuration,
-      withExtraHour: baseDuration + 60,
-      actualUsed: finalDurationMinutes,
-    });
-    console.log('=====================================');
 
     // Build invitees array similar to B2C flow
     const invitees = [{
@@ -227,14 +200,7 @@ export async function POST(request: NextRequest) {
       invitees: invitees,
     };
 
-    console.log('Booking data to insert:', {
-      tour_id: bookingData.tour_id,
-      tour_datetime: bookingData.tour_datetime,
-      tour_end: bookingData.tour_end,
-      city: bookingData.city,
-      status: bookingData.status,
-      booking_type: bookingData.booking_type,
-    });
+    // Booking data to insert
 
     // Insert booking into tourbooking table
     // Try with booking_type first, if it fails due to missing column, retry without it
@@ -258,13 +224,7 @@ export async function POST(request: NextRequest) {
       bookingError = retryResult.error;
     }
 
-    if (createdBooking) {
-      console.log('Booking created successfully:', {
-        id: createdBooking.id,
-        tour_datetime: createdBooking.tour_datetime,
-        tour_end: createdBooking.tour_end,
-      });
-    }
+    // Booking created successfully
 
     if (bookingError) {
       return NextResponse.json(

@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     template: '%s | BeroepsBelg',
   },
   description: 'Professionele stadsgids in België. Stadswandelingen, teambuilding en rondleidingen in Antwerpen, Brussel, Brugge, Gent en meer.',
-  keywords: ['stadsgids', 'city guide', 'stadswandelingen', 'teambuilding', 'rondleidingen', 'Antwerpen', 'Brussel', 'Brugge', 'Gent', 'België'],
+  keywords: ['stadsgids', 'city guide', 'stadswandelingen', 'teambuilding', 'rondleidingen', 'Antwerpen', 'Brussel', 'Brugge', 'Gent', 'België', 'stadsgids antwerpen', 'guide in antwerp'],
   icons: {
     icon: '/favicon.png',
     shortcut: '/favicon.png',
@@ -57,11 +57,40 @@ export default async function LocaleLayout({
             <CartProvider>
               <FavoritesProvider>
                 <TourFavoritesProvider>
+                  {/* Skip to main content link for screen readers */}
+                  <a
+                    href="#main-content"
+                    className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-[var(--green-accent)] focus:text-white focus:rounded-md focus:font-semibold focus:shadow-lg"
+                    aria-label="Skip to main content"
+                  >
+                    Skip to main content
+                  </a>
+                  
+                  {/* Skip to navigation link */}
+                  <a
+                    href="#main-navigation"
+                    className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-[var(--green-accent)] focus:text-white focus:rounded-md focus:font-semibold focus:shadow-lg focus:mt-12"
+                    aria-label="Skip to navigation"
+                  >
+                    Skip to navigation
+                  </a>
+
                   <div className="flex min-h-screen flex-col">
                     <MainNav locale={locale as Locale} />
-                    <main className="flex-1">{children}</main>
+                    <main id="main-content" className="flex-1" role="main" aria-label="Main content">
+                      {children}
+                    </main>
                     <Footer locale={locale as Locale} />
                   </div>
+                  
+                  {/* Aria live region for dynamic announcements */}
+                  <div
+                    id="aria-live-region"
+                    aria-live="polite"
+                    aria-atomic="true"
+                    className="sr-only"
+                  />
+                  
                   <CookieBanner />
                   <Toaster />
                   <ChatbotWidget locale={locale} />

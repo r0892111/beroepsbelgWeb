@@ -10,10 +10,13 @@ import { ShareButtons } from '@/components/ui/share-buttons';
 import type { Blog } from '@/lib/data/types';
 import type { Locale } from '@/i18n';
 import MarkdownRenderer from '@/components/blog/markdown-renderer';
+import { BlogRelatedTours } from '@/components/blog/blog-related-tours';
 
 interface BlogDetailClientPageProps {
   blog: Blog;
   locale: Locale;
+  tours?: import('@/lib/data').Tour[];
+  citySlug?: string;
 }
 
 // Helper to strip markdown formatting from text
@@ -68,7 +71,7 @@ const getLocalizedContent = (blog: Blog, locale: Locale) => {
   return { title, excerpt, content };
 };
 
-export default function BlogDetailClientPage({ blog, locale }: BlogDetailClientPageProps) {
+export default function BlogDetailClientPage({ blog, locale, tours = [], citySlug }: BlogDetailClientPageProps) {
   const t = useTranslations('blog');
   const { title, excerpt, content } = getLocalizedContent(blog, locale);
 
@@ -131,7 +134,9 @@ export default function BlogDetailClientPage({ blog, locale }: BlogDetailClientP
               src={blog.thumbnail_url}
               alt={title}
               fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 90vw, 1200px"
               className="object-cover"
+              priority
             />
           </div>
         )}
@@ -140,6 +145,11 @@ export default function BlogDetailClientPage({ blog, locale }: BlogDetailClientP
         <div className="prose prose-lg max-w-none">
           <MarkdownRenderer content={content} />
         </div>
+
+        {/* Related Tours Section */}
+        {tours && tours.length > 0 && (
+          <BlogRelatedTours tours={tours} locale={locale} citySlug={citySlug} />
+        )}
 
         {/* Back to Blog */}
         <div className="mt-12 pt-8 border-t">

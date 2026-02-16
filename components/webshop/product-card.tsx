@@ -175,8 +175,10 @@ export function ProductCard({ product }: ProductCardProps) {
                 src={product.image && product.image.trim() !== '' ? product.image : getProductPlaceholder(product.category)}
                 alt={product.title[locale]}
                 fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 className="object-contain group-hover:scale-105 transition-transform duration-300"
                 unoptimized
+                loading="lazy"
                 onError={(e) => {
                   // Fallback to placeholder on image load error
                   const target = e.target as HTMLImageElement;

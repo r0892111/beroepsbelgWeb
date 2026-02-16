@@ -118,27 +118,7 @@ export async function getCities(): Promise<City[]> {
     throw error;
   }
 
-  // Log raw data from database to compare with SQL editor
-  // This will show exactly what Supabase is returning
-  console.log('[getCities] Raw data from Supabase query (ALL FIELDS):', 
-    JSON.stringify((data || []).map((row: any) => ({ 
-      id: row.id,
-      slug: row.slug, 
-      name_nl: row.name_nl,
-      display_order: row.display_order,
-      display_order_type: typeof row.display_order,
-      created_at: row.created_at
-    })), null, 2)
-  );
-  
-  // Also log in the same format as SQL editor for easy comparison
-  console.log('[getCities] Cities in query order:', 
-    (data || []).map((row: any) => ({ 
-      slug: row.slug, 
-      name_nl: row.name_nl,
-      display_order: row.display_order
-    }))
-  );
+  // Raw data from Supabase query
 
   const citiesFromDb = (data || []).map((row: any) => ({
     id: row.id,
@@ -344,11 +324,7 @@ export async function getTourBySlug(citySlug: string, slug: string): Promise<Tou
   });
 
   if (!matchingTour) {
-    console.warn('[getTourBySlug] No matching tour found:', {
-      citySlug,
-      slug,
-      cityId: cityData?.id,
-    });
+    // No matching tour found
     return null;
   }
 
@@ -652,7 +628,7 @@ export async function getProductImages(): Promise<Record<string, ProductImage[]>
         console.warn('product_images column does not exist in webshop_data. Please add it via migration.');
         return {};
       }
-      console.error('Error fetching product images:', error);
+      // Error fetching product images
       return {};
     }
 
@@ -693,7 +669,7 @@ export async function getProductImages(): Promise<Record<string, ProductImage[]>
 
     return imagesMap;
   } catch (err) {
-    console.error('Exception fetching product images:', err);
+    // Exception fetching product images
     return {};
   }
 }
@@ -713,7 +689,7 @@ export async function getTourImages(): Promise<Record<string, TourImage[]>> {
         console.warn('tour_images column does not exist in tours_table_prod. Please add it via migration.');
         return {};
       }
-      console.error('Error fetching tour images:', error);
+      // Error fetching tour images
       return {};
     }
 
@@ -741,7 +717,7 @@ export async function getTourImages(): Promise<Record<string, TourImage[]>> {
 
     return imagesMap;
   } catch (err) {
-    console.error('Exception fetching tour images:', err);
+    // Exception fetching tour images
     return {};
   }
 }
@@ -763,7 +739,7 @@ export async function getLectures(): Promise<Lecture[]> {
         console.warn('lectures table does not exist. Please run migration to create lectures table.');
         return [];
       }
-      console.error('Error fetching lectures:', error);
+      // Error fetching lectures
       return [];
     }
 
@@ -815,7 +791,7 @@ export async function getLectures(): Promise<Lecture[]> {
 
     return lectures;
   } catch (err) {
-    console.error('Exception fetching lectures:', err);
+    // Exception fetching lectures
     return [];
   }
 }
@@ -836,7 +812,7 @@ export async function getPressItems(): Promise<Press[]> {
         console.warn('press table does not exist. Please run migration to create press table.');
         return [];
       }
-      console.error('Error fetching press items:', error);
+      // Error fetching press items
       return [];
     }
 
@@ -855,7 +831,7 @@ export async function getPressItems(): Promise<Press[]> {
 
     return pressItems;
   } catch (err) {
-    console.error('Exception fetching press items:', err);
+    // Exception fetching press items
     return [];
   }
 }
@@ -915,7 +891,7 @@ export async function createNewsletterSubscription(
       updated_at: data.updated_at,
     };
   } catch (err) {
-    console.error('Exception creating newsletter subscription:', err);
+    // Exception creating newsletter subscription
     throw err;
   }
 }
@@ -970,7 +946,7 @@ export async function createLectureBooking(booking: Omit<LectureBooking, 'id' | 
       updated_at: data.updated_at,
     };
   } catch (err) {
-    console.error('Exception creating lecture booking:', err);
+    // Exception creating lecture booking
     throw err;
   }
 }
@@ -999,7 +975,7 @@ export async function getFaqItems(): Promise<FaqItem[]> {
     }
 
     if (!data || data.length === 0) {
-      console.warn('No FAQ items found in database');
+      // No FAQ items found in database
       return [];
     }
 
@@ -1020,7 +996,7 @@ export async function getFaqItems(): Promise<FaqItem[]> {
 
     return items;
   } catch (err) {
-    console.error('Exception fetching FAQ items:', err);
+    // Exception fetching FAQ items
     return [];
   }
 }
@@ -1108,7 +1084,7 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
     }
     
     // Fetch existing bookings for these dates
-    console.log('getLocalToursBookings: Fetching bookings for dates:', saturdayDates.slice(0, 5), '... (total:', saturdayDates.length, ')');
+    // Fetching bookings for dates
     const { data: existingBookings, error } = await supabaseServer
       .from('local_tours_bookings')
       .select('*')
@@ -1116,14 +1092,14 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
       .in('booking_date', saturdayDates)
       .order('booking_date', { ascending: true });
     
-    console.log('getLocalToursBookings: Fetched', existingBookings?.length || 0, 'bookings from database');
+    // Fetched bookings from database
     if (existingBookings && existingBookings.length > 0) {
       const unavailableCount = existingBookings.filter((b: any) => b.status === 'unavailable').length;
-      console.log('getLocalToursBookings: Found', unavailableCount, 'unavailable bookings in database');
+      // Found unavailable bookings in database
     }
     
     if (error) {
-      console.error('Error fetching local tours bookings:', error);
+      // Error fetching local tours bookings
       return [];
     }
     
@@ -1348,7 +1324,7 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
     bookingsMap.forEach((booking, dateStr) => {
       if (booking.status === 'unavailable') {
         unavailableDates.add(dateStr);
-        console.log('getLocalToursBookings: Found unavailable date in bookingsMap:', dateStr);
+        // Found unavailable date in bookingsMap
       }
     });
 
@@ -1356,7 +1332,7 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
     (existingBookings || []).forEach((booking: any) => {
       if (booking.status === 'unavailable' && booking.booking_date) {
         unavailableDates.add(booking.booking_date);
-        console.log('getLocalToursBookings: Found unavailable date in existingBookings:', booking.booking_date);
+        // Found unavailable date in existingBookings
       }
     });
 
@@ -1369,15 +1345,15 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
       .eq('status', 'unavailable')
       .in('booking_date', saturdayDates);
 
-    console.log('getLocalToursBookings: Direct query found', directUnavailable?.length || 0, 'unavailable dates');
+    // Direct query found unavailable dates
     (directUnavailable || []).forEach((booking: any) => {
       if (booking.booking_date) {
         unavailableDates.add(booking.booking_date);
-        console.log('getLocalToursBookings: Found unavailable date in direct query:', booking.booking_date);
+        // Found unavailable date in direct query
       }
     });
 
-    console.log('getLocalToursBookings: Total unavailable dates found:', unavailableDates.size, Array.from(unavailableDates));
+    // Total unavailable dates found
 
     // Build bookings array - use existing entries or create virtual placeholders for display
     // NOTE: We no longer create placeholder entries in the database - they're only virtual for the UI
@@ -1441,7 +1417,7 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
     
     return bookings;
   } catch (err) {
-    console.error('Error in getLocalToursBookings:', err);
+    // Error in getLocalToursBookings
     return [];
   }
 }

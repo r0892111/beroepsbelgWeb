@@ -19,8 +19,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Default to 'nl' as it's the default locale in middleware
+  // The actual locale-specific lang is handled by next-intl in the locale layout
   return (
-    <html lang="en" className="h-full">
+    <html lang="nl" className="h-full">
       <body className={`${inter.className} h-full`}>{children}</body>
     </html>
   );

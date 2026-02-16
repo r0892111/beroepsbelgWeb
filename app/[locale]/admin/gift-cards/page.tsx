@@ -116,14 +116,14 @@ export default function AdminGiftCardsPage() {
         .order('created_at', { ascending: false });
 
       if (fetchError) {
-        console.error('Failed to fetch gift cards:', fetchError);
+        // Failed to fetch gift cards
         setError('Failed to load gift cards');
         return;
       }
 
       setGiftCards((data as GiftCard[]) || []);
     } catch (err) {
-      console.error('Failed to fetch gift cards:', err);
+      // Failed to fetch gift cards
       setError('Failed to load gift cards');
     } finally {
       setLoading(false);
@@ -148,7 +148,7 @@ export default function AdminGiftCardsPage() {
     try {
       generatedCode = await generateUniqueCode();
     } catch (err) {
-      console.error('Failed to generate code:', err);
+      // Failed to generate code
       // If generation fails, use a temporary code that will be regenerated on submit
       generatedCode = '';
     }
@@ -316,7 +316,7 @@ export default function AdminGiftCardsPage() {
           .eq('id', editingGiftCard.id);
 
         if (updateError) {
-          console.error('Failed to update gift card:', updateError);
+          // Failed to update gift card
           toast.error('Failed to update gift card');
           return;
         }
@@ -342,7 +342,7 @@ export default function AdminGiftCardsPage() {
           .insert(giftCardData);
 
         if (insertError) {
-          console.error('Failed to create gift card:', insertError);
+          // Failed to create gift card
           toast.error('Failed to create gift card');
           return;
         }
@@ -353,7 +353,7 @@ export default function AdminGiftCardsPage() {
       closeDialog();
       void fetchGiftCards();
     } catch (err) {
-      console.error('Error saving gift card:', err);
+      // Error saving gift card
       toast.error('An error occurred while saving the gift card');
     } finally {
       setSubmitting(false);
@@ -372,7 +372,7 @@ export default function AdminGiftCardsPage() {
         .eq('id', giftCard.id);
 
       if (deleteError) {
-        console.error('Failed to delete gift card:', deleteError);
+        // Failed to delete gift card
         toast.error('Failed to delete gift card');
         return;
       }
@@ -380,7 +380,7 @@ export default function AdminGiftCardsPage() {
       toast.success('Gift card deleted successfully');
       void fetchGiftCards();
     } catch (err) {
-      console.error('Error deleting gift card:', err);
+      // Error deleting gift card
       toast.error('An error occurred while deleting the gift card');
     }
   };

@@ -69,19 +69,30 @@ export function CartSheet() {
     <>
       <Sheet open={sheetOpen} onOpenChange={handleSheetOpenChange}>
         <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="relative">
-            <ShoppingCart className="h-5 w-5" />
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="relative"
+            aria-label={`${t('title') || 'Shopping cart'}${cartCount > 0 ? `, ${cartCount} ${cartCount === 1 ? 'item' : 'items'}` : ''}`}
+            aria-expanded={sheetOpen}
+          >
+            <ShoppingCart className="h-5 w-5" aria-hidden="true" />
             {cartCount > 0 && (
               <span 
                 className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground"
                 suppressHydrationWarning
+                aria-label={`${cartCount} ${cartCount === 1 ? 'item' : 'items'} in cart`}
               >
-                {cartCount}
+                <span className="sr-only">{cartCount} {cartCount === 1 ? 'item' : 'items'} in cart</span>
+                <span aria-hidden="true">{cartCount}</span>
               </span>
             )}
           </Button>
         </SheetTrigger>
-        <SheetContent className="w-full sm:max-w-lg">
+        <SheetContent 
+          className="w-full sm:max-w-lg"
+          aria-label={t('title') || 'Shopping cart'}
+        >
           <SheetHeader>
             <SheetTitle>{t('title')}</SheetTitle>
             <SheetDescription>
@@ -155,17 +166,21 @@ export function CartSheet() {
                                   size="icon"
                                   className="h-7 w-7"
                                   onClick={() => updateQuantity(item.product_id, Math.max(0, item.quantity - 1))}
+                                  aria-label={`Decrease quantity of ${(product as any)?.Name || (product as any)?.title_nl || 'product'}`}
                                 >
-                                  <Minus className="h-3 w-3" />
+                                  <Minus className="h-3 w-3" aria-hidden="true" />
                                 </Button>
-                                <span className="text-sm w-8 text-center">{item.quantity}</span>
+                                <span className="text-sm w-8 text-center" aria-label={`Quantity: ${item.quantity}`}>
+                                  {item.quantity}
+                                </span>
                                 <Button
                                   variant="outline"
                                   size="icon"
                                   className="h-7 w-7"
                                   onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
+                                  aria-label={`Increase quantity of ${(product as any)?.Name || (product as any)?.title_nl || 'product'}`}
                                 >
-                                  <Plus className="h-3 w-3" />
+                                  <Plus className="h-3 w-3" aria-hidden="true" />
                                 </Button>
                               </>
                             )}
@@ -174,8 +189,9 @@ export function CartSheet() {
                               size="icon"
                               className="h-7 w-7 ml-auto"
                               onClick={() => removeFromCart(item.product_id)}
+                              aria-label={`Remove ${(product as any)?.Name || (product as any)?.title_nl || 'product'} from cart`}
                             >
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                              <Trash2 className="h-4 w-4 text-destructive" aria-hidden="true" />
                             </Button>
                           </div>
                         </div>

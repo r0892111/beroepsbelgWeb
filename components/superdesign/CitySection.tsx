@@ -103,7 +103,7 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
           .order('display_order', { ascending: true, nullsFirst: false });
 
         if (citiesError) {
-          console.error('Error fetching cities:', citiesError);
+          // Error fetching cities
           setLoading(false);
           return;
         }
@@ -114,7 +114,7 @@ export function CitySection({ locale = 'nl' }: CitySectionProps) {
           .select('city_id, photo_url');
 
         if (imagesError) {
-          console.error('Error fetching city images:', imagesError);
+          // Error fetching city images
         }
 
         const imagesMap: Record<string, { photoUrl?: string }> = {};

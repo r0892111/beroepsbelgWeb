@@ -14,7 +14,6 @@ export async function updateGuideMetrics(guideId: number | null): Promise<void> 
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('[updateGuideMetrics] Missing Supabase environment variables');
       return;
     }
 
@@ -31,7 +30,6 @@ export async function updateGuideMetrics(guideId: number | null): Promise<void> 
       .eq('guide_id', guideId);
 
     if (bookingsError) {
-      console.error(`[updateGuideMetrics] Error fetching bookings for guide ${guideId}:`, bookingsError);
       return;
     }
 
@@ -72,17 +70,10 @@ export async function updateGuideMetrics(guideId: number | null): Promise<void> 
       .eq('id', guideId);
 
     if (updateError) {
-      console.error(`[updateGuideMetrics] Error updating guide ${guideId}:`, updateError);
-    } else {
-      console.log(`[updateGuideMetrics] Successfully updated metrics for guide ${guideId}:`, {
-        tours_done,
-        photos_taken_frequency,
-        photos_taken_amount,
-        requested_client_info,
-      });
+      // Error updating guide metrics
     }
-  } catch (error) {
-    console.error(`[updateGuideMetrics] Unexpected error updating guide ${guideId}:`, error);
+  } catch {
+    // Unexpected error updating guide metrics
   }
 }
 
@@ -117,7 +108,7 @@ export async function incrementGuideDeniedAssignment(guideId: number | null): Pr
       .single();
 
     if (fetchError || !guide) {
-      console.error(`[incrementGuideDeniedAssignment] Error fetching guide ${guideId}:`, fetchError);
+      // Error fetching guide
       return;
     }
 
@@ -131,12 +122,12 @@ export async function incrementGuideDeniedAssignment(guideId: number | null): Pr
       .eq('id', guideId);
 
     if (updateError) {
-      console.error(`[incrementGuideDeniedAssignment] Error updating guide ${guideId}:`, updateError);
+      // Error updating guide
     } else {
-      console.log(`[incrementGuideDeniedAssignment] Successfully incremented denied_assignment for guide ${guideId} to ${newCount}`);
+      // Successfully incremented denied_assignment
     }
   } catch (error) {
-    console.error(`[incrementGuideDeniedAssignment] Unexpected error updating guide ${guideId}:`, error);
+    // Unexpected error updating guide
   }
 }
 

@@ -1,9 +1,10 @@
 import { type Locale, locales } from '@/i18n';
 import { getTourBySlug } from '@/lib/api/content';
+import { getTourRatings } from '@/lib/api/tour-ratings';
 import { Badge } from '@/components/ui/badge';
 import { Share2, MapPin, Clock, Languages, Sparkles } from 'lucide-react';
 import type { Metadata } from 'next';
-import { TouristTripJsonLd } from '@/components/seo/json-ld';
+import { TouristTripJsonLd, BreadcrumbJsonLd, AggregateRatingJsonLd } from '@/components/seo/json-ld';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -12,7 +13,9 @@ import { TourBookingButton } from '@/components/tours/tour-booking-button';
 import { LocalToursBooking } from '@/components/tours/local-tours-booking';
 import { TourShareButtons } from '@/components/tours/tour-share-buttons';
 import { TourFavoriteButton } from '@/components/tours/tour-favorite-button';
+import { RelatedTours } from '@/components/tours/related-tours';
 import { getBookingTypeShortLabel } from '@/lib/utils';
+import { getTours } from '@/lib/api/content';
 
 interface TourDetailPageProps {
   params: Promise<{ locale: Locale; city: string; slug: string }>;
@@ -46,7 +49,15 @@ export async function generateMetadata({ params }: TourDetailPageProps): Promise
     ? description.substring(0, 157).replace(/\n/g, ' ').trim() + '...'
     : description.replace(/\n/g, ' ').trim();
 
-  const title = `${tour.title} | BeroepsBelg Tours`;
+  // Optimize title for Antwerp tours with target keywords
+  const isAntwerp = city === 'antwerpen' || city === 'antwerp';
+  const title = isAntwerp
+    ? locale === 'nl'
+      ? `${tour.title} | Stadsgids Antwerpen - BeroepsBelg`
+      : locale === 'en'
+      ? `${tour.title} | Guide in Antwerp - BeroepsBelg`
+      : `${tour.title} | BeroepsBelg Tours`
+    : `${tour.title} | BeroepsBelg Tours`;
   const url = `${BASE_URL}/${locale}/tours/${city}/${slug}`;
 
   const languages: Record<string, string> = {};
@@ -90,22 +101,21 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
   
   // Validate parameters
   if (!city || typeof city !== 'string' || !slug || typeof slug !== 'string') {
-    console.warn('[TourDetailPage] Invalid parameters:', { city, slug });
     notFound();
   }
-  
-  // Add logging for debugging
-  console.log('[TourDetailPage] Looking for tour:', { city, slug, locale });
   
   try {
     const tour = await getTourBySlug(city, slug);
 
     if (!tour) {
-      console.warn('[TourDetailPage] Tour not found:', { city, slug });
       notFound();
     }
-    
-    console.log('[TourDetailPage] Found tour:', { id: tour.id, title: tour.title, city: tour.city });
+
+    // Fetch all tours for related tours section and tour ratings
+    const [allTours, tourRatings] = await Promise.all([
+      getTours(city),
+      getTourRatings(tour.id),
+    ]);
 
   const t = await getTranslations('common');
   const tTour = await getTranslations('tourDetail');
@@ -183,6 +193,26 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 
+  // Check if this is an Antwerp tour for SEO optimization
+  const isAntwerp = city === 'antwerpen' || city === 'antwerp';
+
+  // Prepare SEO-optimized image alt prefix for Antwerp tours
+  const imageAltPrefix = isAntwerp
+    ? locale === 'nl'
+      ? `${tour.title} - Stadsgids Antwerpen`
+      : locale === 'en'
+      ? `${tour.title} - Guide in Antwerp`
+      : tour.title
+    : tour.title;
+
+  // Prepare breadcrumb items
+  const breadcrumbItems = [
+    { name: locale === 'nl' ? 'Home' : locale === 'en' ? 'Home' : locale === 'fr' ? 'Accueil' : 'Startseite', url: `${BASE_URL}/${locale}` },
+    { name: locale === 'nl' ? 'Tours' : locale === 'en' ? 'Tours' : locale === 'fr' ? 'Visites' : 'Touren', url: `${BASE_URL}/${locale}/tours` },
+    { name: cityDisplayName, url: `${BASE_URL}/${locale}/tours/${city}` },
+    { name: tour.title, url: `${BASE_URL}/${locale}/tours/${city}/${tour.slug}` },
+  ];
+
   return (
     <>
       <TouristTripJsonLd
@@ -196,6 +226,14 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
         url={`${BASE_URL}/${locale}/tours/${city}/${tour.slug}`}
         languages={tour.languages}
       />
+      <BreadcrumbJsonLd items={breadcrumbItems} />
+      {/* Add AggregateRating schema with actual review data */}
+      {tourRatings && tourRatings.reviewCount > 0 && (
+        <AggregateRatingJsonLd
+          ratingValue={tourRatings.ratingValue}
+          reviewCount={tourRatings.reviewCount}
+        />
+      )}
       <div className="bg-ivory min-h-screen">
         <div className="container mx-auto px-4 py-20">
           <div className="mx-auto max-w-5xl">
@@ -212,7 +250,11 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
           <div className="mb-12">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy">{tour.title}</h1>
+                <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy">
+                  {tour.title}
+                  {isAntwerp && locale === 'nl' && ' - Stadsgids Antwerpen'}
+                  {isAntwerp && locale === 'en' && ' - Guide in Antwerp'}
+                </h1>
                 {tour.id && <TourFavoriteButton tourId={tour.id} size="default" />}
               </div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -290,13 +332,23 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
             <div className="mb-12">
               <TourImageGallery 
                 images={tour.tourImages || []} 
-                title={tour.title}
+                title={imageAltPrefix}
                 fallbackImage={tour.image}
               />
             </div>
           )}
 
-        <div className="mb-12 space-y-6">
+        {/* What to Expect Section */}
+        <div className="mb-12 rounded-lg bg-sand p-8 brass-corner">
+          <h2 className="text-2xl font-serif font-bold text-navy mb-4">
+            {locale === 'nl' 
+              ? 'Wat kun je verwachten?' 
+              : locale === 'en' 
+              ? 'What to Expect' 
+              : locale === 'fr'
+              ? 'À quoi s\'attendre'
+              : 'Was Sie erwartet'}
+          </h2>
           {getDescription() && (
             <div className="prose max-w-none">
               {getDescription().split('\n\n').map((paragraph, idx) => {
@@ -332,7 +384,7 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
             </div>
           )}
           {tour.notes && (
-            <p className="text-sm italic" style={{ color: 'var(--brass)' }}>{tour.notes}</p>
+            <p className="text-sm italic mt-4" style={{ color: 'var(--brass)' }}>{tour.notes}</p>
           )}
         </div>
 
@@ -433,14 +485,21 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
             shareUrl={`${BASE_URL}/${locale}/tours/${city}/${tour.slug}`}
             shareTitle={tour.title}
           />
-          </div>
+        </div>
+
+        {/* Related Tours Section */}
+        <RelatedTours 
+          tours={allTours} 
+          currentTourId={tour.id} 
+          locale={locale}
+          city={city}
+        />
           </div>
         </div>
       </div>
     </>
   );
-  } catch (error) {
-    console.error('[TourDetailPage] Error fetching tour:', error);
+  } catch {
     notFound();
   }
 }

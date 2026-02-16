@@ -133,7 +133,7 @@ export function LectureBookingForm({ open, onOpenChange, lectureId, lectureTitle
         });
       } catch (webhookError) {
         // Log webhook error but don't fail the submission
-        console.error('Failed to send webhook:', webhookError);
+        // Failed to send webhook
       }
 
       toast.success(tBooking('success'));
@@ -152,7 +152,7 @@ export function LectureBookingForm({ open, onOpenChange, lectureId, lectureTitle
       setErrors({});
       onOpenChange(false);
     } catch (error: any) {
-      console.error('Failed to submit booking:', error);
+      // Failed to submit booking
       toast.error(error.message || 'Failed to submit booking. Please try again.');
     } finally {
       setSubmitting(false);

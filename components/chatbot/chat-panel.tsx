@@ -62,7 +62,7 @@ export function ChatPanel({ messages, streamingState, onSendMessage, onClose, on
       }
       setUserHasScrolled(false);
     } catch (error) {
-      console.error('Failed to send message:', error);
+      // Failed to send message
     } finally {
       setIsSending(false);
     }

@@ -247,12 +247,12 @@ export default function AdminBookingsPage() {
         .order('id', { ascending: false });
 
       if (fetchError) {
-        console.error('Failed to fetch bookings:', fetchError);
+        // Failed to fetch bookings
         setError('Failed to load bookings');
         return;
       }
 
-      console.log('Fetched bookings:', bookingsData);
+      // Fetched bookings
       setBookings((bookingsData as TourBooking[]) || []);
 
       // Fetch tours
@@ -286,7 +286,7 @@ export default function AdminBookingsPage() {
         setAllGuides(guidesList);
       }
     } catch (err) {
-      console.error('Failed to fetch bookings:', err);
+      // Failed to fetch bookings
       setError('Failed to load bookings');
     } finally {
       setLoading(false);
@@ -557,7 +557,7 @@ export default function AdminBookingsPage() {
       // Refresh bookings
       void fetchBookings();
     } catch (error) {
-      console.error('Error sending guide offer:', error);
+      // Error sending guide offer
       toast.error(error instanceof Error ? error.message : 'Failed to send guide offer');
     } finally {
       setSendingGuideOffer(false);
@@ -622,7 +622,7 @@ export default function AdminBookingsPage() {
 
       toast.success(`Gift card validated! Available discount: €${amountToApply.toFixed(2)}`);
     } catch (error) {
-      console.error('Error validating gift card:', error);
+      // Error validating gift card
       setGiftCardError('Failed to validate gift card. Please try again.');
       setAppliedGiftCard(null);
     } finally {
@@ -688,7 +688,7 @@ export default function AdminBookingsPage() {
       const data = await response.json();
       setTeamleaderDeals(data.deals || []);
     } catch (err) {
-      console.error('Error fetching TeamLeader deals:', err);
+      // Error fetching TeamLeader deals
       setDealsError(err instanceof Error ? err.message : 'Failed to load deals');
     } finally {
       setLoadingDeals(false);
@@ -720,7 +720,7 @@ export default function AdminBookingsPage() {
       const data = await response.json();
       setTeamleaderInvoices(data.invoices || []);
     } catch (err) {
-      console.error('Error fetching TeamLeader invoices:', err);
+      // Error fetching TeamLeader invoices
       setInvoicesError(err instanceof Error ? err.message : 'Failed to load invoices');
     } finally {
       setLoadingInvoices(false);
@@ -897,7 +897,7 @@ export default function AdminBookingsPage() {
         .single();
 
       if (bookingError) {
-        console.error('Error creating booking:', bookingError);
+        // Error creating booking
         toast.error('Failed to create booking');
         return;
       }
@@ -921,16 +921,16 @@ export default function AdminBookingsPage() {
 
           if (!redeemResponse.ok) {
             const redeemData = await redeemResponse.json();
-            console.error('Failed to redeem gift card:', redeemData.error);
+            // Failed to redeem gift card
             toast.error(`Booking created but gift card redemption failed: ${redeemData.error || 'Unknown error'}`);
             // Don't fail the booking creation, just warn the admin
           } else {
             const redeemData = await redeemResponse.json();
-            console.info('Gift card redeemed successfully:', redeemData);
+            // Gift card redeemed successfully
             toast.success(`Gift card applied: €${redeemData.amountApplied.toFixed(2)} discount`);
           }
         } catch (giftCardError) {
-          console.error('Error redeeming gift card:', giftCardError);
+          // Error redeeming gift card
           toast.error('Booking created but gift card redemption failed. Please redeem manually.');
           // Don't fail the booking creation
         }
@@ -964,7 +964,7 @@ export default function AdminBookingsPage() {
           .insert(localBookingData);
 
         if (localError) {
-          console.error('Error creating local tours booking:', localError);
+          // Error creating local tours booking
           // Don't fail the whole operation, the main booking was created
         }
       }
@@ -1035,13 +1035,13 @@ export default function AdminBookingsPage() {
           });
 
           if (!webhookResponse.ok) {
-            console.error('Failed to send booking to intake webhook:', webhookResponse.status);
+            // Failed to send booking to intake webhook
             // Don't fail the booking creation, just log the error
           } else {
-            console.info('Booking sent to intake webhook successfully');
+            // Booking sent to intake webhook successfully
           }
         } catch (webhookError) {
-          console.error('Error sending booking to intake webhook:', webhookError);
+          // Error sending booking to intake webhook
           // Don't fail the booking creation, just log the error
         }
       }
@@ -1051,7 +1051,7 @@ export default function AdminBookingsPage() {
       resetCreateForm();
       void fetchBookings();
     } catch (error) {
-      console.error('Error creating booking:', error);
+      // Error creating booking
       toast.error('Failed to create booking');
     } finally {
       setCreatingBooking(false);

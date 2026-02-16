@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
       });
 
     if (transactionError) {
-      console.error('Failed to record gift card transaction:', transactionError);
+      // Failed to record gift card transaction
       // Don't fail the redemption, but log the error
     }
 
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
       giftCardCode: normalizedCode,
     });
   } catch (error) {
-    console.error('Error redeeming gift card:', error);
+    // Error redeeming gift card
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

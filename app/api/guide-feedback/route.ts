@@ -65,7 +65,6 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (fetchError) {
-      console.error('Error fetching guide:', fetchError);
       return NextResponse.json({ error: 'Guide not found' }, { status: 404 });
     }
 
@@ -80,7 +79,6 @@ export async function POST(request: NextRequest) {
       .eq('id', guideId);
 
     if (updateError) {
-      console.error('Error updating guide:', updateError);
       return NextResponse.json({ error: 'Failed to save feedback' }, { status: 500 });
     }
 
@@ -112,14 +110,12 @@ export async function POST(request: NextRequest) {
           locale: locale || 'nl',
         }),
       });
-    } catch (webhookError) {
-      // Log webhook error but don't fail the request
-      console.error('Error sending to webhook:', webhookError);
+    } catch {
+      // Webhook error - don't fail the request
     }
 
     return NextResponse.json({ success: true, message: 'Feedback submitted successfully' });
-  } catch (error) {
-    console.error('Error in guide-feedback API:', error);
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

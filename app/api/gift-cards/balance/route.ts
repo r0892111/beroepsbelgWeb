@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (error) {
-      console.error('Error checking gift card balance:', error);
+      // Error checking gift card balance
       return NextResponse.json(
         { error: 'Failed to check balance' },
         { status: 500 }

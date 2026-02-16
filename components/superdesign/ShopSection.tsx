@@ -137,7 +137,7 @@ const ProductCard = ({
         toast.success(tAuth('addedToCart') || 'Added to cart');
       }
     } catch (error) {
-      console.error('Error adding to cart:', error);
+      // Error adding to cart
       toast.error(tAuth('failedToAddToCart') || 'Failed to add to cart');
     } finally {
       setIsAddingToCart(false);
@@ -154,7 +154,7 @@ const ProductCard = ({
 
     // Use UUID as product identifier (consistent with cart system)
     if (!product.uuid) {
-      console.error('Cannot add favorite: product has no uuid');
+      // Cannot add favorite: product has no uuid
       toast.error('Unable to add to favorites');
       return;
     }
@@ -169,7 +169,7 @@ const ProductCard = ({
         toast.success(tAuth('addedToFavorites'));
       }
     } catch (error) {
-      console.error('Error toggling favorite:', error);
+      // Error toggling favorite
       toast.error('Failed to update favorites');
     } finally {
       setIsTogglingFavorite(false);
@@ -461,7 +461,7 @@ export function ShopSection() {
 
         setProducts(displayProducts);
       } catch (err) {
-        console.error('Error fetching products:', err);
+        // Error fetching products
         setError('Failed to load products');
       } finally {
         setLoading(false);

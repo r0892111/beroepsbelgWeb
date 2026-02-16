@@ -183,7 +183,7 @@ export function Footer({ locale }: FooterProps) {
       setConsent(false);
       setShowExtendedFields(false);
     } catch (error: any) {
-      console.error('Newsletter subscription error:', error);
+      // Newsletter subscription error
       toast.error(error.message || t('newsletter.error') || 'Failed to subscribe. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -191,14 +191,19 @@ export function Footer({ locale }: FooterProps) {
   };
 
   return (
-    <footer className="relative bg-[#1BDD95] text-black pt-20 pb-8 overflow-hidden font-sans">
+    <footer 
+      role="contentinfo"
+      aria-label="Site footer"
+      className="relative bg-[#1BDD95] text-black pt-20 pb-8 overflow-hidden font-sans"
+    >
 
       {/* Watermark Image - Anchored to bottom right */}
-      <div className="absolute bottom-0 right-0 w-[90%] md:w-[50%] lg:w-[40%] pointer-events-none z-0 translate-y-[10%] translate-x-[5%]">
+      <div className="absolute bottom-0 right-0 w-[90%] md:w-[50%] lg:w-[40%] pointer-events-none z-0 translate-y-[10%] translate-x-[5%]" aria-hidden="true">
         <img
           src={ASSETS.centralStation}
-          alt="Central Station Sketch"
+          alt=""
           className="w-full h-auto object-contain object-right-bottom opacity-20 mix-blend-multiply"
+          role="presentation"
         />
       </div>
 
@@ -211,33 +216,39 @@ export function Footer({ locale }: FooterProps) {
             <h3 className="font-serif text-2xl tracking-wide font-medium">{t('stayConnected')}</h3>
 
             {/* Social Icons - 2x4 Grid */}
-            <div className="grid grid-cols-4 grid-rows-2 gap-4 mb-4">
-              <SocialLink icon={<Instagram className="w-9 h-9" />} href="https://www.instagram.com/tanguyottomer/" />
-              <SocialLink icon={<TikTokIcon className="w-9 h-9" />} href="https://www.tiktok.com/@tanguyottomer" />
-              <SocialLink icon={<Linkedin className="w-9 h-9" />} href="https://www.linkedin.com/in/tanguy-ottomer-1649a6a/" />
-              <SocialLink icon={<WhatsAppIcon className="w-9 h-9" />} href="https://api.whatsapp.com/send?phone=32494254159" />
-              <SocialLink icon={<Facebook className="w-9 h-9" />} href="https://www.facebook.com/tanguy.ottomer/" />
-              <SocialLink icon={<TripAdvisorIcon className="w-9 h-9" />} href="https://www.tripadvisor.be/Attraction_Review-g188636-d13545814-Reviews-BeroepsBelg-Antwerp_Antwerp_Province.html" />
-              <SocialLink icon={<YouTubeIcon className="w-9 h-9" />} href="https://www.youtube.com/channel/UC-xT2xEycm8Xoig18wo9Sxg" />
+            <div className="grid grid-cols-4 grid-rows-2 gap-4 mb-4" role="list" aria-label="Social media links">
+              <SocialLink icon={<Instagram className="w-9 h-9" />} href="https://www.instagram.com/tanguyottomer/" label="Instagram" />
+              <SocialLink icon={<TikTokIcon className="w-9 h-9" />} href="https://www.tiktok.com/@tanguyottomer" label="TikTok" />
+              <SocialLink icon={<Linkedin className="w-9 h-9" />} href="https://www.linkedin.com/in/tanguy-ottomer-1649a6a/" label="LinkedIn" />
+              <SocialLink icon={<WhatsAppIcon className="w-9 h-9" />} href="https://api.whatsapp.com/send?phone=32494254159" label="WhatsApp" />
+              <SocialLink icon={<Facebook className="w-9 h-9" />} href="https://www.facebook.com/tanguy.ottomer/" label="Facebook" />
+              <SocialLink icon={<TripAdvisorIcon className="w-9 h-9" />} href="https://www.tripadvisor.be/Attraction_Review-g188636-d13545814-Reviews-BeroepsBelg-Antwerp_Antwerp_Province.html" label="TripAdvisor" />
+              <SocialLink icon={<YouTubeIcon className="w-9 h-9" />} href="https://www.youtube.com/channel/UC-xT2xEycm8Xoig18wo9Sxg" label="YouTube" />
             </div>
 
             {/* Newsletter */}
             <div className="w-full max-w-sm">
               <h4 className="text-sm font-medium tracking-wider mb-3 uppercase opacity-90">{t('newsletterSignUp')}</h4>
-              <form onSubmit={handleSubmit} className="space-y-3">
+              <form onSubmit={handleSubmit} className="space-y-3" aria-label="Newsletter subscription form">
                 <div className="flex w-full">
+                  <label htmlFor="newsletter-email" className="sr-only">
+                    {t('emailPlaceholder') || 'Email address'}
+                  </label>
                   <input
+                    id="newsletter-email"
                     type="email"
                     value={email}
                     onChange={handleEmailChange}
                     placeholder={t('emailPlaceholder')}
                     className="flex-1 bg-white text-gray-800 px-4 py-3 outline-none placeholder:text-gray-400 text-sm"
                     required
+                    aria-label={t('emailPlaceholder') || 'Email address'}
                   />
                   <button
                     type="submit"
                     disabled={isSubmitting}
                     className="bg-white text-[#1BDD95] px-6 py-3 text-sm font-bold tracking-wider hover:bg-gray-100 transition-colors uppercase border-l border-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-label={isSubmitting ? t('newsletter.submitting') || 'Submitting...' : t('subscribe') || 'Subscribe to newsletter'}
                   >
                     {isSubmitting ? t('newsletter.submitting') || '...' : t('subscribe')}
                   </button>
@@ -246,21 +257,31 @@ export function Footer({ locale }: FooterProps) {
                 {/* Extended Fields - Show when user starts typing email */}
                 {showExtendedFields && (
                   <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <label htmlFor="newsletter-firstname" className="sr-only">
+                      {t('newsletter.firstName') || 'First Name'}
+                    </label>
                     <input
+                      id="newsletter-firstname"
                       type="text"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       placeholder={t('newsletter.firstName') || 'First Name'}
                       className="w-full bg-white text-gray-800 px-4 py-3 outline-none placeholder:text-gray-400 text-sm"
                       required
+                      aria-label={t('newsletter.firstName') || 'First Name'}
                     />
+                    <label htmlFor="newsletter-lastname" className="sr-only">
+                      {t('newsletter.lastName') || 'Last Name'}
+                    </label>
                     <input
+                      id="newsletter-lastname"
                       type="text"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       placeholder={t('newsletter.lastName') || 'Last Name'}
                       className="w-full bg-white text-gray-800 px-4 py-3 outline-none placeholder:text-gray-400 text-sm"
                       required
+                      aria-label={t('newsletter.lastName') || 'Last Name'}
                     />
                     <div className="flex items-start gap-2">
                       <input
@@ -336,6 +357,7 @@ export function Footer({ locale }: FooterProps) {
              <button
                onClick={openCookieBanner}
                className="hover:underline underline-offset-4"
+               aria-label="Open cookie preferences"
              >
                {t('cookieSettings')}
              </button>
@@ -346,16 +368,17 @@ export function Footer({ locale }: FooterProps) {
   );
 }
 
-function SocialLink({ icon, href }: { icon: React.ReactNode; href: string }) {
+function SocialLink({ icon, href, label }: { icon: React.ReactNode; href: string; label: string }) {
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
       className="text-black hover:opacity-70 transition-opacity duration-200"
-      aria-label="Social Link"
+      aria-label={`Visit our ${label} page (opens in new tab)`}
     >
       {icon}
+      <span className="sr-only">{label}</span>
     </a>
   );
 }
