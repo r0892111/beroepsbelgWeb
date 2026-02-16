@@ -1574,6 +1574,86 @@ export default function BookingDetailPage() {
     }
   };
 
+  // Send payment link to a specific invitee
+  const handleSendPaymentLinkToInvitee = async (
+    invitee: Invitee,
+    inviteeIndex?: number,
+    localBookingId?: string
+  ) => {
+    if (!booking || !tour) return;
+
+    if (!invitee.email || !invitee.name) {
+      toast.error('Invitee must have email and name to send payment link');
+      return;
+    }
+
+    const numberOfPeople = invitee.numberOfPeople || 1;
+    const baseAmount = invitee.amount || (tour.price || 0) * numberOfPeople;
+    const isPaid = invitee.isPaid || false;
+
+    if (isPaid) {
+      toast.info('This invitee has already paid');
+      return;
+    }
+
+    if (baseAmount <= 0) {
+      toast.error('Cannot send payment link: amount is 0 or invalid');
+      return;
+    }
+
+    try {
+      // Get auth token for API calls
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Not authenticated');
+      }
+
+      const fees = {
+        requestTanguy: invitee.requestTanguy || false,
+        hasExtraHour: invitee.hasExtraHour || false,
+        weekendFee: invitee.weekendFee || false,
+        eveningFee: invitee.eveningFee || false,
+        tanguyCost: invitee.tanguyCost || 0,
+        extraHourCost: invitee.extraHourCost || 0,
+        weekendFeeCost: invitee.weekendFeeCost || 0,
+        eveningFeeCost: invitee.eveningFeeCost || 0,
+      };
+
+      const paymentResponse = await fetch('/api/admin/send-payment-link', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          bookingId: booking.id,
+          customerName: invitee.name,
+          customerEmail: invitee.email,
+          tourName: tour.title || 'Tour',
+          tourId: tour.id,
+          numberOfPeople,
+          amount: baseAmount,
+          localBookingId: localBookingId,
+          city: booking.city || tour.city,
+          tourDatetime: booking.tour_datetime,
+          fees: fees,
+          isExtraInvitees: false,
+        }),
+      });
+
+      if (!paymentResponse.ok) {
+        const errorData = await paymentResponse.json();
+        throw new Error(errorData.error || 'Failed to create payment link');
+      }
+
+      const paymentData = await paymentResponse.json();
+      toast.success(`Payment link sent to ${invitee.name} (${invitee.email})`);
+    } catch (err) {
+      const error = err instanceof Error ? err.message : 'Failed to send payment link';
+      toast.error(error);
+    }
+  };
+
   // Call invoice webhook
   const handleCallInvoiceWebhook = async (invoiceId: string, price: number) => {
     try {
@@ -2302,6 +2382,27 @@ export default function BookingDetailPage() {
                             <Trash2 className="h-3 w-3" />
                             <span className="text-xs">Delete</span>
                           </Button>
+                          {(() => {
+                            const matchingInvitee = allInvitees.find(inv =>
+                              (inv.email || '').toLowerCase().trim() === (lb.customer_email || '').toLowerCase().trim()
+                            );
+                            const isPaid = !!(lb.deal_id || lb.stripe_session_id || matchingInvitee?.isPaid);
+                            const amount = matchingInvitee?.amount || (tour?.price || 0) * (lb.amnt_of_people || 1);
+                            if (!isPaid && amount > 0 && matchingInvitee) {
+                              return (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50"
+                                  onClick={() => handleSendPaymentLinkToInvitee(matchingInvitee, undefined, lb.id)}
+                                >
+                                  <CreditCard className="h-3 w-3" />
+                                  <span className="text-xs">Send Payment Link</span>
+                                </Button>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
                         {/* Upsell products for this customer */}
                         {(() => {
@@ -2549,6 +2650,17 @@ export default function BookingDetailPage() {
                             <Trash2 className="h-3 w-3" />
                             <span className="text-xs">Delete</span>
                           </Button>
+                          {!inv.isPaid && inv.amount !== undefined && inv.amount > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50"
+                              onClick={() => handleSendPaymentLinkToInvitee(inv, index)}
+                            >
+                              <CreditCard className="h-3 w-3" />
+                              <span className="text-xs">Send Payment Link</span>
+                            </Button>
+                          )}
                         </div>
                         {/* Upsell products for this invitee */}
                         {inv.upsellProducts && inv.upsellProducts.length > 0 && (
