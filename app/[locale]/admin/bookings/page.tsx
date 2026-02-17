@@ -985,6 +985,12 @@ export default function AdminBookingsPage() {
           // Build payload matching n8n intake endpoint expectations
           // This payload includes fields for both standardization nodes
           const bookingStatus = createForm.isPaid ? 'payment_completed' : 'pending';
+          
+          // Always include custom price (or default tour price if not set)
+          // This ensures pricePerPerson is always present in the payload
+          const finalPricePerPerson = pricePerPerson; // Already calculated above (custom or default)
+          const finalAmount = totalAmount; // Already calculated above (includes fees and gift card discount)
+          
           const payload = {
             // Fields for first standardization node
             body: {
@@ -997,9 +1003,27 @@ export default function AdminBookingsPage() {
               additionalInfo: createForm.specialRequests || null,
               citySlug,
               tourId: createForm.tourId,
+              tourName: tour.title || '',
               numberOfPeople: createForm.numberOfPeople,
               language: finalLanguage,
               upsellProducts: [], // Manual bookings don't have upsells yet
+              // Always include price information
+              customPrice: createForm.customPrice || null, // Custom price if set, null if using default
+              pricePerPerson: finalPricePerPerson, // Always include price per person (custom or default)
+              amount: finalAmount, // Total amount including fees
+              baseTourPrice: baseTourPrice, // Base price before fees
+              // Fee information
+              requestTanguy: createForm.requestTanguy,
+              extraHour: createForm.extraHour,
+              weekendFee: createForm.weekendFee,
+              eveningFee: createForm.eveningFee,
+              tanguyCost: feeTanguyCost,
+              extraHourCost: feeExtraHourCost,
+              weekendFeeCost: feeWeekendCost,
+              eveningFeeCost: feeEveningCost,
+              // Gift card information
+              giftCardCode: appliedGiftCard?.code || null,
+              giftCardDiscount: giftCardDiscount > 0 ? giftCardDiscount : null,
             },
             // Fields for second standardization node (metadata)
             metadata: {
@@ -1008,6 +1032,10 @@ export default function AdminBookingsPage() {
               bookingId: newBooking.id,
               booking_id: newBooking.id,
               status: bookingStatus,
+              // Include price information in metadata as well
+              customPrice: createForm.customPrice || null,
+              pricePerPerson: finalPricePerPerson,
+              amount: finalAmount,
             },
             // Fields for second standardization node (bookingData)
             bookingData: {
@@ -1021,6 +1049,22 @@ export default function AdminBookingsPage() {
               specialRequests: createForm.specialRequests || null,
               upsellProducts: [],
               status: bookingStatus,
+              // Always include price information
+              customPrice: createForm.customPrice || null,
+              pricePerPerson: finalPricePerPerson,
+              amount: finalAmount,
+              baseTourPrice: baseTourPrice,
+              // Fee information
+              extraHour: createForm.extraHour,
+              weekendFee: createForm.weekendFee,
+              eveningFee: createForm.eveningFee,
+              tanguyCost: feeTanguyCost,
+              extraHourCost: feeExtraHourCost,
+              weekendFeeCost: feeWeekendCost,
+              eveningFeeCost: feeEveningCost,
+              // Gift card information
+              giftCardCode: appliedGiftCard?.code || null,
+              giftCardDiscount: giftCardDiscount > 0 ? giftCardDiscount : null,
             },
           };
 
