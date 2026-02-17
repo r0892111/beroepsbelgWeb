@@ -45,7 +45,7 @@ const {
       citySlug,
       opMaat = false,
       upsellProducts = [], // Array of { n: name, p: price, q: quantity } (standardized format)
-    opMaatAnswers = null, // Op maat specific answers
+      opMaatAnswers = null, // Op maat specific answers
     existingTourBookingId = null, // Existing tourbooking ID (for local stories - passed from frontend)
     durationMinutes = null, // Tour duration in minutes (will be calculated from tour data + extra hour)
     extraHour = false, // Extra hour option (150 EUR)
@@ -54,6 +54,7 @@ const {
     locale = 'nl', // Locale for redirect URLs (default to Dutch)
     giftCardCode = null, // Gift card code for redemption
     giftCardDiscount = 0, // Discount amount to apply from gift card
+    shippingAddress = null, // Shipping address for upsell products (always required)
     } = await req.json()
 
     // Freight costs constants
@@ -515,6 +516,7 @@ numberOfPeople,
 
       opMaatAnswers: opMaatAnswers || null,
       upsellProducts: upsellProducts.length > 0 ? upsellProducts : [],
+      shippingAddress: shippingAddress || null, // Shipping address for upsell products (always required)
 
       amounts: {
         tourFullPrice,
@@ -538,6 +540,14 @@ numberOfPeople,
       tourType,
       tourId,
       customerEmail,
+      hasShippingAddress: !!shippingAddress,
+      shippingAddress: shippingAddress ? {
+        hasFullName: !!shippingAddress.fullName,
+        hasStreet: !!shippingAddress.street,
+        hasCity: !!shippingAddress.city,
+        hasPostalCode: !!shippingAddress.postalCode,
+        hasCountry: !!shippingAddress.country,
+      } : null,
     });
 
     // Insert into pending_tour_bookings table

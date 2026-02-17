@@ -195,6 +195,9 @@ async function handleEvent(event: Stripe.Event) {
           tourType,
           hasAmounts: !!bookingData?.amounts,
           amounts: bookingData?.amounts,
+          hasShippingAddress: !!bookingData?.shippingAddress,
+          shippingAddress: bookingData?.shippingAddress,
+          customerName: bookingData?.customerName,
         }));
 
         // Validate required booking data
@@ -373,10 +376,12 @@ async function handleEvent(event: Stripe.Event) {
               // Use existing tourbooking
               const existingTourBooking = existingTourBookings[0];
               tourbookingId = existingTourBooking.id;
+              // Set createdBookingId immediately so Stoqflow order creation can use it
+              createdBookingId = tourbookingId;
 
               // Append new invitee to existing invitees
               const currentInvitees = existingTourBooking.invitees || [];
-              const newInvitee = {
+              const newInvitee: any = {
                 name: bookingData.customerName,
                 email: bookingData.customerEmail,
                 phone: bookingData.customerPhone,
@@ -404,6 +409,12 @@ async function handleEvent(event: Stripe.Event) {
                 promoDiscountAmount: promoCodeInfo.discountAmount,
                 promoDiscountPercent: promoCodeInfo.discountPercent,
               };
+
+              // Store shipping address in invitee data for Stoqflow order creation
+              if (bookingData.shippingAddress) {
+                newInvitee.shippingAddress = bookingData.shippingAddress;
+                console.info('[Local Stories] Stored shipping address in invitee data');
+              }
 
               const updatedInvitees = [...currentInvitees, newInvitee];
               await supabase
@@ -494,7 +505,9 @@ async function handleEvent(event: Stripe.Event) {
 
             console.info(`Creating local_tours_bookings entry: date=${saturdayDateStr}, time=${bookingTimeStr}, tourId=${bookingData.tourId}, customer=${bookingData.customerEmail}`);
 
-            const localBookingData = {
+            // Extract shipping address from bookingData
+            const shippingAddress = bookingData?.shippingAddress;
+            const localBookingData: any = {
               tour_id: bookingData.tourId,
               booking_date: saturdayDateStr,
               booking_time: bookingTimeStr,
@@ -509,6 +522,24 @@ async function handleEvent(event: Stripe.Event) {
               user_id: bookingData.userId,
               isContacted: false,
             };
+
+            // Store shipping address if available
+            if (shippingAddress) {
+              localBookingData.shipping_full_name = shippingAddress.fullName || null;
+              localBookingData.shipping_street = shippingAddress.street || null;
+              localBookingData.shipping_city = shippingAddress.city || null;
+              localBookingData.shipping_postal_code = shippingAddress.postalCode || null;
+              localBookingData.shipping_country = shippingAddress.country || 'BE';
+              
+              console.info('[Local Stories] Storing shipping address in local_tours_bookings:', {
+                hasFullName: !!localBookingData.shipping_full_name,
+                hasStreet: !!localBookingData.shipping_street,
+                hasCity: !!localBookingData.shipping_city,
+                hasPostalCode: !!localBookingData.shipping_postal_code,
+              });
+            } else {
+              console.warn('[Local Stories] No shipping address in bookingData for local_tours_bookings');
+            }
 
             // Always insert a new entry - each customer booking gets their own row
             const { error: localInsertError } = await supabase
@@ -526,6 +557,41 @@ async function handleEvent(event: Stripe.Event) {
           // STANDARD or OP_MAAT: Simple insert
           console.info(`Processing ${tourType} booking`);
 
+          const newInvitee: any = {
+            name: bookingData.customerName,
+            email: bookingData.customerEmail,
+            phone: bookingData.customerPhone,
+            numberOfPeople: bookingData.numberOfPeople,
+            language: bookingData.language,
+            contactLanguage: bookingData.contactLanguage || 'nl', // Language for email communications
+            specialRequests: bookingData.specialRequests,
+            requestTanguy: bookingData.requestTanguy,
+            amount: bookingData.amounts.totalAmount || (bookingData.amounts.tourFinalAmount + (bookingData.amounts.tanguyCost || 0) + (bookingData.amounts.extraHourCost || 0) + (bookingData.amounts.weekendFeeCost || 0) + (bookingData.amounts.eveningFeeCost || 0)),
+            originalAmount: bookingData.amounts.tourFullPrice,
+            discountApplied: bookingData.amounts.discountAmount,
+            tanguyCost: bookingData.amounts.tanguyCost,
+            extraHourCost: bookingData.amounts.extraHourCost,
+            weekendFeeCost: bookingData.amounts.weekendFeeCost,
+            eveningFeeCost: bookingData.amounts.eveningFeeCost,
+            currency: 'eur',
+            isContacted: false,
+            upsellProducts: bookingData.upsellProducts,
+            opMaatAnswers: bookingData.opMaatAnswers,
+            tourStartDatetime: bookingData.tourDatetime,
+            tourEndDatetime: bookingData.tourEndDatetime,
+            durationMinutes: bookingData.durationMinutes,
+            // Promo code info from Stripe
+            promoCode: promoCodeInfo.code,
+            promoDiscountAmount: promoCodeInfo.discountAmount,
+            promoDiscountPercent: promoCodeInfo.discountPercent,
+          };
+
+          // Store shipping address in invitee data for Stoqflow order creation
+          if (bookingData.shippingAddress) {
+            newInvitee.shippingAddress = bookingData.shippingAddress;
+            console.info('[Standard/OpMaat] Stored shipping address in invitee data');
+          }
+
           const newTourBooking = {
             tour_id: bookingData.tourId,
             stripe_session_id: sessionId,
@@ -535,34 +601,7 @@ async function handleEvent(event: Stripe.Event) {
             city: bookingData.citySlug,
             request_tanguy: bookingData.requestTanguy,
             user_id: bookingData.userId,
-            invitees: [{
-              name: bookingData.customerName,
-              email: bookingData.customerEmail,
-              phone: bookingData.customerPhone,
-              numberOfPeople: bookingData.numberOfPeople,
-              language: bookingData.language,
-              contactLanguage: bookingData.contactLanguage || 'nl', // Language for email communications
-              specialRequests: bookingData.specialRequests,
-              requestTanguy: bookingData.requestTanguy,
-              amount: bookingData.amounts.totalAmount || (bookingData.amounts.tourFinalAmount + (bookingData.amounts.tanguyCost || 0) + (bookingData.amounts.extraHourCost || 0) + (bookingData.amounts.weekendFeeCost || 0) + (bookingData.amounts.eveningFeeCost || 0)),
-              originalAmount: bookingData.amounts.tourFullPrice,
-              discountApplied: bookingData.amounts.discountAmount,
-              tanguyCost: bookingData.amounts.tanguyCost,
-              extraHourCost: bookingData.amounts.extraHourCost,
-              weekendFeeCost: bookingData.amounts.weekendFeeCost,
-              eveningFeeCost: bookingData.amounts.eveningFeeCost,
-              currency: 'eur',
-              isContacted: false,
-              upsellProducts: bookingData.upsellProducts,
-              opMaatAnswers: bookingData.opMaatAnswers,
-              tourStartDatetime: bookingData.tourDatetime,
-              tourEndDatetime: bookingData.tourEndDatetime,
-              durationMinutes: bookingData.durationMinutes,
-              // Promo code info from Stripe
-              promoCode: promoCodeInfo.code,
-              promoDiscountAmount: promoCodeInfo.discountAmount,
-              promoDiscountPercent: promoCodeInfo.discountPercent,
-            }],
+            invitees: [newInvitee],
           };
 
           const { data: newBooking, error: insertError } = await supabase
@@ -651,6 +690,17 @@ async function handleEvent(event: Stripe.Event) {
         // Create Stoqflow order for upsell products if any are present
         let stoqflowOrderId: string | null = null;
         const upsellProducts = bookingData?.upsellProducts;
+        console.info('[Stoqflow] Checking if Stoqflow order should be created:', {
+          hasUpsellProducts: !!upsellProducts,
+          isArray: Array.isArray(upsellProducts),
+          upsellProductsLength: upsellProducts?.length || 0,
+          createdBookingId: createdBookingId,
+          tourType: tourType,
+          upsellProducts: upsellProducts,
+          shippingAddress: bookingData?.shippingAddress,
+          customerName: bookingData?.customerName,
+          customerEmail: bookingData?.customerEmail,
+        });
         if (upsellProducts && Array.isArray(upsellProducts) && upsellProducts.length > 0 && createdBookingId) {
           try {
             const stoqflowClientId = Deno.env.get('STOQFLOW_CLIENT_ID');
@@ -670,18 +720,86 @@ async function handleEvent(event: Stripe.Event) {
               const basicAuth = btoa(credentials);
               const apiBaseUrl = `${stoqflowBaseUrl}/api/v2`;
 
-              // Helper function to generate SKU from product ID (same as in webshop order creation)
+              // Helper function to generate SKU from product ID (same as sync-webshop-to-stoqflow)
               const generateSKU = (productId: string): string => {
                 const id = productId || '';
                 if (!id) {
-                  return `STR${Date.now().toString().slice(-10)}`;
+                  return `WS${Date.now().toString().slice(-10)}`;
                 }
+                // Remove dashes and other non-alphanumeric characters (same as sync function)
                 let sku = id.replace(/[^a-zA-Z0-9]/g, '').substring(0, 50);
                 if (sku.length < 3) {
-                  sku = `STR${sku}`.substring(0, 50);
+                  sku = `WS${sku}`.substring(0, 50);
                 }
                 sku = sku.replace(/::/g, '-').replace(/\|\|/g, '-');
                 return sku;
+              };
+              
+              // Helper function to lookup product in webshop_data to get Stoqflow ID
+              const lookupProductInDatabase = async (productUuid: string): Promise<string | null> => {
+                try {
+                  const { data: product, error } = await supabase
+                    .from('webshop_data')
+                    .select('stoqflow_id, uuid')
+                    .eq('uuid', productUuid)
+                    .single();
+                  
+                  if (!error && product?.stoqflow_id) {
+                    console.info(`[Stoqflow] Found Stoqflow ID in database: ${product.stoqflow_id} for UUID: ${productUuid}`);
+                    return product.stoqflow_id;
+                  }
+                } catch (err: any) {
+                  console.warn(`[Stoqflow] Error looking up product in database:`, err.message);
+                }
+                return null;
+              };
+              
+              // Helper function to search Stoqflow product with retry and backoff
+              const searchStoqflowProduct = async (sku: string, retries = 3): Promise<any> => {
+                for (let attempt = 0; attempt < retries; attempt++) {
+                  try {
+                    // Add delay before retry (exponential backoff)
+                    if (attempt > 0) {
+                      const delayMs = Math.min(1000 * Math.pow(2, attempt - 1), 10000); // Max 10 seconds
+                      console.info(`[Stoqflow] Retrying product lookup (attempt ${attempt + 1}/${retries}) after ${delayMs}ms delay`);
+                      await new Promise(resolve => setTimeout(resolve, delayMs));
+                    }
+                    
+                    const productSearchRes = await fetch(`${apiBaseUrl}/products?sku=${encodeURIComponent(sku)}&fields=*`, {
+                      method: 'GET',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Basic ${basicAuth}`,
+                      },
+                    });
+                    
+                    if (productSearchRes.status === 429) {
+                      // Rate limited - wait longer and retry
+                      if (attempt < retries - 1) {
+                        const retryAfter = parseInt(productSearchRes.headers.get('Retry-After') || '60');
+                        console.warn(`[Stoqflow] Rate limited (429), waiting ${retryAfter}s before retry`);
+                        await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+                        continue;
+                      }
+                    }
+                    
+                    if (productSearchRes.ok) {
+                      const productData = await productSearchRes.json();
+                      if (Array.isArray(productData) && productData.length > 0) {
+                        return productData[0];
+                      }
+                    }
+                    
+                    // If not rate limited and not found, don't retry
+                    if (productSearchRes.status !== 429) {
+                      break;
+                    }
+                  } catch (err: any) {
+                    console.warn(`[Stoqflow] Error searching product (attempt ${attempt + 1}):`, err.message);
+                    if (attempt === retries - 1) throw err;
+                  }
+                }
+                return null;
               };
 
               // Convert upsell products to Stoqflow order items
@@ -709,118 +827,261 @@ async function handleEvent(event: Stripe.Event) {
                     });
                     console.info(`[Stoqflow] Using product_id directly (looks like Stoqflow ID): ${productId}`);
                   } else {
-                    // It's a UUID or other format - generate SKU and search for product
-                    const sku = generateSKU(productId);
-                    console.info(`[Stoqflow] Looking up product by SKU: ${sku} (from product ID: ${productId})`);
+                    // It's a UUID - first try to get Stoqflow ID from database
+                    let stoqflowProductId = await lookupProductInDatabase(productId);
+                    
+                    if (stoqflowProductId) {
+                      // Found Stoqflow ID in database
+                      stoqflowOrderItems.push({
+                        product_id: stoqflowProductId,
+                        quantity: quantity,
+                      });
+                      console.info(`[Stoqflow] Using Stoqflow ID from database: ${stoqflowProductId}`);
+                    } else {
+                      // Not in database - generate SKU and search Stoqflow API (with retry)
+                      const sku = generateSKU(productId);
+                      console.info(`[Stoqflow] Looking up product by SKU: ${sku} (from product ID: ${productId})`);
 
-                    // Search for product by SKU
-                    const productSearchRes = await fetch(`${apiBaseUrl}/products?sku=${encodeURIComponent(sku)}&fields=*`, {
-                      method: 'GET',
-                      headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Basic ${basicAuth}`,
-                      },
-                    });
-
-                    if (productSearchRes.ok) {
-                      const productData = await productSearchRes.json();
-                      if (Array.isArray(productData) && productData.length > 0) {
-                        const stoqflowProduct = productData[0];
+                      const stoqflowProduct = await searchStoqflowProduct(sku);
+                      
+                      if (stoqflowProduct) {
                         stoqflowOrderItems.push({
                           product_id: stoqflowProduct._id,
                           quantity: quantity,
                         });
                         console.info(`[Stoqflow] Found product: ${stoqflowProduct._id} (SKU: ${sku})`);
                       } else {
-                        // Product not found - create order item without product_id
-                        console.warn(`[Stoqflow] Product not found for SKU ${sku}, creating order item without product_id`);
-                        stoqflowOrderItems.push({
-                          quantity: quantity,
-                        });
+                        // Product not found - skip this item (Stoqflow requires product_id)
+                        console.warn(`[Stoqflow] Product not found for SKU ${sku}, skipping item (product_id required by Stoqflow)`);
+                        // Don't add item without product_id - Stoqflow will reject it
                       }
-                    } else {
-                      console.warn(`[Stoqflow] Failed to search for product by SKU ${sku}: ${productSearchRes.status}`);
-                      stoqflowOrderItems.push({
-                        quantity: quantity,
-                      });
                     }
                   }
                 } catch (lookupErr: any) {
                   console.warn(`[Stoqflow] Failed to lookup product for ${productId}:`, lookupErr.message);
-                  // Add item without product_id
-                  stoqflowOrderItems.push({
-                    quantity: quantity,
-                  });
+                  // Don't add item without product_id - Stoqflow will reject it
                 }
               }
 
-              // Ensure we have at least one order item (required by API)
-              if (stoqflowOrderItems.length === 0) {
-                console.warn('[Stoqflow] No order items to sync, skipping Stoqflow order creation');
+              // Filter out items without product_id (Stoqflow requires product_id for all items)
+              const validOrderItems = stoqflowOrderItems.filter((item: any) => item.product_id);
+              
+              // Log if some items were filtered out
+              if (validOrderItems.length < stoqflowOrderItems.length) {
+                console.warn(`[Stoqflow] Filtered out ${stoqflowOrderItems.length - validOrderItems.length} items without product_id. Proceeding with ${validOrderItems.length} valid items.`);
+              }
+              
+              // Ensure we have at least one valid order item (required by API)
+              if (validOrderItems.length === 0) {
+                console.warn('[Stoqflow] No valid order items (all items missing product_id), skipping Stoqflow order creation');
               } else {
-                // Prepare client_info from shipping address in bookingData (always required)
+                // Prepare client_info from shipping address (always required)
                 const clientInfo: any = {};
-                const shippingAddress = bookingData?.shippingAddress;
-                if (shippingAddress) {
-                  clientInfo.name = shippingAddress.fullName || bookingData.customerName || 'Guest';
-                  clientInfo.address_1 = shippingAddress.street || '';
-                  clientInfo.address_2 = '';
-                  clientInfo.city = shippingAddress.city || '';
-                  clientInfo.postal_code = shippingAddress.postalCode || '';
-                  clientInfo.country = shippingAddress.country || 'BE';
-                } else {
-                  // Fallback: use customer name if shipping address is missing (should not happen)
-                  console.warn('[Stoqflow] Shipping address missing in bookingData, using customer name as fallback');
-                  clientInfo.name = bookingData.customerName || 'Guest';
-                  clientInfo.address_1 = '';
-                  clientInfo.address_2 = '';
-                  clientInfo.city = '';
-                  clientInfo.postal_code = '';
-                  clientInfo.country = 'BE';
-                }
-                clientInfo.email = bookingData.customerEmail || '';
-
-                // Prepare notes (max 500 characters according to API)
-                const notesText = `Tour Booking: ${sessionId} | Booking ID: ${createdBookingId} | Customer: ${bookingData.customerEmail}`;
-                const notes = notesText.length > 500 ? notesText.substring(0, 497) + '...' : notesText;
-
-                // Create order payload according to Stoqflow API v2 documentation
-                const stoqflowPayload: any = {
-                  shop_id: stoqflowShopId, // Required
-                  order_items: stoqflowOrderItems, // Required, non-empty array
-                  status: 'ready-to-pick', // Payment already completed
-                  type_of_goods: 'commercial-goods',
-                  origin: {
-                    id: sessionId, // Stripe checkout session ID
-                    number: createdBookingId.toString(), // Booking ID reference
-                  },
-                  notes: notes,
-                };
-
-                // Client handling: if client_id provided, use it; otherwise use client_info
-                const stoqflowOrderClientId = Deno.env.get('STOQFLOW_ORDER_CLIENT_ID');
-                if (stoqflowOrderClientId) {
-                  stoqflowPayload.client_id = stoqflowOrderClientId;
-                } else {
-                  stoqflowPayload.client_info = clientInfo;
-                }
-
-                // Validate payload before sending
-                if (!stoqflowShopId) {
-                  throw new Error('STOQFLOW_SHOP_ID is required but not set');
-                }
-                if (!Array.isArray(stoqflowOrderItems) || stoqflowOrderItems.length === 0) {
-                  throw new Error('order_items must be a non-empty array');
-                }
-
-                console.info('[Stoqflow] Creating order with payload:', {
-                  shop_id: stoqflowShopId,
-                  item_count: stoqflowOrderItems.length,
-                  items_with_product_id: stoqflowOrderItems.filter((item: any) => item.product_id).length,
-                  items_without_product_id: stoqflowOrderItems.filter((item: any) => !item.product_id).length,
-                  status: stoqflowPayload.status,
-                  booking_id: createdBookingId,
+                let shippingAddress = bookingData?.shippingAddress;
+                
+                console.info('[Stoqflow] Extracting shipping address:', {
+                  hasShippingAddressInBookingData: !!shippingAddress,
+                  shippingAddressType: typeof shippingAddress,
+                  shippingAddress: JSON.stringify(shippingAddress),
+                  shippingAddressKeys: shippingAddress ? Object.keys(shippingAddress) : [],
+                  customerName: bookingData?.customerName,
+                  bookingId: createdBookingId,
                 });
+                
+                // If shipping address not in bookingData, try to fetch from database
+                if (!shippingAddress && createdBookingId) {
+                  if (tourType === 'local_stories') {
+                    // For local stories: fetch from local_tours_bookings
+                    console.info('[Stoqflow] Shipping address not in bookingData, fetching from local_tours_bookings...');
+                    try {
+                      const { data: localBooking } = await supabase
+                        .from('local_tours_bookings')
+                        .select('shipping_full_name, shipping_street, shipping_city, shipping_postal_code, shipping_country')
+                        .eq('booking_id', createdBookingId)
+                        .eq('stripe_session_id', sessionId)
+                        .maybeSingle();
+                      
+                      if (localBooking && localBooking.shipping_street && localBooking.shipping_city && localBooking.shipping_postal_code) {
+                        shippingAddress = {
+                          fullName: localBooking.shipping_full_name || null,
+                          street: localBooking.shipping_street,
+                          city: localBooking.shipping_city,
+                          postalCode: localBooking.shipping_postal_code,
+                          country: localBooking.shipping_country || 'BE',
+                        };
+                        console.info('[Stoqflow] Found shipping address in local_tours_bookings:', shippingAddress);
+                      }
+                    } catch (err) {
+                      console.warn('[Stoqflow] Error fetching shipping address from local_tours_bookings:', err);
+                    }
+                  } else {
+                    // For regular tours: fetch from tourbooking invitees
+                    console.info('[Stoqflow] Shipping address not in bookingData, fetching from tourbooking invitees...');
+                    try {
+                      const { data: tourBooking } = await supabase
+                        .from('tourbooking')
+                        .select('invitees')
+                        .eq('id', createdBookingId)
+                        .maybeSingle();
+                      
+                      if (tourBooking && Array.isArray(tourBooking.invitees)) {
+                        // Find invitee matching this customer email
+                        const matchingInvitee = tourBooking.invitees.find((inv: any) => 
+                          inv.email && inv.email.toLowerCase() === (bookingData.customerEmail || '').toLowerCase()
+                        );
+                        
+                        if (matchingInvitee?.shippingAddress) {
+                          shippingAddress = matchingInvitee.shippingAddress;
+                          console.info('[Stoqflow] Found shipping address in tourbooking invitee:', shippingAddress);
+                        }
+                      }
+                    } catch (err) {
+                      console.warn('[Stoqflow] Error fetching shipping address from tourbooking:', err);
+                    }
+                  }
+                }
+                
+                let hasValidAddress = false;
+                
+                // Check if shippingAddress exists and has required fields
+                if (shippingAddress && typeof shippingAddress === 'object') {
+                  const street = shippingAddress.street || shippingAddress.address_1 || '';
+                  const city = shippingAddress.city || '';
+                  const postalCode = shippingAddress.postalCode || shippingAddress.postal_code || '';
+                  
+                  if (street && city && postalCode) {
+                    // Use shipping address from bookingData or local_tours_bookings (form data filled by user)
+                    clientInfo.name = shippingAddress.fullName || bookingData.customerName || 'Guest';
+                    clientInfo.address_1 = street.trim();
+                    clientInfo.address_2 = (shippingAddress.street2 || shippingAddress.address_2 || '').trim();
+                    clientInfo.city = city.trim();
+                    clientInfo.postal_code = postalCode.trim();
+                    clientInfo.country = shippingAddress.country || 'BE';
+                    hasValidAddress = true;
+                    
+                    console.info('[Stoqflow] Using shipping address:', {
+                      source: shippingAddress.street ? 'bookingData/local_tours_bookings' : 'unknown',
+                      name: clientInfo.name,
+                      address_1: clientInfo.address_1,
+                      city: clientInfo.city,
+                      postal_code: clientInfo.postal_code,
+                      country: clientInfo.country,
+                    });
+                  } else {
+                    console.warn('[Stoqflow] Shipping address exists but missing required fields:', {
+                      hasStreet: !!street,
+                      hasCity: !!city,
+                      hasPostalCode: !!postalCode,
+                      shippingAddress,
+                    });
+                  }
+                } else {
+                  // Fallback: try to get from session shipping address
+                  console.warn('[Stoqflow] Shipping address missing or incomplete, checking Stripe session...');
+                  
+                  // Try to get shipping address from Stripe session
+                  let sessionShippingAddress: Stripe.Address | null = null;
+                  let sessionShippingName: string | null = null;
+                  try {
+                    const sessionData = await stripe.checkout.sessions.retrieve(sessionId);
+                    if (sessionData.shipping_details?.address) {
+                      sessionShippingAddress = sessionData.shipping_details.address;
+                      sessionShippingName = sessionData.shipping_details.name || null;
+                      console.info('[Stoqflow] Found shipping address in Stripe session');
+                    }
+                  } catch (err) {
+                    console.warn('[Stoqflow] Could not retrieve session:', err);
+                  }
+                  
+                  if (sessionShippingAddress && sessionShippingAddress.line1 && sessionShippingAddress.city && sessionShippingAddress.postal_code) {
+                    clientInfo.name = sessionShippingName || bookingData.customerName || 'Guest';
+                    clientInfo.address_1 = sessionShippingAddress.line1;
+                    clientInfo.address_2 = sessionShippingAddress.line2 || '';
+                    clientInfo.city = sessionShippingAddress.city;
+                    clientInfo.postal_code = sessionShippingAddress.postal_code;
+                    clientInfo.country = sessionShippingAddress.country || 'BE';
+                    hasValidAddress = true;
+                    
+                    console.info('[Stoqflow] Using shipping address from Stripe session:', {
+                      name: clientInfo.name,
+                      address_1: clientInfo.address_1,
+                      city: clientInfo.city,
+                      postal_code: clientInfo.postal_code,
+                      country: clientInfo.country,
+                    });
+                  }
+                }
+                
+                // Validate that we have required address fields
+                if (!hasValidAddress || !clientInfo.address_1 || !clientInfo.city || !clientInfo.postal_code) {
+                  console.error('[Stoqflow] Missing required shipping address fields. Cannot create Stoqflow order.', {
+                    hasValidAddress,
+                    hasAddress1: !!clientInfo.address_1,
+                    hasCity: !!clientInfo.city,
+                    hasPostalCode: !!clientInfo.postal_code,
+                    clientInfo,
+                  });
+                  // Skip order creation if address is missing
+                } else {
+                  clientInfo.email = bookingData.customerEmail || '';
+                  
+                  console.info('[Stoqflow] Prepared client_info:', {
+                    name: clientInfo.name,
+                    address_1: clientInfo.address_1,
+                    city: clientInfo.city,
+                    postal_code: clientInfo.postal_code,
+                    country: clientInfo.country,
+                    email: clientInfo.email,
+                  });
+
+                  // Prepare notes (max 500 characters according to API)
+                  const notesText = `Tour Booking: ${sessionId} | Booking ID: ${createdBookingId} | Customer: ${bookingData.customerEmail}`;
+                  const notes = notesText.length > 500 ? notesText.substring(0, 497) + '...' : notesText;
+
+                  // Create order payload according to Stoqflow API v2 documentation
+                  const stoqflowPayload: any = {
+                    shop_id: stoqflowShopId, // Required
+                    order_items: validOrderItems, // Use only items with product_id
+                    status: 'ready-to-pick', // Payment already completed
+                    type_of_goods: 'commercial-goods',
+                    origin: {
+                      id: sessionId, // Stripe checkout session ID
+                      number: createdBookingId.toString(), // Booking ID reference
+                    },
+                    notes: notes,
+                  };
+
+                  // Client handling: if client_id provided, use it; otherwise use client_info
+                  const stoqflowOrderClientId = Deno.env.get('STOQFLOW_ORDER_CLIENT_ID');
+                  if (stoqflowOrderClientId) {
+                    stoqflowPayload.client_id = stoqflowOrderClientId;
+                  } else {
+                    stoqflowPayload.client_info = clientInfo;
+                  }
+
+                  // Validate payload before sending
+                  if (!stoqflowShopId) {
+                    throw new Error('STOQFLOW_SHOP_ID is required but not set');
+                  }
+                  if (!Array.isArray(validOrderItems) || validOrderItems.length === 0) {
+                    throw new Error('order_items must be a non-empty array with product_id');
+                  }
+                  
+                  // Validate all items have product_id
+                  const itemsWithoutProductId = validOrderItems.filter((item: any) => !item.product_id);
+                  if (itemsWithoutProductId.length > 0) {
+                    throw new Error(`Found ${itemsWithoutProductId.length} items without product_id`);
+                  }
+
+                  console.info('[Stoqflow] Creating order with payload:', {
+                    shop_id: stoqflowShopId,
+                    item_count: validOrderItems.length,
+                    items_with_product_id: validOrderItems.filter((item: any) => item.product_id).length,
+                    status: stoqflowPayload.status,
+                    booking_id: createdBookingId,
+                    has_client_info: !!stoqflowPayload.client_info,
+                    has_client_id: !!stoqflowPayload.client_id,
+                  });
 
                 const stoqflowRes = await fetch(`${apiBaseUrl}/orders`, {
                   method: 'POST',
@@ -856,6 +1117,7 @@ async function handleEvent(event: Stripe.Event) {
                     session_id: sessionId,
                     booking_id: createdBookingId,
                   });
+                }
                 }
               }
             } else {
@@ -2036,10 +2298,29 @@ async function handleEvent(event: Stripe.Event) {
               const apiBaseUrl = `${stoqflowBaseUrl}/api/v2`;
 
               // Look up Stoqflow product IDs from Stripe product IDs
-              // We generate SKU from Stripe product ID in a consistent way, so we can search by SKU
+              // First try database lookup (by stripe_product_id), then fallback to API search
               const stoqflowOrderItems: any[] = [];
               
-              // Helper function to generate SKU from Stripe product ID (same as in sync function)
+              // Helper function to lookup product in webshop_data by stripe_product_id to get Stoqflow ID
+              const lookupProductInDatabase = async (stripeProductId: string): Promise<string | null> => {
+                try {
+                  const { data: product, error } = await supabase
+                    .from('webshop_data')
+                    .select('stoqflow_id, stripe_product_id, uuid')
+                    .eq('stripe_product_id', stripeProductId)
+                    .single();
+                  
+                  if (!error && product?.stoqflow_id) {
+                    console.info(`[Stoqflow] Found Stoqflow ID in database: ${product.stoqflow_id} for Stripe product: ${stripeProductId}`);
+                    return product.stoqflow_id;
+                  }
+                } catch (err: any) {
+                  console.warn(`[Stoqflow] Error looking up product in database:`, err.message);
+                }
+                return null;
+              };
+              
+              // Helper function to generate SKU from Stripe product ID (fallback method)
               const generateSKU = (stripeProductId: string): string => {
                 const productId = stripeProductId || '';
                 if (!productId) {
@@ -2053,72 +2334,108 @@ async function handleEvent(event: Stripe.Event) {
                 return sku;
               };
               
+              // Helper function to search Stoqflow product with retry and backoff
+              const searchStoqflowProduct = async (sku: string, retries = 3): Promise<any> => {
+                for (let attempt = 0; attempt < retries; attempt++) {
+                  try {
+                    // Add delay before retry (exponential backoff)
+                    if (attempt > 0) {
+                      const delayMs = Math.min(1000 * Math.pow(2, attempt - 1), 10000); // Max 10 seconds
+                      console.info(`[Stoqflow] Retrying product lookup (attempt ${attempt + 1}/${retries}) after ${delayMs}ms delay`);
+                      await new Promise(resolve => setTimeout(resolve, delayMs));
+                    }
+                    
+                    const productSearchRes = await fetch(`${apiBaseUrl}/products?sku=${encodeURIComponent(sku)}&fields=*`, {
+                      method: 'GET',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Basic ${basicAuth}`,
+                      },
+                    });
+                    
+                    if (productSearchRes.status === 429) {
+                      // Rate limited - wait longer and retry
+                      if (attempt < retries - 1) {
+                        const retryAfter = parseInt(productSearchRes.headers.get('Retry-After') || '60');
+                        console.warn(`[Stoqflow] Rate limited (429), waiting ${retryAfter}s before retry`);
+                        await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+                        continue;
+                      }
+                    }
+                    
+                    if (productSearchRes.ok) {
+                      const productData = await productSearchRes.json();
+                      if (Array.isArray(productData) && productData.length > 0) {
+                        return productData[0];
+                      }
+                    }
+                    
+                    // If not rate limited and not found, don't retry
+                    if (productSearchRes.status !== 429) {
+                      break;
+                    }
+                  } catch (err: any) {
+                    console.warn(`[Stoqflow] Error searching product (attempt ${attempt + 1}):`, err.message);
+                    if (attempt === retries - 1) throw err;
+                  }
+                }
+                return null;
+              };
+              
               for (const item of productItems) {
                 // Prefer stripeProductId for lookup, fallback to productId
                 const productIdToUse = (item as any).stripeProductId || item.productId;
                 
-                if (productIdToUse) {
-                  // Try to find Stoqflow product by SKU (generated from Stripe product ID)
-                  try {
-                    // Check if productId looks like a Stoqflow ID (base58 format, ~17 chars)
-                    const looksLikeStoqflowId = /^[23456789ABCDEFGHJKLMNPQRSTWXYZabcdefghijkmnopqrstuvwxyz]{15,20}$/.test(productIdToUse);
-                    
-                    if (looksLikeStoqflowId) {
-                      // Assume it's already a Stoqflow product ID
-                      stoqflowOrderItems.push({
-                        product_id: productIdToUse,
-                        quantity: item.quantity || 1,
-                      });
-                      console.info(`[Stoqflow] Using product_id directly (looks like Stoqflow ID): ${productIdToUse}`);
-                    } else {
-                      // It's a Stripe product ID - generate SKU and search for product
-                      const sku = generateSKU(productIdToUse);
-                      console.info(`[Stoqflow] Looking up product by SKU: ${sku} (from Stripe product: ${productIdToUse})`);
-                      
-                      // Search for product by SKU
-                      const productSearchRes = await fetch(`${apiBaseUrl}/products?sku=${encodeURIComponent(sku)}&fields=*`, {
-                        method: 'GET',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          'Authorization': `Basic ${basicAuth}`,
-                        },
-                      });
-                      
-                      if (productSearchRes.ok) {
-                        const productData = await productSearchRes.json();
-                        if (Array.isArray(productData) && productData.length > 0) {
-                          const stoqflowProduct = productData[0];
-                          stoqflowOrderItems.push({
-                            product_id: stoqflowProduct._id,
-                            quantity: item.quantity || 1,
-                          });
-                          console.info(`[Stoqflow] Found product: ${stoqflowProduct._id} (SKU: ${sku})`);
-                        } else {
-                          // Product not found - create order item without product_id
-                          console.warn(`[Stoqflow] Product not found for SKU ${sku}, creating order item without product_id`);
-                          stoqflowOrderItems.push({
-                            quantity: item.quantity || 1,
-                          });
-                        }
-                      } else {
-                        console.warn(`[Stoqflow] Failed to search for product by SKU ${sku}: ${productSearchRes.status}`);
-                        stoqflowOrderItems.push({
-                          quantity: item.quantity || 1,
-                        });
-                      }
-                    }
-                  } catch (lookupErr: any) {
-                    console.warn(`[Stoqflow] Failed to lookup product for ${productIdToUse}:`, lookupErr.message);
-                    // Add item without product_id
+                if (!productIdToUse) {
+                  console.warn('[Stoqflow] Skipping item without product ID:', item);
+                  continue;
+                }
+
+                try {
+                  // Check if productId looks like a Stoqflow ID (base58 format, ~17 chars)
+                  const looksLikeStoqflowId = /^[23456789ABCDEFGHJKLMNPQRSTWXYZabcdefghijkmnopqrstuvwxyz]{15,20}$/.test(productIdToUse);
+                  
+                  if (looksLikeStoqflowId) {
+                    // Assume it's already a Stoqflow product ID
                     stoqflowOrderItems.push({
+                      product_id: productIdToUse,
                       quantity: item.quantity || 1,
                     });
+                    console.info(`[Stoqflow] Using product_id directly (looks like Stoqflow ID): ${productIdToUse}`);
+                  } else {
+                    // It's a Stripe product ID - first try database lookup
+                    let stoqflowProductId = await lookupProductInDatabase(productIdToUse);
+                    
+                    if (stoqflowProductId) {
+                      // Found Stoqflow ID in database
+                      stoqflowOrderItems.push({
+                        product_id: stoqflowProductId,
+                        quantity: item.quantity || 1,
+                      });
+                      console.info(`[Stoqflow] Using Stoqflow ID from database: ${stoqflowProductId}`);
+                    } else {
+                      // Not in database - generate SKU and search Stoqflow API (with retry)
+                      const sku = generateSKU(productIdToUse);
+                      console.info(`[Stoqflow] Looking up product by SKU: ${sku} (from Stripe product: ${productIdToUse})`);
+
+                      const stoqflowProduct = await searchStoqflowProduct(sku);
+                      
+                      if (stoqflowProduct) {
+                        stoqflowOrderItems.push({
+                          product_id: stoqflowProduct._id,
+                          quantity: item.quantity || 1,
+                        });
+                        console.info(`[Stoqflow] Found product: ${stoqflowProduct._id} (SKU: ${sku})`);
+                      } else {
+                        // Product not found - skip this item (Stoqflow requires product_id)
+                        console.warn(`[Stoqflow] Product not found for SKU ${sku}, skipping item (product_id required by Stoqflow)`);
+                        // Don't add item without product_id - Stoqflow will reject it
+                      }
+                    }
                   }
-                } else {
-                  // No product ID - add item without product_id
-                  stoqflowOrderItems.push({
-                    quantity: item.quantity || 1,
-                  });
+                } catch (lookupErr: any) {
+                  console.warn(`[Stoqflow] Failed to lookup product for ${productIdToUse}:`, lookupErr.message);
+                  // Don't add item without product_id - Stoqflow will reject it
                 }
               }
 

@@ -446,8 +446,30 @@ export default function BookingDetailPage() {
 
         if (localBookingsError) {
           // Error fetching local tours bookings
+          console.error('Error fetching local_tours_bookings:', localBookingsError);
         } else if (localBookingsData) {
-          setLocalStoriesBookings(localBookingsData as LocalStoriesBooking[]);
+          // Deduplicate by id to prevent double-counting
+          const uniqueBookings = new Map();
+          localBookingsData.forEach((b: any) => {
+            if (!uniqueBookings.has(b.id)) {
+              uniqueBookings.set(b.id, b);
+            }
+          });
+          const deduplicatedBookings = Array.from(uniqueBookings.values()) as LocalStoriesBooking[];
+          
+          // Log for debugging
+          console.log('Local stories bookings:', {
+            totalFetched: localBookingsData.length,
+            uniqueCount: deduplicatedBookings.length,
+            totalPeople: deduplicatedBookings.reduce((sum, b) => sum + (b.amnt_of_people || 0), 0),
+            bookings: deduplicatedBookings.map(b => ({
+              id: b.id,
+              customer: b.customer_name,
+              people: b.amnt_of_people,
+            })),
+          });
+          
+          setLocalStoriesBookings(deduplicatedBookings);
         }
       } else {
         setLocalStoriesBookings([]);
@@ -2163,7 +2185,16 @@ export default function BookingDetailPage() {
                   </CardTitle>
                   <CardDescription>
                     {isLocalStories ? (
-                      <>Total people signed up: {localStoriesBookings.reduce((sum, b) => sum + (b.amnt_of_people || 0), 0)}</>
+                      <>Total people signed up: {(() => {
+                        // Calculate total people, ensuring we don't double-count
+                        const uniqueBookings = new Map();
+                        localStoriesBookings.forEach(b => {
+                          if (!uniqueBookings.has(b.id)) {
+                            uniqueBookings.set(b.id, b);
+                          }
+                        });
+                        return Array.from(uniqueBookings.values()).reduce((sum, b) => sum + (b.amnt_of_people || 0), 0);
+                      })()}</>
                     ) : (
                       <>Total people: {allInvitees.reduce((sum, inv) => sum + (inv.numberOfPeople || 1), 0)}</>
                     )}
@@ -2460,7 +2491,19 @@ export default function BookingDetailPage() {
                     <div className="pt-2 border-t">
                       <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Signed Up</p>
                       <p className="text-lg font-semibold">
-                        {localStoriesBookings.reduce((sum, b) => sum + (b.amnt_of_people || 0), 0)} people
+                        {(() => {
+                          // Calculate total people, ensuring we don't double-count
+                          // Use Set to track unique booking IDs to avoid duplicates
+                          const uniqueBookings = new Map();
+                          localStoriesBookings.forEach(b => {
+                            // Use id as unique key to prevent double-counting
+                            if (!uniqueBookings.has(b.id)) {
+                              uniqueBookings.set(b.id, b);
+                            }
+                          });
+                          const totalPeople = Array.from(uniqueBookings.values()).reduce((sum, b) => sum + (b.amnt_of_people || 0), 0);
+                          return totalPeople;
+                        })()} people
                       </p>
                     </div>
                   </div>

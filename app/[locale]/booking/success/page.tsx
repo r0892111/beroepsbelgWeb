@@ -867,28 +867,48 @@ export default function BookingSuccessPage() {
               <div className="pt-4 border-t space-y-2" style={{ borderColor: 'var(--border-light)' }}>
                 <p className="font-semibold mb-3 text-base" style={{ color: 'var(--text-primary)' }}>{t('priceBreakdown') || 'Price Overview'}:</p>
 
-                {/* Tour base price */}
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
-                    {booking.tour_title} ({booking.number_of_people} {booking.number_of_people > 1 ? 'personen' : 'persoon'})
-                  </span>
-                  <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
-                    €{(() => {
-                      // Use originalAmount if available (tour price before fees/discount)
-                      // Otherwise calculate: amount - fees (amount is tour + fees, before discount)
-                      if (booking.originalAmount > 0) {
-                        return parseFloat(booking.originalAmount).toFixed(2);
-                      }
-                      const totalAmount = parseFloat(booking.amount) || 0;
-                      const tanguyCost = parseFloat(booking.tanguyCost) || 0;
-                      const extraHourCost = parseFloat(booking.extraHourCost) || 0;
-                      const weekendFeeCost = parseFloat(booking.weekendFeeCost) || 0;
-                      const eveningFeeCost = parseFloat(booking.eveningFeeCost) || 0;
-                      const baseTourPrice = totalAmount - tanguyCost - extraHourCost - weekendFeeCost - eveningFeeCost;
-                      return baseTourPrice.toFixed(2);
-                    })()}
-                  </span>
-                </div>
+                {(() => {
+                  // Calculate all price components once
+                  const promoDiscount = parseFloat(booking.promoDiscountAmount) || 0;
+                  const tanguyCost = parseFloat(booking.tanguyCost) || 0;
+                  const extraHourCost = parseFloat(booking.extraHourCost) || 0;
+                  const weekendFeeCost = parseFloat(booking.weekendFeeCost) || 0;
+                  const eveningFeeCost = parseFloat(booking.eveningFeeCost) || 0;
+                  const totalFees = tanguyCost + extraHourCost + weekendFeeCost + eveningFeeCost;
+                  
+                  const upsellTotal = purchasedUpsellProducts.reduce((sum, product: any) => {
+                    const quantity = product.quantity || 1;
+                    const price = parseFloat(String(product.price)) || 0;
+                    return sum + (price * quantity);
+                  }, 0);
+                  
+                  // Calculate base tour price
+                  let baseTourPrice = 0;
+                  if (booking.originalAmount > 0) {
+                    // Use originalAmount if available (tour price before discount, excluding fees)
+                    baseTourPrice = parseFloat(booking.originalAmount);
+                  } else {
+                    // Reconstruct: amount is final total (after discount)
+                    // Final amount = (tour + fees + upsells) - discount
+                    // So: tour = finalAmount + discount - fees - upsells
+                    const finalAmount = parseFloat(booking.amount) || 0;
+                    baseTourPrice = Math.max(0, finalAmount + promoDiscount - totalFees - upsellTotal);
+                  }
+                  
+                  const subtotal = baseTourPrice + totalFees + upsellTotal;
+                  const finalTotal = subtotal - promoDiscount;
+                  
+                  return (
+                    <>
+                      {/* Tour base price */}
+                      <div className="flex justify-between items-center py-1">
+                        <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                          {booking.tour_title} ({booking.number_of_people} {booking.number_of_people > 1 ? 'personen' : 'persoon'})
+                        </span>
+                        <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
+                          €{baseTourPrice.toFixed(2)}
+                        </span>
+                      </div>
 
                 {/* Tanguy cost if applicable */}
                 {booking.tanguyCost > 0 && (
@@ -938,18 +958,33 @@ export default function BookingSuccessPage() {
                   );
                 })}
 
-                {/* Promo code discount (shown at the bottom before total) */}
-                {(booking.promoDiscountAmount > 0 || booking.promoCode) && (
-                  <div className="flex justify-between items-center py-1 pt-2 border-t" style={{ borderColor: 'var(--border-light)' }}>
-                    <span className="text-sm" style={{ color: 'var(--primary-base)' }}>
-                      {t('discount') || 'Korting'} {booking.promoCode && `(${booking.promoCode})`}
-                      {booking.promoDiscountPercent && ` - ${booking.promoDiscountPercent}%`}
-                    </span>
-                    <span className="font-medium text-sm" style={{ color: 'var(--primary-base)' }}>
-                      -€{(parseFloat(booking.promoDiscountAmount) || 0).toFixed(2)}
-                    </span>
-                  </div>
-                )}
+                      {/* Subtotal (before discount) - only show if discount is applied */}
+                      {promoDiscount > 0 && (
+                        <div className="flex justify-between items-center py-1 pt-2 border-t" style={{ borderColor: 'var(--border-light)' }}>
+                          <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                            {t('subtotal') || 'Subtotaal'}
+                          </span>
+                          <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
+                            €{subtotal.toFixed(2)}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Promo code discount */}
+                      {(promoDiscount > 0 || booking.promoCode) && (
+                        <div className="flex justify-between items-center py-1">
+                          <span className="text-sm" style={{ color: 'var(--primary-base)' }}>
+                            {t('discount') || 'Korting'} {booking.promoCode && `(${booking.promoCode})`}
+                            {booking.promoDiscountPercent && ` - ${booking.promoDiscountPercent}%`}
+                          </span>
+                          <span className="font-medium text-sm" style={{ color: 'var(--primary-base)' }}>
+                            -€{promoDiscount.toFixed(2)}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Total */}
@@ -960,20 +995,39 @@ export default function BookingSuccessPage() {
                 <span className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{t('totalPaid')}</span>
                 <span className="text-xl font-bold" style={{ color: 'var(--primary-base)' }}>
                   €{(() => {
-                    // For local stories with Stripe data, booking.amount is already the final total
-                    if (booking.is_local_stories) {
-                      return (parseFloat(booking.amount) || 0).toFixed(2);
-                    }
-                    // For regular bookings: amount = tour + fees (before discount)
-                    // Total paid = amount + upsells - discount
-                    const totalAmount = parseFloat(booking.amount) || 0;
+                    // Calculate final total consistently
                     const promoDiscount = parseFloat(booking.promoDiscountAmount) || 0;
+                    const tanguyCost = parseFloat(booking.tanguyCost) || 0;
+                    const extraHourCost = parseFloat(booking.extraHourCost) || 0;
+                    const weekendFeeCost = parseFloat(booking.weekendFeeCost) || 0;
+                    const eveningFeeCost = parseFloat(booking.eveningFeeCost) || 0;
+                    const totalFees = tanguyCost + extraHourCost + weekendFeeCost + eveningFeeCost;
+                    
                     const upsellTotal = purchasedUpsellProducts.reduce((sum, product: any) => {
                       const quantity = product.quantity || 1;
                       const price = parseFloat(String(product.price)) || 0;
                       return sum + (price * quantity);
                     }, 0);
-                    return (totalAmount + upsellTotal - promoDiscount).toFixed(2);
+                    
+                    let baseTourPrice = 0;
+                    if (booking.originalAmount > 0) {
+                      baseTourPrice = parseFloat(booking.originalAmount);
+                    } else {
+                      const finalAmount = parseFloat(booking.amount) || 0;
+                      baseTourPrice = Math.max(0, finalAmount + promoDiscount - totalFees - upsellTotal);
+                    }
+                    
+                    // Calculate expected total: tour + fees + upsells - discount
+                    const calculatedTotal = baseTourPrice + totalFees + upsellTotal - promoDiscount;
+                    const finalAmount = parseFloat(booking.amount) || 0;
+                    
+                    // Use the higher value to ensure we show the correct total
+                    // booking.amount should be the source of truth, but if it's 0 or seems wrong, use calculated
+                    if (booking.is_local_stories) {
+                      return finalAmount.toFixed(2);
+                    }
+                    
+                    return Math.max(finalAmount, calculatedTotal).toFixed(2);
                   })()}
                 </span>
               </div>
