@@ -407,12 +407,23 @@ export default function BookingDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      // Fetch booking
+      // Fetch booking with all fields including invitees
       const { data: bookingData, error: bookingError } = await supabase
         .from('tourbooking')
         .select('*')
         .eq('id', parseInt(bookingId, 10))
         .single();
+      
+      // Ensure invitees is always an array (even if null/undefined)
+      // Also log for debugging
+      if (bookingData) {
+        if (!bookingData.invitees || !Array.isArray(bookingData.invitees)) {
+          console.warn(`[Booking Detail] Booking ${bookingId} has no invitees array, setting to empty array. Original value:`, bookingData.invitees);
+          bookingData.invitees = [];
+        } else {
+          console.log(`[Booking Detail] Booking ${bookingId} has ${bookingData.invitees.length} invitee(s)`);
+        }
+      }
 
       if (bookingError || !bookingData) {
         setError('Booking not found');

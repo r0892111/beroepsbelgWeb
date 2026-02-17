@@ -417,13 +417,43 @@ async function handleEvent(event: Stripe.Event) {
               }
 
               const updatedInvitees = [...currentInvitees, newInvitee];
+              
+              // Prepare update data including shipping address
+              const updateData: any = {
+                invitees: updatedInvitees,
+                stripe_session_id: sessionId, // Update to latest session
+                status: 'payment_completed'
+              };
+
+              // Store shipping address in tourbooking table if available
+              const shippingAddress = bookingData?.shippingAddress;
+              if (shippingAddress) {
+                // Helper to normalize country code to ISO format
+                const normalizeCountry = (country: string | null | undefined): string => {
+                  if (!country) return 'BE';
+                  const countryLower = country.toLowerCase().trim();
+                  const countryMap: Record<string, string> = {
+                    'belgië': 'BE', 'belgium': 'BE', 'belgique': 'BE', 'belgien': 'BE',
+                    'nederland': 'NL', 'netherlands': 'NL', 'pays-bas': 'NL', 'niederlande': 'NL',
+                    'france': 'FR', 'frankrijk': 'FR',
+                    'deutschland': 'DE', 'germany': 'DE', 'duitsland': 'DE',
+                    'luxembourg': 'LU', 'luxemburg': 'LU',
+                  };
+                  if (/^[A-Z]{2}$/.test(country)) return country;
+                  return countryMap[countryLower] || 'BE';
+                };
+
+                updateData.shipping_full_name = shippingAddress.fullName || null;
+                updateData.shipping_street = shippingAddress.street || null;
+                updateData.shipping_city = shippingAddress.city || null;
+                updateData.shipping_postal_code = shippingAddress.postalCode || null;
+                updateData.shipping_country = normalizeCountry(shippingAddress.country);
+                console.info('[Local Stories] Storing shipping address in tourbooking table');
+              }
+
               await supabase
                 .from('tourbooking')
-                .update({
-                  invitees: updatedInvitees,
-                  stripe_session_id: sessionId, // Update to latest session
-                  status: 'payment_completed'
-                })
+                .update(updateData)
                 .eq('id', tourbookingId);
 
               console.info(`Appended invitee to existing tourbooking ${tourbookingId}`);
@@ -525,11 +555,26 @@ async function handleEvent(event: Stripe.Event) {
 
             // Store shipping address if available
             if (shippingAddress) {
+              // Helper to normalize country code (defined above in Stoqflow section, but also needed here)
+              const normalizeCountry = (country: string | null | undefined): string => {
+                if (!country) return 'BE';
+                const countryLower = country.toLowerCase().trim();
+                const countryMap: Record<string, string> = {
+                  'belgië': 'BE', 'belgium': 'BE', 'belgique': 'BE', 'belgien': 'BE',
+                  'nederland': 'NL', 'netherlands': 'NL', 'pays-bas': 'NL', 'niederlande': 'NL',
+                  'france': 'FR', 'frankrijk': 'FR',
+                  'deutschland': 'DE', 'germany': 'DE', 'duitsland': 'DE',
+                  'luxembourg': 'LU', 'luxemburg': 'LU',
+                };
+                if (/^[A-Z]{2}$/.test(country)) return country;
+                return countryMap[countryLower] || 'BE';
+              };
+
               localBookingData.shipping_full_name = shippingAddress.fullName || null;
               localBookingData.shipping_street = shippingAddress.street || null;
               localBookingData.shipping_city = shippingAddress.city || null;
               localBookingData.shipping_postal_code = shippingAddress.postalCode || null;
-              localBookingData.shipping_country = shippingAddress.country || 'BE';
+              localBookingData.shipping_country = normalizeCountry(shippingAddress.country);
               
               console.info('[Local Stories] Storing shipping address in local_tours_bookings:', {
                 hasFullName: !!localBookingData.shipping_full_name,
@@ -592,7 +637,8 @@ async function handleEvent(event: Stripe.Event) {
             console.info('[Standard/OpMaat] Stored shipping address in invitee data');
           }
 
-          const newTourBooking = {
+          // Prepare tourbooking data including shipping address
+          const newTourBooking: any = {
             tour_id: bookingData.tourId,
             stripe_session_id: sessionId,
             status: 'payment_completed',
@@ -603,6 +649,32 @@ async function handleEvent(event: Stripe.Event) {
             user_id: bookingData.userId,
             invitees: [newInvitee],
           };
+
+          // Store shipping address in tourbooking table if available
+          const shippingAddress = bookingData?.shippingAddress;
+          if (shippingAddress) {
+            // Helper to normalize country code to ISO format
+            const normalizeCountry = (country: string | null | undefined): string => {
+              if (!country) return 'BE';
+              const countryLower = country.toLowerCase().trim();
+              const countryMap: Record<string, string> = {
+                'belgië': 'BE', 'belgium': 'BE', 'belgique': 'BE', 'belgien': 'BE',
+                'nederland': 'NL', 'netherlands': 'NL', 'pays-bas': 'NL', 'niederlande': 'NL',
+                'france': 'FR', 'frankrijk': 'FR',
+                'deutschland': 'DE', 'germany': 'DE', 'duitsland': 'DE',
+                'luxembourg': 'LU', 'luxemburg': 'LU',
+              };
+              if (/^[A-Z]{2}$/.test(country)) return country;
+              return countryMap[countryLower] || 'BE';
+            };
+
+            newTourBooking.shipping_full_name = shippingAddress.fullName || null;
+            newTourBooking.shipping_street = shippingAddress.street || null;
+            newTourBooking.shipping_city = shippingAddress.city || null;
+            newTourBooking.shipping_postal_code = shippingAddress.postalCode || null;
+            newTourBooking.shipping_country = normalizeCountry(shippingAddress.country);
+            console.info('[Standard/OpMaat] Storing shipping address in tourbooking table');
+          }
 
           const { data: newBooking, error: insertError } = await supabase
             .from('tourbooking')
@@ -719,6 +791,40 @@ async function handleEvent(event: Stripe.Event) {
               const credentials = `${stoqflowClientId}:${stoqflowClientSecret}`;
               const basicAuth = btoa(credentials);
               const apiBaseUrl = `${stoqflowBaseUrl}/api/v2`;
+
+              // Helper function to normalize country name to ISO code (Stoqflow requires ISO codes)
+              const normalizeCountryCode = (country: string | null | undefined): string => {
+                if (!country) return 'BE';
+                
+                const countryLower = country.toLowerCase().trim();
+                
+                // Map common country names to ISO codes
+                const countryMap: Record<string, string> = {
+                  'belgië': 'BE',
+                  'belgium': 'BE',
+                  'belgique': 'BE',
+                  'belgien': 'BE',
+                  'nederland': 'NL',
+                  'netherlands': 'NL',
+                  'pays-bas': 'NL',
+                  'niederlande': 'NL',
+                  'france': 'FR',
+                  'frankrijk': 'FR',
+                  'deutschland': 'DE',
+                  'germany': 'DE',
+                  'duitsland': 'DE',
+                  'luxembourg': 'LU',
+                  'luxemburg': 'LU',
+                };
+                
+                // Check if it's already an ISO code (2 uppercase letters)
+                if (/^[A-Z]{2}$/.test(country)) {
+                  return country;
+                }
+                
+                // Map country name to ISO code
+                return countryMap[countryLower] || 'BE'; // Default to BE if not found
+              };
 
               // Helper function to generate SKU from product ID (same as sync-webshop-to-stoqflow)
               const generateSKU = (productId: string): string => {
@@ -875,6 +981,40 @@ async function handleEvent(event: Stripe.Event) {
               if (validOrderItems.length === 0) {
                 console.warn('[Stoqflow] No valid order items (all items missing product_id), skipping Stoqflow order creation');
               } else {
+                // Helper function to convert country name to ISO code
+                const normalizeCountryCode = (country: string | null | undefined): string => {
+                  if (!country) return 'BE';
+                  
+                  const countryLower = country.toLowerCase().trim();
+                  
+                  // Map common country names to ISO codes
+                  const countryMap: Record<string, string> = {
+                    'belgië': 'BE',
+                    'belgium': 'BE',
+                    'belgique': 'BE',
+                    'belgien': 'BE',
+                    'nederland': 'NL',
+                    'netherlands': 'NL',
+                    'pays-bas': 'NL',
+                    'niederlande': 'NL',
+                    'france': 'FR',
+                    'frankrijk': 'FR',
+                    'deutschland': 'DE',
+                    'germany': 'DE',
+                    'duitsland': 'DE',
+                    'luxembourg': 'LU',
+                    'luxemburg': 'LU',
+                  };
+                  
+                  // Check if it's already an ISO code (2 uppercase letters)
+                  if (/^[A-Z]{2}$/.test(country)) {
+                    return country;
+                  }
+                  
+                  // Map country name to ISO code
+                  return countryMap[countryLower] || 'BE'; // Default to BE if not found
+                };
+
                 // Prepare client_info from shipping address (always required)
                 const clientInfo: any = {};
                 let shippingAddress = bookingData?.shippingAddress;
@@ -890,9 +1030,46 @@ async function handleEvent(event: Stripe.Event) {
                 
                 // If shipping address not in bookingData, try to fetch from database
                 if (!shippingAddress && createdBookingId) {
-                  if (tourType === 'local_stories') {
-                    // For local stories: fetch from local_tours_bookings
-                    console.info('[Stoqflow] Shipping address not in bookingData, fetching from local_tours_bookings...');
+                  // First try: fetch from tourbooking table (works for all tour types)
+                  console.info('[Stoqflow] Shipping address not in bookingData, fetching from tourbooking table...');
+                  try {
+                    const { data: tourBooking } = await supabase
+                      .from('tourbooking')
+                      .select('shipping_full_name, shipping_street, shipping_city, shipping_postal_code, shipping_country, invitees')
+                      .eq('id', createdBookingId)
+                      .maybeSingle();
+                    
+                    if (tourBooking) {
+                      // Check if shipping address is stored in tourbooking table columns
+                      if (tourBooking.shipping_street && tourBooking.shipping_city && tourBooking.shipping_postal_code) {
+                        shippingAddress = {
+                          fullName: tourBooking.shipping_full_name || null,
+                          street: tourBooking.shipping_street,
+                          city: tourBooking.shipping_city,
+                          postalCode: tourBooking.shipping_postal_code,
+                          country: tourBooking.shipping_country || 'BE',
+                        };
+                        console.info('[Stoqflow] Found shipping address in tourbooking table:', shippingAddress);
+                      } 
+                      // Fallback: check invitee data
+                      else if (tourBooking.invitees && Array.isArray(tourBooking.invitees)) {
+                        const matchingInvitee = tourBooking.invitees.find((inv: any) => 
+                          inv.email && inv.email.toLowerCase() === (bookingData.customerEmail || '').toLowerCase()
+                        );
+                        
+                        if (matchingInvitee?.shippingAddress) {
+                          shippingAddress = matchingInvitee.shippingAddress;
+                          console.info('[Stoqflow] Found shipping address in tourbooking invitee:', shippingAddress);
+                        }
+                      }
+                    }
+                  } catch (err) {
+                    console.warn('[Stoqflow] Error fetching shipping address from tourbooking:', err);
+                  }
+
+                  // Second try: for local stories, also check local_tours_bookings
+                  if (!shippingAddress && tourType === 'local_stories') {
+                    console.info('[Stoqflow] Shipping address not found in tourbooking, checking local_tours_bookings...');
                     try {
                       const { data: localBooking } = await supabase
                         .from('local_tours_bookings')
@@ -914,30 +1091,6 @@ async function handleEvent(event: Stripe.Event) {
                     } catch (err) {
                       console.warn('[Stoqflow] Error fetching shipping address from local_tours_bookings:', err);
                     }
-                  } else {
-                    // For regular tours: fetch from tourbooking invitees
-                    console.info('[Stoqflow] Shipping address not in bookingData, fetching from tourbooking invitees...');
-                    try {
-                      const { data: tourBooking } = await supabase
-                        .from('tourbooking')
-                        .select('invitees')
-                        .eq('id', createdBookingId)
-                        .maybeSingle();
-                      
-                      if (tourBooking && Array.isArray(tourBooking.invitees)) {
-                        // Find invitee matching this customer email
-                        const matchingInvitee = tourBooking.invitees.find((inv: any) => 
-                          inv.email && inv.email.toLowerCase() === (bookingData.customerEmail || '').toLowerCase()
-                        );
-                        
-                        if (matchingInvitee?.shippingAddress) {
-                          shippingAddress = matchingInvitee.shippingAddress;
-                          console.info('[Stoqflow] Found shipping address in tourbooking invitee:', shippingAddress);
-                        }
-                      }
-                    } catch (err) {
-                      console.warn('[Stoqflow] Error fetching shipping address from tourbooking:', err);
-                    }
                   }
                 }
                 
@@ -956,7 +1109,8 @@ async function handleEvent(event: Stripe.Event) {
                     clientInfo.address_2 = (shippingAddress.street2 || shippingAddress.address_2 || '').trim();
                     clientInfo.city = city.trim();
                     clientInfo.postal_code = postalCode.trim();
-                    clientInfo.country = shippingAddress.country || 'BE';
+                    // Normalize country to ISO code (Stoqflow requires ISO codes like "BE", not "België")
+                    clientInfo.country = normalizeCountryCode(shippingAddress.country);
                     hasValidAddress = true;
                     
                     console.info('[Stoqflow] Using shipping address:', {
@@ -999,7 +1153,8 @@ async function handleEvent(event: Stripe.Event) {
                     clientInfo.address_2 = sessionShippingAddress.line2 || '';
                     clientInfo.city = sessionShippingAddress.city;
                     clientInfo.postal_code = sessionShippingAddress.postal_code;
-                    clientInfo.country = sessionShippingAddress.country || 'BE';
+                    // Normalize country to ISO code (Stoqflow requires ISO codes)
+                    clientInfo.country = normalizeCountryCode(sessionShippingAddress.country);
                     hasValidAddress = true;
                     
                     console.info('[Stoqflow] Using shipping address from Stripe session:', {
