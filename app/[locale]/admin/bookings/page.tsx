@@ -1847,13 +1847,25 @@ export default function AdminBookingsPage() {
                   ))}
                 </SelectContent>
               </Select>
-              {selectedTour && (
-                <p className="text-xs text-muted-foreground">
-                  Default price: €{(selectedTour.price || 0).toFixed(2)} per person
-                  {selectedTour.local_stories && ' • This is a Local Stories tour'}
-                  {selectedTour.op_maat && ' • This is a Custom (Op Maat) tour'}
-                </p>
-              )}
+&              {selectedTour && (() => {
+                const displayPrice = createForm.customPrice && createForm.customPrice.trim() !== ''
+                  ? parseFloat(createForm.customPrice)
+                  : (selectedTour.price || 0);
+                const isCustomPrice = !!createForm.customPrice && createForm.customPrice.trim() !== '';
+                
+                return (
+                  <p className="text-xs text-muted-foreground">
+                    {isCustomPrice ? 'Custom price' : 'Default price'}: €{displayPrice.toFixed(2)} per person
+                    {selectedTour.local_stories && ' • This is a Local Stories tour'}
+                    {selectedTour.op_maat && ' • This is a Custom (Op Maat) tour'}
+                    {isCustomPrice && (
+                      <span className="text-amber-600 font-medium">
+                        {' • '}Default: €{(selectedTour.price || 0).toFixed(2)}
+                      </span>
+                    )}
+                  </p>
+                );
+              })()}
             </div>
 
             {/* Custom Price Override */}
