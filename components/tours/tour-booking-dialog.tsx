@@ -377,10 +377,40 @@ export function TourBookingDialog({
       return;
     }
     
-    // Open upsell dialog instead of immediately proceeding to payment
-    console.log('Opening upsell dialog, current showUpsellDialog:', showUpsellDialog);
-    // Just open the upsell dialog - it will show on top of the main dialog
-    setShowUpsellDialog(true);
+    // Load products first to check if any are available
+    if (products.length === 0) {
+      setProductsLoading(true);
+      try {
+        const res = await fetch('/api/products');
+        const data: Product[] = await res.json();
+        const webshopItems = data.filter(p =>
+          p.category === 'Book' ||
+          p.category === 'Merchandise' ||
+          p.category === 'Game'
+        );
+        setProducts(webshopItems);
+        setProductsLoading(false);
+        
+        // If products are available, show upsell dialog first
+        // Otherwise, go directly to address dialog
+        if (webshopItems.length > 0) {
+          console.log('Opening upsell dialog, current showUpsellDialog:', showUpsellDialog);
+          setShowUpsellDialog(true);
+        } else {
+          // No products available, go directly to address dialog
+          setShowAddressDialog(true);
+        }
+      } catch (err) {
+        console.error('Error loading products:', err);
+        setProductsLoading(false);
+        // On error, go directly to address dialog
+        setShowAddressDialog(true);
+      }
+    } else {
+      // Products already loaded, show upsell dialog
+      console.log('Opening upsell dialog, current showUpsellDialog:', showUpsellDialog);
+      setShowUpsellDialog(true);
+    }
   };
 
   const proceedToCheckout = async () => {
@@ -388,6 +418,15 @@ export function TourBookingDialog({
     setError(null);
 
     try {
+      // Validate shipping address is always provided
+      if (!addressData.fullName || !addressData.street || !addressData.city || 
+          !addressData.postalCode || !addressData.country) {
+        setError('Vul alle verplichte verzendgegevens in');
+        setLoading(false);
+        setShowAddressDialog(true);
+        return;
+      }
+
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -443,15 +482,15 @@ export function TourBookingDialog({
           opMaat: opMaat,
           locale: locale, // Pass locale for correct redirect after payment
           upsellProducts: upsellProducts, // Include upsell products in checkout session
-          // Address data for shipping (only if upsell products are selected)
-          shippingAddress: upsellProducts.length > 0 ? {
+          // Address data for shipping (always required)
+          shippingAddress: {
             fullName: addressData.fullName,
             birthdate: addressData.birthdate,
             street: addressData.street,
             city: addressData.city,
             postalCode: addressData.postalCode,
             country: addressData.country,
-          } : null,
+          },
           // Op maat personalization - NOT collected during checkout
           // User fills out form later via email link to /op-maat-form page
           opMaatAnswers: null,
@@ -1504,18 +1543,9 @@ export function TourBookingDialog({
             <Button
               type="button"
               onClick={() => {
-                // Check if upsell products are selected - if yes, show address dialog first
-                const hasUpsellProducts = upsellTotal > 0;
-                
-                if (hasUpsellProducts) {
-                  // Show address dialog for shipping
-                  setShowUpsellDialog(false);
-                  setShowAddressDialog(true);
-                } else {
-                  // No upsell products or op maat questions, proceed directly to checkout
-                  // Op maat personalization form will be filled out later via email link
-                  proceedToCheckout();
-                }
+                // Always show address dialog to collect shipping address
+                setShowUpsellDialog(false);
+                setShowAddressDialog(true);
               }}
               disabled={loading}
               className="w-full sm:w-auto"
@@ -1534,7 +1564,7 @@ export function TourBookingDialog({
           </ResponsiveDialogFooter>
       </ResponsiveDialog>
 
-      {/* Address Dialog for Upsell Products */}
+      {/* Address Dialog - Always Required */}
       <ResponsiveDialog 
         open={showAddressDialog} 
         onOpenChange={(isOpen) => {
@@ -1547,6 +1577,9 @@ export function TourBookingDialog({
               <FileText className="h-5 w-5" />
               Verzendgegevens
             </ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
+              Vul uw verzendgegevens in (verplicht)
+            </ResponsiveDialogDescription>
             <ResponsiveDialogDescription>
               Vul je gegevens in voor de verzending van je producten
             </ResponsiveDialogDescription>

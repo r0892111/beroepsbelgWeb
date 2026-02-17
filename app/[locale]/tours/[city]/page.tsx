@@ -150,11 +150,7 @@ export default async function ToursCityPage({ params }: ToursCityPageProps) {
       <div className="bg-[#1BDD95] pt-10 md:pt-14 pb-32 md:pb-40 px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="mb-4 text-center text-5xl md:text-6xl lg:text-7xl font-bold font-oswald uppercase tracking-tight text-white">
-            {isAntwerp && locale === 'nl'
-              ? 'Stadsgids Antwerpen - Tours'
-              : isAntwerp && locale === 'en'
-              ? 'Guide in Antwerp - Tours'
-              : `Tours ${cityDisplayName}`}
+            {`Tours ${cityName}`}
           </h1>
         </div>
       </div>

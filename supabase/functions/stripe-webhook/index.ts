@@ -648,6 +648,235 @@ async function handleEvent(event: Stripe.Event) {
           }
         }
 
+        // Create Stoqflow order for upsell products if any are present
+        let stoqflowOrderId: string | null = null;
+        const upsellProducts = bookingData?.upsellProducts;
+        if (upsellProducts && Array.isArray(upsellProducts) && upsellProducts.length > 0 && createdBookingId) {
+          try {
+            const stoqflowClientId = Deno.env.get('STOQFLOW_CLIENT_ID');
+            const stoqflowClientSecret = Deno.env.get('STOQFLOW_CLIENT_SECRET');
+            const stoqflowShopId = Deno.env.get('STOQFLOW_SHOP_ID');
+            const stoqflowBaseUrl = Deno.env.get('STOQFLOW_BASE_URL');
+
+            if (stoqflowClientId && stoqflowClientSecret && stoqflowShopId && stoqflowBaseUrl) {
+              console.info('[Stoqflow] Creating order in Stoqflow for tour booking upsell products', {
+                sessionId,
+                bookingId: createdBookingId,
+                upsellProductCount: upsellProducts.length,
+              });
+
+              // Create Basic Auth header
+              const credentials = `${stoqflowClientId}:${stoqflowClientSecret}`;
+              const basicAuth = btoa(credentials);
+              const apiBaseUrl = `${stoqflowBaseUrl}/api/v2`;
+
+              // Helper function to generate SKU from product ID (same as in webshop order creation)
+              const generateSKU = (productId: string): string => {
+                const id = productId || '';
+                if (!id) {
+                  return `STR${Date.now().toString().slice(-10)}`;
+                }
+                let sku = id.replace(/[^a-zA-Z0-9]/g, '').substring(0, 50);
+                if (sku.length < 3) {
+                  sku = `STR${sku}`.substring(0, 50);
+                }
+                sku = sku.replace(/::/g, '-').replace(/\|\|/g, '-');
+                return sku;
+              };
+
+              // Convert upsell products to Stoqflow order items
+              // Upsell products format: {id, n: name, p: price, q: quantity}
+              const stoqflowOrderItems: any[] = [];
+
+              for (const upsell of upsellProducts) {
+                const productId = upsell.id;
+                const quantity = upsell.q !== undefined ? upsell.q : (upsell.quantity || 1);
+
+                if (!productId || quantity <= 0) {
+                  console.warn('[Stoqflow] Skipping invalid upsell product:', upsell);
+                  continue;
+                }
+
+                try {
+                  // Check if productId looks like a Stoqflow ID (base58 format, ~17 chars)
+                  const looksLikeStoqflowId = /^[23456789ABCDEFGHJKLMNPQRSTWXYZabcdefghijkmnopqrstuvwxyz]{15,20}$/.test(productId);
+
+                  if (looksLikeStoqflowId) {
+                    // Assume it's already a Stoqflow product ID
+                    stoqflowOrderItems.push({
+                      product_id: productId,
+                      quantity: quantity,
+                    });
+                    console.info(`[Stoqflow] Using product_id directly (looks like Stoqflow ID): ${productId}`);
+                  } else {
+                    // It's a UUID or other format - generate SKU and search for product
+                    const sku = generateSKU(productId);
+                    console.info(`[Stoqflow] Looking up product by SKU: ${sku} (from product ID: ${productId})`);
+
+                    // Search for product by SKU
+                    const productSearchRes = await fetch(`${apiBaseUrl}/products?sku=${encodeURIComponent(sku)}&fields=*`, {
+                      method: 'GET',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Basic ${basicAuth}`,
+                      },
+                    });
+
+                    if (productSearchRes.ok) {
+                      const productData = await productSearchRes.json();
+                      if (Array.isArray(productData) && productData.length > 0) {
+                        const stoqflowProduct = productData[0];
+                        stoqflowOrderItems.push({
+                          product_id: stoqflowProduct._id,
+                          quantity: quantity,
+                        });
+                        console.info(`[Stoqflow] Found product: ${stoqflowProduct._id} (SKU: ${sku})`);
+                      } else {
+                        // Product not found - create order item without product_id
+                        console.warn(`[Stoqflow] Product not found for SKU ${sku}, creating order item without product_id`);
+                        stoqflowOrderItems.push({
+                          quantity: quantity,
+                        });
+                      }
+                    } else {
+                      console.warn(`[Stoqflow] Failed to search for product by SKU ${sku}: ${productSearchRes.status}`);
+                      stoqflowOrderItems.push({
+                        quantity: quantity,
+                      });
+                    }
+                  }
+                } catch (lookupErr: any) {
+                  console.warn(`[Stoqflow] Failed to lookup product for ${productId}:`, lookupErr.message);
+                  // Add item without product_id
+                  stoqflowOrderItems.push({
+                    quantity: quantity,
+                  });
+                }
+              }
+
+              // Ensure we have at least one order item (required by API)
+              if (stoqflowOrderItems.length === 0) {
+                console.warn('[Stoqflow] No order items to sync, skipping Stoqflow order creation');
+              } else {
+                // Prepare client_info from shipping address in bookingData (always required)
+                const clientInfo: any = {};
+                const shippingAddress = bookingData?.shippingAddress;
+                if (shippingAddress) {
+                  clientInfo.name = shippingAddress.fullName || bookingData.customerName || 'Guest';
+                  clientInfo.address_1 = shippingAddress.street || '';
+                  clientInfo.address_2 = '';
+                  clientInfo.city = shippingAddress.city || '';
+                  clientInfo.postal_code = shippingAddress.postalCode || '';
+                  clientInfo.country = shippingAddress.country || 'BE';
+                } else {
+                  // Fallback: use customer name if shipping address is missing (should not happen)
+                  console.warn('[Stoqflow] Shipping address missing in bookingData, using customer name as fallback');
+                  clientInfo.name = bookingData.customerName || 'Guest';
+                  clientInfo.address_1 = '';
+                  clientInfo.address_2 = '';
+                  clientInfo.city = '';
+                  clientInfo.postal_code = '';
+                  clientInfo.country = 'BE';
+                }
+                clientInfo.email = bookingData.customerEmail || '';
+
+                // Prepare notes (max 500 characters according to API)
+                const notesText = `Tour Booking: ${sessionId} | Booking ID: ${createdBookingId} | Customer: ${bookingData.customerEmail}`;
+                const notes = notesText.length > 500 ? notesText.substring(0, 497) + '...' : notesText;
+
+                // Create order payload according to Stoqflow API v2 documentation
+                const stoqflowPayload: any = {
+                  shop_id: stoqflowShopId, // Required
+                  order_items: stoqflowOrderItems, // Required, non-empty array
+                  status: 'ready-to-pick', // Payment already completed
+                  type_of_goods: 'commercial-goods',
+                  origin: {
+                    id: sessionId, // Stripe checkout session ID
+                    number: createdBookingId.toString(), // Booking ID reference
+                  },
+                  notes: notes,
+                };
+
+                // Client handling: if client_id provided, use it; otherwise use client_info
+                const stoqflowOrderClientId = Deno.env.get('STOQFLOW_ORDER_CLIENT_ID');
+                if (stoqflowOrderClientId) {
+                  stoqflowPayload.client_id = stoqflowOrderClientId;
+                } else {
+                  stoqflowPayload.client_info = clientInfo;
+                }
+
+                // Validate payload before sending
+                if (!stoqflowShopId) {
+                  throw new Error('STOQFLOW_SHOP_ID is required but not set');
+                }
+                if (!Array.isArray(stoqflowOrderItems) || stoqflowOrderItems.length === 0) {
+                  throw new Error('order_items must be a non-empty array');
+                }
+
+                console.info('[Stoqflow] Creating order with payload:', {
+                  shop_id: stoqflowShopId,
+                  item_count: stoqflowOrderItems.length,
+                  items_with_product_id: stoqflowOrderItems.filter((item: any) => item.product_id).length,
+                  items_without_product_id: stoqflowOrderItems.filter((item: any) => !item.product_id).length,
+                  status: stoqflowPayload.status,
+                  booking_id: createdBookingId,
+                });
+
+                const stoqflowRes = await fetch(`${apiBaseUrl}/orders`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Basic ${basicAuth}`,
+                  },
+                  body: JSON.stringify(stoqflowPayload),
+                });
+
+                if (stoqflowRes.ok) {
+                  const stoqflowData = await stoqflowRes.json();
+                  stoqflowOrderId = stoqflowData._id;
+                  console.info('[Stoqflow] Order created successfully for tour booking upsell products:', {
+                    stoqflow_order_id: stoqflowOrderId,
+                    session_id: sessionId,
+                    booking_id: createdBookingId,
+                  });
+                } else {
+                  const errorText = await stoqflowRes.text();
+                  let errorMessage = errorText;
+                  try {
+                    const errorJson = JSON.parse(errorText);
+                    errorMessage = errorJson.message || errorJson.error || errorText;
+                  } catch {
+                    // Keep original error text if not JSON
+                  }
+
+                  console.error('[Stoqflow] ❌ Failed to create order for tour booking upsell products:', {
+                    status: stoqflowRes.status,
+                    statusText: stoqflowRes.statusText,
+                    error: errorMessage,
+                    session_id: sessionId,
+                    booking_id: createdBookingId,
+                  });
+                }
+              }
+            } else {
+              console.warn('[Stoqflow] Missing environment variables, skipping Stoqflow order creation for tour booking upsell products', {
+                hasClientId: !!stoqflowClientId,
+                hasClientSecret: !!stoqflowClientSecret,
+                hasShopId: !!stoqflowShopId,
+                hasBaseUrl: !!stoqflowBaseUrl,
+              });
+            }
+          } catch (err: any) {
+            console.error('[Stoqflow] Error creating order for tour booking upsell products:', {
+              error: err.message,
+              error_type: err?.constructor?.name,
+              session_id: sessionId,
+              booking_id: createdBookingId,
+            });
+            // Don't fail the booking if Stoqflow fails - booking is already created
+          }
+        }
+
         // Call N8N webhook for tour booking confirmation
         const n8nWebhookUrl = 'https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc';
 
@@ -657,6 +886,7 @@ async function handleEvent(event: Stripe.Event) {
             ...metadata,
             stripe_session_id: sessionId,
             booking_id: createdBookingId,
+            stoqflow_order_id: stoqflowOrderId || null, // Include Stoqflow order ID if created
           },
           bookingData, // Include full booking data
           // Include promo code info for invoice creation
