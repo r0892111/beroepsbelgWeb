@@ -1009,30 +1009,92 @@ function getNextSaturdays(count: number = 8): Date[] {
   const saturdays: Date[] = [];
   const today = new Date();
 
-  // Find the next Saturday (in Brussels timezone)
-  const brusselsFormatter = new Intl.DateTimeFormat('en-CA', {
+  // Get today's date string in Brussels timezone (YYYY-MM-DD format)
+  const todayFormatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Brussels',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const todayStr = todayFormatter.format(today);
+  const [todayYear, todayMonth, todayDay] = todayStr.split('-').map(Number);
+
+  // Get the day of week for today in Brussels timezone
+  const brusselsDayFormatter = new Intl.DateTimeFormat('en-US', {
     timeZone: 'Europe/Brussels',
     weekday: 'short',
   });
-  const brusselsDay = brusselsFormatter.format(today);
+  const brusselsDay = brusselsDayFormatter.format(today);
   const dayMap: { [key: string]: number } = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
-  const currentDayNum = dayMap[brusselsDay] ?? today.getDay();
+  const currentDayNum = dayMap[brusselsDay] ?? 0;
 
-  const daysUntilSaturday = (6 - currentDayNum + 7) % 7 || 7;
+  // Calculate days until next Saturday
+  // If today is Saturday (6), we want next Saturday (7 days away)
+  // Otherwise: (6 - currentDayNum + 7) % 7, but if result is 0, use 7
+  let daysUntilSaturday: number;
+  if (currentDayNum === 6) {
+    // Today is Saturday, get next Saturday
+    daysUntilSaturday = 7;
+  } else {
+    daysUntilSaturday = (6 - currentDayNum + 7) % 7;
+    if (daysUntilSaturday === 0) {
+      daysUntilSaturday = 7;
+    }
+  }
+
+  // Date formatter for Brussels timezone
+  const dateFormatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Brussels',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  
+  // Weekday formatter for verification
+  const weekdayFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Brussels',
+    weekday: 'short',
+  });
 
   for (let i = 0; i < count; i++) {
-    // Calculate the date for this Saturday
-    const saturdayDate = new Date(today);
-    saturdayDate.setDate(today.getDate() + daysUntilSaturday + (i * 7));
+    // Calculate days to add: daysUntilSaturday + (i * 7) for subsequent Saturdays
+    const daysToAdd = daysUntilSaturday + (i * 7);
+    
+    // Create a date at noon UTC to avoid day boundary issues
+    // This ensures the date stays correct when formatted in Brussels timezone
+    const targetDate = new Date(Date.UTC(todayYear, todayMonth - 1, todayDay, 12, 0, 0));
+    targetDate.setUTCDate(targetDate.getUTCDate() + daysToAdd);
 
-    // Get the date string in Brussels timezone
-    const dateFormatter = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Europe/Brussels',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
-    const dateStr = dateFormatter.format(saturdayDate);
+    // Format the date in Brussels timezone to get the actual date string
+    const dateStr = dateFormatter.format(targetDate);
+    
+    // Parse the date string to verify it's actually a Saturday
+    // Create a date at noon Brussels time to check the weekday
+    const verifyDateStr = dateStr + 'T12:00:00';
+    const verifyDate = new Date(verifyDateStr);
+    const verifyDay = weekdayFormatter.format(verifyDate);
+    
+    if (verifyDay !== 'Sat') {
+      console.error(`[getNextSaturdays] Error: Date ${dateStr} calculated as ${verifyDay}, not Saturday! Adjusting...`);
+      // Try to fix: find the nearest Saturday
+      const verifyDayNum = dayMap[verifyDay] ?? 0;
+      const daysToAdjust = (6 - verifyDayNum + 7) % 7;
+      if (daysToAdjust > 0 && daysToAdjust < 7) {
+        const fixedDate = new Date(verifyDate);
+        fixedDate.setDate(fixedDate.getDate() + daysToAdjust);
+        const fixedStr = dateFormatter.format(fixedDate);
+        const finalVerify = weekdayFormatter.format(new Date(fixedStr + 'T12:00:00'));
+        if (finalVerify === 'Sat') {
+          console.log(`[getNextSaturdays] Fixed date from ${dateStr} to ${fixedStr}`);
+          const saturday = parseBrusselsDateTime(fixedStr, '14:00');
+          saturdays.push(saturday);
+          continue;
+        }
+      }
+      // If we can't fix it, skip this date
+      console.error(`[getNextSaturdays] Could not fix date ${dateStr}, skipping...`);
+      continue;
+    }
 
     // Create a Date for Saturday at 14:00 Brussels time
     const saturday = parseBrusselsDateTime(dateStr, '14:00');
