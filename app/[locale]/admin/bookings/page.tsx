@@ -768,9 +768,44 @@ export default function AdminBookingsPage() {
 
   // Handle create booking submission
   const handleCreateBooking = async (skipDuplicateCheck = false) => {
-    if (!createForm.tourId || !createForm.date || !createForm.customerName || !createForm.customerEmail) {
-      toast.error('Please fill in all required fields');
+    // Form validation
+    if (!createForm.tourId) {
+      toast.error('Please select a tour');
       return;
+    }
+    if (!createForm.date) {
+      toast.error('Please select a date');
+      return;
+    }
+    if (!createForm.time) {
+      toast.error('Please select a time');
+      return;
+    }
+    if (!createForm.customerName || createForm.customerName.trim() === '') {
+      toast.error('Please enter customer name');
+      return;
+    }
+    if (!createForm.customerEmail || createForm.customerEmail.trim() === '') {
+      toast.error('Please enter customer email');
+      return;
+    }
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(createForm.customerEmail.trim())) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    if (createForm.numberOfPeople < 1) {
+      toast.error('Number of people must be at least 1');
+      return;
+    }
+    // Validate custom price if provided
+    if (createForm.customPrice && createForm.customPrice.trim() !== '') {
+      const parsedCustomPrice = parseFloat(createForm.customPrice);
+      if (isNaN(parsedCustomPrice) || parsedCustomPrice < 0) {
+        toast.error('Custom price must be a valid positive number');
+        return;
+      }
     }
 
     // Check for duplicates first (unless we're skipping because user confirmed)
@@ -991,12 +1026,18 @@ export default function AdminBookingsPage() {
           const finalPricePerPerson = pricePerPerson; // Already calculated above (custom or default)
           const finalAmount = totalAmount; // Already calculated above (includes fees and gift card discount)
           
+          // Explicitly handle customPrice - always include it, even if empty string
+          // Convert empty string to null, but always include the field
+          const customPriceValue = createForm.customPrice && createForm.customPrice.trim() !== '' 
+            ? createForm.customPrice.trim() 
+            : null;
+          
           const payload = {
             // Fields for first standardization node
             body: {
               contactFirstName,
               contactLastName,
-              contactPhone: createForm.customerPhone,
+              contactPhone: createForm.customerPhone || null,
               contactEmail: createForm.customerEmail,
               companyName: null, // Manual bookings are B2C, no company
               dateTime,
@@ -1007,20 +1048,20 @@ export default function AdminBookingsPage() {
               numberOfPeople: createForm.numberOfPeople,
               language: finalLanguage,
               upsellProducts: [], // Manual bookings don't have upsells yet
-              // Always include price information
-              customPrice: createForm.customPrice || null, // Custom price if set, null if using default
+              // Always include price information - explicitly set even if null
+              customPrice: customPriceValue, // Explicitly set to null if not provided
               pricePerPerson: finalPricePerPerson, // Always include price per person (custom or default)
               amount: finalAmount, // Total amount including fees
               baseTourPrice: baseTourPrice, // Base price before fees
               // Fee information
-              requestTanguy: createForm.requestTanguy,
-              extraHour: createForm.extraHour,
-              weekendFee: createForm.weekendFee,
-              eveningFee: createForm.eveningFee,
-              tanguyCost: feeTanguyCost,
-              extraHourCost: feeExtraHourCost,
-              weekendFeeCost: feeWeekendCost,
-              eveningFeeCost: feeEveningCost,
+              requestTanguy: createForm.requestTanguy || false,
+              extraHour: createForm.extraHour || false,
+              weekendFee: createForm.weekendFee || false,
+              eveningFee: createForm.eveningFee || false,
+              tanguyCost: feeTanguyCost || 0,
+              extraHourCost: feeExtraHourCost || 0,
+              weekendFeeCost: feeWeekendCost || 0,
+              eveningFeeCost: feeEveningCost || 0,
               // Gift card information
               giftCardCode: appliedGiftCard?.code || null,
               giftCardDiscount: giftCardDiscount > 0 ? giftCardDiscount : null,
@@ -1032,41 +1073,49 @@ export default function AdminBookingsPage() {
               bookingId: newBooking.id,
               booking_id: newBooking.id,
               status: bookingStatus,
-              // Include price information in metadata as well
-              customPrice: createForm.customPrice || null,
+              // Include price information in metadata as well - explicitly set
+              customPrice: customPriceValue, // Explicitly set to null if not provided
               pricePerPerson: finalPricePerPerson,
               amount: finalAmount,
             },
             // Fields for second standardization node (bookingData)
             bookingData: {
-              customerPhone: createForm.customerPhone,
+              customerPhone: createForm.customerPhone || null,
               customerEmail: createForm.customerEmail,
               bookingDate: createForm.date,
               bookingDateTime: dateTime,
               numberOfPeople: createForm.numberOfPeople,
               language: finalLanguage,
-              requestTanguy: createForm.requestTanguy,
+              requestTanguy: createForm.requestTanguy || false,
               specialRequests: createForm.specialRequests || null,
               upsellProducts: [],
               status: bookingStatus,
-              // Always include price information
-              customPrice: createForm.customPrice || null,
+              // Always include price information - explicitly set
+              customPrice: customPriceValue, // Explicitly set to null if not provided
               pricePerPerson: finalPricePerPerson,
               amount: finalAmount,
               baseTourPrice: baseTourPrice,
               // Fee information
-              extraHour: createForm.extraHour,
-              weekendFee: createForm.weekendFee,
-              eveningFee: createForm.eveningFee,
-              tanguyCost: feeTanguyCost,
-              extraHourCost: feeExtraHourCost,
-              weekendFeeCost: feeWeekendCost,
-              eveningFeeCost: feeEveningCost,
+              extraHour: createForm.extraHour || false,
+              weekendFee: createForm.weekendFee || false,
+              eveningFee: createForm.eveningFee || false,
+              tanguyCost: feeTanguyCost || 0,
+              extraHourCost: feeExtraHourCost || 0,
+              weekendFeeCost: feeWeekendCost || 0,
+              eveningFeeCost: feeEveningCost || 0,
               // Gift card information
               giftCardCode: appliedGiftCard?.code || null,
               giftCardDiscount: giftCardDiscount > 0 ? giftCardDiscount : null,
             },
           };
+          
+          // Debug log to verify customPrice is in payload
+          console.log('Webhook payload customPrice:', {
+            customPrice: customPriceValue,
+            pricePerPerson: finalPricePerPerson,
+            amount: finalAmount,
+            formCustomPrice: createForm.customPrice,
+          });
 
           const webhookResponse = await fetch('https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc', {
             method: 'POST',
