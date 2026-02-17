@@ -854,11 +854,9 @@ export default function AdminBookingsPage() {
         durationMinutes: finalDuration,
       };
 
-      // Only set amount if customer has already paid
-      // Don't set pendingPaymentPeople here - that's only for when adding extra people later
-      if (createForm.isPaid) {
-        invitee.amount = totalAmount; // Total includes all fees
-      }
+      // Always set amount to preserve custom price calculation
+      // This ensures the custom price is stored even for unpaid bookings
+      invitee.amount = totalAmount; // Total includes all fees (base price + all fees - gift card discount)
 
       // Create tourbooking entry
       // For non-Local Stories tours, include deal_id directly in tourbooking
