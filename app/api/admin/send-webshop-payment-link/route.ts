@@ -218,7 +218,7 @@ export async function POST(request: NextRequest) {
       throw new Error('Failed to create checkout session URL');
     }
 
-    // Retrieve full session with line items expanded (matching webhook format)
+    // Retrieve full session with line items expanded (needed for session object structure)
     const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
       expand: ['line_items', 'line_items.data.price.product'],
     });
@@ -243,37 +243,35 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', orderId);
 
-    // Prepare items array matching webhook format
+    // Use form data to prepare items array (not Stripe session data)
     const productItems: any[] = [];
     const shippingItems: any[] = [];
     let shippingCost = 0;
+    let productSubtotal = 0;
 
-    if (fullSession.line_items?.data) {
-      for (const item of fullSession.line_items.data) {
-        const itemName = item.description || 
-          (item.price && typeof item.price === 'object' && 'product' in item.price && typeof item.price.product === 'object' && item.price.product && 'name' in item.price.product 
-            ? (item.price.product as any).name 
-            : 'Product');
-        
-        const itemNameStr = typeof itemName === 'string' ? itemName : 'Product';
-        const quantity = item.quantity ?? 1;
-        const unitPrice = ((item.amount_subtotal ?? item.amount_total ?? 0) / 100) / quantity;
+    if (items && Array.isArray(items)) {
+      for (const item of items) {
+        const itemTitle = item.title || 'Product';
+        const quantity = item.quantity || 1;
+        const price = item.price || 0;
 
-        if (itemNameStr.toLowerCase().includes('verzendkosten') ||
-            itemNameStr.toLowerCase().includes('shipping') ||
-            itemNameStr.toLowerCase().includes('freight')) {
-          shippingCost += unitPrice;
+        // Check if it's a shipping item
+        if (itemTitle.toLowerCase().includes('verzendkosten') ||
+            itemTitle.toLowerCase().includes('shipping') ||
+            itemTitle.toLowerCase().includes('freight')) {
+          shippingCost += price;
           shippingItems.push({
-            title: itemNameStr,
+            title: itemTitle,
             quantity: quantity,
-            price: unitPrice,
+            price: price,
           });
         } else {
+          productSubtotal += price * quantity;
           productItems.push({
-            title: itemNameStr,
+            title: itemTitle,
             quantity: quantity,
-            price: unitPrice,
-            productId: null, // Can be extracted from Stripe product metadata if needed
+            price: price,
+            productId: item.productId || null,
           });
         }
       }
@@ -281,26 +279,27 @@ export async function POST(request: NextRequest) {
 
     // Calculate totals matching webhook format
     const allItems = [...productItems, ...shippingItems];
-    const productSubtotal = productItems.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
-    const discountAmount = ((fullSession as any).total_details?.amount_discount ?? 0) / 100;
+    const discountAmount = 0; // No discount for manual payment links
+    const finalTotal = productSubtotal + shippingCost - discountAmount;
 
     // Build payload matching exact webhook format
+    // Use form data for order object, but keep Stripe session structure for session object
     const payload = {
       headers: {}, // Headers are added by n8n/webhook infrastructure
       params: {},
       query: {},
       body: {
-        session: fullSession,
+        session: fullSession, // Keep Stripe session object structure
         order: {
           checkout_session_id: session.id,
           created_at: new Date().toISOString(),
-          amount_subtotal: fullSession.amount_subtotal, // In cents
-          amount_total: fullSession.amount_total, // In cents
-          product_subtotal: productSubtotal, // In euros
-          discount_amount: discountAmount, // In euros
-          shipping_cost: shippingCost, // In euros
-          final_total: productSubtotal - discountAmount + shippingCost, // In euros
-          items: allItems,
+          amount_subtotal: Math.round(finalTotal * 100), // In cents (from form data)
+          amount_total: Math.round(finalTotal * 100), // In cents (from form data)
+          product_subtotal: productSubtotal, // In euros (from form data)
+          discount_amount: discountAmount, // In euros (from form data)
+          shipping_cost: shippingCost, // In euros (from form data)
+          final_total: finalTotal, // In euros (from form data)
+          items: allItems, // From form data
           promoCode: null,
           promoDiscountPercent: null,
         },

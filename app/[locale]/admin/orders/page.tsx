@@ -548,7 +548,7 @@ export default function AdminOrdersPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleViewOrder(order)}
+                            onClick={() => router.push(`/${locale}/admin/orders/${order.id}`)}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
