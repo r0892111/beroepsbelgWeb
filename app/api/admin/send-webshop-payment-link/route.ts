@@ -27,44 +27,51 @@ function getSupabaseServer() {
 
 async function checkAdminAccess(request: NextRequest): Promise<{ isAdmin: boolean; userId: string | null }> {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseAnonKey) {
-      return { isAdmin: false, userId: null };
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-    });
-
     const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return { isAdmin: false, userId: null };
+    let accessToken: string | null = null;
+
+    if (authHeader?.startsWith('Bearer ')) {
+      accessToken = authHeader.substring(7);
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (accessToken) {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    if (authError || !user) {
-      return { isAdmin: false, userId: null };
+      if (!supabaseUrl || !supabaseAnonKey) {
+        return { isAdmin: false, userId: null };
+      }
+
+      const supabaseAnon = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+      });
+
+      const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(accessToken);
+
+      if (authError || !user) {
+        return { isAdmin: false, userId: null };
+      }
+
+      // Use service role client to check profile (bypasses RLS)
+      const supabaseServer = getSupabaseServer();
+      const { data: profile, error: profileError } = await supabaseServer
+        .from('profiles')
+        .select('isAdmin, is_admin')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || !profile) {
+        return { isAdmin: false, userId: user.id };
+      }
+
+      const isAdmin = profile.isAdmin === true || profile.is_admin === true;
+      return { isAdmin, userId: user.id };
     }
 
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('isAdmin, is_admin')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return { isAdmin: false, userId: user.id };
-    }
-
-    const isAdmin = profile.isAdmin === true || profile.is_admin === true;
-    return { isAdmin, userId: user.id };
+    return { isAdmin: false, userId: null };
   } catch (error) {
     return { isAdmin: false, userId: null };
   }
