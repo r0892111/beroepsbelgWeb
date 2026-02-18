@@ -284,25 +284,24 @@ export async function POST(request: NextRequest) {
 
     // Build payload matching exact webhook format
     // Use form data for order object, but keep Stripe session structure for session object
+    // Removed one level of body nesting - session and order are now at the root level
     const payload = {
       headers: {}, // Headers are added by n8n/webhook infrastructure
       params: {},
       query: {},
-      body: {
-        session: fullSession, // Keep Stripe session object structure
-        order: {
-          checkout_session_id: session.id,
-          created_at: new Date().toISOString(),
-          amount_subtotal: Math.round(finalTotal * 100), // In cents (from form data)
-          amount_total: Math.round(finalTotal * 100), // In cents (from form data)
-          product_subtotal: productSubtotal, // In euros (from form data)
-          discount_amount: discountAmount, // In euros (from form data)
-          shipping_cost: shippingCost, // In euros (from form data)
-          final_total: finalTotal, // In euros (from form data)
-          items: allItems, // From form data
-          promoCode: null,
-          promoDiscountPercent: null,
-        },
+      session: fullSession, // Keep Stripe session object structure
+      order: {
+        checkout_session_id: session.id,
+        created_at: new Date().toISOString(),
+        amount_subtotal: Math.round(finalTotal * 100), // In cents (from form data)
+        amount_total: Math.round(finalTotal * 100), // In cents (from form data)
+        product_subtotal: productSubtotal, // In euros (from form data)
+        discount_amount: discountAmount, // In euros (from form data)
+        shipping_cost: shippingCost, // In euros (from form data)
+        final_total: finalTotal, // In euros (from form data)
+        items: allItems, // From form data
+        promoCode: null,
+        promoDiscountPercent: null,
       },
       webhookUrl: N8N_WEBSHOP_PAYMENT_LINK_WEBHOOK,
       executionMode: 'production',
