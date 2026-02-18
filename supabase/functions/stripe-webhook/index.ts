@@ -426,6 +426,7 @@ async function handleEvent(event: Stripe.Event) {
               };
 
               // Store shipping address in tourbooking table if available
+              // Note: Only add these fields if the columns exist (migration may not be applied yet)
               const shippingAddress = bookingData?.shippingAddress;
               if (shippingAddress) {
                 // Helper to normalize country code to ISO format
@@ -443,12 +444,18 @@ async function handleEvent(event: Stripe.Event) {
                   return countryMap[countryLower] || 'BE';
                 };
 
-                updateData.shipping_full_name = shippingAddress.fullName || null;
-                updateData.shipping_street = shippingAddress.street || null;
-                updateData.shipping_city = shippingAddress.city || null;
-                updateData.shipping_postal_code = shippingAddress.postalCode || null;
-                updateData.shipping_country = normalizeCountry(shippingAddress.country);
-                console.info('[Local Stories] Storing shipping address in tourbooking table');
+                // Try to add shipping address columns, but don't fail if they don't exist
+                // The migration will add these columns, but we need to handle the case where it's not applied yet
+                try {
+                  updateData.shipping_full_name = shippingAddress.fullName || null;
+                  updateData.shipping_street = shippingAddress.street || null;
+                  updateData.shipping_city = shippingAddress.city || null;
+                  updateData.shipping_postal_code = shippingAddress.postalCode || null;
+                  updateData.shipping_country = normalizeCountry(shippingAddress.country);
+                  console.info('[Local Stories] Storing shipping address in tourbooking table');
+                } catch (err) {
+                  console.warn('[Local Stories] Shipping address columns may not exist yet - storing in invitee data only:', err);
+                }
               }
 
               await supabase
@@ -509,6 +516,10 @@ async function handleEvent(event: Stripe.Event) {
 
             if (insertError) {
               console.error('Error creating new tourbooking for local stories:', insertError);
+              throw new Error(`Failed to create local stories tourbooking: ${insertError.message}`);
+            } else if (!newBooking || !newBooking.id) {
+              console.error('Error: newBooking or newBooking.id is null after insert');
+              throw new Error('Failed to create local stories tourbooking: No ID returned');
             } else {
               tourbookingId = newBooking.id;
               console.info(`Created new tourbooking ${tourbookingId} for local stories`);
@@ -651,6 +662,7 @@ async function handleEvent(event: Stripe.Event) {
           };
 
           // Store shipping address in tourbooking table if available
+          // Note: Only add these fields if the columns exist (migration may not be applied yet)
           const shippingAddress = bookingData?.shippingAddress;
           if (shippingAddress) {
             // Helper to normalize country code to ISO format
@@ -668,22 +680,46 @@ async function handleEvent(event: Stripe.Event) {
               return countryMap[countryLower] || 'BE';
             };
 
-            newTourBooking.shipping_full_name = shippingAddress.fullName || null;
-            newTourBooking.shipping_street = shippingAddress.street || null;
-            newTourBooking.shipping_city = shippingAddress.city || null;
-            newTourBooking.shipping_postal_code = shippingAddress.postalCode || null;
-            newTourBooking.shipping_country = normalizeCountry(shippingAddress.country);
-            console.info('[Standard/OpMaat] Storing shipping address in tourbooking table');
+            // Try to add shipping address columns, but don't fail if they don't exist
+            // The migration will add these columns, but we need to handle the case where it's not applied yet
+            try {
+              newTourBooking.shipping_full_name = shippingAddress.fullName || null;
+              newTourBooking.shipping_street = shippingAddress.street || null;
+              newTourBooking.shipping_city = shippingAddress.city || null;
+              newTourBooking.shipping_postal_code = shippingAddress.postalCode || null;
+              newTourBooking.shipping_country = normalizeCountry(shippingAddress.country);
+              console.info('[Standard/OpMaat] Storing shipping address in tourbooking table');
+            } catch (err) {
+              console.warn('[Standard/OpMaat] Shipping address columns may not exist yet - storing in invitee data only:', err);
+            }
           }
 
-          const { data: newBooking, error: insertError } = await supabase
+          // Try insert - if it fails due to missing shipping columns, retry without them
+          let { data: newBooking, error: insertError } = await supabase
             .from('tourbooking')
             .insert(newTourBooking)
             .select('id')
             .single();
 
+          // If error is about missing shipping columns, retry without them
+          if (insertError && insertError.message && insertError.message.includes('shipping_')) {
+            console.warn(`[${tourType}] Shipping address columns don't exist yet, retrying insert without them`);
+            const { shipping_full_name, shipping_street, shipping_city, shipping_postal_code, shipping_country, ...bookingWithoutShipping } = newTourBooking;
+            const retryResult = await supabase
+              .from('tourbooking')
+              .insert(bookingWithoutShipping)
+              .select('id')
+              .single();
+            newBooking = retryResult.data;
+            insertError = retryResult.error;
+          }
+
           if (insertError) {
             console.error(`Error creating ${tourType} tourbooking:`, insertError);
+            throw new Error(`Failed to create ${tourType} tourbooking: ${insertError.message}`);
+          } else if (!newBooking || !newBooking.id) {
+            console.error(`Error: newBooking or newBooking.id is null after insert for ${tourType}`);
+            throw new Error(`Failed to create ${tourType} tourbooking: No ID returned`);
           } else {
             createdBookingId = newBooking.id;
             console.info(`Created ${tourType} tourbooking ${createdBookingId}`);
@@ -757,6 +793,24 @@ async function handleEvent(event: Stripe.Event) {
             console.error('[Gift Card Redemption] Error redeeming gift card for tour booking:', redeemError);
             // Don't fail the booking - gift card redemption failure shouldn't block booking completion
           }
+        }
+
+        // Log booking creation status
+        if (!createdBookingId) {
+          console.error('[ERROR] createdBookingId is null after booking creation!', {
+            tourType,
+            sessionId,
+            bookingDataTourId: bookingData?.tourId,
+            customerEmail: bookingData?.customerEmail,
+          });
+          // Don't return early - continue to try to call webhook with error info
+          // The error will be handled in the catch block
+        } else {
+          console.info('[SUCCESS] Booking created successfully:', {
+            bookingId: createdBookingId,
+            tourType,
+            sessionId,
+          });
         }
 
         // Create Stoqflow order for upsell products if any are present
@@ -1297,12 +1351,23 @@ async function handleEvent(event: Stripe.Event) {
         // Call N8N webhook for tour booking confirmation
         const n8nWebhookUrl = 'https://alexfinit.app.n8n.cloud/webhook/1ba3d62a-e6ae-48f9-8bbb-0b2be1c091bc';
 
+        // Ensure createdBookingId is set before creating payload
+        if (!createdBookingId) {
+          console.error('[CRITICAL ERROR] createdBookingId is null when trying to call N8N webhook!', {
+            tourType,
+            sessionId,
+            bookingDataTourId: bookingData?.tourId,
+            customerEmail: bookingData?.customerEmail,
+          });
+          throw new Error('Booking ID is null - cannot proceed with webhook call');
+        }
+
         const payload = {
           ...session,
           metadata: {
             ...metadata,
             stripe_session_id: sessionId,
-            booking_id: createdBookingId,
+            booking_id: createdBookingId, // Ensure this is always a number, not null
             stoqflow_order_id: stoqflowOrderId || null, // Include Stoqflow order ID if created
           },
           bookingData, // Include full booking data
@@ -1311,6 +1376,14 @@ async function handleEvent(event: Stripe.Event) {
           promoDiscountAmount: promoCodeInfo.discountAmount,
           promoDiscountPercent: promoCodeInfo.discountPercent,
         };
+
+        // Log payload to verify booking_id is included
+        console.info('[N8N] Payload being sent to webhook:', {
+          hasBookingId: !!payload.metadata.booking_id,
+          bookingId: payload.metadata.booking_id,
+          bookingIdType: typeof payload.metadata.booking_id,
+          sessionId: payload.metadata.stripe_session_id,
+        });
 
         try {
           console.info('[N8N] Calling tour booking webhook', {

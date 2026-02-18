@@ -2557,86 +2557,114 @@ export default function BookingDetailPage() {
                           </div>
                         )}
                         {/* Price Breakdown */}
-                        {(inv.pricePerPerson !== undefined || inv.amount !== undefined || inv.tanguyCost !== undefined || inv.extraHourCost !== undefined || inv.weekendFeeCost !== undefined || inv.eveningFeeCost !== undefined || inv.discountApplied !== undefined || inv.promoDiscountAmount !== undefined) && (
-                          <div className="mt-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
-                            <p className="text-xs font-semibold text-blue-900 mb-2">Price Breakdown</p>
-                            <div className="space-y-1 text-xs">
-                              {inv.pricePerPerson !== undefined && inv.numberOfPeople !== undefined && (
-                                <div className="flex justify-between">
-                                  <span className="text-blue-700">Base Price ({inv.numberOfPeople} {inv.numberOfPeople === 1 ? 'person' : 'people'} × €{inv.pricePerPerson.toFixed(2)})</span>
-                                  <span className="font-medium text-blue-900">€{((inv.pricePerPerson || 0) * (inv.numberOfPeople || 1)).toFixed(2)}</span>
-                                </div>
-                              )}
-                              {inv.tanguyCost !== undefined && inv.tanguyCost > 0 && (
-                                <div className="flex justify-between">
-                                  <span className="text-blue-700">Tanguy Cost</span>
-                                  <span className="font-medium text-blue-900">€{inv.tanguyCost.toFixed(2)}</span>
-                                </div>
-                              )}
-                              {inv.extraHourCost !== undefined && inv.extraHourCost > 0 && (
-                                <div className="flex justify-between">
-                                  <span className="text-blue-700">Extra Hour</span>
-                                  <span className="font-medium text-blue-900">€{inv.extraHourCost.toFixed(2)}</span>
-                                </div>
-                              )}
-                              {inv.weekendFeeCost !== undefined && inv.weekendFeeCost > 0 && (
-                                <div className="flex justify-between">
-                                  <span className="text-blue-700">Weekend Fee</span>
-                                  <span className="font-medium text-blue-900">€{inv.weekendFeeCost.toFixed(2)}</span>
-                                </div>
-                              )}
-                              {inv.eveningFeeCost !== undefined && inv.eveningFeeCost > 0 && (
-                                <div className="flex justify-between">
-                                  <span className="text-blue-700">Evening Fee</span>
-                                  <span className="font-medium text-blue-900">€{inv.eveningFeeCost.toFixed(2)}</span>
-                                </div>
-                              )}
-                              {/* Show original amount if discount was applied */}
-                              {(inv.originalAmount !== undefined && inv.originalAmount > 0 && (inv.discountApplied !== undefined && inv.discountApplied > 0 || inv.promoDiscountAmount !== undefined && inv.promoDiscountAmount > 0)) && (
-                                <div className="flex justify-between pt-1 mt-1 border-t border-blue-300">
-                                  <span className="text-blue-700">Subtotal</span>
-                                  <span className="font-medium text-blue-900">€{inv.originalAmount.toFixed(2)}</span>
-                                </div>
-                              )}
-                              {/* Show discount applied */}
-                              {(inv.discountApplied !== undefined && inv.discountApplied > 0) && (
-                                <div className="flex justify-between">
-                                  <span className="text-green-700">Discount</span>
-                                  <span className="font-medium text-green-700">-€{inv.discountApplied.toFixed(2)}</span>
-                                </div>
-                              )}
-                              {/* Show promo code discount */}
-                              {(inv.promoDiscountAmount !== undefined && inv.promoDiscountAmount > 0) && (
-                                <div className="flex justify-between">
-                                  <span className="text-green-700">
-                                    Promo Code {inv.promoCode && `(${inv.promoCode})`}
-                                    {inv.promoDiscountPercent && ` - ${inv.promoDiscountPercent}%`}
-                                  </span>
-                                  <span className="font-medium text-green-700">-€{inv.promoDiscountAmount.toFixed(2)}</span>
-                                </div>
-                              )}
-                              {(inv.amount !== undefined || inv.pricePerPerson !== undefined) && (
-                                <div className="flex justify-between pt-1 mt-1 border-t border-blue-300">
-                                  <span className="font-semibold text-blue-900">Total</span>
-                                  <span className="font-bold text-blue-900">
-                                    €{inv.amount !== undefined && inv.amount !== null 
-                                      ? inv.amount.toFixed(2) 
-                                      : (
-                                          ((inv.pricePerPerson || 0) * (inv.numberOfPeople || 1)) +
-                                          (inv.tanguyCost || 0) +
-                                          (inv.extraHourCost || 0) +
-                                          (inv.weekendFeeCost || 0) +
-                                          (inv.eveningFeeCost || 0) -
-                                          (inv.discountApplied || 0) -
-                                          (inv.promoDiscountAmount || 0)
-                                        ).toFixed(2)
-                                    }
-                                  </span>
-                                </div>
-                              )}
+                        {(() => {
+                          // Calculate all price components
+                          const pricePerPerson = inv.pricePerPerson || 0;
+                          const numberOfPeople = inv.numberOfPeople || 1;
+                          const baseTourPrice = pricePerPerson > 0 ? pricePerPerson * numberOfPeople : 0;
+                          const tanguyCost = inv.tanguyCost || 0;
+                          const extraHourCost = inv.extraHourCost || 0;
+                          const weekendFeeCost = inv.weekendFeeCost || 0;
+                          const eveningFeeCost = inv.eveningFeeCost || 0;
+                          const totalFees = tanguyCost + extraHourCost + weekendFeeCost + eveningFeeCost;
+                          const discountApplied = inv.discountApplied || 0;
+                          const promoDiscountAmount = inv.promoDiscountAmount || 0;
+                          const totalDiscount = discountApplied + promoDiscountAmount;
+                          
+                          // Calculate subtotal (base + fees)
+                          const subtotalBeforeDiscount = baseTourPrice + totalFees;
+                          
+                          // Use originalAmount if available, otherwise calculate from components
+                          const originalAmount = inv.originalAmount || (subtotalBeforeDiscount > 0 ? subtotalBeforeDiscount : 0);
+                          
+                          // Final amount - use inv.amount if available, otherwise calculate
+                          const finalAmount = inv.amount !== undefined && inv.amount !== null 
+                            ? inv.amount 
+                            : Math.max(0, subtotalBeforeDiscount - totalDiscount);
+                          
+                          // Only show breakdown if we have any price information
+                          const hasPriceInfo = baseTourPrice > 0 || totalFees > 0 || finalAmount > 0 || originalAmount > 0;
+                          
+                          if (!hasPriceInfo) return null;
+                          
+                          return (
+                            <div className="mt-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                              <p className="text-xs font-semibold text-blue-900 mb-2">Price Breakdown</p>
+                              <div className="space-y-1 text-xs">
+                                {/* Base Tour Price */}
+                                {baseTourPrice > 0 && (
+                                  <div className="flex justify-between">
+                                    <span className="text-blue-700">
+                                      {pricePerPerson > 0 
+                                        ? `Base Price (${numberOfPeople} ${numberOfPeople === 1 ? 'person' : 'people'} × €${pricePerPerson.toFixed(2)})`
+                                        : 'Base Price'}
+                                    </span>
+                                    <span className="font-medium text-blue-900">€{baseTourPrice.toFixed(2)}</span>
+                                  </div>
+                                )}
+                                
+                                {/* Fees */}
+                                {tanguyCost > 0 && (
+                                  <div className="flex justify-between">
+                                    <span className="text-blue-700">Tanguy Cost</span>
+                                    <span className="font-medium text-blue-900">€{tanguyCost.toFixed(2)}</span>
+                                  </div>
+                                )}
+                                {extraHourCost > 0 && (
+                                  <div className="flex justify-between">
+                                    <span className="text-blue-700">Extra Hour</span>
+                                    <span className="font-medium text-blue-900">€{extraHourCost.toFixed(2)}</span>
+                                  </div>
+                                )}
+                                {weekendFeeCost > 0 && (
+                                  <div className="flex justify-between">
+                                    <span className="text-blue-700">Weekend Fee</span>
+                                    <span className="font-medium text-blue-900">€{weekendFeeCost.toFixed(2)}</span>
+                                  </div>
+                                )}
+                                {eveningFeeCost > 0 && (
+                                  <div className="flex justify-between">
+                                    <span className="text-blue-700">Evening Fee</span>
+                                    <span className="font-medium text-blue-900">€{eveningFeeCost.toFixed(2)}</span>
+                                  </div>
+                                )}
+                                
+                                {/* Subtotal before discount (only show if discount was applied) */}
+                                {totalDiscount > 0 && originalAmount > 0 && (
+                                  <div className="flex justify-between pt-1 mt-1 border-t border-blue-300">
+                                    <span className="text-blue-700">Subtotal</span>
+                                    <span className="font-medium text-blue-900">€{originalAmount.toFixed(2)}</span>
+                                  </div>
+                                )}
+                                
+                                {/* Discounts */}
+                                {discountApplied > 0 && (
+                                  <div className="flex justify-between">
+                                    <span className="text-green-700">Discount</span>
+                                    <span className="font-medium text-green-700">-€{discountApplied.toFixed(2)}</span>
+                                  </div>
+                                )}
+                                {promoDiscountAmount > 0 && (
+                                  <div className="flex justify-between">
+                                    <span className="text-green-700">
+                                      Promo Code {inv.promoCode && `(${inv.promoCode})`}
+                                      {inv.promoDiscountPercent && ` - ${inv.promoDiscountPercent}%`}
+                                    </span>
+                                    <span className="font-medium text-green-700">-€{promoDiscountAmount.toFixed(2)}</span>
+                                  </div>
+                                )}
+                                
+                                {/* Final Total */}
+                                {finalAmount >= 0 && (
+                                  <div className="flex justify-between pt-1 mt-1 border-t-2 border-blue-400">
+                                    <span className="font-semibold text-blue-900">Total Paid</span>
+                                    <span className="font-bold text-blue-900">€{finalAmount.toFixed(2)}</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          );
+                        })()}
                         {/* Pending payment alert */}
                         {inv.pendingPaymentPeople && (
                           <div className="mt-2 p-2 rounded-lg bg-amber-50 border border-amber-200">
