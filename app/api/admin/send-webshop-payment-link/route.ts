@@ -8,7 +8,7 @@ const stripe = new Stripe(stripeSecretKey, {
   apiVersion: '2025-11-17.clover',
 });
 
-const N8N_WEBSHOP_PAYMENT_LINK_WEBHOOK = 'https://alexfinit.app.n8n.cloud/webhook/webshop-payment-link';
+const N8N_WEBSHOP_PAYMENT_LINK_WEBHOOK = 'https://alexfinit.app.n8n.cloud/webhook/efd633d1-a83c-4e58-a537-8ca171eacf66';
 
 function getSupabaseServer() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -171,8 +171,8 @@ export async function POST(request: NextRequest) {
     // Detect if using test mode
     const isTestMode = stripeSecretKey?.startsWith('sk_test_');
 
-    // Create Stripe checkout session
-    const session = await stripe.checkout.sessions.create({
+    // Create Stripe checkout session config
+    const sessionConfig: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ['card', 'bancontact', 'ideal'],
       line_items: lineItems,
       mode: 'payment',
@@ -192,19 +192,29 @@ export async function POST(request: NextRequest) {
         isManualPaymentLink: 'true',
         isWebshopOrder: 'true',
         stripeMode: isTestMode ? 'test' : 'live',
+        order_type: 'webshop',
+        locale: 'nl',
       },
-    });
+    };
 
-    // Only collect shipping address if provided
+    // Only collect shipping address if provided and not gift card only
     if (shippingAddress && shippingAddress.street) {
-      session.shipping_address_collection = {
+      sessionConfig.shipping_address_collection = {
         allowed_countries: ['BE', 'NL', 'FR', 'DE', 'LU', 'GB', 'ES', 'IT', 'PT', 'AT', 'CH'],
       };
     }
 
+    // Create Stripe checkout session
+    const session = await stripe.checkout.sessions.create(sessionConfig);
+
     if (!session.url) {
       throw new Error('Failed to create checkout session URL');
     }
+
+    // Retrieve full session with line items expanded (matching webhook format)
+    const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+      expand: ['line_items', 'line_items.data.price.product'],
+    });
 
     // Update the order with the new checkout session ID
     const supabase = getSupabaseServer();
@@ -226,19 +236,78 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', orderId);
 
-    // Call n8n webhook to send the payment email
+    // Prepare items array matching webhook format
+    const productItems: any[] = [];
+    const shippingItems: any[] = [];
+    let shippingCost = 0;
+
+    if (fullSession.line_items?.data) {
+      for (const item of fullSession.line_items.data) {
+        const itemName = item.description || 
+          (item.price && typeof item.price === 'object' && 'product' in item.price && typeof item.price.product === 'object' && item.price.product && 'name' in item.price.product 
+            ? (item.price.product as any).name 
+            : 'Product');
+        
+        const itemNameStr = typeof itemName === 'string' ? itemName : 'Product';
+        const quantity = item.quantity ?? 1;
+        const unitPrice = ((item.amount_subtotal ?? item.amount_total ?? 0) / 100) / quantity;
+
+        if (itemNameStr.toLowerCase().includes('verzendkosten') ||
+            itemNameStr.toLowerCase().includes('shipping') ||
+            itemNameStr.toLowerCase().includes('freight')) {
+          shippingCost += unitPrice;
+          shippingItems.push({
+            title: itemNameStr,
+            quantity: quantity,
+            price: unitPrice,
+          });
+        } else {
+          productItems.push({
+            title: itemNameStr,
+            quantity: quantity,
+            price: unitPrice,
+            productId: null, // Can be extracted from Stripe product metadata if needed
+          });
+        }
+      }
+    }
+
+    // Calculate totals matching webhook format
+    const allItems = [...productItems, ...shippingItems];
+    const productSubtotal = productItems.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+    const discountAmount = ((fullSession as any).total_details?.amount_discount ?? 0) / 100;
+
+    // Build payload matching exact webhook format
+    const payload = {
+      headers: {}, // Headers are added by n8n/webhook infrastructure
+      params: {},
+      query: {},
+      body: {
+        session: fullSession,
+        order: {
+          checkout_session_id: session.id,
+          created_at: new Date().toISOString(),
+          amount_subtotal: fullSession.amount_subtotal, // In cents
+          amount_total: fullSession.amount_total, // In cents
+          product_subtotal: productSubtotal, // In euros
+          discount_amount: discountAmount, // In euros
+          shipping_cost: shippingCost, // In euros
+          final_total: productSubtotal - discountAmount + shippingCost, // In euros
+          items: allItems,
+          promoCode: null,
+          promoDiscountPercent: null,
+        },
+      },
+      webhookUrl: N8N_WEBSHOP_PAYMENT_LINK_WEBHOOK,
+      executionMode: 'production',
+    };
+
+    // Call n8n webhook to send the payment email with exact format
     try {
       await fetch(N8N_WEBSHOP_PAYMENT_LINK_WEBHOOK, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderId,
-          customerName,
-          customerEmail,
-          paymentUrl: session.url,
-          amount,
-          items,
-        }),
+        body: JSON.stringify(payload),
       });
     } catch (webhookErr) {
       console.error('Failed to send webshop payment webhook:', webhookErr);
