@@ -303,6 +303,7 @@ export async function POST(request: NextRequest) {
         promoCode: null,
         promoDiscountPercent: null,
       },
+      paymentUrl: session.url, // Payment link URL
       webhookUrl: N8N_WEBSHOP_PAYMENT_LINK_WEBHOOK,
       executionMode: 'production',
     };

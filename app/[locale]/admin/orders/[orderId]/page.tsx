@@ -120,6 +120,14 @@ export default function OrderDetailPage() {
 
     setSaving(true);
     try {
+      // Get session token for authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('You must be logged in to update orders');
+        setSaving(false);
+        return;
+      }
+
       const updates: Partial<StripeOrder> = {
         status: editForm.status,
         payment_status: editForm.payment_status,
@@ -128,26 +136,30 @@ export default function OrderDetailPage() {
         customer_phone: editForm.customer_phone,
         shipping_address: editForm.shipping_address,
         billing_address: editForm.billing_address,
-        updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase
-        .from('stripe_orders')
-        .update(updates)
-        .eq('id', order.id);
+      const response = await fetch(`/api/admin/orders/${order.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(updates),
+      });
 
-      if (error) {
-        console.error('Failed to update order:', error);
-        toast.error('Failed to update order');
-        return;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update order');
       }
+
+      const { order: updatedOrder } = await response.json();
 
       toast.success('Order updated successfully');
       setEditMode(false);
       void fetchOrder();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to update order:', err);
-      toast.error('Failed to update order');
+      toast.error(err.message || 'Failed to update order');
     } finally {
       setSaving(false);
     }

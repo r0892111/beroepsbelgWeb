@@ -2188,6 +2188,10 @@ async function handleEvent(event: Stripe.Event) {
       if (isWebshopOrder) {
         console.info(`✅ Processing ${orderType} order for session: ${sessionId}`);
 
+        // Check if this is a manual payment link (order was created manually, now being paid)
+        const isManualPaymentLink = metadata?.isManualPaymentLink === 'true' || metadata?.isWebshopOrder === 'true';
+        const manualOrderId = metadata?.orderId;
+
         // Retrieve full session with line items, shipping details, and discounts
         const fullSession = await stripe.checkout.sessions.retrieve(sessionId, {
           expand: ['line_items', 'line_items.data.price.product', 'discounts.promotion_code', 'discounts.promotion_code.coupon', 'discounts.coupon'],
@@ -2424,7 +2428,7 @@ async function handleEvent(event: Stripe.Event) {
           return;
         }
 
-        console.info('Inserting webshop order:', {
+        console.info('Processing webshop order:', {
           checkout_session_id: orderInsert.checkout_session_id,
           payment_intent_id: orderInsert.payment_intent_id,
           customer_id: orderInsert.customer_id,
@@ -2436,81 +2440,166 @@ async function handleEvent(event: Stripe.Event) {
           customer_email: orderInsert.customer_email,
           item_count: orderInsert.items?.length || 0,
           has_shipping_address: !!orderInsert.shipping_address,
+          isManualPaymentLink,
+          manualOrderId,
         });
 
-        // Insert the order with retry logic (checkout no longer creates it due to NOT NULL constraints)
+        // For manual payment links, check if order already exists by orderId or checkout_session_id
         let order: any = null;
-        let orderError: any = null;
-        const maxRetries = 3;
-        let retryCount = 0;
-
-        while (retryCount < maxRetries) {
-          const { data, error } = await supabase
+        if (isManualPaymentLink && manualOrderId) {
+          console.info(`Checking for existing order by orderId: ${manualOrderId}`);
+          const { data: orderById, error: fetchByIdError } = await supabase
             .from('stripe_orders')
-            .insert(orderInsert)
+            .select('*')
+            .eq('id', manualOrderId)
+            .single();
+          
+          if (orderById && !fetchByIdError) {
+            order = orderById;
+            console.info(`✅ Found existing order by orderId: ${order.id}`);
+          }
+        }
+
+        // If not found by orderId, check by checkout_session_id
+        if (!order) {
+          const { data: orderBySession, error: fetchBySessionError } = await supabase
+            .from('stripe_orders')
+            .select('*')
+            .eq('checkout_session_id', sessionId)
+            .single();
+          
+          if (orderBySession && !fetchBySessionError) {
+            order = orderBySession;
+            console.info(`✅ Found existing order by checkout_session_id: ${order.id}`);
+          }
+        }
+
+        // If order exists (manual payment link), update it instead of inserting
+        if (order) {
+          console.info(`Updating existing order ${order.id} with payment completion status...`);
+          const { data: updatedOrder, error: updateError } = await supabase
+            .from('stripe_orders')
+            .update({
+              payment_status: fullSession.payment_status || 'paid',
+              status: 'completed',
+              payment_intent_id: paymentIntentId,
+              stripe_payment_intent_id: paymentIntentId,
+              amount_subtotal: fullSession.amount_subtotal || 0,
+              amount_total: fullSession.amount_total || 0,
+              total_amount: (fullSession.amount_total || 0) / 100,
+              checkout_session_id: sessionId, // Update session ID in case it changed
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', order.id)
             .select()
             .single();
+          
+          if (updateError) {
+            console.error('Failed to update existing order:', updateError);
+            throw new Error(`Failed to update existing order: ${updateError.message}`);
+          }
+          
+          console.info(`✅ Updated existing order ${updatedOrder.id} with payment status: ${updatedOrder.payment_status}, status: ${updatedOrder.status}`);
+          order = updatedOrder;
+        } else {
+          // Insert the order with retry logic (checkout no longer creates it due to NOT NULL constraints)
+          let orderError: any = null;
+          const maxRetries = 3;
+          let retryCount = 0;
 
-          if (error) {
-            orderError = error;
-            console.error(`[Attempt ${retryCount + 1}/${maxRetries}] Order insert error:`, {
-              code: error.code,
-              message: error.message,
-              details: error.details,
-              hint: error.hint,
-            });
-            
-            // Check if it's a duplicate key error (order already exists)
-            if (error.code === '23505' || error.message?.includes('duplicate') || error.message?.includes('unique')) {
-              console.warn(`Order already exists for session ${sessionId}, fetching existing order...`);
-              // Try to fetch the existing order
-              const { data: existingOrder, error: fetchError } = await supabase
-                .from('stripe_orders')
-                .select('*')
-                .eq('checkout_session_id', sessionId)
-                .single();
-              if (existingOrder) {
-                order = existingOrder;
-                orderError = null;
-                console.info(`✅ Found existing order: ${existingOrder.id}`);
-                break;
-              } else if (fetchError) {
-                console.error('Failed to fetch existing order:', fetchError);
+          while (retryCount < maxRetries) {
+            const { data, error } = await supabase
+              .from('stripe_orders')
+              .insert(orderInsert)
+              .select()
+              .single();
+
+            if (error) {
+              orderError = error;
+              console.error(`[Attempt ${retryCount + 1}/${maxRetries}] Order insert error:`, {
+                code: error.code,
+                message: error.message,
+                details: error.details,
+                hint: error.hint,
+              });
+              
+              // Check if it's a duplicate key error (order already exists)
+              if (error.code === '23505' || error.message?.includes('duplicate') || error.message?.includes('unique')) {
+                console.warn(`Order already exists for session ${sessionId}, fetching existing order...`);
+                // Try to fetch the existing order
+                const { data: existingOrder, error: fetchError } = await supabase
+                  .from('stripe_orders')
+                  .select('*')
+                  .eq('checkout_session_id', sessionId)
+                  .single();
+                if (existingOrder) {
+                  // Update the existing order with payment completion status
+                  console.info(`Updating existing order ${existingOrder.id} with payment completion status...`);
+                  const { data: updatedOrder, error: updateError } = await supabase
+                    .from('stripe_orders')
+                    .update({
+                      payment_status: fullSession.payment_status || 'paid',
+                      status: 'completed',
+                      payment_intent_id: paymentIntentId,
+                      stripe_payment_intent_id: paymentIntentId,
+                      amount_subtotal: fullSession.amount_subtotal || 0,
+                      amount_total: fullSession.amount_total || 0,
+                      total_amount: (fullSession.amount_total || 0) / 100,
+                      updated_at: new Date().toISOString(),
+                    })
+                    .eq('id', existingOrder.id)
+                    .select()
+                    .single();
+                  
+                  if (updateError) {
+                    console.error('Failed to update existing order:', updateError);
+                    order = existingOrder; // Use existing order even if update failed
+                  } else {
+                    order = updatedOrder;
+                    console.info(`✅ Updated existing order ${order.id} with payment status: ${order.payment_status}`);
+                  }
+                  orderError = null;
+                  break;
+                } else if (fetchError) {
+                  console.error('Failed to fetch existing order:', fetchError);
+                }
               }
+              
+              retryCount++;
+              if (retryCount < maxRetries) {
+                const delay = 1000 * retryCount; // 1s, 2s, 3s
+                console.warn(`Order insert failed, retrying in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+                continue;
+              }
+            } else {
+              order = data;
+              orderError = null;
+              console.info(`✅ Order inserted successfully: ${order.id}`);
+              break;
             }
-            
-            retryCount++;
-            if (retryCount < maxRetries) {
-              const delay = 1000 * retryCount; // 1s, 2s, 3s
-              console.warn(`Order insert failed, retrying in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})...`);
-              await new Promise(resolve => setTimeout(resolve, delay));
-              continue;
-            }
-          } else {
-            order = data;
-            orderError = null;
-            console.info(`✅ Order inserted successfully: ${order.id}`);
-            break;
+          }
+
+          if (orderError) {
+            console.error('❌ CRITICAL: Error creating webshop order after retries:', {
+              error: orderError,
+              error_message: orderError.message,
+              error_code: orderError.code,
+              error_details: orderError.details,
+              session_id: sessionId,
+              order_data: orderInsert,
+              retries: retryCount,
+            });
+            // Don't continue if order creation failed - this is critical
+            // The order must exist in database for the success page to work
+            return;
           }
         }
 
         // Variable to store Stoqflow order ID for N8N webhook
         let stoqflowOrderId: string | null = null;
 
-        if (orderError) {
-          console.error('❌ CRITICAL: Error creating webshop order after retries:', {
-            error: orderError,
-            error_message: orderError.message,
-            error_code: orderError.code,
-            error_details: orderError.details,
-            session_id: sessionId,
-            order_data: orderInsert,
-            retries: retryCount,
-          });
-          // Don't continue if order creation failed - this is critical
-          // The order must exist in database for the success page to work
-          return;
-        } else {
+        if (order) {
           console.info(`✅ Successfully created/found webshop order for session: ${sessionId}, order ID: ${order.id}`);
 
           // Redeem gift card if one was applied at checkout
