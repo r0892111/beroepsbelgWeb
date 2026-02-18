@@ -12,6 +12,7 @@ import { Home, LogOut, RefreshCw, Search, Filter, X, ExternalLink, Package, Eye,
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
@@ -79,6 +80,7 @@ export default function AdminOrdersPage() {
     country: 'België',
     giftCardCode: '',
     giftCardDiscount: 0,
+    isPaid: false,
   });
   const [creatingOrder, setCreatingOrder] = useState(false);
 
@@ -161,6 +163,7 @@ export default function AdminOrdersPage() {
       country: 'België',
       giftCardCode: '',
       giftCardDiscount: 0,
+      isPaid: false,
     });
     void fetchProducts();
   };
@@ -212,61 +215,108 @@ export default function AdminOrdersPage() {
 
     setCreatingOrder(true);
     try {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      // Calculate order totals
+      let subtotal = 0;
+      const orderItemsFormatted: any[] = [];
 
-      // Prepare items matching create-webshop-checkout structure
-      const items = orderItems.map(item => ({
-        productId: item.productId,
-        quantity: item.quantity || 1,
-        customPrice: item.customPrice,
-        isGiftCard: item.isGiftCard,
-      }));
+      for (const item of orderItems) {
+        const product = products.find(p => p.uuid === item.productId);
+        if (!product) continue;
 
-      // Prepare shipping address if not gift card only
+        const quantity = item.quantity || 1;
+        const price = item.customPrice && item.customPrice >= 10 ? item.customPrice : product.price;
+        const itemTotal = price * quantity;
+        subtotal += itemTotal;
+
+        orderItemsFormatted.push({
+          title: product.name,
+          quantity: quantity,
+          price: price,
+          productId: product.uuid,
+        });
+      }
+
+      // Calculate shipping cost
+      const FREIGHT_COST_BE = 7.50;
+      const FREIGHT_COST_INTERNATIONAL = 14.99;
+      let shippingCost = 0;
+      if (!isGiftCardOnly) {
+        const isBelgium = orderFormData.country === 'België' || orderFormData.country === 'Belgium';
+        shippingCost = isBelgium ? FREIGHT_COST_BE : FREIGHT_COST_INTERNATIONAL;
+        orderItemsFormatted.push({
+          title: isBelgium ? 'Verzendkosten (België)' : 'Verzendkosten (Internationaal)',
+          quantity: 1,
+          price: shippingCost,
+        });
+      }
+
+      // Apply gift card discount
+      const totalBeforeDiscount = subtotal + shippingCost;
+      const finalTotal = Math.max(0, totalBeforeDiscount - (orderFormData.giftCardDiscount || 0));
+
+      // Prepare shipping address
       const shippingAddress = !isGiftCardOnly ? {
-        fullName: orderFormData.customerName,
+        name: orderFormData.customerName,
         street: orderFormData.street,
         city: orderFormData.city,
         postalCode: orderFormData.postalCode,
         country: orderFormData.country,
-      } : null;
+      } : {
+        name: orderFormData.customerName,
+        street: '',
+        city: '',
+        postalCode: '',
+        country: 'BE',
+      };
 
-      const response = await fetch(`${supabaseUrl}/functions/v1/create-webshop-checkout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-        },
-        body: JSON.stringify({
-          items,
-          customerName: orderFormData.customerName,
-          customerEmail: orderFormData.customerEmail,
-          customerPhone: orderFormData.customerPhone || null,
-          shippingAddress,
-          billingAddress: shippingAddress, // Use shipping as billing
-          userId: user?.id || null,
-          locale: locale || 'nl',
-          isGiftCardOnly,
-          giftCardCode: orderFormData.giftCardCode || null,
-          giftCardDiscount: orderFormData.giftCardDiscount || 0,
-        }),
-      });
+      // Generate unique IDs for manual orders
+      const checkoutSessionId = `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const paymentIntentId = orderFormData.isPaid ? `pi_manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` : `pi_unpaid_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const customerId = `cus_manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create checkout session');
+      // Create order directly in database
+      const { data: newOrder, error: orderError } = await supabase
+        .from('stripe_orders')
+        .insert({
+          checkout_session_id: checkoutSessionId,
+          payment_intent_id: paymentIntentId,
+          stripe_payment_intent_id: paymentIntentId,
+          customer_id: customerId,
+          amount_subtotal: Math.round((subtotal - (orderFormData.giftCardDiscount || 0)) * 100), // In cents
+          amount_total: Math.round(finalTotal * 100), // In cents
+          currency: 'eur',
+          payment_status: orderFormData.isPaid ? 'paid' : 'unpaid',
+          status: orderFormData.isPaid ? 'completed' : 'pending',
+          total_amount: finalTotal,
+          customer_name: orderFormData.customerName,
+          customer_email: orderFormData.customerEmail,
+          shipping_address: shippingAddress,
+          billing_address: shippingAddress,
+          items: orderItemsFormatted,
+          metadata: {
+            customerName: orderFormData.customerName,
+            customerEmail: orderFormData.customerEmail,
+            customerPhone: orderFormData.customerPhone || '',
+            userId: user?.id || null,
+            shipping_cost: shippingCost,
+            discount_amount: orderFormData.giftCardDiscount || 0,
+            giftCardCode: orderFormData.giftCardCode || null,
+            giftCardDiscount: orderFormData.giftCardDiscount || 0,
+            isManualOrder: true,
+            isPaid: orderFormData.isPaid,
+          },
+          user_id: user?.id || null,
+        })
+        .select('id')
+        .single();
+
+      if (orderError) {
+        console.error('Error creating order:', orderError);
+        throw new Error(orderError.message || 'Failed to create order');
       }
 
-      const { sessionId, url } = await response.json();
-
-      toast.success('Checkout session created successfully');
+      toast.success(`Order created successfully${orderFormData.isPaid ? ' (marked as paid)' : ' (pending payment)'}`);
       setCreateOrderDialogOpen(false);
-      
-      // Open Stripe checkout in new window
-      if (url) {
-        window.open(url, '_blank');
-      }
 
       // Refresh orders list
       void fetchOrders();
@@ -654,6 +704,60 @@ export default function AdminOrdersPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Send Payment Link Button for Unpaid Orders */}
+                {selectedOrder.payment_status === 'unpaid' && selectedOrder.amount_total > 0 && (
+                  <div className="pt-4 border-t">
+                    <Button
+                      onClick={async () => {
+                        try {
+                          const response = await fetch('/api/admin/send-webshop-payment-link', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                              orderId: selectedOrder.id,
+                              checkoutSessionId: selectedOrder.checkout_session_id,
+                              customerName: selectedOrder.customer_name,
+                              customerEmail: selectedOrder.customer_email,
+                              amount: selectedOrder.total_amount || (selectedOrder.amount_total / 100),
+                              items: selectedOrder.items || [],
+                              shippingAddress: selectedOrder.shipping_address,
+                            }),
+                          });
+
+                          if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.error || 'Failed to send payment link');
+                          }
+
+                          toast.success(`Payment link sent to ${selectedOrder.customer_email}`);
+                          
+                          // Refresh orders to get updated data
+                          void fetchOrders();
+                          
+                          // Refresh selected order
+                          const { data: updatedOrder } = await supabase
+                            .from('stripe_orders')
+                            .select('*')
+                            .eq('id', selectedOrder.id)
+                            .single();
+                          
+                          if (updatedOrder) {
+                            setSelectedOrder(updatedOrder as StripeOrder);
+                          }
+                        } catch (err: any) {
+                          console.error('Error sending payment link:', err);
+                          toast.error(err.message || 'Failed to send payment link');
+                        }
+                      }}
+                      className="w-full"
+                    >
+                      Send Payment Link
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </DialogContent>
@@ -864,6 +968,26 @@ export default function AdminOrdersPage() {
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Payment Status */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Payment Status</h3>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="isPaid"
+                    checked={orderFormData.isPaid}
+                    onCheckedChange={(checked) => setOrderFormData({ ...orderFormData, isPaid: checked === true })}
+                  />
+                  <Label htmlFor="isPaid" className="cursor-pointer">
+                    Mark as paid
+                  </Label>
+                </div>
+                {!orderFormData.isPaid && (
+                  <p className="text-sm text-gray-500">
+                    If unchecked, you can send a payment link to the customer after creating the order.
+                  </p>
+                )}
               </div>
 
               {/* Actions */}

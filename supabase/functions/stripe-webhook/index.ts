@@ -2935,17 +2935,40 @@ async function handleEvent(event: Stripe.Event) {
                     session_id: sessionId,
                   });
                   
-                  // Update the stripe_orders record with Stoqflow order ID
-                  if (stoqflowOrderId && order?.id) {
-                    await supabase
-                      .from('stripe_orders')
-                      .update({ 
-                        metadata: {
-                          ...orderInsert.metadata,
-                          stoqflow_order_id: stoqflowOrderId,
-                        }
-                      })
-                      .eq('id', order.id);
+                  // Ensure stripe_orders record exists and is updated with Stoqflow order ID
+                  if (stoqflowOrderId) {
+                    // Check if order exists
+                    if (order?.id) {
+                      // Update existing order with Stoqflow order ID
+                      await supabase
+                        .from('stripe_orders')
+                        .update({ 
+                          metadata: {
+                            ...orderInsert.metadata,
+                            stoqflow_order_id: stoqflowOrderId,
+                          }
+                        })
+                        .eq('id', order.id);
+                    } else {
+                      // Order doesn't exist, create it so it appears in admin panel
+                      console.info('[Stoqflow] stripe_orders record not found, creating one for admin panel');
+                      const { error: insertError } = await supabase
+                        .from('stripe_orders')
+                        .insert({
+                          ...orderInsert,
+                          metadata: {
+                            ...orderInsert.metadata,
+                            stoqflow_order_id: stoqflowOrderId,
+                            created_from_stoqflow: true, // Flag to indicate this was created from Stoqflow
+                          }
+                        });
+                      
+                      if (insertError) {
+                        console.error('[Stoqflow] Failed to create stripe_orders record:', insertError);
+                      } else {
+                        console.info('[Stoqflow] Created stripe_orders record for Stoqflow order');
+                      }
+                    }
                   }
                 } else {
                   const errorText = await stoqflowRes.text();
