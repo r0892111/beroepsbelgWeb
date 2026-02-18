@@ -8,9 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Home, LogOut, RefreshCw, Search, Filter, X, ExternalLink, Package, Eye } from 'lucide-react';
+import { Home, LogOut, RefreshCw, Search, Filter, X, ExternalLink, Package, Eye, Plus, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
@@ -57,11 +58,29 @@ export default function AdminOrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<StripeOrder | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [createOrderDialogOpen, setCreateOrderDialogOpen] = useState(false);
+  const [products, setProducts] = useState<any[]>([]);
+  const [productsLoading, setProductsLoading] = useState(false);
 
   // Filter and search state
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPaymentStatus, setFilterPaymentStatus] = useState<string>('all');
+
+  // Create order form state
+  const [orderItems, setOrderItems] = useState<Array<{ productId: string; quantity: number; customPrice?: number; isGiftCard?: boolean }>>([]);
+  const [orderFormData, setOrderFormData] = useState({
+    customerName: '',
+    customerEmail: '',
+    customerPhone: '',
+    street: '',
+    city: '',
+    postalCode: '',
+    country: 'België',
+    giftCardCode: '',
+    giftCardDiscount: 0,
+  });
+  const [creatingOrder, setCreatingOrder] = useState(false);
 
   useEffect(() => {
     if (!user || (!profile?.isAdmin && !profile?.is_admin)) {
@@ -99,6 +118,165 @@ export default function AdminOrdersPage() {
       void fetchOrders();
     }
   }, [user, profile]);
+
+  const fetchProducts = async () => {
+    setProductsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('webshop_data')
+        .select('uuid, Name, "Price (EUR)", Category, is_giftcard')
+        .order('Name', { ascending: true });
+
+      if (error) {
+        console.error('Failed to fetch products:', error);
+        toast.error('Failed to load products');
+        return;
+      }
+
+      setProducts((data || []).map((p: any) => ({
+        uuid: p.uuid,
+        name: p.Name,
+        price: parseFloat(p['Price (EUR)']?.toString().replace(',', '.') || '0'),
+        category: p.Category,
+        isGiftCard: p.is_giftcard === true || p.Category === 'GiftCard',
+      })));
+    } catch (err) {
+      console.error('Failed to fetch products:', err);
+      toast.error('Failed to load products');
+    } finally {
+      setProductsLoading(false);
+    }
+  };
+
+  const openCreateOrderDialog = () => {
+    setCreateOrderDialogOpen(true);
+    setOrderItems([]);
+    setOrderFormData({
+      customerName: '',
+      customerEmail: '',
+      customerPhone: '',
+      street: '',
+      city: '',
+      postalCode: '',
+      country: 'België',
+      giftCardCode: '',
+      giftCardDiscount: 0,
+    });
+    void fetchProducts();
+  };
+
+  const addOrderItem = () => {
+    setOrderItems([...orderItems, { productId: '', quantity: 1 }]);
+  };
+
+  const removeOrderItem = (index: number) => {
+    setOrderItems(orderItems.filter((_, i) => i !== index));
+  };
+
+  const updateOrderItem = (index: number, field: string, value: any) => {
+    const updated = [...orderItems];
+    updated[index] = { ...updated[index], [field]: value };
+    setOrderItems(updated);
+  };
+
+  const handleCreateOrder = async () => {
+    if (!orderFormData.customerName || !orderFormData.customerEmail) {
+      toast.error('Customer name and email are required');
+      return;
+    }
+
+    if (orderItems.length === 0) {
+      toast.error('Please add at least one product');
+      return;
+    }
+
+    // Check if all items have productId
+    if (orderItems.some(item => !item.productId)) {
+      toast.error('Please select a product for all items');
+      return;
+    }
+
+    // Check if gift card only
+    const isGiftCardOnly = orderItems.every(item => {
+      const product = products.find(p => p.uuid === item.productId);
+      return product?.isGiftCard;
+    });
+
+    // Validate shipping address if not gift card only
+    if (!isGiftCardOnly) {
+      if (!orderFormData.street || !orderFormData.city || !orderFormData.postalCode) {
+        toast.error('Shipping address is required for physical products');
+        return;
+      }
+    }
+
+    setCreatingOrder(true);
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+      // Prepare items matching create-webshop-checkout structure
+      const items = orderItems.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity || 1,
+        customPrice: item.customPrice,
+        isGiftCard: item.isGiftCard,
+      }));
+
+      // Prepare shipping address if not gift card only
+      const shippingAddress = !isGiftCardOnly ? {
+        fullName: orderFormData.customerName,
+        street: orderFormData.street,
+        city: orderFormData.city,
+        postalCode: orderFormData.postalCode,
+        country: orderFormData.country,
+      } : null;
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/create-webshop-checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+        },
+        body: JSON.stringify({
+          items,
+          customerName: orderFormData.customerName,
+          customerEmail: orderFormData.customerEmail,
+          customerPhone: orderFormData.customerPhone || null,
+          shippingAddress,
+          billingAddress: shippingAddress, // Use shipping as billing
+          userId: user?.id || null,
+          locale: locale || 'nl',
+          isGiftCardOnly,
+          giftCardCode: orderFormData.giftCardCode || null,
+          giftCardDiscount: orderFormData.giftCardDiscount || 0,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create checkout session');
+      }
+
+      const { sessionId, url } = await response.json();
+
+      toast.success('Checkout session created successfully');
+      setCreateOrderDialogOpen(false);
+      
+      // Open Stripe checkout in new window
+      if (url) {
+        window.open(url, '_blank');
+      }
+
+      // Refresh orders list
+      void fetchOrders();
+    } catch (err: any) {
+      console.error('Error creating order:', err);
+      toast.error(err.message || 'Failed to create order');
+    } finally {
+      setCreatingOrder(false);
+    }
+  };
 
   const handleLogout = () => {
     signOut();
@@ -174,6 +352,10 @@ export default function AdminOrdersPage() {
             <p className="text-gray-600 mt-1">Manage webshop orders</p>
           </div>
           <div className="flex gap-2">
+            <Button onClick={openCreateOrderDialog} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Order
+            </Button>
             <Link href={`/${locale}/admin/dashboard`}>
               <Button variant="outline" size="sm">
                 <Home className="h-4 w-4 mr-2" />
@@ -474,6 +656,226 @@ export default function AdminOrdersPage() {
                 )}
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Create Order Dialog */}
+        <Dialog open={createOrderDialogOpen} onOpenChange={setCreateOrderDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create Custom Order</DialogTitle>
+              <DialogDescription>Create a new webshop order matching the checkout structure</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6">
+              {/* Customer Information */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Customer Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="customerName">Customer Name *</Label>
+                    <Input
+                      id="customerName"
+                      value={orderFormData.customerName}
+                      onChange={(e) => setOrderFormData({ ...orderFormData, customerName: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="customerEmail">Customer Email *</Label>
+                    <Input
+                      id="customerEmail"
+                      type="email"
+                      value={orderFormData.customerEmail}
+                      onChange={(e) => setOrderFormData({ ...orderFormData, customerEmail: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="customerPhone">Customer Phone</Label>
+                    <Input
+                      id="customerPhone"
+                      value={orderFormData.customerPhone}
+                      onChange={(e) => setOrderFormData({ ...orderFormData, customerPhone: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Order Items */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold">Order Items</h3>
+                  <Button onClick={addOrderItem} size="sm" variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Product
+                  </Button>
+                </div>
+                {orderItems.length === 0 ? (
+                  <p className="text-sm text-gray-500">No items added. Click "Add Product" to start.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {orderItems.map((item, index) => {
+                      const selectedProduct = products.find(p => p.uuid === item.productId);
+                      const isGiftCard = selectedProduct?.isGiftCard || false;
+                      return (
+                        <div key={index} className="border rounded p-4 space-y-3">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-3">
+                              <div className="md:col-span-2">
+                                <Label>Product *</Label>
+                                <Select
+                                  value={item.productId}
+                                  onValueChange={(value) => updateOrderItem(index, 'productId', value)}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select product" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {products.map((product) => (
+                                      <SelectItem key={product.uuid} value={product.uuid}>
+                                        {product.name} - €{product.price.toFixed(2)}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label>Quantity *</Label>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={item.quantity || 1}
+                                  onChange={(e) => updateOrderItem(index, 'quantity', parseInt(e.target.value) || 1)}
+                                />
+                              </div>
+                              {isGiftCard && (
+                                <div>
+                                  <Label>Custom Price (€)</Label>
+                                  <Input
+                                    type="number"
+                                    min="10"
+                                    step="0.01"
+                                    value={item.customPrice || ''}
+                                    onChange={(e) => updateOrderItem(index, 'customPrice', parseFloat(e.target.value) || undefined)}
+                                    placeholder={selectedProduct?.price.toString()}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeOrderItem(index)}
+                              className="mt-6"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          {selectedProduct && (
+                            <div className="text-sm text-gray-600">
+                              Price: €{item.customPrice && item.customPrice >= 10 ? item.customPrice.toFixed(2) : selectedProduct.price.toFixed(2)} × {item.quantity || 1} = €{((item.customPrice && item.customPrice >= 10 ? item.customPrice : selectedProduct.price) * (item.quantity || 1)).toFixed(2)}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Shipping Address */}
+              {orderItems.length > 0 && !orderItems.every(item => {
+                const product = products.find(p => p.uuid === item.productId);
+                return product?.isGiftCard;
+              }) && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Shipping Address</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <Label htmlFor="street">Street Address *</Label>
+                      <Input
+                        id="street"
+                        value={orderFormData.street}
+                        onChange={(e) => setOrderFormData({ ...orderFormData, street: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="city">City *</Label>
+                      <Input
+                        id="city"
+                        value={orderFormData.city}
+                        onChange={(e) => setOrderFormData({ ...orderFormData, city: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="postalCode">Postal Code *</Label>
+                      <Input
+                        id="postalCode"
+                        value={orderFormData.postalCode}
+                        onChange={(e) => setOrderFormData({ ...orderFormData, postalCode: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="country">Country *</Label>
+                      <Select
+                        value={orderFormData.country}
+                        onValueChange={(value) => setOrderFormData({ ...orderFormData, country: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="België">België</SelectItem>
+                          <SelectItem value="Nederland">Nederland</SelectItem>
+                          <SelectItem value="France">France</SelectItem>
+                          <SelectItem value="Deutschland">Deutschland</SelectItem>
+                          <SelectItem value="Luxembourg">Luxembourg</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Gift Card Discount */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Gift Card Discount (Optional)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="giftCardCode">Gift Card Code</Label>
+                    <Input
+                      id="giftCardCode"
+                      value={orderFormData.giftCardCode}
+                      onChange={(e) => setOrderFormData({ ...orderFormData, giftCardCode: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="giftCardDiscount">Discount Amount (€)</Label>
+                    <Input
+                      id="giftCardDiscount"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={orderFormData.giftCardDiscount}
+                      onChange={(e) => setOrderFormData({ ...orderFormData, giftCardDiscount: parseFloat(e.target.value) || 0 })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setCreateOrderDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleCreateOrder} disabled={creatingOrder || productsLoading}>
+                  {creatingOrder ? 'Creating...' : 'Create Order'}
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

@@ -669,76 +669,113 @@ async function handleEvent(event: Stripe.Event) {
             } else {
               console.info(`Created local_tours_bookings entry for session ${sessionId}`);
               
-              // Ensure the customer from local_tours_bookings is added as an invitee to the tourbooking
+              // Rebuild invitees array from all local_tours_bookings entries for this tourbooking
               if (tourbookingId) {
                 try {
-                  // Fetch current tourbooking to get invitees
-                  const { data: currentBooking, error: fetchError } = await supabase
-                    .from('tourbooking')
-                    .select('invitees')
-                    .eq('id', tourbookingId)
-                    .single();
+                  // Fetch all local_tours_bookings entries for this tourbooking
+                  const { data: localBookings, error: localFetchError } = await supabase
+                    .from('local_tours_bookings')
+                    .select('*')
+                    .eq('booking_id', tourbookingId)
+                    .eq('status', 'booked');
 
-                  if (fetchError) {
-                    console.error('Error fetching tourbooking to add invitee:', fetchError);
-                  } else if (currentBooking) {
-                    const currentInvitees = currentBooking.invitees || [];
-                    const customerEmail = bookingData.customerEmail;
+                  if (localFetchError) {
+                    console.error('Error fetching local_tours_bookings to rebuild invitees:', localFetchError);
+                  } else if (localBookings && localBookings.length > 0) {
+                    // Fetch the tourbooking to get any additional data we might need
+                    const { data: tourBooking, error: tourBookingError } = await supabase
+                      .from('tourbooking')
+                      .select('*')
+                      .eq('id', tourbookingId)
+                      .single();
 
-                    // Always add invitee from local_tours_bookings, even if one with same email exists
-                    if (customerEmail) {
-                      // Create invitee object from local_tours_bookings data
-                      const newInvitee: any = {
-                        name: bookingData.customerName,
-                        email: bookingData.customerEmail,
-                        phone: bookingData.customerPhone,
-                        numberOfPeople: bookingData.numberOfPeople,
-                        language: bookingData.language,
-                        contactLanguage: bookingData.contactLanguage || 'nl',
-                        specialRequests: bookingData.specialRequests,
-                        requestTanguy: bookingData.requestTanguy,
-                        amount: bookingData.amounts.totalAmount || (bookingData.amounts.tourFinalAmount + (bookingData.amounts.tanguyCost || 0) + (bookingData.amounts.extraHourCost || 0) + (bookingData.amounts.weekendFeeCost || 0) + (bookingData.amounts.eveningFeeCost || 0)),
-                        originalAmount: bookingData.amounts.tourFullPrice,
-                        discountApplied: bookingData.amounts.discountAmount,
-                        tanguyCost: bookingData.amounts.tanguyCost,
-                        extraHourCost: bookingData.amounts.extraHourCost,
-                        weekendFeeCost: bookingData.amounts.weekendFeeCost,
-                        eveningFeeCost: bookingData.amounts.eveningFeeCost,
-                        currency: 'eur',
-                        isContacted: false,
-                        upsellProducts: bookingData.upsellProducts,
-                        opMaatAnswers: bookingData.opMaatAnswers,
-                        tourStartDatetime: bookingData.tourDatetime,
-                        tourEndDatetime: bookingData.tourEndDatetime,
-                        durationMinutes: bookingData.durationMinutes,
-                        promoCode: promoCodeInfo.code,
-                        promoDiscountAmount: promoCodeInfo.discountAmount,
-                        promoDiscountPercent: promoCodeInfo.discountPercent,
-                      };
+                    if (tourBookingError) {
+                      console.error('Error fetching tourbooking:', tourBookingError);
+                    } else {
+                      // Build new invitees array from all local_tours_bookings entries
+                      // Create a separate invitee for each local_tours_bookings entry, regardless of email matches
+                      const newInvitees: any[] = [];
 
-                      // Store shipping address in invitee data if available
-                      if (bookingData.shippingAddress) {
-                        newInvitee.shippingAddress = bookingData.shippingAddress;
+                      for (const localBooking of localBookings) {
+                        // Check if this is the current booking (matching sessionId)
+                        const isCurrentBooking = localBooking.stripe_session_id === sessionId;
+
+                        // Build invitee object from local_tours_bookings data
+                        const invitee: any = {
+                          name: localBooking.customer_name || '',
+                          email: localBooking.customer_email || '',
+                          phone: localBooking.customer_phone || null,
+                          numberOfPeople: localBooking.amnt_of_people || 1,
+                          language: 'nl',
+                          contactLanguage: 'nl',
+                          currency: 'eur',
+                          isContacted: false,
+                          isPaid: localBooking.status === 'booked',
+                        };
+
+                        // If this is the current booking, use bookingData for full details
+                        if (isCurrentBooking) {
+                          invitee.name = bookingData.customerName || invitee.name;
+                          invitee.email = bookingData.customerEmail || invitee.email;
+                          invitee.phone = bookingData.customerPhone || invitee.phone;
+                          invitee.numberOfPeople = bookingData.numberOfPeople || invitee.numberOfPeople;
+                          invitee.language = bookingData.language || invitee.language;
+                          invitee.contactLanguage = bookingData.contactLanguage || 'nl';
+                          invitee.specialRequests = bookingData.specialRequests;
+                          invitee.requestTanguy = bookingData.requestTanguy;
+                          invitee.amount = bookingData.amounts.totalAmount || (bookingData.amounts.tourFinalAmount + (bookingData.amounts.tanguyCost || 0) + (bookingData.amounts.extraHourCost || 0) + (bookingData.amounts.weekendFeeCost || 0) + (bookingData.amounts.eveningFeeCost || 0));
+                          invitee.originalAmount = bookingData.amounts.tourFullPrice;
+                          invitee.discountApplied = bookingData.amounts.discountAmount;
+                          invitee.tanguyCost = bookingData.amounts.tanguyCost;
+                          invitee.extraHourCost = bookingData.amounts.extraHourCost;
+                          invitee.weekendFeeCost = bookingData.amounts.weekendFeeCost;
+                          invitee.eveningFeeCost = bookingData.amounts.eveningFeeCost;
+                          invitee.upsellProducts = bookingData.upsellProducts;
+                          invitee.opMaatAnswers = bookingData.opMaatAnswers;
+                          invitee.tourStartDatetime = bookingData.tourDatetime;
+                          invitee.tourEndDatetime = bookingData.tourEndDatetime;
+                          invitee.durationMinutes = bookingData.durationMinutes;
+                          invitee.promoCode = promoCodeInfo.code;
+                          invitee.promoDiscountAmount = promoCodeInfo.discountAmount;
+                          invitee.promoDiscountPercent = promoCodeInfo.discountPercent;
+
+                          // Store shipping address if available
+                          if (bookingData.shippingAddress) {
+                            invitee.shippingAddress = bookingData.shippingAddress;
+                          }
+                        } else {
+                          // For existing bookings, try to preserve data from existing invitees if available
+                          // But don't match by email - just use the first available invitee data as a template
+                          const existingInvitees = tourBooking?.invitees || [];
+                          if (existingInvitees.length > 0) {
+                            // Use the first invitee as a template for default values
+                            const templateInvitee = existingInvitees[0];
+                            invitee.language = templateInvitee.language || invitee.language;
+                            invitee.contactLanguage = templateInvitee.contactLanguage || invitee.contactLanguage;
+                            invitee.tourStartDatetime = templateInvitee.tourStartDatetime;
+                            invitee.tourEndDatetime = templateInvitee.tourEndDatetime;
+                            invitee.durationMinutes = templateInvitee.durationMinutes;
+                          }
+                        }
+
+                        newInvitees.push(invitee);
                       }
 
-                      // Append new invitee (always add, even if duplicate email exists)
-                      const updatedInvitees = [...currentInvitees, newInvitee];
-
-                      // Update tourbooking with new invitee
+                      // Replace the entire invitees array with the new one built from local_tours_bookings
                       const { error: updateError } = await supabase
                         .from('tourbooking')
-                        .update({ invitees: updatedInvitees })
+                        .update({ invitees: newInvitees })
                         .eq('id', tourbookingId);
 
                       if (updateError) {
-                        console.error('Error adding invitee to tourbooking after local_tours_bookings creation:', updateError);
+                        console.error('Error rebuilding invitees array from local_tours_bookings:', updateError);
                       } else {
-                        console.info(`Added invitee ${customerEmail} to tourbooking ${tourbookingId} from local_tours_bookings`);
+                        console.info(`Rebuilt invitees array for tourbooking ${tourbookingId} from ${localBookings.length} local_tours_bookings entries`);
                       }
                     }
                   }
                 } catch (err) {
-                  console.error('Error ensuring invitee is added to tourbooking:', err);
+                  console.error('Error rebuilding invitees array from local_tours_bookings:', err);
                   // Don't throw - this is a safety check, booking is already created
                 }
               }

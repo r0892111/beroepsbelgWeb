@@ -392,19 +392,19 @@ export function TourBookingDialog({
         setProductsLoading(false);
         
         // If products are available, show upsell dialog first
-        // Otherwise, go directly to address dialog
+        // Otherwise, proceed directly to checkout (no address needed if no upsell items)
         if (webshopItems.length > 0) {
           console.log('Opening upsell dialog, current showUpsellDialog:', showUpsellDialog);
           setShowUpsellDialog(true);
         } else {
-          // No products available, go directly to address dialog
-          setShowAddressDialog(true);
+          // No products available, proceed directly to checkout (no address needed)
+          void proceedToCheckout();
         }
       } catch (err) {
         console.error('Error loading products:', err);
         setProductsLoading(false);
-        // On error, go directly to address dialog
-        setShowAddressDialog(true);
+        // On error, proceed directly to checkout (no address needed)
+        void proceedToCheckout();
       }
     } else {
       // Products already loaded, show upsell dialog
@@ -418,13 +418,30 @@ export function TourBookingDialog({
     setError(null);
 
     try {
-      // Validate shipping address is always provided
-      if (!addressData.fullName || !addressData.street || !addressData.city || 
-          !addressData.postalCode || !addressData.country) {
-        setError('Vul alle verplichte verzendgegevens in');
-        setLoading(false);
-        setShowAddressDialog(true);
-        return;
+      // Prepare upsell products in standardized format: {id, n: name, p: price, q: quantity}
+      // ID is included for database lookups, but not sent to Stripe metadata (to save space)
+      // Always send as array (even if empty)
+      const upsellProducts = products
+        .filter(p => selectedUpsell[p.uuid] && selectedUpsell[p.uuid] > 0)
+        .map(p => ({
+          id: p.uuid, // Include ID for database lookups
+          n: p.title.nl, // name
+          p: p.price, // price
+          q: selectedUpsell[p.uuid] || 1, // quantity
+        }));
+
+      // Check if upsell products are selected
+      const hasUpsellProducts = upsellProducts.length > 0;
+      
+      // Only validate shipping address if upsell products are selected
+      if (hasUpsellProducts) {
+        if (!addressData.fullName || !addressData.street || !addressData.city || 
+            !addressData.postalCode || !addressData.country) {
+          setError('Vul alle verplichte verzendgegevens in');
+          setLoading(false);
+          setShowAddressDialog(true);
+          return;
+        }
       }
 
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -440,18 +457,6 @@ export function TourBookingDialog({
           bookingDateTime = `${dateStr}T${timeStr}`;
         }
       }
-
-      // Prepare upsell products in standardized format: {id, n: name, p: price, q: quantity}
-      // ID is included for database lookups, but not sent to Stripe metadata (to save space)
-      // Always send as array (even if empty)
-      const upsellProducts = products
-        .filter(p => selectedUpsell[p.uuid] && selectedUpsell[p.uuid] > 0)
-        .map(p => ({
-          id: p.uuid, // Include ID for database lookups
-          n: p.title.nl, // name
-          p: p.price, // price
-          q: selectedUpsell[p.uuid] || 1, // quantity
-        }));
 
       console.log('Sending upsell products to checkout:', {
         count: upsellProducts.length,
@@ -482,15 +487,15 @@ export function TourBookingDialog({
           opMaat: opMaat,
           locale: locale, // Pass locale for correct redirect after payment
           upsellProducts: upsellProducts, // Include upsell products in checkout session
-          // Address data for shipping (always required)
-          shippingAddress: {
+          // Address data for shipping (only required if upsell products are selected)
+          shippingAddress: hasUpsellProducts ? {
             fullName: addressData.fullName,
             birthdate: addressData.birthdate,
             street: addressData.street,
             city: addressData.city,
             postalCode: addressData.postalCode,
             country: addressData.country,
-          },
+          } : null,
           // Op maat personalization - NOT collected during checkout
           // User fills out form later via email link to /op-maat-form page
           opMaatAnswers: null,
@@ -1543,9 +1548,14 @@ export function TourBookingDialog({
             <Button
               type="button"
               onClick={() => {
-                // Always show address dialog to collect shipping address
+                // Only show address dialog if upsell products are selected
                 setShowUpsellDialog(false);
-                setShowAddressDialog(true);
+                if (upsellTotal > 0) {
+                  setShowAddressDialog(true);
+                } else {
+                  // No upsell products, proceed directly to checkout
+                  void proceedToCheckout();
+                }
               }}
               disabled={loading}
               className="w-full sm:w-auto"
