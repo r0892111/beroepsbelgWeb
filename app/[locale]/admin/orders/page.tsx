@@ -711,10 +711,18 @@ export default function AdminOrdersPage() {
                     <Button
                       onClick={async () => {
                         try {
+                          // Get session token for authorization
+                          const { data: { session } } = await supabase.auth.getSession();
+                          if (!session) {
+                            toast.error('You must be logged in to send payment links');
+                            return;
+                          }
+
                           const response = await fetch('/api/admin/send-webshop-payment-link', {
                             method: 'POST',
                             headers: {
                               'Content-Type': 'application/json',
+                              'Authorization': `Bearer ${session.access_token}`,
                             },
                             body: JSON.stringify({
                               orderId: selectedOrder.id,
