@@ -1173,18 +1173,12 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
       .eq('tour_id', tourId)
       .eq('status', 'payment_completed');
     
-    // Calculate number of people per date from local_tours_bookings (sum amnt_of_people for all rows per date)
+    // Calculate number of people per date
+    // Use tourbooking.invitees as the source of truth since we now automatically add
+    // all local_tours_bookings entries as invitees to tourbooking
     const peopleCountByDate = new Map<string, number>();
-
-    (existingBookings || []).forEach((booking: any) => {
-      const dateStr = booking.booking_date;
-      const amntOfPeople = booking.amnt_of_people || 0;
-      const currentCount = peopleCountByDate.get(dateStr) || 0;
-      peopleCountByDate.set(dateStr, currentCount + amntOfPeople);
-    });
     
-    // Also calculate from tourbooking invitees as fallback/verification
-    // This ensures we get accurate counts even if local_tours_bookings is missing data
+    // Count from tourbooking invitees (source of truth)
     if (tourBookings && !tourBookingsError) {
       tourBookings.forEach((tb: any) => {
         const tourDatetime = tb.tour_datetime;
@@ -1200,17 +1194,25 @@ export async function getLocalToursBookings(tourId: string): Promise<LocalTourBo
                 return sum + (invitee.numberOfPeople || 0);
               }, 0);
               
-              // Use the higher count (either from local_tours_bookings or tourbooking)
-              // This handles cases where local_tours_bookings might be missing or have incorrect data
-              const currentCount = peopleCountByDate.get(dateStr) || 0;
-              if (totalPeople > currentCount) {
-                peopleCountByDate.set(dateStr, totalPeople);
-              }
+              // Set the count from tourbooking invitees (source of truth)
+              peopleCountByDate.set(dateStr, totalPeople);
             }
           }
         }
       });
     }
+    
+    // Fallback: If no tourbooking exists yet, count from local_tours_bookings
+    // This handles edge cases where local_tours_bookings exists but tourbooking doesn't
+    (existingBookings || []).forEach((booking: any) => {
+      const dateStr = booking.booking_date;
+      // Only use local_tours_bookings count if we don't already have a count from tourbooking
+      if (!peopleCountByDate.has(dateStr)) {
+        const amntOfPeople = booking.amnt_of_people || 0;
+        const currentCount = peopleCountByDate.get(dateStr) || 0;
+        peopleCountByDate.set(dateStr, currentCount + amntOfPeople);
+      }
+    });
 
     
     // Create a map of existing bookings by date

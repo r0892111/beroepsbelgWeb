@@ -469,7 +469,44 @@ async function handleEvent(event: Stripe.Event) {
 
           // If no existing tourbooking, create new one
           if (!tourbookingId) {
-            const newTourBooking = {
+            // Prepare invitee data with shipping address
+            const newInvitee: any = {
+              name: bookingData.customerName,
+              email: bookingData.customerEmail,
+              phone: bookingData.customerPhone,
+              numberOfPeople: bookingData.numberOfPeople,
+              language: bookingData.language,
+              contactLanguage: bookingData.contactLanguage || 'nl', // Language for email communications
+              specialRequests: bookingData.specialRequests,
+              requestTanguy: bookingData.requestTanguy,
+              amount: bookingData.amounts.totalAmount || (bookingData.amounts.tourFinalAmount + (bookingData.amounts.tanguyCost || 0) + (bookingData.amounts.extraHourCost || 0) + (bookingData.amounts.weekendFeeCost || 0) + (bookingData.amounts.eveningFeeCost || 0)),
+              originalAmount: bookingData.amounts.tourFullPrice,
+              discountApplied: bookingData.amounts.discountAmount,
+              tanguyCost: bookingData.amounts.tanguyCost,
+              extraHourCost: bookingData.amounts.extraHourCost,
+              weekendFeeCost: bookingData.amounts.weekendFeeCost,
+              eveningFeeCost: bookingData.amounts.eveningFeeCost,
+              currency: 'eur',
+              isContacted: false,
+              upsellProducts: bookingData.upsellProducts,
+              opMaatAnswers: bookingData.opMaatAnswers,
+              tourStartDatetime: bookingData.tourDatetime,
+              tourEndDatetime: bookingData.tourEndDatetime,
+              durationMinutes: bookingData.durationMinutes,
+              // Promo code info from Stripe
+              promoCode: promoCodeInfo.code,
+              promoDiscountAmount: promoCodeInfo.discountAmount,
+              promoDiscountPercent: promoCodeInfo.discountPercent,
+            };
+
+            // Store shipping address in invitee data for Stoqflow order creation
+            if (bookingData.shippingAddress) {
+              newInvitee.shippingAddress = bookingData.shippingAddress;
+              console.info('[Local Stories] Stored shipping address in invitee data for new tourbooking');
+            }
+
+            // Prepare tourbooking data including shipping address
+            const newTourBooking: any = {
               tour_id: bookingData.tourId,
               stripe_session_id: sessionId,
               status: 'payment_completed',
@@ -478,41 +515,54 @@ async function handleEvent(event: Stripe.Event) {
               city: bookingData.citySlug,
               request_tanguy: bookingData.requestTanguy,
               user_id: bookingData.userId,
-              invitees: [{
-                name: bookingData.customerName,
-                email: bookingData.customerEmail,
-                phone: bookingData.customerPhone,
-                numberOfPeople: bookingData.numberOfPeople,
-                language: bookingData.language,
-                contactLanguage: bookingData.contactLanguage || 'nl', // Language for email communications
-                specialRequests: bookingData.specialRequests,
-                requestTanguy: bookingData.requestTanguy,
-                amount: bookingData.amounts.totalAmount || (bookingData.amounts.tourFinalAmount + (bookingData.amounts.tanguyCost || 0) + (bookingData.amounts.extraHourCost || 0) + (bookingData.amounts.weekendFeeCost || 0) + (bookingData.amounts.eveningFeeCost || 0)),
-                originalAmount: bookingData.amounts.tourFullPrice,
-                discountApplied: bookingData.amounts.discountAmount,
-                tanguyCost: bookingData.amounts.tanguyCost,
-                extraHourCost: bookingData.amounts.extraHourCost,
-                weekendFeeCost: bookingData.amounts.weekendFeeCost,
-                eveningFeeCost: bookingData.amounts.eveningFeeCost,
-                currency: 'eur',
-                isContacted: false,
-                upsellProducts: bookingData.upsellProducts,
-                opMaatAnswers: bookingData.opMaatAnswers,
-                tourStartDatetime: bookingData.tourDatetime,
-                tourEndDatetime: bookingData.tourEndDatetime,
-                durationMinutes: bookingData.durationMinutes,
-                // Promo code info from Stripe
-                promoCode: promoCodeInfo.code,
-                promoDiscountAmount: promoCodeInfo.discountAmount,
-                promoDiscountPercent: promoCodeInfo.discountPercent,
-              }],
+              invitees: [newInvitee],
             };
 
-            const { data: newBooking, error: insertError } = await supabase
+            // Store shipping address in tourbooking table if available
+            const shippingAddress = bookingData?.shippingAddress;
+            if (shippingAddress) {
+              // Helper to normalize country code to ISO format
+              const normalizeCountry = (country: string | null | undefined): string => {
+                if (!country) return 'BE';
+                const countryLower = country.toLowerCase().trim();
+                const countryMap: Record<string, string> = {
+                  'belgië': 'BE', 'belgium': 'BE', 'belgique': 'BE', 'belgien': 'BE',
+                  'nederland': 'NL', 'netherlands': 'NL', 'pays-bas': 'NL', 'niederlande': 'NL',
+                  'france': 'FR', 'frankrijk': 'FR',
+                  'deutschland': 'DE', 'germany': 'DE', 'duitsland': 'DE',
+                  'luxembourg': 'LU', 'luxemburg': 'LU',
+                };
+                if (/^[A-Z]{2}$/.test(country)) return country;
+                return countryMap[countryLower] || 'BE';
+              };
+
+              newTourBooking.shipping_full_name = shippingAddress.fullName || null;
+              newTourBooking.shipping_street = shippingAddress.street || null;
+              newTourBooking.shipping_city = shippingAddress.city || null;
+              newTourBooking.shipping_postal_code = shippingAddress.postalCode || null;
+              newTourBooking.shipping_country = normalizeCountry(shippingAddress.country);
+              console.info('[Local Stories] Storing shipping address in new tourbooking table');
+            }
+
+            // Try insert - if it fails due to missing shipping columns, retry without them
+            let { data: newBooking, error: insertError } = await supabase
               .from('tourbooking')
               .insert(newTourBooking)
               .select('id')
               .single();
+
+            // If error is about missing shipping columns, retry without them
+            if (insertError && insertError.message && insertError.message.includes('shipping_')) {
+              console.warn('[Local Stories] Shipping address columns don\'t exist yet in tourbooking, retrying insert without them');
+              const { shipping_full_name, shipping_street, shipping_city, shipping_postal_code, shipping_country, ...bookingWithoutShipping } = newTourBooking;
+              const retryResult = await supabase
+                .from('tourbooking')
+                .insert(bookingWithoutShipping)
+                .select('id')
+                .single();
+              newBooking = retryResult.data;
+              insertError = retryResult.error;
+            }
 
             if (insertError) {
               console.error('Error creating new tourbooking for local stories:', insertError);
@@ -618,6 +668,80 @@ async function handleEvent(event: Stripe.Event) {
               // Don't throw - the booking is already created in tourbooking, so we can continue
             } else {
               console.info(`Created local_tours_bookings entry for session ${sessionId}`);
+              
+              // Ensure the customer from local_tours_bookings is added as an invitee to the tourbooking
+              if (tourbookingId) {
+                try {
+                  // Fetch current tourbooking to get invitees
+                  const { data: currentBooking, error: fetchError } = await supabase
+                    .from('tourbooking')
+                    .select('invitees')
+                    .eq('id', tourbookingId)
+                    .single();
+
+                  if (fetchError) {
+                    console.error('Error fetching tourbooking to add invitee:', fetchError);
+                  } else if (currentBooking) {
+                    const currentInvitees = currentBooking.invitees || [];
+                    const customerEmail = bookingData.customerEmail;
+
+                    // Always add invitee from local_tours_bookings, even if one with same email exists
+                    if (customerEmail) {
+                      // Create invitee object from local_tours_bookings data
+                      const newInvitee: any = {
+                        name: bookingData.customerName,
+                        email: bookingData.customerEmail,
+                        phone: bookingData.customerPhone,
+                        numberOfPeople: bookingData.numberOfPeople,
+                        language: bookingData.language,
+                        contactLanguage: bookingData.contactLanguage || 'nl',
+                        specialRequests: bookingData.specialRequests,
+                        requestTanguy: bookingData.requestTanguy,
+                        amount: bookingData.amounts.totalAmount || (bookingData.amounts.tourFinalAmount + (bookingData.amounts.tanguyCost || 0) + (bookingData.amounts.extraHourCost || 0) + (bookingData.amounts.weekendFeeCost || 0) + (bookingData.amounts.eveningFeeCost || 0)),
+                        originalAmount: bookingData.amounts.tourFullPrice,
+                        discountApplied: bookingData.amounts.discountAmount,
+                        tanguyCost: bookingData.amounts.tanguyCost,
+                        extraHourCost: bookingData.amounts.extraHourCost,
+                        weekendFeeCost: bookingData.amounts.weekendFeeCost,
+                        eveningFeeCost: bookingData.amounts.eveningFeeCost,
+                        currency: 'eur',
+                        isContacted: false,
+                        upsellProducts: bookingData.upsellProducts,
+                        opMaatAnswers: bookingData.opMaatAnswers,
+                        tourStartDatetime: bookingData.tourDatetime,
+                        tourEndDatetime: bookingData.tourEndDatetime,
+                        durationMinutes: bookingData.durationMinutes,
+                        promoCode: promoCodeInfo.code,
+                        promoDiscountAmount: promoCodeInfo.discountAmount,
+                        promoDiscountPercent: promoCodeInfo.discountPercent,
+                      };
+
+                      // Store shipping address in invitee data if available
+                      if (bookingData.shippingAddress) {
+                        newInvitee.shippingAddress = bookingData.shippingAddress;
+                      }
+
+                      // Append new invitee (always add, even if duplicate email exists)
+                      const updatedInvitees = [...currentInvitees, newInvitee];
+
+                      // Update tourbooking with new invitee
+                      const { error: updateError } = await supabase
+                        .from('tourbooking')
+                        .update({ invitees: updatedInvitees })
+                        .eq('id', tourbookingId);
+
+                      if (updateError) {
+                        console.error('Error adding invitee to tourbooking after local_tours_bookings creation:', updateError);
+                      } else {
+                        console.info(`Added invitee ${customerEmail} to tourbooking ${tourbookingId} from local_tours_bookings`);
+                      }
+                    }
+                  }
+                } catch (err) {
+                  console.error('Error ensuring invitee is added to tourbooking:', err);
+                  // Don't throw - this is a safety check, booking is already created
+                }
+              }
             }
           }
 
