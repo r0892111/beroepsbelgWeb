@@ -116,7 +116,16 @@ export default function BookingSuccessPage() {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-        // First, check if this is a local stories booking by querying local_tours_bookings directly
+        // First, check if this is a local stories booking
+        // Try local_tours_bookings first, but also check tourbooking if that fails
+        let localBookingData: any = null;
+        let booking: any = null;
+        let invitee: any = null;
+        let tourTitle = 'Tour';
+        let tourOpMaat = false;
+        let tourLocalStories = false;
+
+        // Try to find in local_tours_bookings first
         const localBookingResponse = await fetch(
           `${supabaseUrl}/rest/v1/local_tours_bookings?stripe_session_id=eq.${sessionId}&select=*`,
           {
@@ -126,13 +135,6 @@ export default function BookingSuccessPage() {
             },
           }
         );
-
-        let localBookingData: any = null;
-        let booking: any = null;
-        let invitee: any = null;
-        let tourTitle = 'Tour';
-        let tourOpMaat = false;
-        let tourLocalStories = false;
 
         if (localBookingResponse.ok) {
           const localBookingResponseData = await localBookingResponse.json();
@@ -248,7 +250,8 @@ export default function BookingSuccessPage() {
           }
         }
 
-        // If not a local stories booking, fetch from tourbooking as normal
+        // If not found in local_tours_bookings, check tourbooking
+        // This handles cases where local_tours_bookings insert failed but tourbooking was created
         if (!localBookingData) {
           const bookingResponse = await fetch(
             `${supabaseUrl}/rest/v1/tourbooking?stripe_session_id=eq.${sessionId}&select=*`,
@@ -262,11 +265,81 @@ export default function BookingSuccessPage() {
 
           if (bookingResponse.ok) {
             const bookingResponseData = await bookingResponse.json();
-            console.log('Regular booking data:', bookingResponseData);
+            console.log('Tourbooking data:', bookingResponseData);
 
             if (bookingResponseData && bookingResponseData.length > 0) {
               booking = bookingResponseData[0];
-              invitee = booking.invitees?.[0];
+              
+              // Check if this is a local stories tour by checking the tour
+              if (booking.tour_id) {
+                const tourCheckResponse = await fetch(
+                  `${supabaseUrl}/rest/v1/tours_table_prod?id=eq.${booking.tour_id}&select=local_stories`,
+                  {
+                    headers: {
+                      'apikey': supabaseAnonKey || '',
+                      'Authorization': `Bearer ${supabaseAnonKey}`,
+                    },
+                  }
+                );
+                
+                if (tourCheckResponse.ok) {
+                  const tourCheckData = await tourCheckResponse.json();
+                  if (tourCheckData && tourCheckData.length > 0 && tourCheckData[0].local_stories) {
+                    tourLocalStories = true;
+                    console.log('Found local stories booking in tourbooking table (local_tours_bookings insert may have failed)');
+                    
+                    // For local stories, fetch payment data from Stripe to build invitee
+                    try {
+                      const stripeResponse = await fetch(`/api/checkout-session/${sessionId}`);
+                      if (stripeResponse.ok) {
+                        const stripeData = await stripeResponse.json();
+                        const customerEmail = stripeData.customerEmail || stripeData.customer_email;
+                        
+                        // Find matching invitee by email
+                        if (customerEmail && booking.invitees && Array.isArray(booking.invitees)) {
+                          invitee = booking.invitees.find((inv: any) => 
+                            inv.email && inv.email.toLowerCase() === customerEmail.toLowerCase()
+                          );
+                        }
+                        
+                        // If still no invitee, use Stripe data to build one
+                        if (!invitee && stripeData.success) {
+                          const tourItemPrice = stripeData.tourItem?.totalPrice || 0;
+                          invitee = {
+                            name: stripeData.customerName || '',
+                            email: customerEmail || '',
+                            phone: stripeData.customerPhone || '',
+                            numberOfPeople: stripeData.numberOfPeople || 1,
+                            amount: stripeData.amountTotal || 0,
+                            originalAmount: tourItemPrice,
+                            promoCode: stripeData.promoCode,
+                            promoDiscountAmount: stripeData.discountAmount || 0,
+                            promoDiscountPercent: stripeData.promoDiscountPercent,
+                            upsellProducts: stripeData.upsellItems?.map((item: any) => ({
+                              n: item.name,
+                              p: item.unitPrice,
+                              q: item.quantity,
+                            })) || [],
+                            language: stripeData.language || 'nl',
+                            tanguyCost: 0,
+                            extraHourCost: 0,
+                            weekendFeeCost: 0,
+                            eveningFeeCost: 0,
+                          };
+                          console.log('Built invitee from Stripe data for local stories booking in tourbooking');
+                        }
+                      }
+                    } catch (stripeErr) {
+                      console.warn('Error fetching Stripe session for local stories:', stripeErr);
+                    }
+                  }
+                }
+              }
+              
+              // If still no invitee, use first one
+              if (!invitee) {
+                invitee = booking.invitees?.[0];
+              }
 
               // Fetch the tour data to get images
               if (booking.tour_id) {
@@ -329,21 +402,23 @@ export default function BookingSuccessPage() {
           // Use tour's op_maat property directly (most reliable)
           const opMaatValue = tourOpMaat;
           
-          // For local stories tours, use local_tours_bookings data
+          // For local stories tours, use local_tours_bookings data or tourbooking data
           let bookingData;
-          if (localBookingData) {
-            // Use local_tours_bookings data for local stories tours
-            // Convert amnt_of_people (numeric) to number if needed
-            const numberOfPeople = localBookingData.amnt_of_people
-              ? (typeof localBookingData.amnt_of_people === 'string'
-                  ? parseFloat(localBookingData.amnt_of_people)
-                  : Number(localBookingData.amnt_of_people))
-              : invitee?.numberOfPeople || 1;
+          if (localBookingData || tourLocalStories) {
+            // Use local_tours_bookings data if available, otherwise use tourbooking data
+            if (localBookingData) {
+              // Use local_tours_bookings data for local stories tours
+              // Convert amnt_of_people (numeric) to number if needed
+              const numberOfPeople = localBookingData.amnt_of_people
+                ? (typeof localBookingData.amnt_of_people === 'string'
+                    ? parseFloat(localBookingData.amnt_of_people)
+                    : Number(localBookingData.amnt_of_people))
+                : invitee?.numberOfPeople || 1;
 
-            // Format booking_date properly (it's a date string from the database)
-            const bookingDate = localBookingData.booking_date
-              ? new Date(localBookingData.booking_date).toISOString()
-              : (booking?.tour_datetime || null);
+              // Format booking_date properly (it's a date string from the database)
+              const bookingDate = localBookingData.booking_date
+                ? new Date(localBookingData.booking_date).toISOString()
+                : (booking?.tour_datetime || null);
 
             bookingData = {
               id: booking?.id || localBookingData.booking_id || null,
@@ -377,14 +452,60 @@ export default function BookingSuccessPage() {
               status: booking?.status || 'payment_completed',
             };
             
-            console.log('Local stories booking data prepared:', {
-              customer_name: bookingData.customer_name,
-              customer_email: bookingData.customer_email,
-              number_of_people: bookingData.number_of_people,
-              booking_date: bookingData.booking_date,
-              booking_time: bookingData.booking_time,
-              local_booking_id: bookingData.local_booking_id,
-            });
+              console.log('Local stories booking data prepared:', {
+                customer_name: bookingData.customer_name,
+                customer_email: bookingData.customer_email,
+                number_of_people: bookingData.number_of_people,
+                booking_date: bookingData.booking_date,
+                booking_time: bookingData.booking_time,
+                local_booking_id: bookingData.local_booking_id,
+              });
+            } else {
+              // Local stories booking found in tourbooking (local_tours_bookings insert failed)
+              // Extract date from tour_datetime (format: YYYY-MM-DDTHH:mm:ss)
+              const tourDatetime = booking.tour_datetime;
+              const bookingDate = tourDatetime ? tourDatetime.split('T')[0] : null;
+              const bookingTime = tourDatetime ? tourDatetime.split('T')[1]?.substring(0, 5) || '14:00' : '14:00';
+              
+              bookingData = {
+                id: booking.id,
+                tour_id: booking.tour_id,
+                tour_title: tourTitle,
+                customer_name: invitee?.name || '',
+                customer_email: invitee?.email || '',
+                customer_phone: invitee?.phone || '',
+                number_of_people: invitee?.numberOfPeople || 1,
+                language: invitee?.language || 'nl',
+                special_requests: invitee?.specialRequests || '',
+                // All amounts come from the matched invitee
+                amount: invitee?.amount || 0,
+                originalAmount: invitee?.originalAmount || 0,
+                discountApplied: invitee?.discountApplied || 0,
+                tanguyCost: invitee?.tanguyCost || 0,
+                extraHourCost: invitee?.extraHourCost || 0,
+                weekendFeeCost: invitee?.weekendFeeCost || 0,
+                eveningFeeCost: invitee?.eveningFeeCost || 0,
+                // Promo code discount from Stripe
+                promoCode: invitee?.promoCode || null,
+                promoDiscountAmount: invitee?.promoDiscountAmount || 0,
+                promoDiscountPercent: invitee?.promoDiscountPercent || null,
+                booking_date: bookingDate ? new Date(bookingDate).toISOString() : null,
+                booking_time: bookingTime,
+                tour_datetime: tourDatetime,
+                upsell_products: upsellProducts,
+                is_local_stories: true,
+                status: booking.status || 'payment_completed',
+              };
+              
+              console.log('Local stories booking data prepared from tourbooking:', {
+                customer_name: bookingData.customer_name,
+                customer_email: bookingData.customer_email,
+                number_of_people: bookingData.number_of_people,
+                booking_date: bookingData.booking_date,
+                booking_time: bookingData.booking_time,
+                booking_id: bookingData.id,
+              });
+            }
           } else if (booking) {
             // Use tourbooking data for regular tours
             bookingData = {

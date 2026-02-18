@@ -598,12 +598,24 @@ async function handleEvent(event: Stripe.Event) {
             }
 
             // Always insert a new entry - each customer booking gets their own row
-            const { error: localInsertError } = await supabase
+            // If insert fails due to missing shipping columns, retry without them
+            let { error: localInsertError } = await supabase
               .from('local_tours_bookings')
               .insert(localBookingData);
 
+            // If error is about missing shipping columns, retry without them
+            if (localInsertError && localInsertError.message && localInsertError.message.includes('shipping_')) {
+              console.warn('[Local Stories] Shipping address columns don\'t exist yet in local_tours_bookings, retrying insert without them');
+              const { shipping_full_name, shipping_street, shipping_city, shipping_postal_code, shipping_country, ...bookingWithoutShipping } = localBookingData;
+              const retryResult = await supabase
+                .from('local_tours_bookings')
+                .insert(bookingWithoutShipping);
+              localInsertError = retryResult.error;
+            }
+
             if (localInsertError) {
               console.error('Error creating local_tours_bookings:', localInsertError);
+              // Don't throw - the booking is already created in tourbooking, so we can continue
             } else {
               console.info(`Created local_tours_bookings entry for session ${sessionId}`);
             }
