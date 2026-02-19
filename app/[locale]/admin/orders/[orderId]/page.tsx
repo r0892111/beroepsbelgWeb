@@ -455,7 +455,7 @@ export default function OrderDetailPage() {
                     onChange={(e) => setEditForm({ ...editForm, customer_phone: e.target.value })}
                   />
                 ) : (
-                  <p className="mt-1">{order.customer_phone || order.metadata?.customerPhone || 'N/A'}</p>
+                  <p className="mt-1">{order.customer_phone || (order.metadata?.customerPhone ? String(order.metadata.customerPhone) : 'N/A')}</p>
                 )}
               </div>
             </CardContent>
