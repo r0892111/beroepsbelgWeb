@@ -915,6 +915,52 @@ export default function BookingDetailPage() {
         // Don't fail - main booking was updated
       }
 
+      // Create and send invoice for extra invitee
+      try {
+        const invoiceAmount = (tour.price || 0) * newInvitee.numberOfPeople;
+        const invoicePayload = {
+          booking_id: booking.id,
+          booking_status: booking.status,
+          booking_type: booking.booking_type || 'B2C',
+          tour_id: booking.tour_id,
+          tour_title: tour.title || tour.name || 'Tour',
+          tour_city: booking.city || tour.city || null,
+          tour_datetime: booking.tour_datetime,
+          tour_end: booking.tour_end,
+          // Invitee information
+          invitee_name: newInvitee.name,
+          invitee_email: newInvitee.email,
+          invitee_phone: newInvitee.phone || null,
+          number_of_people: newInvitee.numberOfPeople,
+          language: newInvitee.language || 'nl',
+          special_requests: newInvitee.specialRequests || null,
+          // Payment information
+          amount: invoiceAmount,
+          currency: 'EUR',
+          is_paid: newInvitee.isPaid || false,
+          // Timestamp
+          created_at: new Date().toISOString(),
+          // Additional context
+          is_extra_invitee: true,
+          local_booking_id: localError ? null : undefined, // Will be set if local booking was created successfully
+        };
+
+        // Send invoice to webhook
+        const webhookUrl = 'https://alexfinit.app.n8n.cloud/webhook/manual-payment-extra-invitees-completed';
+        await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(invoicePayload),
+        });
+
+        console.info('Invoice sent to webhook for extra invitee:', invoicePayload);
+      } catch (invoiceError: any) {
+        console.error('Failed to send invoice webhook:', invoiceError);
+        // Don't fail the invitee addition if invoice webhook fails
+      }
+
       toast.success('Invitee added successfully!');
       setAddInviteeDialogOpen(false);
       resetNewInvitee();
@@ -1029,6 +1075,58 @@ export default function BookingDetailPage() {
           .eq('id', booking.id);
 
         if (updateError) throw new Error('Failed to update booking');
+      }
+
+      // Create and send invoice for extra people
+      try {
+        const invoicePayload = {
+          booking_id: booking.id,
+          booking_status: booking.status,
+          booking_type: booking.booking_type || 'B2C',
+          tour_id: booking.tour_id,
+          tour_title: tour?.title || tour?.name || 'Tour',
+          tour_city: booking.city || tour?.city || null,
+          tour_datetime: booking.tour_datetime,
+          tour_end: booking.tour_end,
+          // Invitee information
+          invitee_name: addPeopleTarget.customerName,
+          invitee_email: addPeopleTarget.customerEmail,
+          invitee_phone: null,
+          number_of_people: additionalPeople,
+          language: 'nl',
+          special_requests: null,
+          // Payment information
+          amount: totalAmount,
+          currency: 'EUR',
+          is_paid: false, // Additional people are typically unpaid initially
+          // Fee breakdown
+          base_amount: baseAmount,
+          tanguy_cost: feeCosts.tanguyCost,
+          extra_hour_cost: feeCosts.extraHourCost,
+          weekend_fee_cost: feeCosts.weekendFeeCost,
+          evening_fee_cost: feeCosts.eveningFeeCost,
+          // Timestamp
+          created_at: new Date().toISOString(),
+          // Additional context
+          is_extra_people: true,
+          local_booking_id: addPeopleTarget.localBookingId || null,
+          invitee_index: addPeopleTarget.inviteeIndex !== undefined ? addPeopleTarget.inviteeIndex : null,
+        };
+
+        // Send invoice to webhook
+        const webhookUrl = 'https://alexfinit.app.n8n.cloud/webhook/manual-payment-extra-invitees-completed';
+        await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(invoicePayload),
+        });
+
+        console.info('Invoice sent to webhook for extra people:', invoicePayload);
+      } catch (invoiceError: any) {
+        console.error('Failed to send invoice webhook:', invoiceError);
+        // Don't fail the people addition if invoice webhook fails
       }
 
       toast.success(`Added ${additionalPeople} people to the booking`);
