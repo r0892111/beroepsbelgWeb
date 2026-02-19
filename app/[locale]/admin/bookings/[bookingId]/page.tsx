@@ -1114,7 +1114,7 @@ export default function BookingDetailPage() {
         };
 
         // Send invoice to webhook
-        const webhookUrl = 'https://alexfinit.app.n8n.cloud/webhook/manual-payment-extra-invitees-completed';
+        const webhookUrl = 'https://alexfinit.app.n8n.cloud/webhook/faa0ec47-e8f7-4e4e-a358-2b8fe5f074a2';
         await fetch(webhookUrl, {
           method: 'POST',
           headers: {
