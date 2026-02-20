@@ -810,7 +810,14 @@
     "onlineDiscount": "10% korting bij online boeken",
     "originalPrice": "Originele prijs",
     "discountedPrice": "Prijs met korting",
-    "youSave": "Je bespaart"
+    "youSave": "Je bespaart",
+    "rating": "Beoordeling",
+    "reviews": "beoordelingen",
+    "review": "beoordeling",
+    "viewOnGoogleMaps": "Bekijk op Google Maps",
+    "location": "Locatie",
+    "tourType": "Tour Type",
+    "notes": "Notities"
   },
   "tourTypes": {
     "walking": "Wandeltour",

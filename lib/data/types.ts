@@ -32,6 +32,7 @@ export type Tour = {
   price?: number;
   startLocation?: string;
   endLocation?: string;
+  google_maps_url?: string; // Google Maps URL for tour location
   languages: string[];
   description: string; // Dutch description (primary)
   description_en?: string; // English description

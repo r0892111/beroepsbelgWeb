@@ -742,7 +742,14 @@
     "onlineDiscount": "10% discount for online bookings",
     "originalPrice": "Original price",
     "discountedPrice": "Discounted price",
-    "youSave": "You save"
+    "youSave": "You save",
+    "rating": "Rating",
+    "reviews": "reviews",
+    "review": "review",
+    "viewOnGoogleMaps": "View on Google Maps",
+    "location": "Location",
+    "tourType": "Tour Type",
+    "notes": "Notes"
   },
   "tourTypes": {
     "walking": "Walking Tour",

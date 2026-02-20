@@ -741,7 +741,14 @@
     "onlineDiscount": "10% de réduction pour les réservations en ligne",
     "originalPrice": "Prix original",
     "discountedPrice": "Prix réduit",
-    "youSave": "Vous économisez"
+    "youSave": "Vous économisez",
+    "rating": "Note",
+    "reviews": "avis",
+    "review": "avis",
+    "viewOnGoogleMaps": "Voir sur Google Maps",
+    "location": "Emplacement",
+    "tourType": "Type de tour",
+    "notes": "Notes"
   },
   "tourTypes": {
     "walking": "Visite à pied",

@@ -2,7 +2,7 @@ import { type Locale, locales } from '@/i18n';
 import { getTourBySlug } from '@/lib/api/content';
 import { getTourRatings } from '@/lib/api/tour-ratings';
 import { Badge } from '@/components/ui/badge';
-import { Share2, MapPin, Clock, Languages, Sparkles } from 'lucide-react';
+import { Share2, MapPin, Clock, Languages, Sparkles, Star, ExternalLink } from 'lucide-react';
 import type { Metadata } from 'next';
 import { TouristTripJsonLd, BreadcrumbJsonLd, AggregateRatingJsonLd } from '@/components/seo/json-ld';
 import Link from 'next/link';
@@ -248,57 +248,47 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
             </div>
 
           <div className="mb-12">
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy">
-                  {tour.title}
-                  {isAntwerp && locale === 'nl' && ' - Stadsgids Antwerpen'}
-                  {isAntwerp && locale === 'en' && ' - Guide in Antwerp'}
-                </h1>
-                {tour.id && <TourFavoriteButton tourId={tour.id} size="default" />}
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
+            <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-4 mb-4 flex-wrap">
+                  <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy">
+                    {tour.title}
+                    {isAntwerp && locale === 'nl' && ' - Stadsgids Antwerpen'}
+                    {isAntwerp && locale === 'en' && ' - Guide in Antwerp'}
+                  </h1>
+                  {tour.id && <TourFavoriteButton tourId={tour.id} size="default" />}
+                </div>
+                
+                {/* Tour Ratings */}
+                {tourRatings && tourRatings.reviewCount > 0 && (
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`h-5 w-5 ${
+                            star <= Math.round(tourRatings.ratingValue)
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-gray-300'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-sm font-semibold text-navy">
+                      {tourRatings.ratingValue.toFixed(1)}
+                    </span>
+                    <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                      ({tourRatings.reviewCount} {tourRatings.reviewCount === 1 ? tTour('review') : tTour('reviews')})
+                    </span>
+                  </div>
+                )}
+
                 {/* Tour Types badges */}
-                {tour.tour_types && tour.tour_types.length > 0 && (
-                  <>
-                    {tour.tour_types.map((tourType, index) => {
-                      return (
-                        <Badge
-                          key={`type-${index}`}
-                          className="text-sm px-2 py-1"
-                          style={{
-                            backgroundColor: '#1BDD95',
-                            color: 'white',
-                            border: 'none',
-                          }}
-                        >
-                          {getTourTypeText(tourType)}
-                        </Badge>
-                      );
-                    })}
-                  </>
-                )}
-                {tour.op_maat && (
-                  <Badge
-                    className="text-sm font-semibold"
-                    style={{ backgroundColor: 'var(--brass)', color: 'var(--belgian-navy)' }}
-                  >
-                    {getBookingTypeShortLabel(tour)}
-                  </Badge>
-                )}
-                {tour.local_stories && (
-                  <Badge
-                    className="text-sm font-semibold"
-                    style={{ backgroundColor: 'var(--primary-base)', color: 'white' }}
-                  >
-                    {tTour('localStoriesTag')}
-                  </Badge>
-                )}
-                {tour.themes && tour.themes.length > 0 && (
-                  <>
-                    {tour.themes.map((theme, index) => (
+                <div className="flex items-center gap-2 flex-wrap mb-4">
+                  {tour.tour_types && tour.tour_types.length > 0 ? (
+                    tour.tour_types.map((tourType, index) => (
                       <Badge
-                        key={`theme-${index}`}
+                        key={`type-${index}`}
                         className="text-sm px-2 py-1"
                         style={{
                           backgroundColor: '#1BDD95',
@@ -306,25 +296,69 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
                           border: 'none',
                         }}
                       >
-                        {getThemeText(theme)}
+                        {getTourTypeText(tourType)}
                       </Badge>
-                    ))}
-                  </>
-                )}
+                    ))
+                  ) : tour.type && (
+                    <Badge
+                      className="text-sm px-2 py-1"
+                      style={{
+                        backgroundColor: '#1BDD95',
+                        color: 'white',
+                        border: 'none',
+                      }}
+                    >
+                      {tour.type}
+                    </Badge>
+                  )}
+                  {tour.op_maat && (
+                    <Badge
+                      className="text-sm font-semibold"
+                      style={{ backgroundColor: 'var(--brass)', color: 'var(--belgian-navy)' }}
+                    >
+                      {getBookingTypeShortLabel(tour)}
+                    </Badge>
+                  )}
+                  {tour.local_stories && (
+                    <Badge
+                      className="text-sm font-semibold"
+                      style={{ backgroundColor: 'var(--primary-base)', color: 'white' }}
+                    >
+                      {tTour('localStoriesTag')}
+                    </Badge>
+                  )}
+                  {tour.themes && tour.themes.length > 0 && (
+                    <>
+                      {tour.themes.map((theme, index) => (
+                        <Badge
+                          key={`theme-${index}`}
+                          className="text-sm px-2 py-1"
+                          style={{
+                            backgroundColor: '#1BDD95',
+                            color: 'white',
+                            border: 'none',
+                          }}
+                        >
+                          {getThemeText(theme)}
+                        </Badge>
+                      ))}
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
-            {tour.price && (
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-3">
+              
+              {/* Price Section */}
+              {tour.price && (
+                <div className="flex flex-col gap-2 text-right">
                   <p className="text-3xl font-serif font-bold" style={{ color: 'var(--brass)' }}>
                     €{discountedPrice.toFixed(2)}
                   </p>
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                    {tBooking('perPerson')}
+                  </p>
                 </div>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                  {tBooking('perPerson')}
-                </p>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Tour Images Gallery */}
@@ -383,32 +417,37 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
               })}
             </div>
           )}
-          {tour.notes && (
-            <p className="text-sm italic mt-4" style={{ color: 'var(--brass)' }}>{tour.notes}</p>
-          )}
         </div>
+
+        {/* Notes Section - Separate if notes exist */}
+        {tour.notes && (
+          <div className="mb-12 rounded-lg bg-sand p-8 brass-corner">
+            <h3 className="text-xl font-serif font-bold text-navy mb-3">{tTour('notes')}</h3>
+            <p className="text-base leading-relaxed italic" style={{ color: 'var(--brass)' }}>
+              {tour.notes}
+            </p>
+          </div>
+        )}
 
         <div className="mb-12 rounded-lg bg-sand p-8 brass-corner">
           <h3 className="text-2xl font-serif font-bold text-navy mb-6">{tTour('details')}</h3>
           <div className="grid gap-6 md:grid-cols-2">
-            {tour.startLocation && (
+            {/* Tour Type */}
+            {(tour.tour_types && tour.tour_types.length > 0) || tour.type ? (
               <div className="flex items-start gap-3">
-                <MapPin className="mt-1 h-5 w-5 flex-shrink-0" style={{ color: 'var(--brass)' }} />
+                <Sparkles className="mt-1 h-5 w-5 flex-shrink-0" style={{ color: 'var(--brass)' }} />
                 <div>
-                  <p className="font-semibold text-navy mb-1">{tTour('start')}</p>
-                  <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>{tour.startLocation}</p>
+                  <p className="font-semibold text-navy mb-1">{tTour('tourType')}</p>
+                  <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>
+                    {tour.tour_types && tour.tour_types.length > 0
+                      ? tour.tour_types.map((tourType) => getTourTypeText(tourType)).join(', ')
+                      : tour.type}
+                  </p>
                 </div>
               </div>
-            )}
-            {tour.endLocation && (
-              <div className="flex items-start gap-3">
-                <MapPin className="mt-1 h-5 w-5 flex-shrink-0" style={{ color: 'var(--brass)' }} />
-                <div>
-                  <p className="font-semibold text-navy mb-1">{tTour('end')}</p>
-                  <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>{tour.endLocation}</p>
-                </div>
-              </div>
-            )}
+            ) : null}
+            
+            {/* Duration */}
             <div className="flex items-start gap-3">
               <Clock className="mt-1 h-5 w-5 flex-shrink-0" style={{ color: 'var(--brass)' }} />
               <div>
@@ -416,6 +455,8 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
                 <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>{formatDuration(tour.durationMinutes)}</p>
               </div>
             </div>
+
+            {/* Languages */}
             {tour.languages.length > 0 && (
               <div className="flex items-start gap-3">
                 <Languages className="mt-1 h-5 w-5 flex-shrink-0" style={{ color: 'var(--brass)' }} />
@@ -425,10 +466,54 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
                 </div>
               </div>
             )}
-            {tour.themes && tour.themes.length > 0 && (
+
+            {/* Start Location */}
+            {tour.startLocation && (
               <div className="flex items-start gap-3">
-                <Sparkles className="mt-1 h-5 w-5 flex-shrink-0" style={{ color: 'var(--brass)' }} />
+                <MapPin className="mt-1 h-5 w-5 flex-shrink-0" style={{ color: 'var(--brass)' }} />
                 <div>
+                  <p className="font-semibold text-navy mb-1">{tTour('start')}</p>
+                  <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>{tour.startLocation}</p>
+                </div>
+              </div>
+            )}
+
+            {/* End Location */}
+            {tour.endLocation && (
+              <div className="flex items-start gap-3">
+                <MapPin className="mt-1 h-5 w-5 flex-shrink-0" style={{ color: 'var(--brass)' }} />
+                <div>
+                  <p className="font-semibold text-navy mb-1">{tTour('end')}</p>
+                  <p className="text-sm" style={{ color: 'var(--slate-blue)' }}>{tour.endLocation}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Google Maps URL */}
+            {tour.google_maps_url && (
+              <div className="flex items-start gap-3 md:col-span-2">
+                <MapPin className="mt-1 h-5 w-5 flex-shrink-0" style={{ color: 'var(--brass)' }} />
+                <div className="flex-1">
+                  <p className="font-semibold text-navy mb-1">{tTour('location')}</p>
+                  <a
+                    href={tour.google_maps_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-sm font-medium transition-colors hover:opacity-80"
+                    style={{ color: 'var(--brass)' }}
+                  >
+                    {tTour('viewOnGoogleMaps')}
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {/* Themes */}
+            {tour.themes && tour.themes.length > 0 && (
+              <div className="flex items-start gap-3 md:col-span-2">
+                <Sparkles className="mt-1 h-5 w-5 flex-shrink-0" style={{ color: 'var(--brass)' }} />
+                <div className="flex-1">
                   <p className="font-semibold text-navy mb-1">{tTour('themes')}</p>
                   <div className="flex flex-wrap gap-1.5 mt-1">
                     {tour.themes.map((theme, index) => (

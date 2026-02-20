@@ -753,7 +753,14 @@
     "onlineDiscount": "10% Rabatt bei Online-Buchung",
     "originalPrice": "Ursprünglicher Preis",
     "discountedPrice": "Reduzierter Preis",
-    "youSave": "Sie sparen"
+    "youSave": "Sie sparen",
+    "rating": "Bewertung",
+    "reviews": "Bewertungen",
+    "review": "Bewertung",
+    "viewOnGoogleMaps": "Auf Google Maps anzeigen",
+    "location": "Standort",
+    "tourType": "Tour-Typ",
+    "notes": "Hinweise"
   },
   "tourTypes": {
     "walking": "Stadtrundgang",

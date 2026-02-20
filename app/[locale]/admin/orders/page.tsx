@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Home, LogOut, RefreshCw, Search, Filter, X, ExternalLink, Package, Eye, Plus, Trash2 } from 'lucide-react';
+import { Home, LogOut, RefreshCw, Search, Filter, X, ExternalLink, Package, Eye, Plus, Trash2, FileText, CheckCircle2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -62,6 +62,12 @@ export default function AdminOrdersPage() {
   const [createOrderDialogOpen, setCreateOrderDialogOpen] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
+  
+  // Invoice state
+  const [invoiceId, setInvoiceId] = useState<string>('');
+  const [teamleaderInvoices, setTeamleaderInvoices] = useState<any[]>([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
+  const [invoicesError, setInvoicesError] = useState<string | null>(null);
 
   // Filter and search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -150,9 +156,41 @@ export default function AdminOrdersPage() {
     }
   };
 
+  const fetchTeamleaderInvoices = async () => {
+    setLoadingInvoices(true);
+    setInvoicesError(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setInvoicesError('Not authenticated');
+        return;
+      }
+
+      const response = await fetch('/api/admin/teamleader-invoices', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch invoices');
+      }
+
+      const data = await response.json();
+      setTeamleaderInvoices(data.invoices || []);
+    } catch (err: any) {
+      setInvoicesError(err instanceof Error ? err.message : 'Failed to load invoices');
+    } finally {
+      setLoadingInvoices(false);
+    }
+  };
+
   const openCreateOrderDialog = () => {
     setCreateOrderDialogOpen(true);
     setOrderItems([]);
+    setInvoiceId('');
     setOrderFormData({
       customerName: '',
       customerEmail: '',
@@ -166,6 +204,7 @@ export default function AdminOrdersPage() {
       isPaid: false,
     });
     void fetchProducts();
+    void fetchTeamleaderInvoices();
   };
 
   const addOrderItem = () => {
@@ -304,6 +343,7 @@ export default function AdminOrdersPage() {
             giftCardDiscount: orderFormData.giftCardDiscount || 0,
             isManualOrder: true,
             isPaid: orderFormData.isPaid,
+            invoice_link: invoiceId || null,
           },
           user_id: user?.id || null,
         })
@@ -313,6 +353,26 @@ export default function AdminOrdersPage() {
       if (orderError) {
         console.error('Error creating order:', orderError);
         throw new Error(orderError.message || 'Failed to create order');
+      }
+
+      // If order is marked as paid and has an invoice, call invoice webhook
+      if (orderFormData.isPaid && invoiceId) {
+        try {
+          await fetch('https://alexfinit.app.n8n.cloud/webhook/8a7a6159-5cdb-4853-b6ff-b92307739f22', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              invoice_id: invoiceId,
+              price: finalTotal,
+            }),
+          });
+          console.info('Invoice webhook called successfully');
+        } catch (invoiceError: any) {
+          console.error('Failed to call invoice webhook:', invoiceError);
+          // Don't fail the order creation if invoice webhook fails
+        }
       }
 
       toast.success(`Order created successfully${orderFormData.isPaid ? ' (marked as paid)' : ' (pending payment)'}`);
@@ -975,6 +1035,85 @@ export default function AdminOrdersPage() {
                       onChange={(e) => setOrderFormData({ ...orderFormData, giftCardDiscount: parseFloat(e.target.value) || 0 })}
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* TeamLeader Invoice Selection */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">TeamLeader Invoice (Optional)</h3>
+                <div>
+                  <Label htmlFor="invoiceId">
+                    Link to TeamLeader Invoice
+                  </Label>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Select
+                      value={invoiceId || 'none'}
+                      onValueChange={(value) => setInvoiceId(value === 'none' ? '' : value)}
+                    >
+                      <SelectTrigger className="bg-white flex-1">
+                        <SelectValue placeholder={loadingInvoices ? 'Loading invoices...' : teamleaderInvoices.length === 0 ? 'No invoices found - click Refresh' : 'Select an invoice (optional)'} />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        <SelectItem value="none">No invoice linked</SelectItem>
+                        {teamleaderInvoices.map((invoice) => (
+                          <SelectItem key={invoice.id} value={invoice.id}>
+                            <div className="flex items-center gap-2">
+                              <span>{invoice.title}</span>
+                              {invoice.invoice_number && (
+                                <span className="text-xs text-muted-foreground">({invoice.invoice_number})</span>
+                              )}
+                              {invoice.total && (
+                                <span className="text-xs text-muted-foreground">€{invoice.total.toFixed(2)}</span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void fetchTeamleaderInvoices()}
+                      disabled={loadingInvoices}
+                    >
+                      <RefreshCw className={`h-3 w-3 ${loadingInvoices ? 'animate-spin' : ''}`} />
+                      {loadingInvoices ? 'Loading...' : 'Refresh'}
+                    </Button>
+                  </div>
+                  {invoicesError && (
+                    <p className="text-xs text-red-500 mt-2">{invoicesError}</p>
+                  )}
+                  {teamleaderInvoices.length === 0 && !loadingInvoices && !invoicesError && (
+                    <p className="text-xs text-amber-600 mt-2">No invoices loaded yet. Click Refresh to load invoices from TeamLeader.</p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Link this order to an existing TeamLeader invoice.
+                  </p>
+                  {invoiceId && invoiceId !== 'none' && (
+                    <div className="bg-muted/50 rounded-lg p-2 text-sm mt-2">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <span className="font-medium">Selected invoice:</span>
+                        {(() => {
+                          const selectedInvoice = teamleaderInvoices.find(i => i.id === invoiceId);
+                          return selectedInvoice ? (
+                            <span>
+                              {selectedInvoice.title}
+                              {selectedInvoice.invoice_number && (
+                                <span className="text-xs text-muted-foreground ml-1">({selectedInvoice.invoice_number})</span>
+                              )}
+                              {selectedInvoice.total && (
+                                <span className="text-xs text-muted-foreground ml-1">€{selectedInvoice.total.toFixed(2)}</span>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">Invoice ID: {invoiceId}</span>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
