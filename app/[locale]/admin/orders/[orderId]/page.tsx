@@ -816,41 +816,46 @@ export default function OrderDetailPage() {
             ) : (
               <div>
                 {order.metadata?.invoice_link ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-green-600" />
-                      <span className="font-medium">Invoice Linked</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Invoice ID: {order.metadata.invoice_link as string}
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 gap-1.5 text-green-600 border-green-200 hover:bg-green-50"
-                      asChild
-                    >
-                      <a
-                        href={`https://focus.teamleader.eu/invoice_detail.php?id=${order.metadata.invoice_link}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <FileText className="h-3 w-3" />
-                        View Invoice
-                      </a>
-                    </Button>
-                    {order.payment_status === 'paid' && order.total_amount && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 gap-1.5 mt-2"
-                        onClick={() => handleCallInvoiceWebhook(order.metadata.invoice_link as string, order.total_amount!)}
-                      >
-                        <Send className="h-3 w-3" />
-                        <span className="text-xs">Set Invoice as Paid</span>
-                      </Button>
-                    )}
-                  </div>
+                  (() => {
+                    const invoiceLink = order.metadata.invoice_link as string;
+                    return (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-green-600" />
+                          <span className="font-medium">Invoice Linked</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Invoice ID: {invoiceLink}
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 gap-1.5 text-green-600 border-green-200 hover:bg-green-50"
+                          asChild
+                        >
+                          <a
+                            href={`https://focus.teamleader.eu/invoice_detail.php?id=${invoiceLink}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <FileText className="h-3 w-3" />
+                            View Invoice
+                          </a>
+                        </Button>
+                        {order.payment_status === 'paid' && order.total_amount && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 gap-1.5 mt-2"
+                            onClick={() => handleCallInvoiceWebhook(invoiceLink, order.total_amount!)}
+                          >
+                            <Send className="h-3 w-3" />
+                            <span className="text-xs">Set Invoice as Paid</span>
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })()
                 ) : (
                   <p className="text-muted-foreground">No invoice linked</p>
                 )}
