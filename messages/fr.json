@@ -748,7 +748,19 @@
     "viewOnGoogleMaps": "Voir sur Google Maps",
     "location": "Emplacement",
     "tourType": "Type de tour",
-    "notes": "Notes"
+    "notes": "Notes",
+    "priceBreakdown": "Détail des Prix",
+    "basePrice": "Prix de Base",
+    "optionalFees": "Frais Optionnels",
+    "tanguyAvailable": "Tanguy Ottomer Disponible",
+    "tanguyDescription": "Demandez Tanguy Ottomer, fondateur de Beroepsbelg, comme guide personnel",
+    "extraHour": "Heure Supplémentaire",
+    "extraHourDescription": "Prolongez votre visite d'une heure",
+    "weekendFee": "Supplément Week-end",
+    "weekendFeeDescription": "S'applique aux visites le samedi ou le dimanche",
+    "eveningFee": "Supplément Soirée",
+    "eveningFeeDescription": "S'applique aux visites commençant à 17h00 ou plus tard",
+    "totalWithOptions": "Total (avec toutes les options)"
   },
   "tourTypes": {
     "walking": "Visite à pied",

@@ -2,7 +2,7 @@ import { type Locale, locales } from '@/i18n';
 import { getTourBySlug } from '@/lib/api/content';
 import { getTourRatings } from '@/lib/api/tour-ratings';
 import { Badge } from '@/components/ui/badge';
-import { Share2, MapPin, Clock, Languages, Sparkles, Star, ExternalLink } from 'lucide-react';
+import { Share2, MapPin, Clock, Languages, Sparkles, Star, ExternalLink, Euro, Info } from 'lucide-react';
 import type { Metadata } from 'next';
 import { TouristTripJsonLd, BreadcrumbJsonLd, AggregateRatingJsonLd } from '@/components/seo/json-ld';
 import Link from 'next/link';
@@ -426,6 +426,120 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
             <p className="text-base leading-relaxed italic" style={{ color: 'var(--brass)' }}>
               {tour.notes}
             </p>
+          </div>
+        )}
+
+        {/* Price Breakdown Section */}
+        {tour.price && (
+          <div className="mb-12 rounded-lg bg-sand p-8 brass-corner">
+            <h3 className="text-2xl font-serif font-bold text-navy mb-6 flex items-center gap-2">
+              <Euro className="h-6 w-6" style={{ color: 'var(--brass)' }} />
+              {tTour('priceBreakdown')}
+            </h3>
+            
+            <div className="space-y-4">
+              {/* Base Price */}
+              <div className="flex items-center justify-between pb-3 border-b" style={{ borderColor: 'var(--brass)' }}>
+                <div>
+                  <p className="font-semibold text-navy">{tTour('basePrice')}</p>
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                    {tBooking('perPerson')}
+                  </p>
+                </div>
+                <p className="text-lg font-bold" style={{ color: 'var(--brass)' }}>
+                  €{tour.price.toFixed(2)}
+                </p>
+              </div>
+
+              {/* Optional Fees Section */}
+              <div className="pt-2">
+                <p className="font-semibold text-navy mb-3">{tTour('optionalFees')}</p>
+                <div className="space-y-3">
+                  {/* Tanguy Availability - Only show if tour is eligible */}
+                  {!tour.local_stories && ['antwerpen', 'knokke-heist', 'spa'].includes(city.toLowerCase()) && (
+                    <div className="flex items-start justify-between p-3 rounded-lg bg-white/50">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-medium text-navy">{tTour('tanguyAvailable')}</p>
+                          <Info className="h-4 w-4" style={{ color: 'var(--brass)' }} />
+                        </div>
+                        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                          {tTour('tanguyDescription')}
+                        </p>
+                        <p className="text-xs mt-1 italic" style={{ color: 'var(--text-muted)' }}>
+                          {tBooking('tanguyLanguageDisclaimer')}
+                        </p>
+                      </div>
+                      <p className="text-base font-semibold ml-4" style={{ color: 'var(--brass)' }}>
+                        +€125.00
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Extra Hour */}
+                  {!tour.local_stories && (
+                    <div className="flex items-start justify-between p-3 rounded-lg bg-white/50">
+                      <div className="flex-1">
+                        <p className="font-medium text-navy mb-1">{tTour('extraHour')}</p>
+                        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                          {tTour('extraHourDescription')}
+                        </p>
+                      </div>
+                      <p className="text-base font-semibold ml-4" style={{ color: 'var(--brass)' }}>
+                        +€150.00
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Weekend Fee */}
+                  <div className="flex items-start justify-between p-3 rounded-lg bg-white/50">
+                    <div className="flex-1">
+                      <p className="font-medium text-navy mb-1">{tTour('weekendFee')}</p>
+                      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                        {tTour('weekendFeeDescription')}
+                      </p>
+                    </div>
+                    <p className="text-base font-semibold ml-4" style={{ color: 'var(--brass)' }}>
+                      +€25.00
+                    </p>
+                  </div>
+
+                  {/* Evening Fee */}
+                  {tour.op_maat && (
+                    <div className="flex items-start justify-between p-3 rounded-lg bg-white/50">
+                      <div className="flex-1">
+                        <p className="font-medium text-navy mb-1">{tTour('eveningFee')}</p>
+                        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                          {tTour('eveningFeeDescription')}
+                        </p>
+                      </div>
+                      <p className="text-base font-semibold ml-4" style={{ color: 'var(--brass)' }}>
+                        +€25.00
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Total with all options */}
+              {(() => {
+                const basePrice = tour.price;
+                const tanguyCost = !tour.local_stories && ['antwerpen', 'knokke-heist', 'spa'].includes(city.toLowerCase()) ? 125 : 0;
+                const extraHourCost = !tour.local_stories ? 150 : 0;
+                const weekendFeeCost = 25;
+                const eveningFeeCost = tour.op_maat ? 25 : 0;
+                const totalWithAllOptions = basePrice + tanguyCost + extraHourCost + weekendFeeCost + eveningFeeCost;
+                
+                return (
+                  <div className="flex items-center justify-between pt-4 mt-4 border-t-2" style={{ borderColor: 'var(--brass)' }}>
+                    <p className="text-lg font-semibold text-navy">{tTour('totalWithOptions')}</p>
+                    <p className="text-xl font-bold" style={{ color: 'var(--brass)' }}>
+                      €{totalWithAllOptions.toFixed(2)}
+                    </p>
+                  </div>
+                );
+              })()}
+            </div>
           </div>
         )}
 

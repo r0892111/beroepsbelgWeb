@@ -817,7 +817,19 @@
     "viewOnGoogleMaps": "Bekijk op Google Maps",
     "location": "Locatie",
     "tourType": "Tour Type",
-    "notes": "Notities"
+    "notes": "Notities",
+    "priceBreakdown": "Prijsopgave",
+    "basePrice": "Basisprijs",
+    "optionalFees": "Optionele Kosten",
+    "tanguyAvailable": "Tanguy Ottomer Beschikbaar",
+    "tanguyDescription": "Vraag Tanguy Ottomer, oprichter van Beroepsbelg, aan als uw persoonlijke gids",
+    "extraHour": "Extra Uur",
+    "extraHourDescription": "Verleng uw tour met 1 uur",
+    "weekendFee": "Weekend Toeslag",
+    "weekendFeeDescription": "Van toepassing op tours op zaterdag of zondag",
+    "eveningFee": "Avond Toeslag",
+    "eveningFeeDescription": "Van toepassing op tours die starten vanaf 17:00 of later",
+    "totalWithOptions": "Totaal (met alle opties)"
   },
   "tourTypes": {
     "walking": "Wandeltour",
