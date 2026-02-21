@@ -101,9 +101,10 @@
     "close": "Chat schließen",
     "welcomeMessage": "Hallo! Wobei kann ich Ihnen helfen?",
     "emptyStateTitle": "Wie kann ich Ihnen helfen?",
-    "starterPrompt1": "Welche Touren bieten Sie an?",
-    "starterPrompt2": "Wie buche ich eine Tour?",
-    "starterPrompt3": "Was sind Ihre Preise?"
+    "starterPrompt1": "Angebot anfordern",
+    "starterPrompt2": "Welche Touren bieten Sie an?",
+    "starterPrompt3": "Wie buche ich eine Tour?",
+    "starterPrompt4": "Was sind Ihre Preise?"
   },
   "footer": {
     "address": "Adresse",

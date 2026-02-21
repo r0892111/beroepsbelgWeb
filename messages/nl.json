@@ -165,9 +165,10 @@
     "close": "Chat sluiten",
     "welcomeMessage": "Hey! Waar kan ik je mee helpen?",
     "emptyStateTitle": "Waarmee kan ik je helpen?",
-    "starterPrompt1": "Welke tours bieden jullie aan?",
-    "starterPrompt2": "Hoe boek ik een tour?",
-    "starterPrompt3": "Wat zijn jullie prijzen?"
+    "starterPrompt1": "Vraag een offerte aan",
+    "starterPrompt2": "Welke tours bieden jullie aan?",
+    "starterPrompt3": "Hoe boek ik een tour?",
+    "starterPrompt4": "Wat zijn jullie prijzen?"
   },
   "footer": {
     "address": "Adres",

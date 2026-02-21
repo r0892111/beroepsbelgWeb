@@ -101,9 +101,10 @@
     "close": "Fermer le chat",
     "welcomeMessage": "Salut ! Avec quoi puis-je vous aider?",
     "emptyStateTitle": "Comment puis-je vous aider?",
-    "starterPrompt1": "Quelles visites proposez-vous?",
-    "starterPrompt2": "Comment réserver une visite?",
-    "starterPrompt3": "Quels sont vos tarifs?"
+    "starterPrompt1": "Demander un devis",
+    "starterPrompt2": "Quelles visites proposez-vous?",
+    "starterPrompt3": "Comment réserver une visite?",
+    "starterPrompt4": "Quels sont vos tarifs?"
   },
   "footer": {
     "address": "Adresse",

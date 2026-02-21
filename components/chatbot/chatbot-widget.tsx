@@ -30,11 +30,23 @@ export function ChatbotWidget({ locale }: ChatbotWidgetProps) {
   const t = useTranslations('chatbot');
   const { isCartOpen } = useCartContext();
   const [isOpen, setIsOpen] = useState(false);
+  const [hasAutoOpened, setHasAutoOpened] = useState(false);
   const [conversationId, setConversationId] = useState<string>(() => getOrCreateConversationId());
   const panelRef = useRef<HTMLDivElement>(null);
   const fabRef = useRef<HTMLButtonElement>(null);
 
   const { messages, streamingState, sendMessage, clearMessages, retryLastMessage } = useChatStream(conversationId);
+
+  // Auto-open chatbot on page load (with delay)
+  useEffect(() => {
+    if (!hasAutoOpened && !isCartOpen) {
+      const timer = setTimeout(() => {
+        setIsOpen(true);
+        setHasAutoOpened(true);
+      }, 1500); // Open after 1.5 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [hasAutoOpened, isCartOpen]);
 
   // Close chatbot when cart opens
   useEffect(() => {
@@ -106,19 +118,25 @@ export function ChatbotWidget({ locale }: ChatbotWidgetProps) {
 
   return (
     <>
-      {/* FAB Button */}
+      {/* FAB Button - More Prominent */}
       <button
         ref={fabRef}
         onClick={handleToggle}
-        className="fixed bottom-6 right-6 z-[9999] h-14 w-14 rounded-full bg-[#1BDD95] text-white shadow-lg hover:scale-105 hover:shadow-xl transition-all duration-300 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[#1BDD95] focus:ring-offset-2 active:scale-95"
+        className={`fixed bottom-6 right-6 z-[9999] ${isOpen ? 'h-14 w-14' : 'h-16 w-16'} rounded-full bg-[#1BDD95] text-white shadow-lg hover:scale-105 hover:shadow-xl transition-all duration-300 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[#1BDD95] focus:ring-offset-2 active:scale-95 ${!isOpen ? 'animate-pulse' : ''}`}
         style={{
-          boxShadow: 'var(--shadow-medium)',
+          boxShadow: isOpen ? 'var(--shadow-medium)' : '0 0 20px rgba(27, 221, 149, 0.5), var(--shadow-medium)',
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.boxShadow = 'var(--shadow-hover-glow)';
+          e.currentTarget.classList.remove('animate-pulse');
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.boxShadow = 'var(--shadow-medium)';
+          if (!isOpen) {
+            e.currentTarget.style.boxShadow = '0 0 20px rgba(27, 221, 149, 0.5), var(--shadow-medium)';
+            e.currentTarget.classList.add('animate-pulse');
+          } else {
+            e.currentTarget.style.boxShadow = 'var(--shadow-medium)';
+          }
         }}
         aria-label={isOpen ? t('close') : t('title')}
         aria-expanded={isOpen}
@@ -126,7 +144,7 @@ export function ChatbotWidget({ locale }: ChatbotWidgetProps) {
         {isOpen ? (
           <X className="h-6 w-6" />
         ) : (
-          <MessageCircle className="h-6 w-6" />
+          <MessageCircle className="h-7 w-7" />
         )}
       </button>
 

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import { X, Send, RotateCcw, Bot } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { MessageBubble } from './message-bubble';
@@ -20,12 +21,19 @@ interface ChatPanelProps {
 
 export function ChatPanel({ messages, streamingState, onSendMessage, onClose, onRestart, onRetry }: ChatPanelProps) {
   const t = useTranslations('chatbot');
+  const params = useParams();
+  const router = useRouter();
+  const locale = params.locale as string;
   const [inputValue, setInputValue] = useState('');
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [userHasScrolled, setUserHasScrolled] = useState(false);
+
+  const handleRequestQuote = () => {
+    router.push(`/${locale}/b2b-offerte`);
+  };
 
   // Auto-scroll to bottom when new messages arrive (unless user scrolled up)
   useEffect(() => {
@@ -185,8 +193,8 @@ export function ChatPanel({ messages, streamingState, onSendMessage, onClose, on
             <p className="text-gray-600 text-sm mb-4">{t('emptyStateTitle')}</p>
             <div className="flex flex-col gap-2 w-full max-w-[280px]">
               <button
-                onClick={() => onSendMessage(t('starterPrompt1'))}
-                className="px-4 py-2.5 bg-white rounded-xl border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all text-left"
+                onClick={handleRequestQuote}
+                className="px-4 py-3 bg-[#1BDD95] text-white rounded-xl border-2 border-[#1BDD95] text-sm font-semibold hover:bg-[#2ABE7D] hover:border-[#2ABE7D] transition-all text-left shadow-md"
               >
                 {t('starterPrompt1')}
               </button>
@@ -201,6 +209,12 @@ export function ChatPanel({ messages, streamingState, onSendMessage, onClose, on
                 className="px-4 py-2.5 bg-white rounded-xl border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all text-left"
               >
                 {t('starterPrompt3')}
+              </button>
+              <button
+                onClick={() => onSendMessage(t('starterPrompt4'))}
+                className="px-4 py-2.5 bg-white rounded-xl border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all text-left"
+              >
+                {t('starterPrompt4')}
               </button>
             </div>
           </div>
