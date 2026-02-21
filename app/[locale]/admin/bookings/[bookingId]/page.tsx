@@ -766,6 +766,45 @@ export default function BookingDetailPage() {
     }
   };
 
+  // Advance quote status to next stage
+  const handleAdvanceQuoteStatus = async () => {
+    if (!booking) return;
+    
+    const statusFlow: Record<string, string> = {
+      'quote_pending': 'quote_sent',
+      'quote_sent': 'quote_accepted',
+      'quote_accepted': 'quote_paid',
+    };
+    
+    const currentStatus = booking.status;
+    const nextStatus = statusFlow[currentStatus || ''];
+    
+    if (!nextStatus) {
+      toast.error('Cannot advance status further');
+      return;
+    }
+    
+    try {
+      const { error: updateError } = await supabase
+        .from('tourbooking')
+        .update({
+          status: nextStatus,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', booking.id);
+
+      if (updateError) {
+        throw new Error('Failed to update booking status');
+      }
+
+      toast.success(`Status advanced to ${nextStatus.replace(/_/g, ' ')}`);
+      void fetchBookingDetails();
+    } catch (err) {
+      console.error('Failed to advance quote status:', err);
+      toast.error('Failed to advance quote status');
+    }
+  };
+
   // Save booking edits
   const handleSaveBooking = async () => {
     if (!booking) return;
@@ -2107,6 +2146,19 @@ export default function BookingDetailPage() {
         <Card className="border-dashed">
           <CardContent className="py-4">
             <div className="flex flex-wrap items-center gap-3">
+              {/* Advance Quote Status Button */}
+              {booking.status && ['quote_pending', 'quote_sent', 'quote_accepted'].includes(booking.status) && (
+                <Button
+                  onClick={handleAdvanceQuoteStatus}
+                  size="sm"
+                  className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  {booking.status === 'quote_pending' && 'Mark as Quote Sent'}
+                  {booking.status === 'quote_sent' && 'Mark as Quote Accepted'}
+                  {booking.status === 'quote_accepted' && 'Mark as Quote Paid'}
+                </Button>
+              )}
               {/* Send to Guide Assignment - redirects to guide choosing page */}
               {getGuideIds(booking).length === 0 && (
                 <Button
